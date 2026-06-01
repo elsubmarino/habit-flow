@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:10.11
+    container_name: habitflow-mariadb
+    ports:
+      - "3307:3306"
+    environment:
+      MARIADB_DATABASE: habitflow
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Seoul
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - habitflow-mariadb-data:/var/lib/mysql
+  redis:
+    image: redis:alpine
+    container_name: habitflow-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - habitflow-redis-data:/data
+    command: redis-server --appendonly yes
+
+volumes:
+  habitflow-mariadb-data:
+  habitflow-redis-data:
