@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Builder
 @Getter
 @Setter
-public class TaskHistory {
+public class TaskHistory extends BaseCreatedTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,6 +23,4 @@ public class TaskHistory {
     private String description;
 
     private long sortOrder;
-
-    private LocalDate createdAt;
 }
