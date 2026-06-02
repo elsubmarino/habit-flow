@@ -43,9 +43,11 @@ public class Task extends BaseTimeEntity {
     private Task parent;
 
     @OneToMany(mappedBy = "parent",cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Task> subTasks = new ArrayList<>();
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<TaskAttachment> taskAttachments = new ArrayList<>();
 
 }

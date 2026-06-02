@@ -1,8 +1,12 @@
 package io.streak.habitflow.domain.project.dto;
 
 import io.streak.habitflow.domain.project.entity.Project;
+import io.streak.habitflow.domain.user.dto.UserResponse;
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Builder
@@ -12,20 +16,16 @@ public class ProjectResponse {
     private String color;
     private long sortOrder;
 
-    private String userId;
-    private String userName;
+    @Builder.Default
+    private List<UserResponse> users = new ArrayList<>();
 
-    public static ProjectResponse from(Project project) {
+    public static ProjectResponse from(Project project, List<UserResponse> userResponses) {
         ProjectResponseBuilder builder = ProjectResponse.builder()
                 .id(project.getId())
                 .name(project.getName())
                 .color(project.getColor())
+                .users(userResponses)
                 .sortOrder(project.getSortOrder());
-
-        if(project.getUser() != null){
-            builder.userId(project.getUser().getUserId())
-                    .userName(project.getUser().getUserName());
-        }
 
         return builder.build();
     }
