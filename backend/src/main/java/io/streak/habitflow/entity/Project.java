@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Builder
 @Getter
 @Setter
-public class Project {
+public class Project  extends BaseTimeEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,8 +23,4 @@ public class Project {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id")
     private User user;
-
-
-    private LocalDate createdAt;
-    private LocalDate updatedAt;
 }

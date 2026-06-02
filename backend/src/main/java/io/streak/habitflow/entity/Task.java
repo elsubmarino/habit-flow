@@ -14,7 +14,7 @@ import java.util.List;
 @Builder
 @Getter
 @Setter
-public class Task {
+public class Task extends BaseTimeEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -45,12 +45,5 @@ public class Task {
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TaskAttachment> taskAttachments = new ArrayList<>();
-
-
-
-
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
 
 }

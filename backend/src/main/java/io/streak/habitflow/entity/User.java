@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Builder
 @Getter
 @Setter
-public class User {
+public class User  extends BaseTimeEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,7 +25,5 @@ public class User {
     private String email;
     private String role;
 
-    private LocalDate createdAt;
-    private LocalDate updatedAt;
 
 }

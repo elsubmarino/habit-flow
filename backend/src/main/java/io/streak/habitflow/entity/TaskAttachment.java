@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @Builder
 @Getter
 @Setter
-public class TaskAttachment {
+public class TaskAttachment  extends BaseTimeEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,7 +25,4 @@ public class TaskAttachment {
     private String originalFileName;
 
     private long sortOrder;
-
-    private LocalDate createdAt;
-    private LocalDate updatedAt;
 }
