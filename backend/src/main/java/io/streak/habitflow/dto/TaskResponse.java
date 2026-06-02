@@ -43,7 +43,7 @@ public class TaskResponse {
     private List<LabelResponse> labels = new ArrayList<>();
 
     public static TaskResponse from(Task task, List<LabelResponse> labelResponses) {
-        TaskResponseBuilder taskResponseBuilder = TaskResponse.builder()
+        TaskResponseBuilder builder = TaskResponse.builder()
                 .id(task.getId())
                 .title(task.getTitle())
                 .description(task.getDescription())
@@ -59,21 +59,21 @@ public class TaskResponse {
                         .map(TaskAttachmentResponse::from)
                         .collect(Collectors.toList()));
         if(task.getProject() != null){
-            taskResponseBuilder.projectId(task.getProject().getId())
+            builder.projectId(task.getProject().getId())
                     .projectName(task.getProject().getName())
                     .projectColor(task.getProject().getColor());
         }
 
         if(task.getUser() != null){
-            taskResponseBuilder.userId(task.getUser().getId())
+            builder.userId(task.getUser().getId())
                     .userName(task.getUser().getUserName());
         }
 
         if(task.getParent() != null){
-            taskResponseBuilder.parentId(task.getParent().getId());
+            builder.parentId(task.getParent().getId());
         }
 
 
-        return taskResponseBuilder.build();
+        return builder.build();
     };
 }

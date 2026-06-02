@@ -15,7 +15,7 @@ public class TaskAttachmentResponse {
     private Long taskId;
 
     public static TaskAttachmentResponse from(TaskAttachment taskAttachment) {
-        TaskAttachmentResponseBuilder taskAttachmentResponseBuilder =
+        TaskAttachmentResponseBuilder builder =
                 TaskAttachmentResponse.builder()
                         .id(taskAttachment.getId())
                         .fileUrl(taskAttachment.getFileUrl())
@@ -23,9 +23,9 @@ public class TaskAttachmentResponse {
                         .sortOrder(taskAttachment.getSortOrder());
 
         if(taskAttachment.getTask() != null){
-            taskAttachmentResponseBuilder.taskId(taskAttachment.getTask().getId());
+            builder.taskId(taskAttachment.getTask().getId());
         }
 
-        return  taskAttachmentResponseBuilder.build();
+        return  builder.build();
     }
 }

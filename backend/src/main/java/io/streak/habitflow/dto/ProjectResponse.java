@@ -16,17 +16,17 @@ public class ProjectResponse {
     private String userName;
 
     public static ProjectResponse from(Project project) {
-        ProjectResponseBuilder projectResponseBuilder = ProjectResponse.builder()
+        ProjectResponseBuilder builder = ProjectResponse.builder()
                 .id(project.getId())
                 .name(project.getName())
                 .color(project.getColor())
                 .sortOrder(project.getSortOrder());
 
         if(project.getUser() != null){
-            projectResponseBuilder.userId(project.getUser().getUserId())
+            builder.userId(project.getUser().getUserId())
                     .userName(project.getUser().getUserName());
         }
 
-        return projectResponseBuilder.build();
+        return builder.build();
     }
 }

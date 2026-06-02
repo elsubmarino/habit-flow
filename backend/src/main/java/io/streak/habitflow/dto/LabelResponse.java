@@ -15,16 +15,16 @@ public class LabelResponse {
     private String userName;
 
     public static LabelResponse from(Label label){
-        LabelResponseBuilder labelResponseBuilder = LabelResponse.builder()
+        LabelResponseBuilder builder = LabelResponse.builder()
                 .id(label.getId())
                 .name(label.getName())
                 .sortOrder(label.getSortOrder());
 
         if(label.getUser() != null){
-            labelResponseBuilder.userId(label.getUser().getUserId())
+            builder.userId(label.getUser().getUserId())
                     .userName(label.getUser().getUserName());
         }
 
-        return labelResponseBuilder.build();
+        return builder.build();
     }
 }
