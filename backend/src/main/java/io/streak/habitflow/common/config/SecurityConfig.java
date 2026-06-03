@@ -1,5 +1,7 @@
 package io.streak.habitflow.common.config;
 
+import io.streak.habitflow.common.security.JwtAuthentificationFilter;
+import io.streak.habitflow.common.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

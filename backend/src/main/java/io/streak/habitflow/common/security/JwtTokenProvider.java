@@ -1,23 +1,20 @@
-package io.streak.habitflow.common.config;
+package io.streak.habitflow.common.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class JwtTokenProvider {
 
@@ -26,7 +23,6 @@ public class JwtTokenProvider {
 
     private Key secretKey;
 
-    private final UserDetailsService userDetailsService;
 
     @PostConstruct
     public void init() {
@@ -51,7 +47,11 @@ public class JwtTokenProvider {
         String email = Jwts.parserBuilder().setSigningKey(secretKey).build()
                 .parseClaimsJws(token).getBody().getSubject();
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
+                .username(email)
+                .password("") // 무상태 서버이므로 비밀번호는 공란 처리
+                .authorities("ROLE_USER") // 기본 권한 주입
+                .build();
 
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
