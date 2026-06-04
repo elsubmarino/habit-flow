@@ -6,3 +6,4 @@ backend/build/
 backend/.gradle/
 backend/HELP.md
 frontend/dist/
+backend/src/main/resources/application-secret.yml
