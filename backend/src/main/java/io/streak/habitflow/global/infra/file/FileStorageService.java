@@ -1,6 +1,5 @@
-package io.streak.habitflow.domain.file.service;
+package io.streak.habitflow.global.infra.file;
 
-import io.streak.habitflow.domain.file.dto.FileDto;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface FileStorageService {

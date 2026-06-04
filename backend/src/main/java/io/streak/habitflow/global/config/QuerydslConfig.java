@@ -1,4 +1,4 @@
-package io.streak.habitflow.common.config;
+package io.streak.habitflow.global.config;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;

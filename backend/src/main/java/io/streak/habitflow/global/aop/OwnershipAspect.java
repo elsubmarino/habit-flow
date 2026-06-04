@@ -1,6 +1,5 @@
-package io.streak.habitflow.common.security;
+package io.streak.habitflow.global.aop;
 
-import io.streak.habitflow.common.security.annotation.CheckOwnership;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;

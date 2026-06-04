@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.activity.entity;
 
-import io.streak.habitflow.common.jpa.BaseCreatedTimeEntity;
+import io.streak.habitflow.global.common.BaseCreatedTimeEntity;
 import io.streak.habitflow.domain.task.entity.ActivityType;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.member.entity.Member;

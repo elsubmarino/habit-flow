@@ -1,7 +1,6 @@
-package io.streak.habitflow.app.task;
+package io.streak.habitflow.domain.task.api;
 
 import io.streak.habitflow.domain.task.dto.TaskCreateRequest;
-import io.streak.habitflow.domain.task.dto.TaskRequest;
 import io.streak.habitflow.domain.task.service.TaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

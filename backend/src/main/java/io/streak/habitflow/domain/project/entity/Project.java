@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.project.entity;
 
-import io.streak.habitflow.common.jpa.BaseTimeEntity;
+import io.streak.habitflow.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

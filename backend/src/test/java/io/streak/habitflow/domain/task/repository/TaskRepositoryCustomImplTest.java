@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.task.repository;
 
-import io.streak.habitflow.common.config.JpaAuditingConfig;
-import io.streak.habitflow.common.config.QuerydslConfig;
+import io.streak.habitflow.global.config.JpaAuditingConfig;
+import io.streak.habitflow.global.config.QuerydslConfig;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
 import io.streak.habitflow.domain.task.dto.TaskRequest;

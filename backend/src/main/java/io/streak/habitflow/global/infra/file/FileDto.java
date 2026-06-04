@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.file.dto;
+package io.streak.habitflow.global.infra.file;
 
 import lombok.Builder;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package io.streak.habitflow.common.security.annotation;
+package io.streak.habitflow.global.aop;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

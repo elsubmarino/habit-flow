@@ -1,17 +1,16 @@
 package io.streak.habitflow.domain.task.service;
 
-import io.streak.habitflow.common.security.annotation.CheckOwnership;
+import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
-import io.streak.habitflow.domain.file.dto.FileDto;
-import io.streak.habitflow.domain.file.service.FileStorageService;
+import io.streak.habitflow.global.infra.file.FileDto;
+import io.streak.habitflow.global.infra.file.FileStorageService;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.dto.TaskCreateRequest;
-import io.streak.habitflow.domain.task.dto.TaskRequest;
 import io.streak.habitflow.domain.task.dto.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
@@ -20,8 +19,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

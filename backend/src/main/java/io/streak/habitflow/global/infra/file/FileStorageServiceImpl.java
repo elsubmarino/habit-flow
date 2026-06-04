@@ -1,6 +1,5 @@
-package io.streak.habitflow.domain.file.service;
+package io.streak.habitflow.global.infra.file;
 
-import io.streak.habitflow.domain.file.dto.FileDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
 

@@ -1,4 +1,4 @@
-package io.streak.habitflow.common.security;
+package io.streak.habitflow.global.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
