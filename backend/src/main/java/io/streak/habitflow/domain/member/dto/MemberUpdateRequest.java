@@ -8,7 +8,6 @@ import lombok.Data;
 @Builder
 public class MemberUpdateRequest {
     @NotBlank(message = "변경할 이름은 필수입니다.")
-    private String userName;
-
+    private String name;
     private String email;
 }
