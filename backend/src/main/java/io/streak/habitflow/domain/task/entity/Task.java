@@ -1,8 +1,12 @@
 package io.streak.habitflow.domain.task.entity;
 
 import io.streak.habitflow.common.jpa.BaseTimeEntity;
+import io.streak.habitflow.domain.attachment.entity.Attachment;
+import io.streak.habitflow.domain.comment.entity.Comment;
+import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.project.entity.Project;
-import io.streak.habitflow.domain.user.entity.User;
+import io.streak.habitflow.domain.member.entity.Member;
+import jakarta.annotation.Priority;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,13 +30,15 @@ public class Task extends BaseTimeEntity {
 
     private boolean isCompleted;
 
-    private int priority;
+    @Enumerated(EnumType.STRING)
+    private PriorityType priorityType;
+
     private LocalDateTime dueDate;
     private long sortOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id")
-    private User user;
+    private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="project_id")
@@ -48,6 +54,9 @@ public class Task extends BaseTimeEntity {
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<TaskAttachment> taskAttachments = new ArrayList<>();
+    private List<Comment> comments = new ArrayList<>();
 
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Label>  labels = new ArrayList<>();
 }

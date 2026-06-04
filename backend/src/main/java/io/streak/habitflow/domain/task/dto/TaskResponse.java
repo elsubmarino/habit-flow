@@ -1,6 +1,8 @@
 package io.streak.habitflow.domain.task.dto;
 
+import io.streak.habitflow.domain.attachment.dto.AttachmentResponse;
 import io.streak.habitflow.domain.label.dto.LabelResponse;
+import io.streak.habitflow.domain.task.entity.PriorityType;
 import io.streak.habitflow.domain.task.entity.Task;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +23,7 @@ public class TaskResponse {
     private String title;
     private String description;
     private boolean isCompleted;
-    private int priority;
+    private PriorityType priorityType;
     private LocalDateTime dueDate;
     private long sortOrder;
 
@@ -38,7 +40,7 @@ public class TaskResponse {
     private List<TaskResponse> subTasks = new ArrayList<>();
 
     @Builder.Default
-    private List<TaskAttachmentResponse> taskAttachments = new ArrayList<>();
+    private List<AttachmentResponse> taskAttachments = new ArrayList<>();
 
     @Builder.Default
     private List<LabelResponse> labels = new ArrayList<>();
@@ -49,15 +51,12 @@ public class TaskResponse {
                 .title(task.getTitle())
                 .description(task.getDescription())
                 .isCompleted(task.isCompleted())
-                .priority(task.getPriority())
+                .priorityType(task.getPriorityType())
                 .dueDate(task.getDueDate())
                 .sortOrder(task.getSortOrder())
                 .labels(labelResponses)
                 .subTasks(task.getSubTasks().stream()
                         .map(sub -> TaskResponse.from(sub, new ArrayList<>()))
-                        .collect(Collectors.toList()))
-                .taskAttachments(task.getTaskAttachments().stream()
-                        .map(TaskAttachmentResponse::from)
                         .collect(Collectors.toList()));
         if(task.getProject() != null){
             builder.projectId(task.getProject().getId())
@@ -65,9 +64,9 @@ public class TaskResponse {
                     .projectColor(task.getProject().getColor());
         }
 
-        if(task.getUser() != null){
-            builder.userId(task.getUser().getId())
-                    .userName(task.getUser().getUserName());
+        if(task.getMember() != null){
+            builder.userId(task.getMember().getId())
+                    .userName(task.getMember().getUserName());
         }
 
         if(task.getParent() != null){

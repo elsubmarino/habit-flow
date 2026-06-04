@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.user.dto;
+package io.streak.habitflow.domain.member.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class UserSignUpRequest {
+public class MemberSignUpRequest {
     @NotBlank(message = "아이디는 필수입니다.")
     private String userId;
 

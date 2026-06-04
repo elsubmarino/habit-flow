@@ -1,6 +1,7 @@
-package io.streak.habitflow.domain.project.entity;
+package io.streak.habitflow.domain.comment.entity;
 
 import io.streak.habitflow.domain.member.entity.Member;
+import io.streak.habitflow.domain.task.entity.Task;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,16 +11,16 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class ProjectUser {
+public class CommentUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="project_id")
-    private Project project;
+    @JoinColumn(name = "task_id")
+    private Task task;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="user_id")
+    @JoinColumn(name = "user_id")
     private Member member;
 }

@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.label.entity;
 
 import io.streak.habitflow.common.jpa.BaseTimeEntity;
-import io.streak.habitflow.domain.user.entity.User;
+import io.streak.habitflow.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,5 +22,5 @@ public class Label  extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id")
-    private User user;
+    private Member member;
 }

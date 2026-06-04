@@ -1,7 +1,6 @@
 package io.streak.habitflow.common.security;
 
 import io.streak.habitflow.common.security.annotation.CheckOwnership;
-import io.streak.habitflow.domain.task.dto.TaskRequest;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,7 @@ public class OwnershipAspect {
             Task task = taskRepository.findById(id)
                     .orElseThrow(()->new IllegalArgumentException("존재하지 않는 테스크입니다."));
 
-            if(!task.getUser().getEmail().equals(currentEmail)){
+            if(!task.getMember().getEmail().equals(currentEmail)){
                 throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
             }
         }

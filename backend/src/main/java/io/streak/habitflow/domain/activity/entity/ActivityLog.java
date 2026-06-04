@@ -1,8 +1,9 @@
 package io.streak.habitflow.domain.activity.entity;
 
+import io.streak.habitflow.common.jpa.BaseCreatedTimeEntity;
 import io.streak.habitflow.domain.task.entity.ActivityType;
 import io.streak.habitflow.domain.task.entity.Task;
-import io.streak.habitflow.domain.user.entity.User;
+import io.streak.habitflow.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,7 +17,7 @@ import lombok.*;
         @Index(name="idx_task_created_at",columnList = "task_id,created_at"),
         @Index(name="idx_user_created_at",columnList = "user_id,created_at")
 })
-public class ActivityLog {
+public class ActivityLog extends BaseCreatedTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -27,7 +28,7 @@ public class ActivityLog {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id")
-    private User user;
+    private Member member;
 
     @Enumerated(EnumType.STRING)
     private ActivityType activityType;

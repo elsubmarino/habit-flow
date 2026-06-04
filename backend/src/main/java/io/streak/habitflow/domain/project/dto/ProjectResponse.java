@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.project.dto;
 
 import io.streak.habitflow.domain.project.entity.Project;
-import io.streak.habitflow.domain.user.dto.UserResponse;
+import io.streak.habitflow.domain.member.dto.MemberResponse;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,9 +17,9 @@ public class ProjectResponse {
     private long sortOrder;
 
     @Builder.Default
-    private List<UserResponse> users = new ArrayList<>();
+    private List<MemberResponse> users = new ArrayList<>();
 
-    public static ProjectResponse from(Project project, List<UserResponse> userResponses) {
+    public static ProjectResponse from(Project project, List<MemberResponse> userResponses) {
         ProjectResponseBuilder builder = ProjectResponse.builder()
                 .id(project.getId())
                 .name(project.getName())

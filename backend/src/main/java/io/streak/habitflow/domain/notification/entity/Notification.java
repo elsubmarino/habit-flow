@@ -3,7 +3,7 @@ package io.streak.habitflow.domain.notification.entity;
 import io.streak.habitflow.common.jpa.BaseCreatedTimeEntity;
 import io.streak.habitflow.domain.task.entity.ActivityType;
 import io.streak.habitflow.domain.task.entity.Task;
-import io.streak.habitflow.domain.user.entity.User;
+import io.streak.habitflow.domain.member.entity.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,7 +24,7 @@ public class Notification extends BaseCreatedTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id")
-    private User user;
+    private Member member;
 
     @Enumerated(EnumType.STRING)
     private ActivityType activityType;

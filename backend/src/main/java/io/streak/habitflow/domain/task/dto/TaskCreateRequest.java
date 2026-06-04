@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.task.dto;
 
+import io.streak.habitflow.domain.task.entity.PriorityType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -15,13 +16,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TaskRequest {
+public class TaskCreateRequest {
 
     @NotBlank(message = "제목은 필수 입력 항목입니다.")
     @Size(max = 100, message = "제목은 100자를 초과할 수 없습니다.")
     private String title;
     private String description;
-    private String priorityType;
+    private PriorityType priorityType;
     private LocalDateTime dueDate;
     private Long projectId;
     private Long parentId;

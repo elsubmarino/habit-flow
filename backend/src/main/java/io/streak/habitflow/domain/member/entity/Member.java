@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.user.entity;
+package io.streak.habitflow.domain.member.entity;
 
 import io.streak.habitflow.common.jpa.BaseTimeEntity;
 import jakarta.persistence.Entity;
@@ -13,7 +13,7 @@ import lombok.*;
 @Builder
 @Getter
 @Setter
-public class User  extends BaseTimeEntity {
+public class Member extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
