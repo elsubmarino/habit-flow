@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.notification.dto;
 
-import io.streak.habitflow.domain.task.entity.ActivityType;
+import io.streak.habitflow.domain.task.type.ActivityType;
 import lombok.*;
 
 @Getter

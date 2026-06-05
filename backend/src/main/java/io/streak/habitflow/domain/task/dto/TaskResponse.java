@@ -2,7 +2,7 @@ package io.streak.habitflow.domain.task.dto;
 
 import io.streak.habitflow.domain.attachment.dto.AttachmentResponse;
 import io.streak.habitflow.domain.label.dto.LabelResponse;
-import io.streak.habitflow.domain.task.entity.PriorityType;
+import io.streak.habitflow.domain.task.type.PriorityType;
 import io.streak.habitflow.domain.task.entity.Task;
 import lombok.*;
 

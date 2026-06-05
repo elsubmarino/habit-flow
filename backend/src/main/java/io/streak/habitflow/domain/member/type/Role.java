@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.member.entity;
+package io.streak.habitflow.domain.member.type;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.task.dto;
 
-import io.streak.habitflow.domain.task.entity.PriorityType;
+import io.streak.habitflow.domain.task.type.PriorityType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;

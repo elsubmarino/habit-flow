@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.member.entity;
 
+import io.streak.habitflow.domain.member.type.Role;
 import io.streak.habitflow.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;

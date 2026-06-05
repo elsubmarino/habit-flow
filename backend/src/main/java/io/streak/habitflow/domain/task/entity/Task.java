@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.task.entity;
 
+import io.streak.habitflow.domain.task.type.PriorityType;
 import io.streak.habitflow.global.common.BaseTimeEntity;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.label.entity.Label;

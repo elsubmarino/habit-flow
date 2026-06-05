@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.activity.dto;
 
-import io.streak.habitflow.domain.task.entity.ActivityType;
-import io.streak.habitflow.domain.task.entity.TargetType;
+import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.domain.task.type.TargetType;
 import lombok.*;
 
 @Getter
