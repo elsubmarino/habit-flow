@@ -96,4 +96,13 @@ public class CommentService {
         commentRepository.save(comment);
         return CommentResponse.from(comment);
     }
+
+    /**
+     * 코멘트 삭제
+     * @param id
+     */
+    @Transactional
+    public void deleteComment(Long id){
+        commentRepository.deleteById(id);
+    }
 }

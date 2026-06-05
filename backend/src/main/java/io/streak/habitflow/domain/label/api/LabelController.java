@@ -4,6 +4,7 @@ import io.streak.habitflow.domain.label.dto.LabelRequest;
 import io.streak.habitflow.domain.label.dto.LabelResponse;
 import io.streak.habitflow.domain.label.service.LabelService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -58,5 +59,18 @@ public class LabelController {
                                                      @RequestBody LabelRequest labelRequest){
         LabelResponse labelResponse = labelService.updateLabel(id,labelRequest,userDetails);
         return ResponseEntity.ok(labelResponse);
+    }
+
+    /**
+     * 라벨 삭제
+     * @param id
+     * @param userDetails
+     * @return
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteLabel(@PathVariable Long id,
+                                            @AuthenticationPrincipal UserDetails userDetails) {
+        labelService.deleteLabel(id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

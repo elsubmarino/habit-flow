@@ -67,5 +67,17 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.OK).body(commentResponse);
     }
 
+    /**
+     * 코멘트 삭제
+     * @param id
+     * @param userDetails
+     * @return
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long id,@AuthenticationPrincipal UserDetails userDetails) {
+        commentService.deleteComment(id);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
 
 }

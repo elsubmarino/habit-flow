@@ -56,4 +56,17 @@ public class ProjectController {
         ProjectResponse projectResponse = projectService.updateProject(projectRequest,id,userDetails);
         return ResponseEntity.ok(projectResponse);
     }
+
+    /**
+     * 프로젝트 삭제
+     * @param id
+     * @param userDetails
+     * @return
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProject(@PathVariable Long id,
+                                              @AuthenticationPrincipal UserDetails userDetails) {
+        projectService.deleteProject(id);
+        return ResponseEntity.ok().build();
+    }
 }

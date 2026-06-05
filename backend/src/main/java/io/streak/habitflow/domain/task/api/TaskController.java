@@ -92,5 +92,17 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.OK).body(taskResponse);
     }
 
+    /**
+     * 테스크 삭제
+     * @param id
+     * @param userDetails
+     * @return
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTask(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+        taskService.deleteTask(id,userDetails);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
 
 }

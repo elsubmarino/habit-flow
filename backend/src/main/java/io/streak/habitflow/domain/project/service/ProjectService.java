@@ -69,4 +69,13 @@ public class ProjectService {
                 .build();
         return ProjectResponse.from(projectRepository.save(project));
     }
+
+    /**
+     * 프로젝트 삭제
+     * @param id
+     */
+    @Transactional
+    public void deleteProject(Long id){
+        projectRepository.deleteById(id);
+    }
 }

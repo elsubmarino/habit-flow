@@ -72,4 +72,13 @@ public class LabelService {
                 .build();
         return LabelResponse.from(labelRepository.save(label));
     }
+
+    /**
+     * 라벨 삭제
+     * @param id
+     */
+    @Transactional
+    public void deleteLabel(Long id){
+        labelRepository.deleteById(id);
+    }
 }
