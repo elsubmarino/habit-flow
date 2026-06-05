@@ -19,14 +19,12 @@ public class ProjectResponse {
     @Builder.Default
     private List<MemberResponse> users = new ArrayList<>();
 
-    public static ProjectResponse from(Project project, List<MemberResponse> userResponses) {
+    public static ProjectResponse from(Project project) {
         ProjectResponseBuilder builder = ProjectResponse.builder()
                 .id(project.getId())
                 .name(project.getName())
                 .color(project.getColor())
-                .users(userResponses)
                 .sortOrder(project.getSortOrder());
-
         return builder.build();
     }
 }

@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.activity.entity;
 
+import io.streak.habitflow.domain.task.entity.TargetType;
 import io.streak.habitflow.global.common.BaseCreatedTimeEntity;
 import io.streak.habitflow.domain.task.entity.ActivityType;
 import io.streak.habitflow.domain.task.entity.Task;
@@ -23,13 +24,15 @@ public class ActivityLog extends BaseCreatedTimeEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="task_id")
-    private Task task;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id")
     private Member member;
 
     @Enumerated(EnumType.STRING)
     private ActivityType activityType;
+
+    @Enumerated(EnumType.STRING)
+    private TargetType targetType;
+
+    @Column(name="target_id",nullable = false)
+    private Long targetId;
 }

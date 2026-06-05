@@ -1,0 +1,34 @@
+package io.streak.habitflow.domain.notification.api;
+
+import io.streak.habitflow.domain.notification.dto.NotificationRequest;
+import io.streak.habitflow.domain.notification.dto.NotificationResponse;
+import io.streak.habitflow.domain.notification.service.NotificationService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/api/notification")
+public class NotificationController {
+    private final NotificationService notificationService;
+
+    @GetMapping
+    public ResponseEntity<List<NotificationResponse>> getNotifications(@AuthenticationPrincipal UserDetails userDetails,
+                                                                       @RequestBody NotificationRequest notificationRequest
+                                                                       ) {
+        List<NotificationResponse> notificationResponses = notificationService.getNotifications(notificationRequest,userDetails);
+        return ResponseEntity.ok(notificationResponses);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<NotificationResponse> updateNotification(@PathVariable Long id, @RequestBody NotificationRequest notificationRequest
+            , @AuthenticationPrincipal UserDetails userDetails) {
+        NotificationResponse notificationResponse = notificationService.updateNotification(id,notificationRequest,userDetails);
+        return ResponseEntity.ok(notificationResponse);
+    }
+}

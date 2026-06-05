@@ -6,5 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class LabelRequest {
+    private Long id;
     private String name;
+    private String color;
 }

@@ -14,10 +14,6 @@ public class ActivityLogResponse {
         ActivityLogResponseBuilder builder =  ActivityLogResponse.builder()
                 .id(activityLog.getId());
 
-        if(activityLog.getTask() != null){
-            builder.taskId(activityLog.getTask().getId());
-        }
-
 
         return builder.build();
     }

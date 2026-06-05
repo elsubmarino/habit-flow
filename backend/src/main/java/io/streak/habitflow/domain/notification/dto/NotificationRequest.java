@@ -7,6 +7,7 @@ import lombok.Data;
 @Data
 @Builder
 public class NotificationRequest {
+    private Long id;
     private Long taskId;
     private ActivityType activityType;
     private boolean isConfirmed;

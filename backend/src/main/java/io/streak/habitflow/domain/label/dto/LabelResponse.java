@@ -20,11 +20,6 @@ public class LabelResponse {
                 .name(label.getName())
                 .sortOrder(label.getSortOrder());
 
-        if(label.getMember() != null){
-            builder.userId(label.getMember().getUserId())
-                    .userName(label.getMember().getUserName());
-        }
-
         return builder.build();
     }
 }

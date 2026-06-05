@@ -65,8 +65,7 @@ public class TaskResponse {
         }
 
         if(task.getMember() != null){
-            builder.userId(task.getMember().getId())
-                    .userName(task.getMember().getUserName());
+            builder.userId(task.getMember().getId());
         }
 
         if(task.getParent() != null){

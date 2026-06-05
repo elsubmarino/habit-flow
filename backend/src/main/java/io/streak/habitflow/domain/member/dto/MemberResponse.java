@@ -16,14 +16,13 @@ import java.util.stream.Collectors;
 public class MemberResponse {
     private Long id;
     private String userId;
-    private String userName;
+    private String name;
     private String email;
     private String role;
 
     public static MemberResponse from(Member member) {
         MemberResponseBuilder builder = MemberResponse.builder()
-                .userId(member.getUserId())
-                .userName(member.getUserName())
+                .name(member.getName())
                 .email(member.getEmail());
         return builder.build();
     };

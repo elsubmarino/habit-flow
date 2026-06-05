@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.task.service;
 
+import io.streak.habitflow.domain.task.dto.TaskRequest;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
@@ -19,6 +20,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -99,4 +103,21 @@ public class TaskService {
 
         return TaskResponse.from(info,null);
     }
+
+    public List<TaskResponse> getTasksByProject(Long ProjectId, UserDetails userDetails){
+        List<Task> tasks = taskRepository.findByProjectId(ProjectId);
+        return tasks.stream()
+                .map(task -> TaskResponse.from(task,null))
+                .collect(Collectors.toList());
+    }
+
+    public TaskResponse updateTask(Long taskId, TaskRequest taskRequest,UserDetails userDetails){
+        Task task = Task.builder()
+                .id(taskId)
+                .title(taskRequest.getTitle())
+                .description(taskRequest.getDescription())
+                .build();
+        return TaskResponse.from(taskRepository.save(task),null);
+    }
+
 }
