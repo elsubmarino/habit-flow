@@ -35,8 +35,8 @@ public class CommentController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestPart(value="file",required = false) MultipartFile file,
             @RequestPart("commentRequest") @Valid CommentRequest commentRequest) {
-        CommentResponse commentResponse = commentService.createComment(commentRequest,file,userDetails);
-        return ResponseEntity.status(HttpStatus.CREATED).body(commentResponse);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body( commentService.createComment(commentRequest,file,userDetails));
     }
 
     /**
@@ -48,8 +48,7 @@ public class CommentController {
     @GetMapping
     public ResponseEntity<List<CommentResponse>> getComments(@AuthenticationPrincipal UserDetails userDetails,
                                                              @RequestBody CommentRequest commentRequest) {
-        List<CommentResponse> commentResponses = commentService.getComments(commentRequest);
-        return ResponseEntity.status(HttpStatus.OK).body(commentResponses);
+        return ResponseEntity.ok(commentService.getComments(commentRequest));
     }
 
     /**
@@ -63,8 +62,7 @@ public class CommentController {
     public ResponseEntity<CommentResponse> updateComment(@PathVariable Long id,
                                                          @AuthenticationPrincipal UserDetails userDetails,
                                                          @RequestBody CommentRequest commentRequest) {
-        CommentResponse commentResponse = commentService.updateComment(id, commentRequest);
-        return ResponseEntity.status(HttpStatus.OK).body(commentResponse);
+        return ResponseEntity.ok(commentService.updateComment(id, commentRequest));
     }
 
     /**
@@ -76,7 +74,7 @@ public class CommentController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long id,@AuthenticationPrincipal UserDetails userDetails) {
         commentService.deleteComment(id);
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        return ResponseEntity.noContent().build();
     }
 
 

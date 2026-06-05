@@ -29,7 +29,6 @@ public class ActivityLogController {
      */
     @GetMapping
     public ResponseEntity<List<ActivityLogResponse>> getActivityLogs(@RequestBody ActivityLogRequest activityLogRequest, @AuthenticationPrincipal UserDetails userDetails) {
-        List<ActivityLogResponse> activityLogResponses =  activityLogService.getActivityLogs(activityLogRequest,userDetails);
-        return ResponseEntity.ok(activityLogResponses);
+        return ResponseEntity.ok(activityLogService.getActivityLogs(activityLogRequest,userDetails));
     }
 }

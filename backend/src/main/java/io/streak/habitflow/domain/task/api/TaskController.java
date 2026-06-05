@@ -36,8 +36,7 @@ public class TaskController {
     public ResponseEntity<TaskResponse> createTask(@AuthenticationPrincipal UserDetails userDetails,
                                            @RequestPart(value = "file", required = false) MultipartFile file,
                                            @RequestPart("taskRequest") @Valid TaskCreateRequest taskCreateRequest){
-        TaskResponse taskResponse = taskService.createTask(taskCreateRequest, file, userDetails);
-        return ResponseEntity.status(HttpStatus.CREATED).body(taskResponse);
+        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(taskCreateRequest, file, userDetails));
     }
 
     /**
@@ -49,20 +48,7 @@ public class TaskController {
     @GetMapping("/{id}")
     public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long id,
                                                     @AuthenticationPrincipal UserDetails userDetails) {
-        TaskResponse result = taskService.readTask(id,userDetails);
-        return ResponseEntity.status(HttpStatus.OK).body(result);
-    }
-
-    /**
-     * 테스크 삭제
-     * @param id
-     * @param userDetails
-     * @return
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTaskById(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
-        taskService.deleteTask(id,userDetails);
-        return ResponseEntity.status(HttpStatus.OK).body(null);
+        return ResponseEntity.ok(taskService.readTask(id,userDetails));
     }
 
     /**
@@ -74,8 +60,7 @@ public class TaskController {
     @GetMapping("/project/{id}")
     public ResponseEntity<List<TaskResponse>> getTasksByProject(@AuthenticationPrincipal UserDetails userDetails,
                                                                 @PathVariable Long projectId) {
-        List<TaskResponse> taskResponses = taskService.getTasksByProject(projectId,userDetails);
-        return ResponseEntity.ok(taskResponses);
+        return ResponseEntity.ok(taskService.getTasksByProject(projectId,userDetails));
     }
 
     /**
@@ -89,7 +74,7 @@ public class TaskController {
     public ResponseEntity<TaskResponse> updateTask(@PathVariable Long taskId, @RequestBody TaskRequest taskRequest
             ,@AuthenticationPrincipal UserDetails userDetails) {
         TaskResponse taskResponse = taskService.updateTask(taskId,taskRequest,userDetails);
-        return ResponseEntity.status(HttpStatus.OK).body(taskResponse);
+        return ResponseEntity.ok(taskResponse);
     }
 
     /**
@@ -101,7 +86,7 @@ public class TaskController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
         taskService.deleteTask(id,userDetails);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.noContent().build();
     }
 
 

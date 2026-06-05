@@ -28,8 +28,7 @@ public class LabelController {
     public ResponseEntity<LabelResponse> createLabel(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody LabelRequest labelRequest){
-        LabelResponse response = labelService.createLabel(labelRequest,userDetails);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(labelService.createLabel(labelRequest,userDetails));
     }
 
     /**
@@ -42,8 +41,7 @@ public class LabelController {
     public ResponseEntity<List<LabelResponse>> getLabels(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody LabelRequest labelRequest){
-        List<LabelResponse> labelResponses = labelService.getLabels(labelRequest,userDetails);
-        return ResponseEntity.ok(labelResponses);
+        return ResponseEntity.ok(labelService.getLabels(labelRequest,userDetails));
     }
 
     /**
@@ -57,8 +55,7 @@ public class LabelController {
     public ResponseEntity<LabelResponse> updateLabel(@PathVariable Long id,
                                                      @AuthenticationPrincipal UserDetails userDetails,
                                                      @RequestBody LabelRequest labelRequest){
-        LabelResponse labelResponse = labelService.updateLabel(id,labelRequest,userDetails);
-        return ResponseEntity.ok(labelResponse);
+        return ResponseEntity.ok(labelService.updateLabel(id,labelRequest,userDetails));
     }
 
     /**
@@ -71,6 +68,6 @@ public class LabelController {
     public ResponseEntity<Void> deleteLabel(@PathVariable Long id,
                                             @AuthenticationPrincipal UserDetails userDetails) {
         labelService.deleteLabel(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.noContent().build();
     }
 }

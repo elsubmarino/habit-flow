@@ -27,8 +27,7 @@ public class NotificationController {
     public ResponseEntity<List<NotificationResponse>> getNotifications(@AuthenticationPrincipal UserDetails userDetails,
                                                                        @RequestBody NotificationRequest notificationRequest
                                                                        ) {
-        List<NotificationResponse> notificationResponses = notificationService.getNotifications(notificationRequest,userDetails);
-        return ResponseEntity.ok(notificationResponses);
+        return ResponseEntity.ok(notificationService.getNotifications(notificationRequest,userDetails));
     }
 
     /**
@@ -41,7 +40,6 @@ public class NotificationController {
     @PutMapping("/{id}")
     public ResponseEntity<NotificationResponse> updateNotification(@PathVariable Long id, @RequestBody NotificationRequest notificationRequest
             , @AuthenticationPrincipal UserDetails userDetails) {
-        NotificationResponse notificationResponse = notificationService.updateNotification(id,notificationRequest,userDetails);
-        return ResponseEntity.ok(notificationResponse);
+        return ResponseEntity.ok(notificationService.updateNotification(id,notificationRequest,userDetails));
     }
 }

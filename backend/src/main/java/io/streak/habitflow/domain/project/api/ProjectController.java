@@ -26,8 +26,7 @@ public class ProjectController {
      */
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@RequestBody ProjectRequest projectRequest){
-        ProjectResponse response = projectService.createProject(projectRequest);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(projectService.createProject(projectRequest));
     }
 
     /**
@@ -39,8 +38,7 @@ public class ProjectController {
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getProjects(@RequestBody ProjectRequest projectRequest,
                                                              @AuthenticationPrincipal UserDetails userDetails) {
-        List<ProjectResponse> projectResponses = projectService.getProjects(projectRequest,userDetails);
-        return ResponseEntity.ok(projectResponses);
+        return ResponseEntity.ok(projectService.getProjects(projectRequest,userDetails));
     }
 
     /**
@@ -53,8 +51,7 @@ public class ProjectController {
     @PutMapping("/{id}")
     public ResponseEntity<ProjectResponse> updateProject(@RequestBody ProjectRequest projectRequest,@PathVariable Long id,
                                                          @AuthenticationPrincipal UserDetails userDetails) {
-        ProjectResponse projectResponse = projectService.updateProject(projectRequest,id,userDetails);
-        return ResponseEntity.ok(projectResponse);
+        return ResponseEntity.ok(projectService.updateProject(projectRequest,id,userDetails));
     }
 
     /**
@@ -67,6 +64,6 @@ public class ProjectController {
     public ResponseEntity<Void> deleteProject(@PathVariable Long id,
                                               @AuthenticationPrincipal UserDetails userDetails) {
         projectService.deleteProject(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 }
