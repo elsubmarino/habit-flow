@@ -19,16 +19,33 @@ import java.util.List;
 public class MemberController {
     private final MemberService memberService;
 
+    /**
+     * 멤버 생성
+     * @param memberSignUpRequest
+     * @return
+     */
     @PostMapping
     public ResponseEntity<MemberResponse> createMember(@RequestBody MemberSignUpRequest memberSignUpRequest){
         return ResponseEntity.ok(memberService.createMember(memberSignUpRequest));
     }
 
+    /**
+     * 멤버 단건 조회
+     * @param userDetails
+     * @return
+     */
     @GetMapping
     public ResponseEntity<MemberResponse> getMember(@AuthenticationPrincipal UserDetails userDetails){
         return ResponseEntity.ok(memberService.getMember(userDetails));
     }
 
+    /**
+     * 멤버 업데이트
+     * @param id
+     * @param memberUpdateRequest
+     * @param userDetails
+     * @return
+     */
     @PutMapping("/{id}")
     public ResponseEntity<MemberResponse> updateMember(@PathVariable Long id,
                                                        @RequestBody MemberUpdateRequest memberUpdateRequest,

@@ -19,6 +19,10 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final MemberRepository memberRepository;
 
+    /**
+     * 알림 생성
+     * @param notificationRequest
+     */
     public void createNotification(NotificationRequest notificationRequest){
         Notification notification = Notification.builder()
                 .activityType(notificationRequest.getActivityType())
@@ -26,6 +30,12 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
+    /**
+     * 알림 다건 조회
+     * @param notificationRequest
+     * @param userDetails
+     * @return
+     */
     public List<NotificationResponse> getNotifications(NotificationRequest notificationRequest,UserDetails userDetails){
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 존재하지 않습니다."));
@@ -36,6 +46,13 @@ public class NotificationService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 알림 업데이트
+     * @param id
+     * @param notificationRequest
+     * @param userDetails
+     * @return
+     */
     public NotificationResponse updateNotification(Long id,NotificationRequest notificationRequest,UserDetails userDetails){
         Notification notification = Notification.builder()
                         .id(id)

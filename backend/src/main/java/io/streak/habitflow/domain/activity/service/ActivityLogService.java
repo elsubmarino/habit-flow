@@ -19,6 +19,11 @@ public class ActivityLogService {
     private final ActivityLogRepository activityLogRepository;
     private final MemberRepository memberRepository;
 
+    /**
+     * 액티비티 로그 생성
+     * @param activityLogRequest
+     * @param userDetails
+     */
     public void create(ActivityLogRequest activityLogRequest, UserDetails userDetails) {
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 없습니다."));
@@ -32,6 +37,12 @@ public class ActivityLogService {
         activityLogRepository.save(activityLog);
     }
 
+    /**
+     * 액티비티 로그 조회
+     * @param activityLogRequest
+     * @param userDetails
+     * @return
+     */
     public List<ActivityLogResponse> getActivityLogs(ActivityLogRequest activityLogRequest, UserDetails userDetails) {
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 없습니다."));

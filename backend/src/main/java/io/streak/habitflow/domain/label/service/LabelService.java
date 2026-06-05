@@ -20,6 +20,12 @@ public class LabelService {
     private final LabelRepository labelRepository;
     private final MemberRepository memberRepository;
 
+    /**
+     * 라벨 생성
+     * @param labelRequest
+     * @param userDetails
+     * @return
+     */
     public LabelResponse createLabel(LabelRequest labelRequest, UserDetails userDetails) {
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 존재하지 않습니다."));
@@ -31,6 +37,12 @@ public class LabelService {
         return LabelResponse.from(labelRepository.save(label));
     }
 
+    /**
+     * 라벨 다건 조회
+     * @param labelRequest
+     * @param userDetails
+     * @return
+     */
     public List<LabelResponse> getLabels(LabelRequest labelRequest, UserDetails userDetails) {
         String email  = userDetails.getUsername();
         Member member = memberRepository.findByEmail(email)
@@ -41,6 +53,13 @@ public class LabelService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 라벨 업데이트
+     * @param id
+     * @param labelRequest
+     * @param userDetails
+     * @return
+     */
     public LabelResponse updateLabel(Long id,LabelRequest labelRequest, UserDetails userDetails) {
         Label label = Label.builder()
                 .id(id)

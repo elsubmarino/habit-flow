@@ -22,6 +22,11 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
 
+    /**
+     * 프로젝트 생성
+     * @param projectRequest
+     * @return
+     */
     public ProjectResponse createProject(ProjectRequest projectRequest) {
         Project project = Project.builder()
                 .name(projectRequest.getName())
@@ -30,6 +35,12 @@ public class ProjectService {
         return ProjectResponse.from(projectRepository.save(project));
     }
 
+    /**
+     * 프로젝트 다건 조회
+     * @param projectRequest
+     * @param userDetails
+     * @return
+     */
     public List<ProjectResponse> getProjects(ProjectRequest projectRequest, UserDetails userDetails) {
         String email = userDetails.getUsername();
         List<Project> projects = projectRepository.findByMemberEmail(email);
@@ -38,13 +49,14 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
-    public List<TaskResponse> getTasks(TaskRequest taskRequest, UserDetails userDetails){
-        List<Task> tasks = taskRepository.findByProjectId(taskRequest.getProjectId());
-        return tasks.stream()
-                .map(task -> TaskResponse.from(task,null))
-                .collect(Collectors.toList());
-    }
 
+    /**
+     * 프로젝트 업데이트
+     * @param projectRequest
+     * @param id
+     * @param userDetails
+     * @return
+     */
     public ProjectResponse updateProject(ProjectRequest projectRequest, Long id, UserDetails userDetails) {
         Project project = Project.builder()
                 .id(id)

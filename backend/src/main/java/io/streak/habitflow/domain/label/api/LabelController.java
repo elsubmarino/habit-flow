@@ -17,6 +17,12 @@ import java.util.List;
 public class LabelController {
     private final LabelService labelService;
 
+    /**
+     * 라벨 생성
+     * @param userDetails
+     * @param labelRequest
+     * @return
+     */
     @PostMapping
     public ResponseEntity<LabelResponse> createLabel(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -25,6 +31,12 @@ public class LabelController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * 라벨 다건 조회
+     * @param userDetails
+     * @param labelRequest
+     * @return
+     */
     @GetMapping
     public ResponseEntity<List<LabelResponse>> getLabels(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -33,6 +45,13 @@ public class LabelController {
         return ResponseEntity.ok(labelResponses);
     }
 
+    /**
+     * 라벨 업데이트
+     * @param id
+     * @param userDetails
+     * @param labelRequest
+     * @return
+     */
     @PutMapping("/{id}")
     public ResponseEntity<LabelResponse> updateLabel(@PathVariable Long id,
                                                      @AuthenticationPrincipal UserDetails userDetails,

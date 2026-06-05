@@ -34,11 +34,24 @@ public class TaskService {
     private final CommentRepository commentRepository;
     private final FileStorageService fileStorageService;
 
+    /**
+     * 테스크 삭제
+     * @param id
+     * @param userDetails
+     */
     @CheckOwnership(type="TASK")
     public void deleteTask(Long id, UserDetails userDetails){
         taskRepository.deleteById(id);
     }
 
+
+    /**
+     * 테스크 생성
+     * @param taskCreateRequest
+     * @param file
+     * @param userDetails
+     * @return
+     */
     public TaskResponse createTask(TaskCreateRequest taskCreateRequest, MultipartFile file, UserDetails userDetails){
         String email = userDetails.getUsername();
 
@@ -97,6 +110,12 @@ public class TaskService {
         return TaskResponse.from(savedTask, null);
     }
 
+    /**
+     * 테스크 단건 조회
+     * @param id
+     * @param userDetails
+     * @return
+     */
     public TaskResponse readTask(Long id, UserDetails userDetails){
         Task info = taskRepository.searchTaskInfo(id)
                 .orElseThrow(()->new IllegalArgumentException("해당 테스크가 존재하지 않습니다."));
@@ -104,6 +123,12 @@ public class TaskService {
         return TaskResponse.from(info,null);
     }
 
+    /**
+     * 프로젝트 안의 테스크 다건 조회
+     * @param ProjectId
+     * @param userDetails
+     * @return
+     */
     public List<TaskResponse> getTasksByProject(Long ProjectId, UserDetails userDetails){
         List<Task> tasks = taskRepository.findByProjectId(ProjectId);
         return tasks.stream()
@@ -111,6 +136,13 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 테스크 업데이트
+     * @param taskId
+     * @param taskRequest
+     * @param userDetails
+     * @return
+     */
     public TaskResponse updateTask(Long taskId, TaskRequest taskRequest,UserDetails userDetails){
         Task task = Task.builder()
                 .id(taskId)

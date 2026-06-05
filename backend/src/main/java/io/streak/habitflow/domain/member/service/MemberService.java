@@ -17,6 +17,11 @@ import java.util.Optional;
 public class MemberService {
     private final MemberRepository memberRepository;
 
+    /**
+     * 멤버 생성
+     * @param memberSignUpRequest
+     * @return
+     */
     public MemberResponse createMember(MemberSignUpRequest memberSignUpRequest){
         Member member = Member.builder()
                 .email(memberSignUpRequest.getEmail())
@@ -27,6 +32,11 @@ public class MemberService {
         return MemberResponse.from(result);
     }
 
+    /**
+     * 멤버 단건 조회
+     * @param userDetails
+     * @return
+     */
     public MemberResponse getMember(UserDetails userDetails){
         String email = userDetails.getUsername();
         Member member = memberRepository.findByEmail(email)
@@ -34,6 +44,12 @@ public class MemberService {
         return MemberResponse.from(member);
     }
 
+    /**
+     * 멤버 업데이트
+     * @param id
+     * @param memberUpdateRequest
+     * @return
+     */
     public MemberResponse updateMember(Long id,MemberUpdateRequest  memberUpdateRequest){
         Member member = Member.builder()
                 .id(id)

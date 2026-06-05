@@ -19,12 +19,23 @@ import java.util.List;
 public class ProjectController {
     private final ProjectService projectService;
 
+    /**
+     * 프로젝트 생성
+     * @param projectRequest
+     * @return
+     */
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@RequestBody ProjectRequest projectRequest){
         ProjectResponse response = projectService.createProject(projectRequest);
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * 프로젝트 다건 조회
+     * @param projectRequest
+     * @param userDetails
+     * @return
+     */
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getProjects(@RequestBody ProjectRequest projectRequest,
                                                              @AuthenticationPrincipal UserDetails userDetails) {
@@ -32,6 +43,13 @@ public class ProjectController {
         return ResponseEntity.ok(projectResponses);
     }
 
+    /**
+     * 프로젝트 업데이트
+     * @param projectRequest
+     * @param id
+     * @param userDetails
+     * @return
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ProjectResponse> updateProject(@RequestBody ProjectRequest projectRequest,@PathVariable Long id,
                                                          @AuthenticationPrincipal UserDetails userDetails) {

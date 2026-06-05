@@ -25,6 +25,13 @@ import java.util.List;
 public class TaskController {
     private final TaskService taskService;
 
+    /**
+     * 테스크 생성
+     * @param userDetails
+     * @param file
+     * @param taskCreateRequest
+     * @return
+     */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TaskResponse> createTask(@AuthenticationPrincipal UserDetails userDetails,
                                            @RequestPart(value = "file", required = false) MultipartFile file,
@@ -33,6 +40,12 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskResponse);
     }
 
+    /**
+     * 테스크 단건 조회
+     * @param id
+     * @param userDetails
+     * @return
+     */
     @GetMapping("/{id}")
     public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long id,
                                                     @AuthenticationPrincipal UserDetails userDetails) {
@@ -40,12 +53,24 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
 
+    /**
+     * 테스크 삭제
+     * @param id
+     * @param userDetails
+     * @return
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTaskById(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
         taskService.deleteTask(id,userDetails);
         return ResponseEntity.status(HttpStatus.OK).body(null);
     }
 
+    /**
+     * 프로젝트 안에 종속된 테스크 다건 조회
+     * @param userDetails
+     * @param projectId
+     * @return
+     */
     @GetMapping("/project/{id}")
     public ResponseEntity<List<TaskResponse>> getTasksByProject(@AuthenticationPrincipal UserDetails userDetails,
                                                                 @PathVariable Long projectId) {
@@ -53,6 +78,13 @@ public class TaskController {
         return ResponseEntity.ok(taskResponses);
     }
 
+    /**
+     * 테스크 업데이트
+     * @param taskId
+     * @param taskRequest
+     * @param userDetails
+     * @return
+     */
     @PutMapping("/{id}")
     public ResponseEntity<TaskResponse> updateTask(@PathVariable Long taskId, @RequestBody TaskRequest taskRequest
             ,@AuthenticationPrincipal UserDetails userDetails) {

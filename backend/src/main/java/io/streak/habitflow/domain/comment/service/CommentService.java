@@ -28,6 +28,13 @@ public class CommentService {
     private final TaskRepository taskRepository;
     private final FileStorageService fileStorageService;
 
+    /**
+     * 코멘트 생성
+     * @param commentRequest
+     * @param file
+     * @param userDetails
+     * @return
+     */
     public CommentResponse createComment(CommentRequest commentRequest, MultipartFile file, UserDetails userDetails) {
         String email = userDetails.getUsername();
         Member member = memberRepository.findByEmail(email)
@@ -57,6 +64,11 @@ public class CommentService {
         return CommentResponse.from(result);
     }
 
+    /**
+     * 코멘트 다건 조회
+     * @param commentRequest
+     * @return
+     */
     public List<CommentResponse> getComments(CommentRequest commentRequest) {
         Task task = taskRepository.findById(commentRequest.getTaskId())
                 .orElseThrow(()->new IllegalArgumentException("테스크가 없습니다."));
@@ -66,6 +78,12 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 코멘트 업데이트
+     * @param id
+     * @param request
+     * @return
+     */
     public CommentResponse updateComment(Long id, CommentRequest request){
         Comment comment = Comment.builder()
                 .id(id)

@@ -17,6 +17,12 @@ import java.util.List;
 public class NotificationController {
     private final NotificationService notificationService;
 
+    /**
+     * 알림 다건 조회
+     * @param userDetails
+     * @param notificationRequest
+     * @return
+     */
     @GetMapping
     public ResponseEntity<List<NotificationResponse>> getNotifications(@AuthenticationPrincipal UserDetails userDetails,
                                                                        @RequestBody NotificationRequest notificationRequest
@@ -25,6 +31,13 @@ public class NotificationController {
         return ResponseEntity.ok(notificationResponses);
     }
 
+    /**
+     * 알림 업데이트
+     * @param id
+     * @param notificationRequest
+     * @param userDetails
+     * @return
+     */
     @PutMapping("/{id}")
     public ResponseEntity<NotificationResponse> updateNotification(@PathVariable Long id, @RequestBody NotificationRequest notificationRequest
             , @AuthenticationPrincipal UserDetails userDetails) {

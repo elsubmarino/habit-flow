@@ -23,6 +23,13 @@ import java.util.List;
 public class CommentController {
     private final CommentService commentService;
 
+    /**
+     * 코멘트 생성
+     * @param userDetails
+     * @param file
+     * @param commentRequest
+     * @return
+     */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommentResponse> createComment(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -32,6 +39,12 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(commentResponse);
     }
 
+    /**
+     * 코멘트 다건 조회
+     * @param userDetails
+     * @param commentRequest
+     * @return
+     */
     @GetMapping
     public ResponseEntity<List<CommentResponse>> getComments(@AuthenticationPrincipal UserDetails userDetails,
                                                              @RequestBody CommentRequest commentRequest) {
@@ -39,6 +52,13 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.OK).body(commentResponses);
     }
 
+    /**
+     * 코멘트 업데이트
+     * @param id
+     * @param userDetails
+     * @param commentRequest
+     * @return
+     */
     @PutMapping("/{id}")
     public ResponseEntity<CommentResponse> updateComment(@PathVariable Long id,
                                                          @AuthenticationPrincipal UserDetails userDetails,

@@ -21,6 +21,12 @@ import java.util.List;
 public class ActivityLogController {
     private final ActivityLogService activityLogService;
 
+    /**
+     * 액티비티 로그 조회
+     * @param activityLogRequest
+     * @param userDetails
+     * @return
+     */
     @GetMapping
     public ResponseEntity<List<ActivityLogResponse>> getActivityLogs(@RequestBody ActivityLogRequest activityLogRequest, @AuthenticationPrincipal UserDetails userDetails) {
         List<ActivityLogResponse> activityLogResponses =  activityLogService.getActivityLogs(activityLogRequest,userDetails);
