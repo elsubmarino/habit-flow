@@ -2,11 +2,12 @@ package io.streak.habitflow.domain.activity.dto;
 
 import io.streak.habitflow.domain.task.entity.ActivityType;
 import io.streak.habitflow.domain.task.entity.TargetType;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ActivityLogRequest {
     private Long taskId;
     private ActivityType activityType;

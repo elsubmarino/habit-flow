@@ -12,7 +12,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Getter
-@Setter
 public class Notification extends BaseCreatedTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

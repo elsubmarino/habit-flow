@@ -26,11 +26,11 @@ public class TaskController {
     private final TaskService taskService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> createTask(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<TaskResponse> createTask(@AuthenticationPrincipal UserDetails userDetails,
                                            @RequestPart(value = "file", required = false) MultipartFile file,
                                            @RequestPart("taskRequest") @Valid TaskCreateRequest taskCreateRequest){
-        taskService.createTask(taskCreateRequest, file, userDetails);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        TaskResponse taskResponse = taskService.createTask(taskCreateRequest, file, userDetails);
+        return ResponseEntity.status(HttpStatus.CREATED).body(taskResponse);
     }
 
     @GetMapping("/{id}")

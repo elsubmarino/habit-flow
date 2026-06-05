@@ -2,6 +2,7 @@ package io.streak.habitflow.domain.comment.api;
 
 import io.streak.habitflow.domain.comment.dto.CommentRequest;
 import io.streak.habitflow.domain.comment.dto.CommentResponse;
+import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,12 +24,12 @@ public class CommentController {
     private final CommentService commentService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> createComment(
+    public ResponseEntity<CommentResponse> createComment(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestPart(value="file",required = false) MultipartFile file,
             @RequestPart("commentRequest") @Valid CommentRequest commentRequest) {
-        commentService.createComment(commentRequest,file,userDetails);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        CommentResponse commentResponse = commentService.createComment(commentRequest,file,userDetails);
+        return ResponseEntity.status(HttpStatus.CREATED).body(commentResponse);
     }
 
     @GetMapping

@@ -1,11 +1,12 @@
 package io.streak.habitflow.domain.notification.dto;
 
 import io.streak.habitflow.domain.task.entity.ActivityType;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class NotificationRequest {
     private Long id;
     private Long taskId;

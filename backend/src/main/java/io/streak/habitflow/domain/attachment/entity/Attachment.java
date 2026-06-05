@@ -11,7 +11,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Getter
-@Setter
 public class Attachment extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,4 +31,8 @@ public class Attachment extends BaseTimeEntity {
 
     private String contentType;
     private Long fileSize;
+
+    public void changeComment(Comment comment) {
+        this.comment = comment;
+    }
 }

@@ -1,10 +1,11 @@
 package io.streak.habitflow.domain.attachment.dto;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AttachmentRequest {
     private String fileUrl;
     private String originalFileName;

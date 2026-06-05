@@ -19,6 +19,13 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final MemberRepository memberRepository;
 
+    public void createNotification(NotificationRequest notificationRequest){
+        Notification notification = Notification.builder()
+                .activityType(notificationRequest.getActivityType())
+                .build();
+        notificationRepository.save(notification);
+    }
+
     public List<NotificationResponse> getNotifications(NotificationRequest notificationRequest,UserDetails userDetails){
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 존재하지 않습니다."));

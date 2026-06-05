@@ -1,10 +1,11 @@
 package io.streak.habitflow.domain.project.dto;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProjectRequest {
     private String name;
     private String color;

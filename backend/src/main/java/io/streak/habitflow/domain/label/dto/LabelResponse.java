@@ -1,11 +1,12 @@
 package io.streak.habitflow.domain.label.dto;
 
 import io.streak.habitflow.domain.label.entity.Label;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LabelResponse {
     private Long id;
     private String name;

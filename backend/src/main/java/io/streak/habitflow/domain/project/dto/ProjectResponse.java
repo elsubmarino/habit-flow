@@ -2,14 +2,15 @@ package io.streak.habitflow.domain.project.dto;
 
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.member.dto.MemberResponse;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProjectResponse {
     private Long id;
     private String name;

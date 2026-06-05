@@ -1,11 +1,12 @@
 package io.streak.habitflow.domain.attachment.dto;
 
 import io.streak.habitflow.domain.attachment.entity.Attachment;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AttachmentResponse {
     private Long id;
     private String fileUrl;

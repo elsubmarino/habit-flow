@@ -1,11 +1,12 @@
 package io.streak.habitflow.domain.member.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class MemberSignUpRequest {
     @NotBlank(message = "비밀번호는 필수입니다.")
     private String password;

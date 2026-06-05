@@ -12,9 +12,8 @@ import java.util.List;
 
 @Entity
 @Getter
-@Setter
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class Comment extends BaseTimeEntity {
     @Id
@@ -37,7 +36,7 @@ public class Comment extends BaseTimeEntity {
 
     public void addAttachment(Attachment attachment) {
         this.attachments.add(attachment);
-        attachment.setComment(this);
+        attachment.changeComment(this);
     }
 
 

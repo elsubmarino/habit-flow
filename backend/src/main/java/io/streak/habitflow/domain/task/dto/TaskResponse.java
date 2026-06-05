@@ -4,20 +4,17 @@ import io.streak.habitflow.domain.attachment.dto.AttachmentResponse;
 import io.streak.habitflow.domain.label.dto.LabelResponse;
 import io.streak.habitflow.domain.task.entity.PriorityType;
 import io.streak.habitflow.domain.task.entity.Task;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Data
+@Getter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class TaskResponse {
     private Long id;
     private String title;

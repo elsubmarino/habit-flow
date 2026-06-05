@@ -28,7 +28,7 @@ public class CommentService {
     private final TaskRepository taskRepository;
     private final FileStorageService fileStorageService;
 
-    public void createComment(CommentRequest commentRequest, MultipartFile file, UserDetails userDetails) {
+    public CommentResponse createComment(CommentRequest commentRequest, MultipartFile file, UserDetails userDetails) {
         String email = userDetails.getUsername();
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(()->new IllegalArgumentException("사용자가 없습니다."));
@@ -53,7 +53,8 @@ public class CommentService {
             comment.addAttachment(attachment);
         }
 
-        commentRepository.save(comment);
+        Comment result = commentRepository.save(comment);
+        return CommentResponse.from(result);
     }
 
     public List<CommentResponse> getComments(CommentRequest commentRequest) {
