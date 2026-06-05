@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ActivityLogService {
     private final ActivityLogRepository activityLogRepository;
     private final MemberRepository memberRepository;

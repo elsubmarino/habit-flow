@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class LabelService {
     private final LabelRepository labelRepository;
     private final MemberRepository memberRepository;
