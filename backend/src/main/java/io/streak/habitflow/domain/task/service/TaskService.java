@@ -39,6 +39,7 @@ public class TaskService {
      * @param id
      * @param userDetails
      */
+    @Transactional
     @CheckOwnership(type="TASK")
     public void deleteTask(Long id, UserDetails userDetails){
         taskRepository.deleteById(id);
