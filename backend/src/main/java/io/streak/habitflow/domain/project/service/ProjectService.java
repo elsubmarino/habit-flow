@@ -11,6 +11,7 @@ import io.streak.habitflow.domain.task.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
@@ -27,6 +28,7 @@ public class ProjectService {
      * @param projectRequest
      * @return
      */
+    @Transactional
     public ProjectResponse createProject(ProjectRequest projectRequest) {
         Project project = Project.builder()
                 .name(projectRequest.getName())
@@ -57,6 +59,7 @@ public class ProjectService {
      * @param userDetails
      * @return
      */
+    @Transactional
     public ProjectResponse updateProject(ProjectRequest projectRequest, Long id, UserDetails userDetails) {
         Project project = Project.builder()
                 .id(id)

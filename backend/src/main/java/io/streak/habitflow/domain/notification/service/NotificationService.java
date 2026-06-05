@@ -9,6 +9,7 @@ import io.streak.habitflow.domain.notification.repository.NotificationRepository
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +24,7 @@ public class NotificationService {
      * 알림 생성
      * @param notificationRequest
      */
+    @Transactional
     public void createNotification(NotificationRequest notificationRequest){
         Notification notification = Notification.builder()
                 .activityType(notificationRequest.getActivityType())
@@ -53,6 +55,7 @@ public class NotificationService {
      * @param userDetails
      * @return
      */
+    @Transactional
     public NotificationResponse updateNotification(Long id,NotificationRequest notificationRequest,UserDetails userDetails){
         Notification notification = Notification.builder()
                         .id(id)

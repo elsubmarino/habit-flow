@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -22,6 +23,7 @@ public class MemberService {
      * @param memberSignUpRequest
      * @return
      */
+    @Transactional
     public MemberResponse createMember(MemberSignUpRequest memberSignUpRequest){
         Member member = Member.builder()
                 .email(memberSignUpRequest.getEmail())
@@ -50,6 +52,7 @@ public class MemberService {
      * @param memberUpdateRequest
      * @return
      */
+    @Transactional
     public MemberResponse updateMember(Long id,MemberUpdateRequest  memberUpdateRequest){
         Member member = Member.builder()
                 .id(id)

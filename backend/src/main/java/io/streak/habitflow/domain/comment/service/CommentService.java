@@ -14,6 +14,7 @@ import io.streak.habitflow.global.infra.file.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public class CommentService {
      * @param userDetails
      * @return
      */
+    @Transactional
     public CommentResponse createComment(CommentRequest commentRequest, MultipartFile file, UserDetails userDetails) {
         String email = userDetails.getUsername();
         Member member = memberRepository.findByEmail(email)
@@ -84,6 +86,7 @@ public class CommentService {
      * @param request
      * @return
      */
+    @Transactional
     public CommentResponse updateComment(Long id, CommentRequest request){
         Comment comment = Comment.builder()
                 .id(id)

@@ -9,6 +9,7 @@ import io.streak.habitflow.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class LabelService {
      * @param userDetails
      * @return
      */
+    @Transactional
     public LabelResponse createLabel(LabelRequest labelRequest, UserDetails userDetails) {
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 존재하지 않습니다."));
@@ -60,6 +62,7 @@ public class LabelService {
      * @param userDetails
      * @return
      */
+    @Transactional
     public LabelResponse updateLabel(Long id,LabelRequest labelRequest, UserDetails userDetails) {
         Label label = Label.builder()
                 .id(id)

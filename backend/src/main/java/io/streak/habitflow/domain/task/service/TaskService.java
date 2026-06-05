@@ -52,6 +52,7 @@ public class TaskService {
      * @param userDetails
      * @return
      */
+    @Transactional
     public TaskResponse createTask(TaskCreateRequest taskCreateRequest, MultipartFile file, UserDetails userDetails){
         String email = userDetails.getUsername();
 
@@ -143,6 +144,7 @@ public class TaskService {
      * @param userDetails
      * @return
      */
+    @Transactional
     public TaskResponse updateTask(Long taskId, TaskRequest taskRequest,UserDetails userDetails){
         Task task = Task.builder()
                 .id(taskId)
