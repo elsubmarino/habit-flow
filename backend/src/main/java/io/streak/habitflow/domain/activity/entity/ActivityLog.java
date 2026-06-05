@@ -13,7 +13,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Getter
-@Table(indexes = {
+@Table(name="activity_logs",indexes = {
         @Index(name="idx_task_created_at",columnList = "task_id,created_at"),
         @Index(name="idx_user_created_at",columnList = "user_id,created_at")
 })

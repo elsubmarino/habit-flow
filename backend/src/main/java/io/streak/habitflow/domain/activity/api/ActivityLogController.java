@@ -17,7 +17,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/logs")
+@RequestMapping("/api/log")
 public class ActivityLogController {
     private final ActivityLogService activityLogService;
 
