@@ -1,16 +1,12 @@
 package io.streak.habitflow.domain.project.repository;
 
-import com.querydsl.core.types.Projections;
-import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.streak.habitflow.domain.project.dto.ProjectResponse;
-import io.streak.habitflow.domain.project.entity.Project;
-import io.streak.habitflow.domain.project.entity.QProject;
 import static io.streak.habitflow.domain.project.entity.QProject.project;
 import static io.streak.habitflow.domain.project.entity.QProjectUser.projectUser;
 
-import io.streak.habitflow.domain.project.entity.QProjectUser;
+import com.querydsl.core.types.Projections;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import io.streak.habitflow.domain.project.dto.ProjectResponse;
 import lombok.RequiredArgsConstructor;
-
 import java.util.List;
 
 @RequiredArgsConstructor

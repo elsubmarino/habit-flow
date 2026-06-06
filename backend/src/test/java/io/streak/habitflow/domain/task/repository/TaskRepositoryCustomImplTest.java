@@ -1,5 +1,7 @@
 package io.streak.habitflow.domain.task.repository;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+
 import io.streak.habitflow.global.config.JpaAuditingConfig;
 import io.streak.habitflow.global.config.QuerydslConfig;
 import io.streak.habitflow.domain.comment.entity.Comment;
@@ -16,11 +18,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 @DataJpaTest
 @Import({QuerydslConfig.class, JpaAuditingConfig.class})

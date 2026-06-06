@@ -1,16 +1,17 @@
 package io.streak.habitflow.domain.label.repository;
 
+import static io.streak.habitflow.domain.label.entity.QLabel.label;
+
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.label.dto.LabelResponse;
 import lombok.RequiredArgsConstructor;
-
 import java.util.List;
 
-import static io.streak.habitflow.domain.label.entity.QLabel.label;
 
 @RequiredArgsConstructor
 public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
+
     private final JPAQueryFactory queryFactory;
     @Override
     public List<LabelResponse> searchKeyword(String name, String email) {

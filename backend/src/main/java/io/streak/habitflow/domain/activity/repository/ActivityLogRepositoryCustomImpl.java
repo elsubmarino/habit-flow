@@ -1,15 +1,14 @@
 package io.streak.habitflow.domain.activity.repository;
 
+import static io.streak.habitflow.domain.activity.entity.QActivityLog.activityLog;
+import static io.streak.habitflow.domain.project.entity.QProject.project;
+import static io.streak.habitflow.domain.member.entity.QMember.member;
+
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.activity.dto.ActivityLogSearchCondition;
 import io.streak.habitflow.domain.activity.entity.ActivityLog;
 import lombok.RequiredArgsConstructor;
-
-import static io.streak.habitflow.domain.activity.entity.QActivityLog.activityLog;
-import static io.streak.habitflow.domain.project.entity.QProject.project;
-import static io.streak.habitflow.domain.member.entity.QMember.member;
-
 import java.time.LocalDate;
 import java.util.List;
 
