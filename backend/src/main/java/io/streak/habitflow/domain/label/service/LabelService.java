@@ -20,12 +20,6 @@ public class LabelService {
     private final LabelRepository labelRepository;
     private final MemberRepository memberRepository;
 
-    /**
-     * 라벨 생성
-     * @param labelRequest 라벨 요청 정보 DTO
-     * @param userDetails 인증된 사용자 정보
-     * @return 생성된 라벨 응답 DTO
-     */
     @Transactional
     public LabelResponse createLabel(LabelRequest labelRequest, UserDetails userDetails) {
         Member member = memberRepository.findByEmail(userDetails.getUsername())
@@ -38,11 +32,6 @@ public class LabelService {
         return LabelResponse.from(labelRepository.save(label));
     }
 
-    /**
-     * 라벨 다건 조회
-     * @param userDetails 인증된 사용자 정보
-     * @return 조회된 라벨 응답 DTO 리스트
-     */
     public List<LabelResponse> getLabels(UserDetails userDetails) {
         String email  = userDetails.getUsername();
         Member member = memberRepository.findByEmail(email)
@@ -53,13 +42,6 @@ public class LabelService {
                 .toList();
     }
 
-    /**
-     * 라벨 업데이트
-     * @param id 라벨 ID
-     * @param labelRequest 라벨 요청 정보 DTO
-     * @param userDetails 인증된 사용자 정보
-     * @return 업데이트 된 라벨 응답 DTO
-     */
     @Transactional
     public LabelResponse updateLabel(Long id,LabelRequest labelRequest, UserDetails userDetails) {
         Label label = labelRepository.findById(id)
@@ -73,11 +55,6 @@ public class LabelService {
         return LabelResponse.from(label);
     }
 
-    /**
-     * 라벨 삭제
-     * @param id 라벨 ID
-     * @param userDetails 인증된 사용자
-     */
     @Transactional
     public void deleteLabel(Long id, UserDetails userDetails){
         Label label = labelRepository.findById(id)

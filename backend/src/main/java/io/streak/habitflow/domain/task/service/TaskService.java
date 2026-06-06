@@ -39,11 +39,6 @@ public class TaskService {
     private final FileStorageService fileStorageService;
     private final LabelRepository labelRepository;
 
-    /**
-     * 테스크 삭제
-     * @param id 테스크 ID
-     * @param userDetails 인증된 사용자 정보
-     */
     @Transactional
     @CheckOwnership(type="TASK")
     public void deleteTask(Long id, UserDetails userDetails){
@@ -55,14 +50,6 @@ public class TaskService {
         taskRepository.deleteById(id);
     }
 
-
-    /**
-     * 테스크 생성
-     * @param taskCreateRequest 테스크 생성 요청 정보 DTO
-     * @param file 첨부파일 (선택)
-     * @param userDetails 인증된 사용자 정보
-     * @return 생성된 테스크 생성 응답 정보 DTO
-     */
     @Transactional
     public TaskResponse createTask(TaskCreateRequest taskCreateRequest, MultipartFile file, UserDetails userDetails){
         String email = userDetails.getUsername();
@@ -139,12 +126,6 @@ public class TaskService {
         return TaskResponse.from(savedTask, labelResponses);
     }
 
-    /**
-     * 테스크 단건 조회
-     * @param id 테스크 ID
-     * @param userDetails 인증된 사용자 정보
-     * @return 조회된 테스크 응답 정보 DTO
-     */
     public TaskResponse readTask(Long id, UserDetails userDetails){
         Task task = taskRepository.searchTaskInfo(id)
                 .orElseThrow(()->new IllegalArgumentException("해당 테스크가 존재하지 않습니다."));
@@ -160,12 +141,6 @@ public class TaskService {
         return TaskResponse.from(task,labelResponses);
     }
 
-    /**
-     * 프로젝트 안의 테스크 다건 조회
-     * @param ProjectId 프로젝트 ID
-     * @return 조회된 테스크 응답 정보 DTO
-     */
-
     public List<TaskResponse> getTasksByProject(Long ProjectId){
         List<Task> tasks = taskRepository.findByProjectId(ProjectId);
 
@@ -175,13 +150,6 @@ public class TaskService {
                 .toList();
     }
 
-    /**
-     * 테스크 업데이트
-     * @param taskId 테스크 ID
-     * @param taskRequest 요청된 테스크 요청 정보 DTO
-     * @param userDetails 인증된 사용자 정보
-     * @return 업데이트 된 테스크 응답 정보 DTO
-     */
     @Transactional
     public TaskResponse updateTask(Long taskId, TaskRequest taskRequest,UserDetails userDetails){
         Task task = taskRepository.findById(taskId)

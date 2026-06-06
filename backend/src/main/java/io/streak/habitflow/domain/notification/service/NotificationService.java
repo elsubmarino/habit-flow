@@ -20,10 +20,6 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final MemberRepository memberRepository;
 
-    /**
-     * 알림 생성
-     * @param notificationRequest 알림 요청 DTO 정보
-     */
     @Transactional
     @SuppressWarnings("unused")
     public void createNotification(NotificationRequest notificationRequest){
@@ -33,11 +29,6 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
-    /**
-     * 알림 다건 조회
-     * @param userDetails 인증된 사용자 정보
-     * @return 조회된 다건의 알림 DTO 정보
-     */
     public List<NotificationResponse> getNotifications(UserDetails userDetails){
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 존재하지 않습니다."));
@@ -47,13 +38,6 @@ public class NotificationService {
                 .toList();
     }
 
-    /**
-     * 알림 업데이트
-     * @param id 알림 ID
-     * @param notificationRequest 요청된 알림 DTO 정보
-     * @param userDetails 인증된 사용자 정보
-     * @return 업데이트 된 알림 DTO 응답 정보
-     */
     @Transactional
     public NotificationResponse updateNotification(Long id,NotificationRequest notificationRequest,UserDetails userDetails){
         Notification notification = notificationRepository.findById(id)
