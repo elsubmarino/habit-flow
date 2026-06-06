@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,12 +50,12 @@ public class ActivityLogService {
         List<ActivityLog> activityLogs = activityLogRepository.findByMemberId(member.getId());
         return activityLogs.stream()
                 .map(ActivityLogResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<ActivityLogResponse> searchActivityLogs(ActivityLogSearchCondition activityLogSearchCondition){
         return  activityLogRepository.searchActivityLogs(activityLogSearchCondition).stream()
                 .map(ActivityLogResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

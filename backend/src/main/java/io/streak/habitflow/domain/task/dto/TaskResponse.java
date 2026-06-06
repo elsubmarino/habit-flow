@@ -2,14 +2,16 @@ package io.streak.habitflow.domain.task.dto;
 
 import io.streak.habitflow.domain.attachment.dto.AttachmentResponse;
 import io.streak.habitflow.domain.label.dto.LabelResponse;
-import io.streak.habitflow.domain.task.type.PriorityType;
 import io.streak.habitflow.domain.task.entity.Task;
-import lombok.*;
+import io.streak.habitflow.domain.task.type.PriorityType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 @Builder
@@ -54,7 +56,7 @@ public class TaskResponse {
                 .labels(labelResponses)
                 .subTasks(task.getSubTasks().stream()
                         .map(sub -> TaskResponse.from(sub, new ArrayList<>()))
-                        .collect(Collectors.toList()));
+                        .toList());
 
         if(task.getProject() != null){
             builder.projectId(task.getProject().getId())
@@ -72,5 +74,5 @@ public class TaskResponse {
 
 
         return builder.build();
-    };
+    }
 }

@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +50,7 @@ public class LabelService {
         List<Label> labels = labelRepository.findByMemberId(member.getId());
         return labels.stream()
                 .map(LabelResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -91,6 +90,7 @@ public class LabelService {
 
     public List<LabelResponse> searchLabels(String keyword){
         return labelRepository.findByNameContaining(keyword)
-                .stream().map(LabelResponse::from).collect(Collectors.toList());
+                .stream().map(LabelResponse::from)
+                .toList();
     }
 }

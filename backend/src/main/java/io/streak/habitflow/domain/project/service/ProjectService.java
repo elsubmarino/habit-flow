@@ -11,20 +11,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ProjectService {
     private final ProjectRepository projectRepository;
-    private final TaskRepository taskRepository;
 
-    /**
-     * 프로젝트 생성
-     * @param projectRequest
-     * @return
-     */
     @Transactional
     public ProjectResponse createProject(ProjectRequest projectRequest) {
         Project project = Project.builder()
@@ -34,27 +27,14 @@ public class ProjectService {
         return ProjectResponse.from(projectRepository.save(project));
     }
 
-    /**
-     * 프로젝트 다건 조회
-     * @param userDetails 인증된 사용자 정보
-     * @return
-     */
     public List<ProjectResponse> getProjectsByMember(UserDetails userDetails) {
         String email = userDetails.getUsername();
         List<Project> projects = projectRepository.findByMemberEmail(email);
         return projects.stream()
                 .map(ProjectResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
-
-    /**
-     * 프로젝트 업데이트
-     * @param projectRequest
-     * @param id
-     * @param userDetails
-     * @return
-     */
     @Transactional
     public ProjectResponse updateProject(ProjectRequest projectRequest, Long id, UserDetails userDetails) {
         Project project =  projectRepository.findById(id)
@@ -63,20 +43,11 @@ public class ProjectService {
         return ProjectResponse.from(project);
     }
 
-    /**
-     * 프로젝트 삭제
-     * @param id 프로젝트 ID
-     */
     @Transactional
     public void deleteProject(Long id){
         projectRepository.deleteById(id);
     }
 
-    /**
-     * 프로젝트 검색
-     * @param keyword 프로젝트 키워드
-     * @return 검색된 프로젝트 응답 DTO
-     */
     public List<ProjectResponse> searchProjects(String keyword, UserDetails userDetails) {
         return projectRepository.searchKeyword(keyword,userDetails.getUsername());
     }

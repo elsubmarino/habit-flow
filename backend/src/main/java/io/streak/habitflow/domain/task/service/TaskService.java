@@ -27,7 +27,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -166,13 +165,14 @@ public class TaskService {
      * @param ProjectId 프로젝트 ID
      * @return 조회된 테스크 응답 정보 DTO
      */
+
     public List<TaskResponse> getTasksByProject(Long ProjectId){
         List<Task> tasks = taskRepository.findByProjectId(ProjectId);
 
 
         return tasks.stream()
                 .map(task -> TaskResponse.from(task,new ArrayList<>()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**

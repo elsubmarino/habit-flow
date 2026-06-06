@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,7 +43,7 @@ public class NotificationService {
         List<Notification> notifications = notificationRepository.findByMemberId(member.getId());
         return notifications.stream()
                 .map(NotificationResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
