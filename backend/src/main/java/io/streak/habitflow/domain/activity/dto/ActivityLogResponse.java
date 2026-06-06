@@ -12,11 +12,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ActivityLogResponse {
+    private Long id;
     private ActivityType activityType;
 
     public static ActivityLogResponse from(ActivityLog activityLog){
         return ActivityLogResponse.builder()
                 .activityType(activityLog.getActivityType())
+                .id(activityLog.getId())
                 .build();
     }
 
