@@ -43,6 +43,11 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     public void deleteTask(Long id, UserDetails userDetails){
+        Task task = taskRepository.findById(id)
+                        .orElseThrow(()->new IllegalArgumentException("조회된 테스크가 없습니다."));
+        if(!task.getMember().getEmail().equals(userDetails.getUsername())){
+            throw new IllegalStateException("삭제 권한이 없습니다.");
+        }
         taskRepository.deleteById(id);
     }
 
@@ -116,6 +121,11 @@ public class TaskService {
      * @return 조회된 테스크 응답 정보 DTO
      */
     public TaskResponse readTask(Long id, UserDetails userDetails){
+        Task task = taskRepository.findById(id)
+                .orElseThrow(()->new IllegalArgumentException("조회된 TASK가 없습니다."));
+        if(!task.getMember().getEmail().equals(userDetails.getUsername())){
+            throw new IllegalStateException("조회 권한이 없습니다.");
+        }
         Task info = taskRepository.searchTaskInfo(id)
                 .orElseThrow(()->new IllegalArgumentException("해당 테스크가 존재하지 않습니다."));
 
@@ -128,7 +138,7 @@ public class TaskService {
      * @param userDetails 인증된 사용자 정보
      * @return 조회된 테스크 응답 정보 DTO
      */
-    public List<TaskResponse> getTasksByProject(Long ProjectId, UserDetails userDetails){
+    public List<TaskResponse> getTasksByProject(Long ProjectId){
         List<Task> tasks = taskRepository.findByProjectId(ProjectId);
         return tasks.stream()
                 .map(task -> TaskResponse.from(task,new ArrayList<>()))

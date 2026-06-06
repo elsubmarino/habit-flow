@@ -60,8 +60,7 @@ public class ProjectController {
      * @return
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProject(@PathVariable Long id,
-                                              @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
         projectService.deleteProject(id);
         return ResponseEntity.noContent().build();
     }
@@ -73,9 +72,8 @@ public class ProjectController {
      * @return
      */
     @GetMapping("/{id}/task")
-    public ResponseEntity<List<TaskResponse>> getTasksByProject(@AuthenticationPrincipal UserDetails userDetails,
-                                                                @PathVariable Long id) {
-        return ResponseEntity.ok(taskService.getTasksByProject(id,userDetails));
+    public ResponseEntity<List<TaskResponse>> getTasksByProject(@PathVariable Long id) {
+        return ResponseEntity.ok(taskService.getTasksByProject(id));
     }
 
     /**
@@ -87,6 +85,6 @@ public class ProjectController {
     @GetMapping("/search")
     public ResponseEntity<List<ProjectResponse>> searchProjects(@AuthenticationPrincipal UserDetails userDetails,
                                                             @RequestParam("keyword") String keyword){
-        return ResponseEntity.ok(projectService.searchProjects(keyword));
+        return ResponseEntity.ok(projectService.searchProjects(keyword,userDetails));
     }
 }
