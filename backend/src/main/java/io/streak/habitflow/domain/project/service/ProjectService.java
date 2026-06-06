@@ -40,7 +40,7 @@ public class ProjectService {
      * @param userDetails
      * @return
      */
-    public List<ProjectResponse> getProjects(UserDetails userDetails) {
+    public List<ProjectResponse> getProjectsByMember(UserDetails userDetails) {
         String email = userDetails.getUsername();
         List<Project> projects = projectRepository.findByMemberEmail(email);
         return projects.stream()
@@ -71,5 +71,12 @@ public class ProjectService {
     @Transactional
     public void deleteProject(Long id){
         projectRepository.deleteById(id);
+    }
+
+    public List<ProjectResponse> searchProjects(String keyword){
+        List<Project> projects = projectRepository.findByMemberEmail(keyword);
+        return projects.stream()
+                .map(ProjectResponse::from)
+                .collect(Collectors.toList());
     }
 }

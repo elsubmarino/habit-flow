@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
-public interface ActivityLogRepository extends JpaRepository<ActivityLog,Long> {
+public interface ActivityLogRepository extends JpaRepository<ActivityLog,Long>, ActivityLogRepositoryCustom {
     List<ActivityLog> findByUserId(Long userId);
 }

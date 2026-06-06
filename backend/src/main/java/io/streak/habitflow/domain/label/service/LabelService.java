@@ -83,4 +83,9 @@ public class LabelService {
     public void deleteLabel(Long id){
         labelRepository.deleteById(id);
     }
+
+    public List<LabelResponse> searchLabels(String keyword){
+        return labelRepository.findByNameContaining(keyword)
+                .stream().map(LabelResponse::from).collect(Collectors.toList());
+    }
 }

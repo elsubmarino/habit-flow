@@ -18,8 +18,6 @@ public class ActivityLogResponse {
     public static ActivityLogResponse from(ActivityLog activityLog){
         return ActivityLogResponse.builder()
                 .activityType(activityLog.getActivityType())
-                .targetType(activityLog.getTargetType())
-                .targetId(activityLog.getTargetId())
                 .build();
     }
 

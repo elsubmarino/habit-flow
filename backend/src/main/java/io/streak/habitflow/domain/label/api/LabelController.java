@@ -19,6 +19,7 @@ public class LabelController {
 
     /**
      * 라벨 생성
+     *
      * @param userDetails
      * @param labelRequest
      * @return
@@ -26,24 +27,26 @@ public class LabelController {
     @PostMapping
     public ResponseEntity<LabelResponse> createLabel(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody LabelRequest labelRequest){
-        return ResponseEntity.ok(labelService.createLabel(labelRequest,userDetails));
+            @RequestBody LabelRequest labelRequest) {
+        return ResponseEntity.ok(labelService.createLabel(labelRequest, userDetails));
     }
 
     /**
      * 라벨 다건 조회
+     *
      * @param userDetails
      * @param labelRequest
      * @return
      */
     @GetMapping
     public ResponseEntity<List<LabelResponse>> getLabels(
-            @AuthenticationPrincipal UserDetails userDetails){
+            @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(labelService.getLabels(userDetails));
     }
 
     /**
      * 라벨 업데이트
+     *
      * @param id
      * @param userDetails
      * @param labelRequest
@@ -52,12 +55,13 @@ public class LabelController {
     @PutMapping("/{id}")
     public ResponseEntity<LabelResponse> updateLabel(@PathVariable Long id,
                                                      @AuthenticationPrincipal UserDetails userDetails,
-                                                     @RequestBody LabelRequest labelRequest){
-        return ResponseEntity.ok(labelService.updateLabel(id,labelRequest,userDetails));
+                                                     @RequestBody LabelRequest labelRequest) {
+        return ResponseEntity.ok(labelService.updateLabel(id, labelRequest, userDetails));
     }
 
     /**
      * 라벨 삭제
+     *
      * @param id
      * @param userDetails
      * @return
@@ -67,5 +71,16 @@ public class LabelController {
                                             @AuthenticationPrincipal UserDetails userDetails) {
         labelService.deleteLabel(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 라벨 검색
+     *
+     * @param name
+     * @return
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<LabelResponse>> searchLabels(@RequestParam String keyword) {
+        return ResponseEntity.ok(labelService.searchLabels(keyword));
     }
 }

@@ -2,6 +2,7 @@ package io.streak.habitflow.domain.activity.service;
 
 import io.streak.habitflow.domain.activity.dto.ActivityLogRequest;
 import io.streak.habitflow.domain.activity.dto.ActivityLogResponse;
+import io.streak.habitflow.domain.activity.dto.ActivityLogSearchCondition;
 import io.streak.habitflow.domain.activity.entity.ActivityLog;
 import io.streak.habitflow.domain.activity.repository.ActivityLogRepository;
 import io.streak.habitflow.domain.member.entity.Member;
@@ -34,8 +35,6 @@ public class ActivityLogService {
         ActivityLog activityLog = ActivityLog.builder()
                 .member(member)
                 .activityType(activityLogRequest.getActivityType())
-                .targetType(activityLogRequest.getTargetType())
-                .targetId(activityLogRequest.getTargetId())
                 .build();
         activityLogRepository.save(activityLog);
     }
@@ -51,6 +50,12 @@ public class ActivityLogService {
 
         List<ActivityLog> activityLogs = activityLogRepository.findByUserId(member.getId());
         return activityLogs.stream()
+                .map(ActivityLogResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    public List<ActivityLogResponse> searchActivityLogs(ActivityLogSearchCondition activityLogSearchCondition){
+        return  activityLogRepository.searchActivityLogs(activityLogSearchCondition).stream()
                 .map(ActivityLogResponse::from)
                 .collect(Collectors.toList());
     }

@@ -36,8 +36,8 @@ public class ProjectController {
      * @return
      */
     @GetMapping
-    public ResponseEntity<List<ProjectResponse>> getProjects(@AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(projectService.getProjects(userDetails));
+    public ResponseEntity<List<ProjectResponse>> getProjectsByMember(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(projectService.getProjectsByMember(userDetails));
     }
 
     /**
@@ -69,12 +69,24 @@ public class ProjectController {
     /**
      * 프로젝트 안에 종속된 테스크 다건 조회
      * @param userDetails
-     * @param projectId
+     * @param id
      * @return
      */
     @GetMapping("/{id}/task")
     public ResponseEntity<List<TaskResponse>> getTasksByProject(@AuthenticationPrincipal UserDetails userDetails,
                                                                 @PathVariable Long id) {
         return ResponseEntity.ok(taskService.getTasksByProject(id,userDetails));
+    }
+
+    /**
+     * 프로젝트 검색
+     * @param userDetails
+     * @param keyword
+     * @return
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<ProjectResponse>> searchProjects(@AuthenticationPrincipal UserDetails userDetails,
+                                                            @RequestParam("keyword") String keyword){
+        return ResponseEntity.ok(projectService.searchProjects(keyword));
     }
 }

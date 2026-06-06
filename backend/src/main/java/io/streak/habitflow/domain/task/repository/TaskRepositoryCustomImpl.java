@@ -1,8 +1,10 @@
 package io.streak.habitflow.domain.task.repository;
 
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.task.dto.TaskRequest;
+import io.streak.habitflow.domain.task.dto.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
@@ -46,6 +48,19 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         return StringUtils.hasText(description) ? task.description.contains(description) : null;
     }
 
-
-
+    @Override
+    public List<TaskResponse> searchKeyword(String keyword, String email) {
+        return
+                queryFactory
+                        .select(Projections.fields(
+                                TaskResponse.class,
+                                task.title
+                        ))
+                        .from(task)
+                        .where(
+                                task.title.contains(keyword),
+                                task.member.email.eq(email)
+                        )
+                        .fetch();
+    }
 }
