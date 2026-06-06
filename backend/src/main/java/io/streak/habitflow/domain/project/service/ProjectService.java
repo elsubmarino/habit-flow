@@ -36,8 +36,7 @@ public class ProjectService {
 
     /**
      * 프로젝트 다건 조회
-     * @param projectRequest
-     * @param userDetails
+     * @param userDetails 인증된 사용자 정보
      * @return
      */
     public List<ProjectResponse> getProjectsByMember(UserDetails userDetails) {
@@ -66,7 +65,7 @@ public class ProjectService {
 
     /**
      * 프로젝트 삭제
-     * @param id
+     * @param id 프로젝트 ID
      */
     @Transactional
     public void deleteProject(Long id){
@@ -75,8 +74,8 @@ public class ProjectService {
 
     /**
      * 프로젝트 검색
-     * @param keyword
-     * @return
+     * @param keyword 프로젝트 키워드
+     * @return 검색된 프로젝트 응답 DTO
      */
     public List<ProjectResponse> searchProjects(String keyword, UserDetails userDetails) {
         return projectRepository.searchKeyword(keyword,userDetails.getUsername());

@@ -13,7 +13,7 @@ import lombok.*;
 @Builder
 @Getter
 @Table(name = "activity_logs", indexes = {
-        @Index(name = "idx_paroject_created_at", columnList = "project_id,created_at"),
+        @Index(name = "idx_project_created_at", columnList = "project_id,created_at"),
         @Index(name = "idx_member_created_at", columnList = "member_id,created_at")
 })
 public class ActivityLog extends BaseCreatedTimeEntity {

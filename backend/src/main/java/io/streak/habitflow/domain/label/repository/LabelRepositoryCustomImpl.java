@@ -3,13 +3,11 @@ package io.streak.habitflow.domain.label.repository;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.label.dto.LabelResponse;
-import static io.streak.habitflow.domain.label.entity.QLabel.label;
-
-import io.streak.habitflow.domain.label.entity.QLabel;
-import io.streak.habitflow.domain.project.entity.QProject;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+
+import static io.streak.habitflow.domain.label.entity.QLabel.label;
 
 @RequiredArgsConstructor
 public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {

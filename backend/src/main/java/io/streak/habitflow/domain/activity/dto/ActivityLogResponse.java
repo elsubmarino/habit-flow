@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ActivityLogResponse {
-    private Long id;
     private ActivityType activityType;
 
     public static ActivityLogResponse from(ActivityLog activityLog){
