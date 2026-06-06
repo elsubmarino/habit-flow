@@ -52,18 +52,6 @@ public class TaskController {
     }
 
     /**
-     * 프로젝트 안에 종속된 테스크 다건 조회
-     * @param userDetails
-     * @param projectId
-     * @return
-     */
-    @GetMapping("/project/{id}")
-    public ResponseEntity<List<TaskResponse>> getTasksByProject(@AuthenticationPrincipal UserDetails userDetails,
-                                                                @PathVariable Long projectId) {
-        return ResponseEntity.ok(taskService.getTasksByProject(projectId,userDetails));
-    }
-
-    /**
      * 테스크 업데이트
      * @param taskId
      * @param taskRequest
@@ -94,7 +82,7 @@ public class TaskController {
      * @param userDetails
      * @return
      */
-    @GetMapping("/comment/{id}")
+    @GetMapping("/{id}/comment")
     public ResponseEntity<List<CommentResponse>> getComments(@AuthenticationPrincipal UserDetails userDetails,
                                                              @PathVariable Long id) {
         return ResponseEntity.ok(commentService.getComments(id));
