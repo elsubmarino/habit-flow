@@ -17,7 +17,7 @@ public class IntegratedSearchController {
     private final IntegratedSearchService integratedSearchService;
 
     @GetMapping
-    public ResponseEntity<IntegratedSearchResponse> searchIntegratedItems(@RequestParam String keyword,
+    public ResponseEntity<IntegratedSearchResponse> searchIntegratedItems(@RequestParam("keyword") String keyword,
                                                                                 @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(integratedSearchService.searchAll(keyword,userDetails));
     }

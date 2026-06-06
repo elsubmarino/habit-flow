@@ -78,7 +78,7 @@ public class LabelController {
      * @return 라벨 응답 정보 DTO
      */
     @GetMapping("/search")
-    public ResponseEntity<List<LabelResponse>> searchLabels(@RequestParam String keyword) {
+    public ResponseEntity<List<LabelResponse>> searchLabels(@RequestParam("keyword") String keyword) {
         return ResponseEntity.ok(labelService.searchLabels(keyword));
     }
 }
