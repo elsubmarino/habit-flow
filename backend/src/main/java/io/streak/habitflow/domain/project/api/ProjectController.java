@@ -2,10 +2,8 @@ package io.streak.habitflow.domain.project.api;
 
 import io.streak.habitflow.domain.project.dto.ProjectRequest;
 import io.streak.habitflow.domain.project.dto.ProjectResponse;
-import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.service.ProjectService;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -31,14 +29,12 @@ public class ProjectController {
 
     /**
      * 프로젝트 다건 조회
-     * @param projectRequest
      * @param userDetails
      * @return
      */
     @GetMapping
-    public ResponseEntity<List<ProjectResponse>> getProjects(@RequestBody ProjectRequest projectRequest,
-                                                             @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(projectService.getProjects(projectRequest,userDetails));
+    public ResponseEntity<List<ProjectResponse>> getProjects(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(projectService.getProjects(userDetails));
     }
 
     /**

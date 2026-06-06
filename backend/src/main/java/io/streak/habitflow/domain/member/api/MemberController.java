@@ -50,6 +50,6 @@ public class MemberController {
     public ResponseEntity<MemberResponse> updateMember(@PathVariable Long id,
                                                        @RequestBody MemberUpdateRequest memberUpdateRequest,
                                                        @AuthenticationPrincipal UserDetails userDetails){
-        return ResponseEntity.ok(memberService.updateMember(id,memberUpdateRequest));
+        return ResponseEntity.ok(memberService.updateMember(id,memberUpdateRequest,userDetails));
     }
 }

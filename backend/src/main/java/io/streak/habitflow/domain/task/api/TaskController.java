@@ -1,11 +1,10 @@
 package io.streak.habitflow.domain.task.api;
 
-import io.streak.habitflow.domain.project.dto.ProjectRequest;
-import io.streak.habitflow.domain.project.entity.Project;
+import io.streak.habitflow.domain.comment.dto.CommentResponse;
+import io.streak.habitflow.domain.comment.service.CommentService;
 import io.streak.habitflow.domain.task.dto.TaskCreateRequest;
 import io.streak.habitflow.domain.task.dto.TaskRequest;
 import io.streak.habitflow.domain.task.dto.TaskResponse;
-import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.service.TaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TaskController {
     private final TaskService taskService;
+    private final CommentService commentService;
 
     /**
      * 테스크 생성
@@ -87,6 +87,17 @@ public class TaskController {
     public ResponseEntity<Void> deleteTask(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
         taskService.deleteTask(id,userDetails);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * 테스크에 종속된 코멘트 다건 조회
+     * @param userDetails
+     * @return
+     */
+    @GetMapping("/comment/{id}")
+    public ResponseEntity<List<CommentResponse>> getComments(@AuthenticationPrincipal UserDetails userDetails,
+                                                             @PathVariable Long id) {
+        return ResponseEntity.ok(commentService.getComments(id));
     }
 
 

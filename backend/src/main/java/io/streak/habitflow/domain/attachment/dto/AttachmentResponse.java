@@ -8,20 +8,13 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AttachmentResponse {
-    private Long id;
     private String fileUrl;
     private String originalFileName;
-    private long sortOrder;
-
-    private Long taskId;
 
     public static AttachmentResponse from(Attachment attachment) {
-        AttachmentResponseBuilder builder =
-                AttachmentResponse.builder()
-                        .id(attachment.getId())
-                        .fileUrl(attachment.getFileUrl())
-                        .originalFileName(attachment.getOriginalFileName());
-
-        return  builder.build();
+        return  AttachmentResponse.builder()
+                .fileUrl(attachment.getFileUrl())
+                .originalFileName(attachment.getOriginalFileName())
+                .build();
     }
 }

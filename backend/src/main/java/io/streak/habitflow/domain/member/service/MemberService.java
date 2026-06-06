@@ -5,6 +5,7 @@ import io.streak.habitflow.domain.member.dto.MemberSignUpRequest;
 import io.streak.habitflow.domain.member.dto.MemberUpdateRequest;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
+import io.streak.habitflow.domain.member.type.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -30,6 +31,7 @@ public class MemberService {
                 .email(memberSignUpRequest.getEmail())
                 .name(memberSignUpRequest.getName())
                 .password(memberSignUpRequest.getPassword())
+                .role(Role.USER)
                 .build();
         Member result = memberRepository.save(member);
         return MemberResponse.from(result);
@@ -54,11 +56,16 @@ public class MemberService {
      * @return
      */
     @Transactional
-    public MemberResponse updateMember(Long id,MemberUpdateRequest  memberUpdateRequest){
-        Member member = Member.builder()
-                .id(id)
-                .password(memberUpdateRequest.getPassword())
-                .build();
-        return MemberResponse.from(memberRepository.save(member));
+    public MemberResponse updateMember(Long id,MemberUpdateRequest  memberUpdateRequest,UserDetails userDetails){
+        Member member = memberRepository.findById(id)
+                .orElseThrow((()->new IllegalArgumentException("멤버가 존재하지 않습니다.")));
+
+        if(!member.getEmail().equals(userDetails.getUsername())){
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
+
+        member.updateMember(memberUpdateRequest.getPassword());
+
+        return MemberResponse.from(member);
     }
 }

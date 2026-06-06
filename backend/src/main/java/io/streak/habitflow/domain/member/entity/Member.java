@@ -24,5 +24,8 @@ public class Member extends BaseTimeEntity {
     @Column(nullable = false)
     private Role role;
 
+    public void updateMember(String password){
+        this.password=password;
+    }
 
 }

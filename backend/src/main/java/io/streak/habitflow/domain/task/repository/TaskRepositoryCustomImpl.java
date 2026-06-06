@@ -2,20 +2,16 @@ package io.streak.habitflow.domain.task.repository;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.streak.habitflow.domain.comment.entity.QComment;
-import io.streak.habitflow.domain.label.entity.QLabel;
-import io.streak.habitflow.domain.project.entity.QProject;
 import io.streak.habitflow.domain.task.dto.TaskRequest;
-import io.streak.habitflow.domain.task.entity.QTask;
 import io.streak.habitflow.domain.task.entity.Task;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 
-import static io.streak.habitflow.domain.task.entity.QTask.task;
-import static io.streak.habitflow.domain.project.entity.QProject.project;
-
 import java.util.List;
 import java.util.Optional;
+
+import static io.streak.habitflow.domain.project.entity.QProject.project;
+import static io.streak.habitflow.domain.task.entity.QTask.task;
 
 @RequiredArgsConstructor
 public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {

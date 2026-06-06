@@ -1,8 +1,11 @@
 package io.streak.habitflow.domain.comment.dto;
 
-import io.streak.habitflow.domain.attachment.entity.Attachment;
+import io.streak.habitflow.domain.attachment.dto.AttachmentResponse;
 import io.streak.habitflow.domain.comment.entity.Comment;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,13 +16,16 @@ import java.util.List;
 @AllArgsConstructor
 public class CommentResponse {
     private String content;
+
     @Builder.Default
-    private List<Attachment> attachments = new ArrayList<>();
+    private List<AttachmentResponse> attachments = new ArrayList<>();
 
     public static CommentResponse from(Comment comment) {
         return CommentResponse.builder()
                 .content(comment.getContent())
-                .attachments(comment.getAttachments())
+                .attachments(comment.getAttachments().stream()
+                        .map(AttachmentResponse::from)
+                        .toList())
                 .build();
     }
 }

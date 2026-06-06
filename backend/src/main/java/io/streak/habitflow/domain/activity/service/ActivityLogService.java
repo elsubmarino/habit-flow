@@ -42,11 +42,10 @@ public class ActivityLogService {
 
     /**
      * 액티비티 로그 조회
-     * @param activityLogRequest
      * @param userDetails
      * @return
      */
-    public List<ActivityLogResponse> getActivityLogs(ActivityLogRequest activityLogRequest, UserDetails userDetails) {
+    public List<ActivityLogResponse> getActivityLogs(UserDetails userDetails) {
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 없습니다."));
 

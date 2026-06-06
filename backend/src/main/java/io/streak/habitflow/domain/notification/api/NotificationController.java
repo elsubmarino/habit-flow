@@ -19,15 +19,13 @@ public class NotificationController {
 
     /**
      * 알림 다건 조회
-     * @param userDetails
      * @param notificationRequest
      * @return
      */
     @GetMapping
-    public ResponseEntity<List<NotificationResponse>> getNotifications(@AuthenticationPrincipal UserDetails userDetails,
-                                                                       @RequestBody NotificationRequest notificationRequest
+    public ResponseEntity<List<NotificationResponse>> getNotifications(@AuthenticationPrincipal UserDetails userDetails
                                                                        ) {
-        return ResponseEntity.ok(notificationService.getNotifications(notificationRequest,userDetails));
+        return ResponseEntity.ok(notificationService.getNotifications(userDetails));
     }
 
     /**

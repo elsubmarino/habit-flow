@@ -23,4 +23,9 @@ public class Label  extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id")
     private Member member;
+
+    public void updateLabel(String name, String color){
+        this.name = name;
+        this.color = color;
+    }
 }

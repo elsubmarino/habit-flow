@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,7 +45,7 @@ public class LabelService {
      * @param userDetails
      * @return
      */
-    public List<LabelResponse> getLabels(LabelRequest labelRequest, UserDetails userDetails) {
+    public List<LabelResponse> getLabels(UserDetails userDetails) {
         String email  = userDetails.getUsername();
         Member member = memberRepository.findByEmail(email)
                         .orElseThrow(()->new IllegalArgumentException("멤버를 찾을 수 없습니다."));
@@ -65,12 +64,15 @@ public class LabelService {
      */
     @Transactional
     public LabelResponse updateLabel(Long id,LabelRequest labelRequest, UserDetails userDetails) {
-        Label label = Label.builder()
-                .id(id)
-                .name(labelRequest.getName())
-                .color(labelRequest.getColor())
-                .build();
-        return LabelResponse.from(labelRepository.save(label));
+        Label label = labelRepository.findById(id)
+                .orElseThrow(()->new IllegalArgumentException("라벨이 존재하지 않습니다."));
+
+        if(!label.getMember().getEmail().equals(userDetails.getUsername())) {
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
+
+        label.updateLabel(labelRequest.getName(), labelRequest.getColor());
+        return LabelResponse.from(label);
     }
 
     /**

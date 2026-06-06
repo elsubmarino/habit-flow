@@ -4,15 +4,11 @@ import io.streak.habitflow.domain.project.dto.ProjectRequest;
 import io.streak.habitflow.domain.project.dto.ProjectResponse;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.domain.task.dto.TaskRequest;
-import io.streak.habitflow.domain.task.dto.TaskResponse;
-import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,7 +40,7 @@ public class ProjectService {
      * @param userDetails
      * @return
      */
-    public List<ProjectResponse> getProjects(ProjectRequest projectRequest, UserDetails userDetails) {
+    public List<ProjectResponse> getProjects(UserDetails userDetails) {
         String email = userDetails.getUsername();
         List<Project> projects = projectRepository.findByMemberEmail(email);
         return projects.stream()
@@ -62,12 +58,10 @@ public class ProjectService {
      */
     @Transactional
     public ProjectResponse updateProject(ProjectRequest projectRequest, Long id, UserDetails userDetails) {
-        Project project = Project.builder()
-                .id(id)
-                .name(projectRequest.getName())
-                .color(projectRequest.getColor())
-                .build();
-        return ProjectResponse.from(projectRepository.save(project));
+        Project project =  projectRepository.findById(id)
+                .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
+        project.updateProject(projectRequest.getName(),projectRequest.getColor());
+        return ProjectResponse.from(project);
     }
 
     /**

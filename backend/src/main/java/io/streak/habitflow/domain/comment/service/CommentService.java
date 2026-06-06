@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -72,8 +71,8 @@ public class CommentService {
      * @param commentRequest
      * @return
      */
-    public List<CommentResponse> getComments(CommentRequest commentRequest) {
-        Task task = taskRepository.findById(commentRequest.getTaskId())
+    public List<CommentResponse> getComments(Long id) {
+        Task task = taskRepository.findById(id)
                 .orElseThrow(()->new IllegalArgumentException("테스크가 없습니다."));
         List<Comment> comments = commentRepository.findByTaskId(task.getId());
         return comments.stream()
@@ -88,12 +87,14 @@ public class CommentService {
      * @return
      */
     @Transactional
-    public CommentResponse updateComment(Long id, CommentRequest request){
-        Comment comment = Comment.builder()
-                .id(id)
-                .content(request.getContent())
-                .build();
-        commentRepository.save(comment);
+    public CommentResponse updateComment(Long id, CommentRequest request, UserDetails userDetails) {
+        Comment comment = commentRepository.findById(id)
+                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 댓글입니다."));
+        if(comment.getMember().getEmail().equals(userDetails.getUsername())){
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
+
+        comment.updateContent(request.getContent());
         return CommentResponse.from(comment);
     }
 

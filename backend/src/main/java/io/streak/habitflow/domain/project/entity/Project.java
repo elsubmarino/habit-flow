@@ -18,4 +18,9 @@ public class Project  extends BaseTimeEntity {
     private String name;
     private String color;
     private long sortOrder;
+
+    public void updateProject(String name, String color){
+        this.name=name;
+        this.color=color;
+    }
 }

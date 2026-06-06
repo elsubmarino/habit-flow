@@ -2,7 +2,6 @@ package io.streak.habitflow.domain.comment.api;
 
 import io.streak.habitflow.domain.comment.dto.CommentRequest;
 import io.streak.habitflow.domain.comment.dto.CommentResponse;
-import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -10,12 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,17 +35,7 @@ public class CommentController {
                 .body( commentService.createComment(commentRequest,file,userDetails));
     }
 
-    /**
-     * 코멘트 다건 조회
-     * @param userDetails
-     * @param commentRequest
-     * @return
-     */
-    @GetMapping
-    public ResponseEntity<List<CommentResponse>> getComments(@AuthenticationPrincipal UserDetails userDetails,
-                                                             @RequestBody CommentRequest commentRequest) {
-        return ResponseEntity.ok(commentService.getComments(commentRequest));
-    }
+
 
     /**
      * 코멘트 업데이트
@@ -62,7 +48,7 @@ public class CommentController {
     public ResponseEntity<CommentResponse> updateComment(@PathVariable Long id,
                                                          @AuthenticationPrincipal UserDetails userDetails,
                                                          @RequestBody CommentRequest commentRequest) {
-        return ResponseEntity.ok(commentService.updateComment(id, commentRequest));
+        return ResponseEntity.ok(commentService.updateComment(id, commentRequest, userDetails));
     }
 
     /**

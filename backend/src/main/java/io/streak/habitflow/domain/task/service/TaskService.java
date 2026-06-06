@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.swing.plaf.nimbus.State;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -147,12 +148,13 @@ public class TaskService {
      */
     @Transactional
     public TaskResponse updateTask(Long taskId, TaskRequest taskRequest,UserDetails userDetails){
-        Task task = Task.builder()
-                .id(taskId)
-                .title(taskRequest.getTitle())
-                .description(taskRequest.getDescription())
-                .build();
-        return TaskResponse.from(taskRepository.save(task),null);
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(()->new IllegalArgumentException("TASK가 존재하지 않습니다."));
+        if(!task.getMember().getEmail().equals(userDetails.getUsername())){
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
+        task.updateTask(taskRequest.getTitle(),taskRequest.getDescription());
+        return TaskResponse.from(task,null);
     }
 
 }

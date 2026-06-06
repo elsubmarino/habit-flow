@@ -4,7 +4,6 @@ import io.streak.habitflow.domain.label.dto.LabelRequest;
 import io.streak.habitflow.domain.label.dto.LabelResponse;
 import io.streak.habitflow.domain.label.service.LabelService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -39,9 +38,8 @@ public class LabelController {
      */
     @GetMapping
     public ResponseEntity<List<LabelResponse>> getLabels(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody LabelRequest labelRequest){
-        return ResponseEntity.ok(labelService.getLabels(labelRequest,userDetails));
+            @AuthenticationPrincipal UserDetails userDetails){
+        return ResponseEntity.ok(labelService.getLabels(userDetails));
     }
 
     /**

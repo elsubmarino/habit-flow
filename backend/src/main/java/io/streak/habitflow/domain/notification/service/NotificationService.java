@@ -39,7 +39,7 @@ public class NotificationService {
      * @param userDetails
      * @return
      */
-    public List<NotificationResponse> getNotifications(NotificationRequest notificationRequest,UserDetails userDetails){
+    public List<NotificationResponse> getNotifications(UserDetails userDetails){
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 존재하지 않습니다."));
         List<Notification> notifications = notificationRepository.findByUserId(member.getId())
@@ -58,10 +58,12 @@ public class NotificationService {
      */
     @Transactional
     public NotificationResponse updateNotification(Long id,NotificationRequest notificationRequest,UserDetails userDetails){
-        Notification notification = Notification.builder()
-                        .id(id)
-                        .isConfirmed(notificationRequest.isConfirmed())
-                        .build();
-        return NotificationResponse.from(notificationRepository.save(notification));
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(()->new IllegalArgumentException("알림이 존재하지 않습니다."));
+        if(!notification.getMember().getEmail().equals(userDetails.getUsername())){
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
+        notification.updateNotification(notificationRequest.isConfirmed());
+        return NotificationResponse.from(notification);
     }
 }

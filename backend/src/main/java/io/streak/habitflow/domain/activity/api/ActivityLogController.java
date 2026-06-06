@@ -4,7 +4,6 @@ import io.streak.habitflow.domain.activity.dto.ActivityLogRequest;
 import io.streak.habitflow.domain.activity.dto.ActivityLogResponse;
 import io.streak.habitflow.domain.activity.service.ActivityLogService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,12 +22,13 @@ public class ActivityLogController {
 
     /**
      * 액티비티 로그 조회
+     *
      * @param activityLogRequest
      * @param userDetails
      * @return
      */
     @GetMapping
-    public ResponseEntity<List<ActivityLogResponse>> getActivityLogs(@RequestBody ActivityLogRequest activityLogRequest, @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(activityLogService.getActivityLogs(activityLogRequest,userDetails));
+    public ResponseEntity<List<ActivityLogResponse>> getActivityLogs(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(activityLogService.getActivityLogs(userDetails));
     }
 }

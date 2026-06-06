@@ -31,4 +31,7 @@ public class Notification extends BaseCreatedTimeEntity {
 
     private boolean isConfirmed;
 
+    public void updateNotification(boolean isConfirmed){
+        this.isConfirmed=isConfirmed;
+    }
 }

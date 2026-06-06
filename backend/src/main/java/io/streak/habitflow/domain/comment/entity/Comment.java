@@ -40,5 +40,9 @@ public class Comment extends BaseTimeEntity {
         attachment.changeComment(this);
     }
 
+    public void updateContent(String content){
+        this.content = content;
+    }
+
 
 }
