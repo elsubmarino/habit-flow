@@ -17,22 +17,11 @@ import java.util.List;
 public class ActivityLogController {
     private final ActivityLogService activityLogService;
 
-    /**
-     * 액티비티 로그 조회
-     *
-     * @param userDetails 인증된 사용자 정보
-     * @return 조회된 액티비티 로그 응답 DTO
-     */
     @GetMapping
     public ResponseEntity<List<ActivityLogResponse>> getActivityLogs(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(activityLogService.getActivityLogs(userDetails));
     }
 
-    /**
-     * 액티비티 로그 검색
-     * @param activityLogSearchCondition 액티비티 로그 검색 요청 정보 DTO
-     * @return 검색된 액티비티 로그 검색 응답 DTO
-     */
     @GetMapping("/search")
     public ResponseEntity<List<ActivityLogResponse>> searchActivityLogs(@ModelAttribute ActivityLogSearchCondition activityLogSearchCondition
                                                                         ) {

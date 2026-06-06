@@ -25,6 +25,7 @@ public class NotificationService {
      * @param notificationRequest 알림 요청 DTO 정보
      */
     @Transactional
+    @SuppressWarnings("unused")
     public void createNotification(NotificationRequest notificationRequest){
         Notification notification = Notification.builder()
                 .activityType(notificationRequest.getActivityType())

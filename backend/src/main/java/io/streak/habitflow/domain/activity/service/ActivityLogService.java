@@ -27,6 +27,7 @@ public class ActivityLogService {
      * @param userDetails 인증된 사용자 정보
      */
     @Transactional
+    @SuppressWarnings("unused")
     public void create(ActivityLogRequest activityLogRequest, UserDetails userDetails) {
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 없습니다."));

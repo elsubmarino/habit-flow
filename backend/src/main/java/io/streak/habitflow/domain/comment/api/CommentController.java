@@ -19,13 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class CommentController {
     private final CommentService commentService;
 
-    /**
-     * 코멘트 생성
-     * @param userDetails 인증된 사용자 정보
-     * @param file 첨부파일 (선택)
-     * @param commentRequest 댓글 요청 정보 DTO
-     * @return 댓글 응답 정보 DTO
-     */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommentResponse> createComment(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -35,15 +28,6 @@ public class CommentController {
                 .body( commentService.createComment(commentRequest,file,userDetails));
     }
 
-
-
-    /**
-     * 코멘트 업데이트
-     * @param id 댓글 ID
-     * @param userDetails 인증된 사용자 정보
-     * @param commentRequest 댓글 요청 정보 DTO
-     * @return 댓글 응답 정보 DTO
-     */
     @PutMapping("/{id}")
     public ResponseEntity<CommentResponse> updateComment(@PathVariable Long id,
                                                          @AuthenticationPrincipal UserDetails userDetails,
@@ -51,11 +35,6 @@ public class CommentController {
         return ResponseEntity.ok(commentService.updateComment(id, commentRequest, userDetails));
     }
 
-    /**
-     * 코멘트 삭제
-     * @param id 댓글 ID
-     * @param userDetails 인증된 사용자 정보
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long id,@AuthenticationPrincipal UserDetails userDetails) {
         commentService.deleteComment(id);

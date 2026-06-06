@@ -25,13 +25,6 @@ public class TaskController {
     private final TaskService taskService;
     private final CommentService commentService;
 
-    /**
-     * 테스크 생성
-     * @param userDetails 인증된 사용자 정보
-     * @param file 첨부파일 (선택)
-     * @param taskCreateRequest  테스크 생성 요청 정보 DTO
-     * @return 테스크 응답 정보 DTO
-     */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<TaskResponse> createTask(@AuthenticationPrincipal UserDetails userDetails,
                                            @RequestPart(value = "file", required = false) MultipartFile file,
@@ -39,25 +32,12 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(taskCreateRequest, file, userDetails));
     }
 
-    /**
-     * 테스크 단건 조회
-     * @param id 테스크 ID
-     * @param userDetails 인증된 사용자 정보
-     * @return 테스크 응답 정보 DTO
-     */
     @GetMapping("/{id}")
     public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long id,
                                                     @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(taskService.readTask(id,userDetails));
     }
 
-    /**
-     * 테스크 업데이트
-     * @param taskId 테스크 ID
-     * @param taskRequest 테스크 요청 정보 DTO
-     * @param userDetails 인증된 사용자 정보
-     * @return 테스크 응답 정보 DTO
-     */
     @PutMapping("/{id}")
     public ResponseEntity<TaskResponse> updateTask(@PathVariable Long taskId, @RequestBody TaskRequest taskRequest
             ,@AuthenticationPrincipal UserDetails userDetails) {
@@ -65,22 +45,12 @@ public class TaskController {
         return ResponseEntity.ok(taskResponse);
     }
 
-    /**
-     * 테스크 삭제
-     * @param id 테스크 ID
-     * @param userDetails 인증된 사용자 정보
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
         taskService.deleteTask(id,userDetails);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * 테스크에 종속된 코멘트 다건 조회
-     * @param userDetails 인증된 사용자 정보
-     * @return 테스크 응답 정보 DTO
-     */
     @GetMapping("/{id}/comments")
     public ResponseEntity<List<CommentResponse>> getComments(@AuthenticationPrincipal UserDetails userDetails,
                                                              @PathVariable Long id) {

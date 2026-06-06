@@ -12,21 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    /**
-     * 로그인 성공
-     * @param oauth2User
-     * @return
-     */
     @GetMapping("/success")
     public ResponseEntity<String> loginSuccess(@AuthenticationPrincipal OAuth2User oauth2User) {
         String email = oauth2User.getAttribute("email");
         return ResponseEntity.ok(email+"님, 소셜 가입/로그인에 성공했습니다.");
     }
 
-    /**
-     * 로그인 실패
-     * @return
-     */
     @GetMapping("/fail")
     public ResponseEntity<String> loginFail(){
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("소셜 로그인에 실패했습니다.");
