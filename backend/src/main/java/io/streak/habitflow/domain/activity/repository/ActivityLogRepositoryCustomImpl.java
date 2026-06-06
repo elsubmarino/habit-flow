@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import java.time.LocalDate;
 import java.util.List;
 
+@SuppressWarnings("unused")
 @RequiredArgsConstructor
 public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCustom {
     private final JPAQueryFactory queryFactory;

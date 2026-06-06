@@ -14,6 +14,7 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Optional;
 
+@SuppressWarnings("unused")
 @RequiredArgsConstructor
 public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     private final JPAQueryFactory queryFactory;

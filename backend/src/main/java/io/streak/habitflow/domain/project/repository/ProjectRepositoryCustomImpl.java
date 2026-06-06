@@ -9,6 +9,7 @@ import io.streak.habitflow.domain.project.dto.ProjectResponse;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
 
+@SuppressWarnings("unused")
 @RequiredArgsConstructor
 public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     private final JPAQueryFactory queryFactory;

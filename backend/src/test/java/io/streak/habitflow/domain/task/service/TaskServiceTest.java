@@ -40,7 +40,6 @@ class TaskServiceTest {
 
     @Mock private TaskRepository taskRepository;
     @Mock private MemberRepository memberRepository;
-    @Mock private ProjectRepository projectRepository;
     @Mock private CommentRepository commentRepository;
     @Mock private FileStorageService fileStorageService;
 

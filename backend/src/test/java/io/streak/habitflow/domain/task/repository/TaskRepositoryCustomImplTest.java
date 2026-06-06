@@ -32,14 +32,11 @@ class TaskRepositoryCustomImplTest {
 
     @Autowired private EntityManager em;
 
-    private Member testMember;
     private Task testTask;
-    @Autowired
-    private TaskService taskService;
 
     @BeforeEach
     void setUp(){
-        testMember = Member.builder().email("test@test.com")
+        Member testMember = Member.builder().email("test@test.com")
                 .password("1234")
                 .build();
         memberRepository.save(testMember);

@@ -8,7 +8,7 @@ import io.streak.habitflow.domain.label.dto.LabelResponse;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
 
-
+@SuppressWarnings("unused")
 @RequiredArgsConstructor
 public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
 
