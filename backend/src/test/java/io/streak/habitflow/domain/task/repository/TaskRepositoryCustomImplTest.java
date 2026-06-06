@@ -1,16 +1,13 @@
 package io.streak.habitflow.domain.task.repository;
 
-import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-
-import io.streak.habitflow.global.config.JpaAuditingConfig;
-import io.streak.habitflow.global.config.QuerydslConfig;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
-import io.streak.habitflow.domain.task.dto.TaskRequest;
-import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.task.service.TaskService;
+import io.streak.habitflow.domain.task.dto.TaskRequest;
+import io.streak.habitflow.domain.task.entity.Task;
+import io.streak.habitflow.global.config.JpaAuditingConfig;
+import io.streak.habitflow.global.config.QuerydslConfig;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,8 +15,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+
 import java.util.List;
 import java.util.Optional;
+
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 
 @DataJpaTest
@@ -68,7 +68,7 @@ class TaskRepositoryCustomImplTest {
         Optional<Task> resultOpt = taskRepository.searchTaskInfo(targetId);
 
         assertThat(resultOpt).isPresent();
-        Task result = resultOpt.get();
+        Task result = resultOpt.orElseThrow(()->new AssertionError("테스크 결과가 존재하지 않습니다."));
         Task subTask = Task.builder()
                 .title("서브테스크")
                 .parent(result)
@@ -88,7 +88,7 @@ class TaskRepositoryCustomImplTest {
         Optional<Task> resultOpt = taskRepository.searchTaskInfo(targetId);
 
         assertThat(resultOpt).isPresent();
-        Task result = resultOpt.get();
+        Task result = resultOpt.orElseThrow(()->new AssertionError("테스크 결과가 존재하지 않습니다."));
         assertThat(result.getTitle()).isEqualTo("스프링 부트 복습");
         assertThat(result.getDescription()).isEqualTo("Query DSL");
 
