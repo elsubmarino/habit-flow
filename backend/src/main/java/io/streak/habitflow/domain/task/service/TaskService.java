@@ -154,7 +154,11 @@ public class TaskService {
             throw new IllegalStateException("조회 권한이 없습니다.");
         }
 
-        return TaskResponse.from(task,new ArrayList<>());
+        List<LabelResponse> labelResponses = task.getTaskLabels().stream()
+                .map(taskLabel -> LabelResponse.from(taskLabel.getLabel()))
+                .toList();
+
+        return TaskResponse.from(task,labelResponses);
     }
 
     /**
@@ -164,6 +168,8 @@ public class TaskService {
      */
     public List<TaskResponse> getTasksByProject(Long ProjectId){
         List<Task> tasks = taskRepository.findByProjectId(ProjectId);
+
+
         return tasks.stream()
                 .map(task -> TaskResponse.from(task,new ArrayList<>()))
                 .collect(Collectors.toList());
@@ -184,7 +190,12 @@ public class TaskService {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
         task.updateTask(taskRequest.getTitle(),taskRequest.getDescription());
-        return TaskResponse.from(task,new ArrayList<>());
+
+        List<LabelResponse> labelResponses = task.getTaskLabels().stream()
+                .map(taskLabel -> LabelResponse.from(taskLabel.getLabel()))
+                .toList();
+
+        return TaskResponse.from(task,labelResponses);
     }
 
 }
