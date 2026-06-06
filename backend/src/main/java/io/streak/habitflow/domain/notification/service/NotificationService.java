@@ -42,8 +42,7 @@ public class NotificationService {
     public List<NotificationResponse> getNotifications(UserDetails userDetails){
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 존재하지 않습니다."));
-        List<Notification> notifications = notificationRepository.findByUserId(member.getId())
-                .orElseThrow(()->new IllegalArgumentException("알림이 없습니다."));
+        List<Notification> notifications = notificationRepository.findByUserId(member.getId());
         return notifications.stream()
                 .map(NotificationResponse::from)
                 .collect(Collectors.toList());
