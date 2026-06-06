@@ -67,7 +67,7 @@ public class LabelController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLabel(@PathVariable Long id,
                                             @AuthenticationPrincipal UserDetails userDetails) {
-        labelService.deleteLabel(id);
+        labelService.deleteLabel(id, userDetails);
         return ResponseEntity.noContent().build();
     }
 

@@ -77,9 +77,15 @@ public class LabelService {
     /**
      * 라벨 삭제
      * @param id 라벨 ID
+     * @param userDetails 인증된 사용자
      */
     @Transactional
-    public void deleteLabel(Long id){
+    public void deleteLabel(Long id, UserDetails userDetails){
+        Label label = labelRepository.findById(id)
+                        .orElseThrow(()->new IllegalArgumentException("검색된 라벨이 존재하지 않습니다."));
+        if(!label.getMember().getEmail().equals(userDetails.getUsername())) {
+            throw new IllegalStateException("삭제 권한이 없습니다.");
+        }
         labelRepository.deleteById(id);
     }
 
