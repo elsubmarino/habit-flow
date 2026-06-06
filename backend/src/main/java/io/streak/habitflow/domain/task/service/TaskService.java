@@ -121,15 +121,14 @@ public class TaskService {
      * @return 조회된 테스크 응답 정보 DTO
      */
     public TaskResponse readTask(Long id, UserDetails userDetails){
-        Task task = taskRepository.findById(id)
-                .orElseThrow(()->new IllegalArgumentException("조회된 TASK가 없습니다."));
+        Task task = taskRepository.searchTaskInfo(id)
+                .orElseThrow(()->new IllegalArgumentException("해당 테스크가 존재하지 않습니다."));
+
         if(!task.getMember().getEmail().equals(userDetails.getUsername())){
             throw new IllegalStateException("조회 권한이 없습니다.");
         }
-        Task info = taskRepository.searchTaskInfo(id)
-                .orElseThrow(()->new IllegalArgumentException("해당 테스크가 존재하지 않습니다."));
 
-        return TaskResponse.from(info,new ArrayList<>());
+        return TaskResponse.from(task,new ArrayList<>());
     }
 
     /**
