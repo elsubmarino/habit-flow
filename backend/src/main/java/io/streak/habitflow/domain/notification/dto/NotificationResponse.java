@@ -14,8 +14,7 @@ public class NotificationResponse {
     private boolean isConfirmed;
 
     public static NotificationResponse from(Notification notification) {
-        return
-                NotificationResponse
+        return NotificationResponse
                         .builder()
                         .activityType(notification.getActivityType())
                         .isConfirmed(notification.isConfirmed())

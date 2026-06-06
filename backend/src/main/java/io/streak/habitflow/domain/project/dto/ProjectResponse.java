@@ -21,11 +21,11 @@ public class ProjectResponse {
     private List<MemberResponse> users = new ArrayList<>();
 
     public static ProjectResponse from(Project project) {
-        ProjectResponseBuilder builder = ProjectResponse.builder()
+        return ProjectResponse.builder()
                 .id(project.getId())
                 .name(project.getName())
                 .color(project.getColor())
-                .sortOrder(project.getSortOrder());
-        return builder.build();
+                .sortOrder(project.getSortOrder())
+                .build();
     }
 }

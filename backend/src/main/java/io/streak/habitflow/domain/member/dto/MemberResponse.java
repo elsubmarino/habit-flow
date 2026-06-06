@@ -1,14 +1,10 @@
 package io.streak.habitflow.domain.member.dto;
 
-import io.streak.habitflow.domain.label.dto.LabelResponse;
 import io.streak.habitflow.domain.member.entity.Member;
-import io.streak.habitflow.domain.task.dto.TaskResponse;
-import io.streak.habitflow.domain.task.entity.Task;
-import lombok.*;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
@@ -22,9 +18,9 @@ public class MemberResponse {
     private String role;
 
     public static MemberResponse from(Member member) {
-        MemberResponseBuilder builder = MemberResponse.builder()
+        return MemberResponse.builder()
                 .name(member.getName())
-                .email(member.getEmail());
-        return builder.build();
+                .email(member.getEmail())
+                .build();
     };
 }

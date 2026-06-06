@@ -55,6 +55,7 @@ public class TaskResponse {
                 .subTasks(task.getSubTasks().stream()
                         .map(sub -> TaskResponse.from(sub, new ArrayList<>()))
                         .collect(Collectors.toList()));
+
         if(task.getProject() != null){
             builder.projectId(task.getProject().getId())
                     .projectName(task.getProject().getName())

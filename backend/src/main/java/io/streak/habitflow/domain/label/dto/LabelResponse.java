@@ -16,11 +16,10 @@ public class LabelResponse {
     private String userName;
 
     public static LabelResponse from(Label label){
-        LabelResponseBuilder builder = LabelResponse.builder()
+        return LabelResponse.builder()
                 .id(label.getId())
                 .name(label.getName())
-                .sortOrder(label.getSortOrder());
-
-        return builder.build();
+                .sortOrder(label.getSortOrder())
+                .build();
     }
 }
