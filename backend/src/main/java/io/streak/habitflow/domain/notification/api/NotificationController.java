@@ -19,8 +19,8 @@ public class NotificationController {
 
     /**
      * 알림 다건 조회
-     * @param notificationRequest
-     * @return
+     * @param userDetails 인증된 사용자 정보
+     * @return 알림 응답 정보 DTO
      */
     @GetMapping
     public ResponseEntity<List<NotificationResponse>> getNotifications(@AuthenticationPrincipal UserDetails userDetails
@@ -30,10 +30,10 @@ public class NotificationController {
 
     /**
      * 알림 업데이트
-     * @param id
-     * @param notificationRequest
-     * @param userDetails
-     * @return
+     * @param id 알림 ID
+     * @param notificationRequest 알림 요청 정보 DTO
+     * @param userDetails 인증된 사용자 정보
+     * @return 알림 응답 정보 DTO
      */
     @PutMapping("/{id}")
     public ResponseEntity<NotificationResponse> updateNotification(@PathVariable Long id, @RequestBody NotificationRequest notificationRequest

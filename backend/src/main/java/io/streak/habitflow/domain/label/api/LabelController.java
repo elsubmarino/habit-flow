@@ -20,9 +20,9 @@ public class LabelController {
     /**
      * 라벨 생성
      *
-     * @param userDetails
-     * @param labelRequest
-     * @return
+     * @param userDetails 인증된 사용자 정보
+     * @param labelRequest 라벨 요청 정보 DTO
+     * @return 라벨 응답 정보 DTO
      */
     @PostMapping
     public ResponseEntity<LabelResponse> createLabel(
@@ -34,9 +34,8 @@ public class LabelController {
     /**
      * 라벨 다건 조회
      *
-     * @param userDetails
-     * @param labelRequest
-     * @return
+     * @param userDetails 인증된 사용자 정보
+     * @return 라벨 응답 정보 DTO
      */
     @GetMapping
     public ResponseEntity<List<LabelResponse>> getLabels(
@@ -47,10 +46,10 @@ public class LabelController {
     /**
      * 라벨 업데이트
      *
-     * @param id
-     * @param userDetails
-     * @param labelRequest
-     * @return
+     * @param id 라벨 ID
+     * @param userDetails 인증된 사용자 정보
+     * @param labelRequest 라벨 요청 정보 DTO
+     * @return 라벨 응답 정보 DTO
      */
     @PutMapping("/{id}")
     public ResponseEntity<LabelResponse> updateLabel(@PathVariable Long id,
@@ -62,9 +61,8 @@ public class LabelController {
     /**
      * 라벨 삭제
      *
-     * @param id
-     * @param userDetails
-     * @return
+     * @param id 라벨 ID
+     * @param userDetails 인증된 사용자 정보
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLabel(@PathVariable Long id,
@@ -76,8 +74,8 @@ public class LabelController {
     /**
      * 라벨 검색
      *
-     * @param name
-     * @return
+     * @param keyword 검색키워드
+     * @return 라벨 응답 정보 DTO
      */
     @GetMapping("/search")
     public ResponseEntity<List<LabelResponse>> searchLabels(@RequestParam String keyword) {

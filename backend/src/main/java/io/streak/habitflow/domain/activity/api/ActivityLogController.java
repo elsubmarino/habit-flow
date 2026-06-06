@@ -31,12 +31,11 @@ public class ActivityLogController {
     /**
      * 액티비티 로그 검색
      * @param activityLogSearchCondition 액티비티 로그 검색 요청 정보 DTO
-     * @param userDetails 인증된 사용자 정보
      * @return 검색된 액티비티 로그 검색 응답 DTO
      */
     @GetMapping("/search")
-    public ResponseEntity<List<ActivityLogResponse>> searchActivityLogs(@ModelAttribute ActivityLogSearchCondition activityLogSearchCondition,
-                                                                        @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<ActivityLogResponse>> searchActivityLogs(@ModelAttribute ActivityLogSearchCondition activityLogSearchCondition
+                                                                        ) {
         return ResponseEntity.ok(activityLogService.searchActivityLogs(activityLogSearchCondition));
     }
 
