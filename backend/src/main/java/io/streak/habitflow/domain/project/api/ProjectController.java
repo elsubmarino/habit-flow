@@ -15,7 +15,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/project")
+@RequestMapping("/api/projects")
 public class ProjectController {
     private final ProjectService projectService;
     private final TaskService taskService;
@@ -68,7 +68,7 @@ public class ProjectController {
      * @param id 프로젝트 ID
      * @return 테스크 응답 정보 DTO
      */
-    @GetMapping("/{id}/task")
+    @GetMapping("/{id}/tasks")
     public ResponseEntity<List<TaskResponse>> getTasksByProject(@PathVariable Long id) {
         return ResponseEntity.ok(taskService.getTasksByProject(id));
     }

@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/activity-log")
+@RequestMapping("/api/activity-logs")
 public class ActivityLogController {
     private final ActivityLogService activityLogService;
 
