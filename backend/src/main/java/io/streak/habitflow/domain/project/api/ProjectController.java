@@ -22,8 +22,8 @@ public class ProjectController {
 
     /**
      * 프로젝트 생성
-     * @param projectRequest
-     * @return
+     * @param projectRequest 프로젝트 요청 정보 DTO
+     * @return 프로젝트 응답 정보 DTO
      */
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(@RequestBody ProjectRequest projectRequest){
@@ -32,8 +32,8 @@ public class ProjectController {
 
     /**
      * 프로젝트 다건 조회
-     * @param userDetails
-     * @return
+     * @param userDetails 인증된 사용자 정보
+     * @return 프로젝트 응답 정보 DTO
      */
     @GetMapping
     public ResponseEntity<List<ProjectResponse>> getProjectsByMember(@AuthenticationPrincipal UserDetails userDetails) {
@@ -42,10 +42,10 @@ public class ProjectController {
 
     /**
      * 프로젝트 업데이트
-     * @param projectRequest
-     * @param id
-     * @param userDetails
-     * @return
+     * @param projectRequest 프로젝트 요청 정보 DTO
+     * @param id 프로젝트 ID
+     * @param userDetails 인증된 사용자 정보
+     * @return 프로젝트 응답 정보 DTO
      */
     @PutMapping("/{id}")
     public ResponseEntity<ProjectResponse> updateProject(@RequestBody ProjectRequest projectRequest,@PathVariable Long id,
@@ -55,9 +55,7 @@ public class ProjectController {
 
     /**
      * 프로젝트 삭제
-     * @param id
-     * @param userDetails
-     * @return
+     * @param id 프로젝트 ID
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
@@ -67,9 +65,8 @@ public class ProjectController {
 
     /**
      * 프로젝트 안에 종속된 테스크 다건 조회
-     * @param userDetails
-     * @param id
-     * @return
+     * @param id 프로젝트 ID
+     * @return 테스크 응답 정보 DTO
      */
     @GetMapping("/{id}/task")
     public ResponseEntity<List<TaskResponse>> getTasksByProject(@PathVariable Long id) {
@@ -78,9 +75,9 @@ public class ProjectController {
 
     /**
      * 프로젝트 검색
-     * @param userDetails
-     * @param keyword
-     * @return
+     * @param userDetails 인증된 사용자 정보
+     * @param keyword 검색 키워드
+     * @return 프로젝트 응답 정보 DTO
      */
     @GetMapping("/search")
     public ResponseEntity<List<ProjectResponse>> searchProjects(@AuthenticationPrincipal UserDetails userDetails,

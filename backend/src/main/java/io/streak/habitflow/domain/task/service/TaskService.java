@@ -135,7 +135,6 @@ public class TaskService {
     /**
      * 프로젝트 안의 테스크 다건 조회
      * @param ProjectId 프로젝트 ID
-     * @param userDetails 인증된 사용자 정보
      * @return 조회된 테스크 응답 정보 DTO
      */
     public List<TaskResponse> getTasksByProject(Long ProjectId){
