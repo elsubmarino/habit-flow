@@ -54,8 +54,17 @@ public class Task extends BaseTimeEntity {
     @Builder.Default
     private List<Comment> comments = new ArrayList<>();
 
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<TaskLabel> taskLabels = new ArrayList<>();
+
     public void updateTask(String title, String description){
         this.title = title;
         this.description = description;
+    }
+
+    public void addTaskLabel(TaskLabel taskLabel){
+        this.taskLabels.add(taskLabel);
+        taskLabel.assignTask(this);
     }
 }

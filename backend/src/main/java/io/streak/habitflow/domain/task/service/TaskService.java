@@ -3,6 +3,9 @@ package io.streak.habitflow.domain.task.service;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
+import io.streak.habitflow.domain.label.dto.LabelResponse;
+import io.streak.habitflow.domain.label.entity.Label;
+import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.project.entity.Project;
@@ -11,6 +14,7 @@ import io.streak.habitflow.domain.task.dto.TaskCreateRequest;
 import io.streak.habitflow.domain.task.dto.TaskRequest;
 import io.streak.habitflow.domain.task.dto.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
+import io.streak.habitflow.domain.task.entity.TaskLabel;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.infra.file.FileDto;
@@ -34,6 +38,7 @@ public class TaskService {
     private final ProjectRepository projectRepository;
     private final CommentRepository commentRepository;
     private final FileStorageService fileStorageService;
+    private final LabelRepository labelRepository;
 
     /**
      * 테스크 삭제
@@ -88,7 +93,28 @@ public class TaskService {
                 .parent(parentTask)
                 .build();
 
+        if(taskCreateRequest.getLabelIds() != null && !taskCreateRequest.getLabelIds().isEmpty()){
+            for(Long labelId : taskCreateRequest.getLabelIds()){
+                Label label = labelRepository.findById(labelId)
+                        .orElseThrow(()->new IllegalArgumentException("존재하지 않는 라벨입니다."));
+
+                TaskLabel taskLabel = TaskLabel.builder()
+                        .label(label)
+                        .build();
+
+                task.addTaskLabel(taskLabel);
+            }
+        }
+
         Task savedTask = taskRepository.save(task);
+
+        List<LabelResponse> labelResponses = savedTask.getTaskLabels()
+                .stream()
+                .map(taskLabel -> {
+                    Label realLabel = taskLabel.getLabel();
+                    return LabelResponse.from(realLabel);
+                })
+                .toList();
 
         if(file != null && !file.isEmpty()){
             FileDto fileDto = fileStorageService.upload(file);
@@ -111,7 +137,7 @@ public class TaskService {
 
 
         }
-        return TaskResponse.from(savedTask, new ArrayList<>());
+        return TaskResponse.from(savedTask, labelResponses);
     }
 
     /**

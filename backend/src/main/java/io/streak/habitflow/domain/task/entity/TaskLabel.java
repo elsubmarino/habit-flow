@@ -21,4 +21,8 @@ public class TaskLabel {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "label_id")
     private Label label;
+
+    public void assignTask(Task task){
+        this.task = task;
+    }
 }
