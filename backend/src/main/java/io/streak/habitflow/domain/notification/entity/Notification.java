@@ -23,7 +23,7 @@ public class Notification extends BaseCreatedTimeEntity {
     private Task task;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="user_id")
+    @JoinColumn(name="member_id")
     private Member member;
 
     @Enumerated(EnumType.STRING)

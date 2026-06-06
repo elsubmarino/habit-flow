@@ -23,9 +23,9 @@ public class LabelService {
 
     /**
      * 라벨 생성
-     * @param labelRequest
-     * @param userDetails
-     * @return
+     * @param labelRequest 라벨 요청 정보 DTO
+     * @param userDetails 인증된 사용자 정보
+     * @return 생성된 라벨 응답 DTO
      */
     @Transactional
     public LabelResponse createLabel(LabelRequest labelRequest, UserDetails userDetails) {
@@ -41,15 +41,14 @@ public class LabelService {
 
     /**
      * 라벨 다건 조회
-     * @param labelRequest
-     * @param userDetails
-     * @return
+     * @param userDetails 인증된 사용자 정보
+     * @return 조회된 라벨 응답 DTO 리스트
      */
     public List<LabelResponse> getLabels(UserDetails userDetails) {
         String email  = userDetails.getUsername();
         Member member = memberRepository.findByEmail(email)
                         .orElseThrow(()->new IllegalArgumentException("멤버를 찾을 수 없습니다."));
-        List<Label> labels = labelRepository.findByUserId(member.getId());
+        List<Label> labels = labelRepository.findByMemberId(member.getId());
         return labels.stream()
                 .map(LabelResponse::from)
                 .collect(Collectors.toList());
@@ -57,10 +56,10 @@ public class LabelService {
 
     /**
      * 라벨 업데이트
-     * @param id
-     * @param labelRequest
-     * @param userDetails
-     * @return
+     * @param id 라벨 ID
+     * @param labelRequest 라벨 요청 정보 DTO
+     * @param userDetails 인증된 사용자 정보
+     * @return 업데이트 된 라벨 응답 DTO
      */
     @Transactional
     public LabelResponse updateLabel(Long id,LabelRequest labelRequest, UserDetails userDetails) {
@@ -77,7 +76,7 @@ public class LabelService {
 
     /**
      * 라벨 삭제
-     * @param id
+     * @param id 라벨 ID
      */
     @Transactional
     public void deleteLabel(Long id){

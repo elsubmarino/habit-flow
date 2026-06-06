@@ -73,10 +73,12 @@ public class ProjectService {
         projectRepository.deleteById(id);
     }
 
-    public List<ProjectResponse> searchProjects(String keyword){
-        List<Project> projects = projectRepository.findByMemberEmail(keyword);
-        return projects.stream()
-                .map(ProjectResponse::from)
-                .collect(Collectors.toList());
+    /**
+     * 프로젝트 검색
+     * @param keyword
+     * @return
+     */
+    public List<ProjectResponse> searchProjects(String keyword, UserDetails userDetails) {
+        return projectRepository.searchKeyword(keyword,userDetails.getUsername());
     }
 }

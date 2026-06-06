@@ -24,8 +24,8 @@ public class ActivityLogService {
 
     /**
      * 액티비티 로그 생성
-     * @param activityLogRequest
-     * @param userDetails
+     * @param activityLogRequest 요청된 액티비티 로그 요청 DTO 정보
+     * @param userDetails 인증된 사용자 정보
      */
     @Transactional
     public void create(ActivityLogRequest activityLogRequest, UserDetails userDetails) {
@@ -41,14 +41,14 @@ public class ActivityLogService {
 
     /**
      * 액티비티 로그 조회
-     * @param userDetails
-     * @return
+     * @param userDetails 요청된 사용자 정보
+     * @return 조회된 다건의 액티비티 로그 응답 정보
      */
     public List<ActivityLogResponse> getActivityLogs(UserDetails userDetails) {
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 없습니다."));
 
-        List<ActivityLog> activityLogs = activityLogRepository.findByUserId(member.getId());
+        List<ActivityLog> activityLogs = activityLogRepository.findByMemberId(member.getId());
         return activityLogs.stream()
                 .map(ActivityLogResponse::from)
                 .collect(Collectors.toList());

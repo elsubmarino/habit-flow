@@ -19,7 +19,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
         return queryFactory
                 .select(Projections.fields(
                         LabelResponse.class,
-                        label.name, label.color
+                        label.name
                 ))
                 .from(label)
                 .where(

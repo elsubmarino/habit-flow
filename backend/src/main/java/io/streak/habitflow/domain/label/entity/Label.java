@@ -21,7 +21,7 @@ public class Label  extends BaseTimeEntity {
     private long sortOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="user_id")
+    @JoinColumn(name="member_id")
     private Member member;
 
     public void updateLabel(String name, String color){

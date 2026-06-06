@@ -1,10 +1,9 @@
 package io.streak.habitflow.domain.activity.entity;
 
-import io.streak.habitflow.domain.project.entity.Project;
-import io.streak.habitflow.domain.task.type.TargetType;
-import io.streak.habitflow.global.common.BaseCreatedTimeEntity;
-import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.domain.member.entity.Member;
+import io.streak.habitflow.domain.project.entity.Project;
+import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.global.common.BaseCreatedTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,9 +12,9 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Getter
-@Table(name="activity_logs",indexes = {
-        @Index(name="idx_task_created_at",columnList = "task_id,created_at"),
-        @Index(name="idx_user_created_at",columnList = "user_id,created_at")
+@Table(name = "activity_logs", indexes = {
+        @Index(name = "idx_paroject_created_at", columnList = "project_id,created_at"),
+        @Index(name = "idx_member_created_at", columnList = "member_id,created_at")
 })
 public class ActivityLog extends BaseCreatedTimeEntity {
     @Id
@@ -23,11 +22,11 @@ public class ActivityLog extends BaseCreatedTimeEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="user_id")
+    @JoinColumn(name = "member_id")
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="project_id")
+    @JoinColumn(name = "project_id")
     private Project project;
 
     @Enumerated(EnumType.STRING)
