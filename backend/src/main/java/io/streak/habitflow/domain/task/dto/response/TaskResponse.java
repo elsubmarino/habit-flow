@@ -66,6 +66,10 @@ public class TaskResponse {
             builder.projectId(task.getProject().getId())
                     .projectName(task.getProject().getName())
                     .projectColor(task.getProject().getColor());
+        }else{
+            builder.projectId(null)
+                    .projectName("관리함")
+                    .projectColor("#808080");
         }
 
         if(task.getMember() != null){
