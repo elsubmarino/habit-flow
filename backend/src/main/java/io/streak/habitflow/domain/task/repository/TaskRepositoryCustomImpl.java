@@ -6,11 +6,18 @@ import static io.streak.habitflow.domain.task.entity.QTask.task;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.streak.habitflow.domain.task.dto.TaskRequest;
-import io.streak.habitflow.domain.task.dto.TaskResponse;
+import io.streak.habitflow.domain.label.entity.QLabel;
+import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
+import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
+import io.streak.habitflow.domain.task.dto.response.TaskResponse;
+import io.streak.habitflow.domain.task.entity.QTaskLabel;
 import io.streak.habitflow.domain.task.entity.Task;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cglib.core.Local;
 import org.springframework.util.StringUtils;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,12 +27,12 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<Task> searchTasks(TaskRequest taskRequest) {
+    public List<Task> searchTasks(TaskUpdateRequest taskUpdateRequest) {
         return queryFactory
                 .selectFrom(task)
                 .where(
-                        titleContains(taskRequest.getTitle()),
-                        descriptionContains(taskRequest.getDescription())
+                        titleContains(taskUpdateRequest.getTitle()),
+                        descriptionContains(taskUpdateRequest.getDescription())
                 )
                 .orderBy(task.createdAt.desc())
                 .fetch();
@@ -62,5 +69,28 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                                 task.member.email.eq(email)
                         )
                         .fetch();
+    }
+
+    @Override
+    public List<Task> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId) {
+        return queryFactory
+                .selectFrom(task)
+                .leftJoin(task.taskLabels, QTaskLabel.taskLabel).fetchJoin()
+                .leftJoin(QTaskLabel.taskLabel.label, QLabel.label).fetchJoin()
+                .where(task.member.id.eq(memberId),
+                        filterTypeEq(taskSearchCondition.getFilterType()))
+                .orderBy(task.dueDate.desc(),task.createdAt.desc())
+                .fetch();
+    }
+
+    private BooleanExpression filterTypeEq(String filterType){
+        if(!StringUtils.hasText(filterType)) return null;
+        LocalDateTime now = LocalDateTime.now();
+        if("TODAY".equals(filterType)){
+            return task.dueDate.between(now.toLocalDate().atStartOfDay(), now.toLocalDate().atTime(23,59,59));
+        }else if("UPCOMING".equals(filterType)){
+            return task.dueDate.goe(now.toLocalDate().plusDays(1).atStartOfDay());
+        }
+        return null;
     }
 }

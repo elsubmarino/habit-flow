@@ -4,8 +4,8 @@ import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.task.dto.TaskCreateRequest;
-import io.streak.habitflow.domain.task.dto.TaskResponse;
+import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
+import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.global.infra.file.FileDto;
@@ -57,7 +57,7 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("TASK를 제대로 읽어들인다.")
-    void readTask_Success(){
+    void getTask_ById_Success(){
         Long taskId = 1L;
         Task testTask = Task.builder()
                 .title("조회할 업무")
@@ -67,7 +67,7 @@ class TaskServiceTest {
 
         given(taskRepository.searchTaskInfo(taskId)).willReturn(Optional.of(testTask));
 
-        TaskResponse response = taskService.readTask(taskId, userDetails);
+        TaskResponse response = taskService.getTaskById(taskId, userDetails);
 
         assertThat(response).isNotNull();
         assertThat(response.getTitle()).isEqualTo("조회할 업무");
@@ -77,12 +77,12 @@ class TaskServiceTest {
 
     @Test
     @DisplayName("존재하지 않는 테스크 ID로 조회하면 예외가 발생한다.")
-    void readTask_Fail_TaskNotFound() {
+    void getTask_Fail_TaskByIdNotFound() {
         Long invalidTaskId = 999L;
 
         given(taskRepository.searchTaskInfo(invalidTaskId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> taskService.readTask(invalidTaskId, userDetails))
+        assertThatThrownBy(() -> taskService.getTaskById(invalidTaskId, userDetails))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("해당 테스크가 존재하지 않습니다.");
 

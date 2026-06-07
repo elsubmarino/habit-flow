@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.notification.dto;
+package io.streak.habitflow.domain.notification.dto.response;
 
 import io.streak.habitflow.domain.notification.entity.Notification;
 import io.streak.habitflow.domain.task.type.ActivityType;
@@ -8,13 +8,13 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class NotificationResponse {
+public class NotificationListResponse {
     private Long taskId;
     private ActivityType activityType;
     private boolean isConfirmed;
 
-    public static NotificationResponse from(Notification notification) {
-        return NotificationResponse
+    public static NotificationListResponse from(Notification notification) {
+        return NotificationListResponse
                         .builder()
                         .activityType(notification.getActivityType())
                         .isConfirmed(notification.isConfirmed())

@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.activity.repository;
 
-import io.streak.habitflow.domain.activity.dto.ActivityLogSearchCondition;
+import io.streak.habitflow.domain.activity.dto.request.ActivityLogSearchCondition;
 import io.streak.habitflow.domain.activity.entity.ActivityLog;
 
 import java.util.List;

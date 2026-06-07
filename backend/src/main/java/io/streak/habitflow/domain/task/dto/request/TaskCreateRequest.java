@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.task.dto;
+package io.streak.habitflow.domain.task.dto.request;
 
 import io.streak.habitflow.domain.task.type.PriorityType;
 import jakarta.validation.constraints.NotBlank;
@@ -19,8 +19,8 @@ public class TaskCreateRequest {
     @Size(max = 100, message = "제목은 100자를 초과할 수 없습니다.")
     private String title;
     private String description;
-    private PriorityType priorityType;
     private LocalDateTime dueDate;
+    private PriorityType priorityType;
     private Long projectId;
     private Long parentId;
 

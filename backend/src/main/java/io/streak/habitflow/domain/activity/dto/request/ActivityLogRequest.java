@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.activity.dto;
+package io.streak.habitflow.domain.activity.dto.request;
 
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.domain.task.type.TargetType;

@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.member.dto;
+package io.streak.habitflow.domain.member.dto.response;
 
 import io.streak.habitflow.domain.member.entity.Member;
 import lombok.AllArgsConstructor;

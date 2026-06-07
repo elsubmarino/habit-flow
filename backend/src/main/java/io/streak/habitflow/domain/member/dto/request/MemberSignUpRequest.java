@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.member.dto;
+package io.streak.habitflow.domain.member.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;

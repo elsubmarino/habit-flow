@@ -1,8 +1,8 @@
 package io.streak.habitflow.domain.activity.service;
 
-import io.streak.habitflow.domain.activity.dto.ActivityLogRequest;
-import io.streak.habitflow.domain.activity.dto.ActivityLogResponse;
-import io.streak.habitflow.domain.activity.dto.ActivityLogSearchCondition;
+import io.streak.habitflow.domain.activity.dto.request.ActivityLogRequest;
+import io.streak.habitflow.domain.activity.dto.response.ActivityLogListResponse;
+import io.streak.habitflow.domain.activity.dto.request.ActivityLogSearchCondition;
 import io.streak.habitflow.domain.activity.entity.ActivityLog;
 import io.streak.habitflow.domain.activity.repository.ActivityLogRepository;
 import io.streak.habitflow.domain.member.entity.Member;
@@ -34,19 +34,19 @@ public class ActivityLogService {
         activityLogRepository.save(activityLog);
     }
 
-    public List<ActivityLogResponse> getActivityLogs(UserDetails userDetails) {
+    public List<ActivityLogListResponse> getActivityLogs(UserDetails userDetails) {
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 없습니다."));
 
         List<ActivityLog> activityLogs = activityLogRepository.findByMemberId(member.getId());
         return activityLogs.stream()
-                .map(ActivityLogResponse::from)
+                .map(ActivityLogListResponse::from)
                 .toList();
     }
 
-    public List<ActivityLogResponse> searchActivityLogs(ActivityLogSearchCondition activityLogSearchCondition){
+    public List<ActivityLogListResponse> searchActivityLogs(ActivityLogSearchCondition activityLogSearchCondition){
         return  activityLogRepository.searchActivityLogs(activityLogSearchCondition).stream()
-                .map(ActivityLogResponse::from)
+                .map(ActivityLogListResponse::from)
                 .toList();
     }
 }

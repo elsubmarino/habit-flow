@@ -1,8 +1,8 @@
 package io.streak.habitflow.domain.member.api;
 
-import io.streak.habitflow.domain.member.dto.MemberResponse;
-import io.streak.habitflow.domain.member.dto.MemberSignUpRequest;
-import io.streak.habitflow.domain.member.dto.MemberUpdateRequest;
+import io.streak.habitflow.domain.member.dto.response.MemberResponse;
+import io.streak.habitflow.domain.member.dto.request.MemberSignUpRequest;
+import io.streak.habitflow.domain.member.dto.request.MemberUpdateRequest;
 import io.streak.habitflow.domain.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

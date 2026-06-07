@@ -4,7 +4,7 @@ import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.task.dto.TaskRequest;
+import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.global.config.JpaAuditingConfig;
 import io.streak.habitflow.global.config.QuerydslConfig;
@@ -101,10 +101,10 @@ class TaskRepositoryCustomImplTest {
     @Test
     @DisplayName("제목에 복습인 애들만 검색한다.")
     void searchTasksByTitle(){
-        TaskRequest taskRequest = TaskRequest.builder()
+        TaskUpdateRequest taskUpdateRequest = TaskUpdateRequest.builder()
                 .title("복습").build();
 
-        List<Task> result = taskRepository.searchTasks(taskRequest);
+        List<Task> result = taskRepository.searchTasks(taskUpdateRequest);
 
         assertThat(result).hasSize(2);
         assertThat(result).extracting("title")

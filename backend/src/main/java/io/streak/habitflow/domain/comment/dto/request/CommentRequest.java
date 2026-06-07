@@ -1,6 +1,5 @@
-package io.streak.habitflow.domain.comment.dto;
+package io.streak.habitflow.domain.comment.dto.request;
 
-import jakarta.persistence.ManyToOne;
 import lombok.*;
 
 @Getter

@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.activity.api;
 
-import io.streak.habitflow.domain.activity.dto.ActivityLogResponse;
-import io.streak.habitflow.domain.activity.dto.ActivityLogSearchCondition;
+import io.streak.habitflow.domain.activity.dto.response.ActivityLogListResponse;
+import io.streak.habitflow.domain.activity.dto.request.ActivityLogSearchCondition;
 import io.streak.habitflow.domain.activity.service.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,12 +18,12 @@ public class ActivityLogController {
     private final ActivityLogService activityLogService;
 
     @GetMapping
-    public ResponseEntity<List<ActivityLogResponse>> getActivityLogs(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<ActivityLogListResponse>> getActivityLogs(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(activityLogService.getActivityLogs(userDetails));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ActivityLogResponse>> searchActivityLogs(@ModelAttribute ActivityLogSearchCondition activityLogSearchCondition
+    public ResponseEntity<List<ActivityLogListResponse>> searchActivityLogs(@ModelAttribute ActivityLogSearchCondition activityLogSearchCondition
                                                                         ) {
         return ResponseEntity.ok(activityLogService.searchActivityLogs(activityLogSearchCondition));
     }

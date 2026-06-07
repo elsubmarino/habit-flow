@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.comment.api;
 
-import io.streak.habitflow.domain.comment.dto.CommentRequest;
-import io.streak.habitflow.domain.comment.dto.CommentResponse;
+import io.streak.habitflow.domain.comment.dto.request.CommentRequest;
+import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.comment.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

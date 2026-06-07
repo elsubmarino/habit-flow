@@ -44,5 +44,8 @@ public class Comment extends BaseTimeEntity {
         this.content = content;
     }
 
+    public void assignTask(Task task){
+        this.task = task;
+    }
 
 }

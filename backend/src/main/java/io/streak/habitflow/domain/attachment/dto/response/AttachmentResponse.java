@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.attachment.dto;
+package io.streak.habitflow.domain.attachment.dto.response;
 
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import lombok.*;

@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.notification.dto;
+package io.streak.habitflow.domain.notification.dto.request;
 
 import io.streak.habitflow.domain.task.type.ActivityType;
 import lombok.*;

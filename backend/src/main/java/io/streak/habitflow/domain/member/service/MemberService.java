@@ -1,18 +1,15 @@
 package io.streak.habitflow.domain.member.service;
 
-import io.streak.habitflow.domain.member.dto.MemberResponse;
-import io.streak.habitflow.domain.member.dto.MemberSignUpRequest;
-import io.streak.habitflow.domain.member.dto.MemberUpdateRequest;
+import io.streak.habitflow.domain.member.dto.response.MemberResponse;
+import io.streak.habitflow.domain.member.dto.request.MemberSignUpRequest;
+import io.streak.habitflow.domain.member.dto.request.MemberUpdateRequest;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.member.type.Role;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

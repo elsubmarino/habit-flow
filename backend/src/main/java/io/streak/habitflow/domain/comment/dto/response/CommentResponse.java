@@ -1,6 +1,6 @@
-package io.streak.habitflow.domain.comment.dto;
+package io.streak.habitflow.domain.comment.dto.response;
 
-import io.streak.habitflow.domain.attachment.dto.AttachmentResponse;
+import io.streak.habitflow.domain.attachment.dto.response.AttachmentResponse;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

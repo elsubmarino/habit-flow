@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.search.api;
 
-import io.streak.habitflow.domain.search.dto.IntegratedSearchResponse;
+import io.streak.habitflow.domain.search.dto.response.IntegratedSearchResponse;
 import io.streak.habitflow.domain.search.service.IntegratedSearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

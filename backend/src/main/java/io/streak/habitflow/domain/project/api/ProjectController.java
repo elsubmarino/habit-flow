@@ -4,7 +4,7 @@ import io.streak.habitflow.domain.project.dto.request.ProjectCreateRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.service.ProjectService;
-import io.streak.habitflow.domain.task.dto.TaskResponse;
+import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

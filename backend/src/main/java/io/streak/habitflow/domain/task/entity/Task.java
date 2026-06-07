@@ -58,13 +58,33 @@ public class Task extends BaseTimeEntity {
     @Builder.Default
     private List<TaskLabel> taskLabels = new ArrayList<>();
 
-    public void updateTask(String title, String description){
-        this.title = title;
-        this.description = description;
-    }
-
     public void addTaskLabel(TaskLabel taskLabel){
         this.taskLabels.add(taskLabel);
         taskLabel.assignTask(this);
+    }
+
+    public void addComment(Comment comment){
+        this.comments.add(comment);
+        comment.assignTask(this);
+    }
+
+    public void updateTitle(String title){
+        this.title = title;
+    }
+
+    public void updateDescription(String description){
+        this.description = description;
+    }
+
+    public void updatePriorityType(PriorityType priorityType){
+        this.priorityType = priorityType;
+    }
+
+    public void updateDueDate(LocalDateTime dueDate){
+        this.dueDate = dueDate;
+    }
+
+    public void changeProject(Project project){
+        this.project = project;
     }
 }

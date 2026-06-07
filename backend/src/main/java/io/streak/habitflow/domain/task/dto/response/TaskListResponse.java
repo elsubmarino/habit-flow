@@ -1,8 +1,7 @@
-package io.streak.habitflow.domain.task.dto;
+package io.streak.habitflow.domain.task.dto.response;
 
-import io.streak.habitflow.domain.attachment.dto.AttachmentResponse;
+import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
-import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.PriorityType;
 import lombok.AllArgsConstructor;
@@ -18,7 +17,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TaskResponse {
+public class TaskListResponse {
     private Long id;
     private String title;
     private String description;
@@ -37,16 +36,16 @@ public class TaskResponse {
     private Long parentId;
 
     @Builder.Default
-    private List<TaskResponse> subTasks = new ArrayList<>();
-
-    @Builder.Default
-    private List<AttachmentResponse> taskAttachments = new ArrayList<>();
+    private List<TaskListResponse> subTasks = new ArrayList<>();
 
     @Builder.Default
     private List<LabelListResponse> labels = new ArrayList<>();
 
-    public static TaskResponse from(Task task, List<LabelListResponse> labelListResponses) {
-        TaskResponseBuilder builder = TaskResponse.builder()
+    @Builder.Default
+    private List<CommentResponse> comments = new ArrayList<>();
+
+    public static TaskListResponse from(Task task, List<LabelListResponse> labelListResponses) {
+        TaskListResponse.TaskListResponseBuilder builder = TaskListResponse.builder()
                 .id(task.getId())
                 .title(task.getTitle())
                 .description(task.getDescription())
@@ -54,10 +53,8 @@ public class TaskResponse {
                 .priorityType(task.getPriorityType())
                 .dueDate(task.getDueDate())
                 .sortOrder(task.getSortOrder())
-                .labels(labelListResponses)
-                .subTasks(task.getSubTasks().stream()
-                        .map(sub -> TaskResponse.from(sub, new ArrayList<>()))
-                        .toList());
+                .labels(labelListResponses);
+
 
         if(task.getProject() != null){
             builder.projectId(task.getProject().getId())

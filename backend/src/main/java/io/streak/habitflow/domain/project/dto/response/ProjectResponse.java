@@ -1,11 +1,7 @@
 package io.streak.habitflow.domain.project.dto.response;
 
 import io.streak.habitflow.domain.project.entity.Project;
-import io.streak.habitflow.domain.member.dto.MemberResponse;
 import lombok.*;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @Builder

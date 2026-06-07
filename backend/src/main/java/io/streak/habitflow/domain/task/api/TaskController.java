@@ -1,10 +1,12 @@
 package io.streak.habitflow.domain.task.api;
 
-import io.streak.habitflow.domain.comment.dto.CommentResponse;
+import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.comment.service.CommentService;
-import io.streak.habitflow.domain.task.dto.TaskCreateRequest;
-import io.streak.habitflow.domain.task.dto.TaskRequest;
-import io.streak.habitflow.domain.task.dto.TaskResponse;
+import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
+import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
+import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
+import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
+import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,13 +37,28 @@ public class TaskController {
     @GetMapping("/{id}")
     public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long id,
                                                     @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(taskService.readTask(id,userDetails));
+        return ResponseEntity.ok(taskService.getTaskById(id,userDetails));
+    }
+
+    @GetMapping("/today")
+    public ResponseEntity<List<TaskListResponse>> getTodayTasks(@AuthenticationPrincipal UserDetails userDetails) {
+        TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
+        taskSearchCondition.setFilterType("TODAY");
+        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));
+    }
+
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<TaskListResponse>> getUpcomingTasks(@AuthenticationPrincipal UserDetails userDetails) {
+        TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
+        taskSearchCondition.setFilterType("UPCOMING");
+        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TaskResponse> updateTask(@PathVariable Long taskId, @RequestBody TaskRequest taskRequest
-            ,@AuthenticationPrincipal UserDetails userDetails) {
-        TaskResponse taskResponse = taskService.updateTask(taskId,taskRequest,userDetails);
+    public ResponseEntity<TaskResponse> updateTask(@PathVariable("id") Long taskId,
+                                                   @RequestBody TaskUpdateRequest taskUpdateRequest,
+                                                   @AuthenticationPrincipal UserDetails userDetails) {
+        TaskResponse taskResponse = taskService.updateTask(taskId, taskUpdateRequest,userDetails);
         return ResponseEntity.ok(taskResponse);
     }
 

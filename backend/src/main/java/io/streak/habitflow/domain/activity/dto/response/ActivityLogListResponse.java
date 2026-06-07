@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.activity.dto;
+package io.streak.habitflow.domain.activity.dto.response;
 
 import io.streak.habitflow.domain.activity.entity.ActivityLog;
 import io.streak.habitflow.domain.task.type.ActivityType;
@@ -11,12 +11,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ActivityLogResponse {
+public class ActivityLogListResponse {
     private Long id;
     private ActivityType activityType;
 
-    public static ActivityLogResponse from(ActivityLog activityLog){
-        return ActivityLogResponse.builder()
+    public static ActivityLogListResponse from(ActivityLog activityLog){
+        return ActivityLogListResponse.builder()
                 .activityType(activityLog.getActivityType())
                 .id(activityLog.getId())
                 .build();

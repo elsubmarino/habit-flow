@@ -1,8 +1,8 @@
 package io.streak.habitflow.domain.comment.service;
 
 import io.streak.habitflow.domain.attachment.entity.Attachment;
-import io.streak.habitflow.domain.comment.dto.CommentRequest;
-import io.streak.habitflow.domain.comment.dto.CommentResponse;
+import io.streak.habitflow.domain.comment.dto.request.CommentRequest;
+import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
 import io.streak.habitflow.domain.member.entity.Member;

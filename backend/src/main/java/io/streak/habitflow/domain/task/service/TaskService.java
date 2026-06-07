@@ -4,16 +4,17 @@ import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
 import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
-import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.domain.task.dto.TaskCreateRequest;
-import io.streak.habitflow.domain.task.dto.TaskRequest;
-import io.streak.habitflow.domain.task.dto.TaskResponse;
+import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
+import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
+import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
+import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
+import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.entity.TaskLabel;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
@@ -78,6 +79,9 @@ public class TaskService {
                 .member(member)
                 .project(project)
                 .parent(parentTask)
+                .subTasks(new ArrayList<>())
+                .taskLabels(new ArrayList<>())
+                .comments(new ArrayList<>())
                 .build();
 
         if(taskCreateRequest.getLabelIds() != null && !taskCreateRequest.getLabelIds().isEmpty()){
@@ -93,6 +97,25 @@ public class TaskService {
             }
         }
 
+        if(file != null && !file.isEmpty()){
+            FileDto fileDto = fileStorageService.upload(file);
+
+            Comment comment = Comment.builder()
+                    .content("첨부파일이 등록되었습니다.")
+                    .member(member)
+                    .attachments(new ArrayList<>())
+                    .build();
+
+            Attachment attachment = Attachment.builder()
+                    .originalFileName(fileDto.getOriginalFileName())
+                    .savedFileName(fileDto.getSavedFileName())
+                    .fileUrl(fileDto.getFileUrl())
+                    .build();
+
+            comment.addAttachment(attachment);
+            task.addComment(comment);
+        }
+
         Task savedTask = taskRepository.save(task);
 
         List<LabelListResponse> labelListResponses = savedTask.getTaskLabels()
@@ -103,31 +126,10 @@ public class TaskService {
                 })
                 .toList();
 
-        if(file != null && !file.isEmpty()){
-            FileDto fileDto = fileStorageService.upload(file);
-
-            Comment comment = Comment.builder()
-                    .content("첨부파일이 등록되었습니다.")
-                    .task(savedTask)
-                    .member(member)
-                    .build();
-
-            Attachment attachment = Attachment.builder()
-                    .originalFileName(fileDto.getOriginalFileName())
-                    .savedFileName(fileDto.getSavedFileName())
-                    .fileUrl(fileDto.getFileUrl())
-                    .build();
-
-            comment.addAttachment(attachment);
-
-            commentRepository.save(comment);
-
-
-        }
         return TaskResponse.from(savedTask, labelListResponses);
     }
 
-    public TaskResponse readTask(Long id, UserDetails userDetails){
+    public TaskResponse getTaskById(Long id, UserDetails userDetails){
         Task task = taskRepository.searchTaskInfo(id)
                 .orElseThrow(()->new IllegalArgumentException("해당 테스크가 존재하지 않습니다."));
 
@@ -151,14 +153,60 @@ public class TaskService {
                 .toList();
     }
 
+    public List<TaskListResponse> getTasks(TaskSearchCondition taskSearchCondition, UserDetails userDetails){
+        String email = userDetails.getUsername();
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 회원입니다."));
+        List<Task> tasks = taskRepository.searchTasksByCondition(taskSearchCondition, member.getId());
+        return tasks.stream()
+                .map(task-> {
+                    List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
+                            .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
+                            .toList();
+                    return TaskListResponse.from(task,labelListResponses);
+                })
+                .toList();
+
+    }
+
     @Transactional
-    public TaskResponse updateTask(Long taskId, TaskRequest taskRequest,UserDetails userDetails){
+    public TaskResponse updateTask(Long taskId, TaskUpdateRequest taskUpdateRequest, UserDetails userDetails){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(()->new IllegalArgumentException("TASK가 존재하지 않습니다."));
         if(!task.getMember().getEmail().equals(userDetails.getUsername())){
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
-        task.updateTask(taskRequest.getTitle(),taskRequest.getDescription());
+
+        if(taskUpdateRequest.getTitle()!=null){
+            task.updateTitle(taskUpdateRequest.getTitle());
+        }
+
+        if(taskUpdateRequest.getDescription()!=null){
+            task.updateDescription(taskUpdateRequest.getDescription());
+        }
+
+        if(taskUpdateRequest.getDueDate()!=null){
+            task.updateDueDate(taskUpdateRequest.getDueDate());
+        }
+
+        if(taskUpdateRequest.getPriorityType()!=null){
+            task.updatePriorityType(taskUpdateRequest.getPriorityType());
+        }
+
+        if(taskUpdateRequest.getProjectId()!=null){
+            Project project= projectRepository.findById(taskUpdateRequest.getProjectId())
+                    .orElseThrow(()->new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
+            task.changeProject(project);
+        }
+
+        if(taskUpdateRequest.getLabelIds() != null){
+            task.getTaskLabels().clear();
+            for(Long labelId : taskUpdateRequest.getLabelIds()){
+                Label label = labelRepository.findById(labelId)
+                        .orElseThrow(()->new IllegalArgumentException("라벨이 존재하지 않습니다."));
+                task.addTaskLabel(TaskLabel.builder().label(label).build());
+            }
+        }
 
         List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
