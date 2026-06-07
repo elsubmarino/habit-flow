@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TaskRepositoryCustom {
-    List<Task> searchTasks(TaskUpdateRequest taskUpdateRequest);
+    List<Task> searchTasks(TaskUpdateRequest taskUpdateRequest, String email);
     Optional<Task> searchTaskInfo(Long id);
     List<TaskResponse> searchKeyword(String keyword, String email);
     List<Task> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId);

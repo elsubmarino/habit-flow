@@ -41,11 +41,11 @@ class TaskRepositoryCustomImplTest {
                 .build();
         memberRepository.save(testMember);
 
-        testTask = Task.builder().title("스프링 부트 복습").description("Query DSL").member(testMember).build();
+        testTask = Task.builder().name("스프링 부트 복습").description("Query DSL").member(testMember).build();
 
         taskRepository.save(testTask);
-        taskRepository.save(Task.builder().title("리액트 복습").description("프론트엔드").member(testMember).parent(testTask).build());
-        taskRepository.save(Task.builder().title("운동하기").description("헬스장가기").member(testMember).parent(testTask).build());
+        taskRepository.save(Task.builder().name("리액트 복습").description("프론트엔드").member(testMember).parent(testTask).build());
+        taskRepository.save(Task.builder().name("운동하기").description("헬스장가기").member(testMember).parent(testTask).build());
 
         for(int i=0;i<3;i++){
             commentRepository.save(Comment.builder()
@@ -70,7 +70,7 @@ class TaskRepositoryCustomImplTest {
         assertThat(resultOpt).isPresent();
         Task result = resultOpt.orElseThrow(()->new AssertionError("테스크 결과가 존재하지 않습니다."));
         Task subTask = Task.builder()
-                .title("서브테스크")
+                .name("서브테스크")
                 .parent(result)
                 .build();
 
@@ -89,7 +89,7 @@ class TaskRepositoryCustomImplTest {
 
         assertThat(resultOpt).isPresent();
         Task result = resultOpt.orElseThrow(()->new AssertionError("테스크 결과가 존재하지 않습니다."));
-        assertThat(result.getTitle()).isEqualTo("스프링 부트 복습");
+        assertThat(result.getName()).isEqualTo("스프링 부트 복습");
         assertThat(result.getDescription()).isEqualTo("Query DSL");
 
         assertThat(result.getComments()).hasSize(3);
@@ -102,12 +102,12 @@ class TaskRepositoryCustomImplTest {
     @DisplayName("제목에 복습인 애들만 검색한다.")
     void searchTasksByTitle(){
         TaskUpdateRequest taskUpdateRequest = TaskUpdateRequest.builder()
-                .title("복습").build();
+                .name("복습").build();
 
-        List<Task> result = taskRepository.searchTasks(taskUpdateRequest);
+        List<Task> result = taskRepository.searchTasks(taskUpdateRequest,"test@test.com");
 
         assertThat(result).hasSize(2);
-        assertThat(result).extracting("title")
+        assertThat(result).extracting("name")
                 .containsExactlyInAnyOrder("스프링 부트 복습","리액트 복습");
     }
 

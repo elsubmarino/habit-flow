@@ -23,7 +23,7 @@ public class Task extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title;
+    private String name;
     private String description;
 
     private boolean isCompleted;
@@ -68,8 +68,8 @@ public class Task extends BaseTimeEntity {
         comment.assignTask(this);
     }
 
-    public void updateTitle(String title){
-        this.title = title;
+    public void updateName(String name){
+        this.name = name;
     }
 
     public void updateDescription(String description){

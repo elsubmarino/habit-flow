@@ -10,6 +10,7 @@ import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
+import io.streak.habitflow.domain.project.repository.ProjectUserRepository;
 import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
 import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
@@ -40,6 +41,7 @@ public class TaskService {
     private final CommentRepository commentRepository;
     private final FileStorageService fileStorageService;
     private final LabelRepository labelRepository;
+    private final ProjectUserRepository projectUserRepository;
 
     @Transactional
     @CheckOwnership(type="TASK")
@@ -63,6 +65,10 @@ public class TaskService {
         if(taskCreateRequest.getProjectId() != null){
             project = projectRepository.findById(taskCreateRequest.getProjectId())
                     .orElseThrow(()->new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
+            boolean isMember = projectUserRepository.existsByProjectAndMember(project, member);
+            if(!isMember){
+                throw new IllegalStateException("해당 프로젝트에 대한 접근 권한이 없습니다.");
+            }
         }
 
         Task parentTask = null;
@@ -72,7 +78,7 @@ public class TaskService {
         }
 
         Task task = Task.builder()
-                .title(taskCreateRequest.getTitle())
+                .name(taskCreateRequest.getName())
                 .description(taskCreateRequest.getDescription())
                 .dueDate(taskCreateRequest.getDueDate())
                 .priorityType(taskCreateRequest.getPriorityType())
@@ -177,8 +183,8 @@ public class TaskService {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
-        if(taskUpdateRequest.getTitle()!=null){
-            task.updateTitle(taskUpdateRequest.getTitle());
+        if(taskUpdateRequest.getName()!=null){
+            task.updateName(taskUpdateRequest.getName());
         }
 
         if(taskUpdateRequest.getDescription()!=null){

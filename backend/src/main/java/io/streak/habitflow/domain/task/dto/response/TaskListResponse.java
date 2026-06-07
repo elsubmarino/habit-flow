@@ -19,7 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 public class TaskListResponse {
     private Long id;
-    private String title;
+    private String name;
     private String description;
     private boolean isCompleted;
     private PriorityType priorityType;
@@ -47,7 +47,7 @@ public class TaskListResponse {
     public static TaskListResponse from(Task task, List<LabelListResponse> labelListResponses) {
         TaskListResponse.TaskListResponseBuilder builder = TaskListResponse.builder()
                 .id(task.getId())
-                .title(task.getTitle())
+                .name(task.getName())
                 .description(task.getDescription())
                 .isCompleted(task.isCompleted())
                 .priorityType(task.getPriorityType())

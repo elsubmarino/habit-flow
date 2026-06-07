@@ -13,10 +13,8 @@ import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.QTaskLabel;
 import io.streak.habitflow.domain.task.entity.Task;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cglib.core.Local;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -27,12 +25,13 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<Task> searchTasks(TaskUpdateRequest taskUpdateRequest) {
+    public List<Task> searchTasks(TaskUpdateRequest taskUpdateRequest, String email) {
         return queryFactory
                 .selectFrom(task)
                 .where(
-                        titleContains(taskUpdateRequest.getTitle()),
-                        descriptionContains(taskUpdateRequest.getDescription())
+                        nameContains(taskUpdateRequest.getName()),
+                        descriptionContains(taskUpdateRequest.getDescription()),
+                        task.member.email.eq(email)
                 )
                 .orderBy(task.createdAt.desc())
                 .fetch();
@@ -48,8 +47,8 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         return Optional.ofNullable(result);
     }
 
-    private BooleanExpression titleContains(String title) {
-        return StringUtils.hasText(title) ? task.title.contains(title) : null;
+    private BooleanExpression nameContains(String name) {
+        return StringUtils.hasText(name) ? task.name.contains(name) : null;
     }
     private BooleanExpression descriptionContains(String description) {
         return StringUtils.hasText(description) ? task.description.contains(description) : null;
@@ -61,11 +60,11 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 queryFactory
                         .select(Projections.fields(
                                 TaskResponse.class,
-                                task.title
+                                task.name
                         ))
                         .from(task)
                         .where(
-                                task.title.contains(keyword),
+                                task.name.contains(keyword),
                                 task.member.email.eq(email)
                         )
                         .fetch();

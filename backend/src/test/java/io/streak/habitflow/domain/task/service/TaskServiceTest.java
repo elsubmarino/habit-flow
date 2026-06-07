@@ -60,7 +60,7 @@ class TaskServiceTest {
     void getTask_ById_Success(){
         Long taskId = 1L;
         Task testTask = Task.builder()
-                .title("조회할 업무")
+                .name("조회할 업무")
                 .description("내용")
                 .member(testMember)
                 .build();
@@ -70,7 +70,7 @@ class TaskServiceTest {
         TaskResponse response = taskService.getTaskById(taskId, userDetails);
 
         assertThat(response).isNotNull();
-        assertThat(response.getTitle()).isEqualTo("조회할 업무");
+        assertThat(response.getName()).isEqualTo("조회할 업무");
 
         verify(taskRepository).searchTaskInfo(taskId);
     }
@@ -95,19 +95,19 @@ class TaskServiceTest {
         // given: 상황 셋업
         Long parentId = 1L;
         TaskCreateRequest request = TaskCreateRequest.builder()
-                .title("하위 업무 추가")
+                .name("하위 업무 추가")
                 .parentId(parentId)
                 .build();
 
         Task parentTask = Task.builder()
-                .title("부모 업무")
+                .name("부모 업무")
                 .member(testMember)
                 .build();
 
         given(memberRepository.findByEmail("test@test.com")).willReturn(Optional.of(testMember));
         given(taskRepository.findById(parentId)).willReturn(Optional.of(parentTask));
 
-        Task savedTask = Task.builder().title("하위 업무 추가").parent(parentTask).member(testMember).build();
+        Task savedTask = Task.builder().name("하위 업무 추가").parent(parentTask).member(testMember).build();
         given(taskRepository.save(any(Task.class))).willReturn(savedTask);
 
         TaskResponse response = taskService.createTask(request, null, userDetails);
@@ -122,7 +122,7 @@ class TaskServiceTest {
 
         Task capturedTask = taskCaptor.getValue();
         assertThat(capturedTask.getParent()).isNotNull(); // 부모가 잘 세팅되었는지 검증!
-        assertThat(capturedTask.getParent().getTitle()).isEqualTo("부모 업무");
+        assertThat(capturedTask.getParent().getName()).isEqualTo("부모 업무");
     }
 
     @Test
@@ -130,13 +130,13 @@ class TaskServiceTest {
     void createTask_Success_WithoutFile() {
         // given (상황 셋업)
         TaskCreateRequest request = TaskCreateRequest.builder()
-                .title("테스트 업무")
+                .name("테스트 업무")
                 .description("내용")
                 .build();
 
         given(memberRepository.findByEmail("test@test.com")).willReturn(Optional.of(testMember));
 
-        Task savedTask = Task.builder().title("테스트 업무").member(testMember).build();
+        Task savedTask = Task.builder().name("테스트 업무").member(testMember).build();
         given(taskRepository.save(any(Task.class))).willReturn(savedTask);
 
         TaskResponse response = taskService.createTask(request, null, userDetails);
@@ -152,7 +152,7 @@ class TaskServiceTest {
     void createTask_Success_WithFile() {
         // given
         TaskCreateRequest request = TaskCreateRequest.builder()
-                .title("파일 첨부 업무")
+                .name("파일 첨부 업무")
                 .build();
 
         MockMultipartFile mockFile = new MockMultipartFile(
@@ -167,7 +167,7 @@ class TaskServiceTest {
 
         given(memberRepository.findByEmail("test@test.com")).willReturn(Optional.of(testMember));
 
-        Task savedTask = Task.builder().title("파일 첨부 업무").member(testMember).build();
+        Task savedTask = Task.builder().name("파일 첨부 업무").member(testMember).build();
         given(taskRepository.save(any(Task.class))).willReturn(savedTask);
 
         given(fileStorageService.upload(mockFile)).willReturn(mockFileDto);
