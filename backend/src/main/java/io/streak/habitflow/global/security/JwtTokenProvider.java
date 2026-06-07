@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 
@@ -26,7 +27,8 @@ public class JwtTokenProvider {
 
     @PostConstruct
     public void init() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKeyString);
+        //TODO BASE64로?
+        byte[] keyBytes = secretKeyString.getBytes(StandardCharsets.UTF_8);
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 

@@ -1,6 +1,7 @@
 package io.streak.habitflow.global.security;
 
 import io.streak.habitflow.global.security.oauth.CustomOAuth2UserService;
+import io.streak.habitflow.global.security.oauth.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +21,7 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -35,7 +37,7 @@ public class SecurityConfig {
                 .sessionManagement(session->session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth->auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**","/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthentificationFilter(jwtTokenProvider),
@@ -44,7 +46,7 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)
                         )
-                        .defaultSuccessUrl("/api/auth/success",true)
+                        .successHandler(oAuth2LoginSuccessHandler)
                         .failureUrl("/api/auth/fail")
                 )
         ;
