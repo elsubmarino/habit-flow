@@ -23,9 +23,11 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.getNotifications(userDetails));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<NotificationListResponse> updateNotification(@PathVariable Long id, @RequestBody NotificationRequest notificationRequest
-            , @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(notificationService.updateNotification(id,notificationRequest,userDetails));
+    @PutMapping("/{id}/confirm")
+    public ResponseEntity<Void> confirmNotification(@PathVariable Long id,
+                                                                        @RequestBody NotificationRequest notificationRequest,
+                                                                        @AuthenticationPrincipal UserDetails userDetails) {
+        notificationService.confirmNotification(id, notificationRequest, userDetails);
+        return ResponseEntity.noContent().build();
     }
 }
