@@ -12,6 +12,7 @@ public class LabelResponse {
     private String name;
     private long sortOrder;
     private boolean isFavorite;
+    private String color;
 
     public static LabelResponse from(Label label,boolean isFavorite){
         return LabelResponse.builder()
@@ -19,6 +20,7 @@ public class LabelResponse {
                 .name(label.getName())
                 .sortOrder(label.getSortOrder())
                 .isFavorite(isFavorite)
+                .color(label.getColor())
                 .build();
     }
 }

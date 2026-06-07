@@ -13,7 +13,6 @@ import io.streak.habitflow.domain.project.entity.ProjectUser;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.project.repository.ProjectUserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,18 +74,24 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponse updateProject(ProjectCreateRequest projectCreateRequest, Long id, UserDetails userDetails) {
-        Project project =  projectRepository.findById(id)
+    public ProjectResponse updateProject(ProjectCreateRequest projectCreateRequest, Long projectId, UserDetails userDetails) {
+        Project project =  projectRepository.findById(projectId)
                 .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
 
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
+        Project parentProject = null;
         if(projectCreateRequest.getParentId() != null){
-            Project parent = projectRepository.findById(projectCreateRequest.getParentId())
+            parentProject = projectRepository.findById(projectCreateRequest.getParentId())
                     .orElseThrow(()->new IllegalArgumentException("부모 프로젝트가 존재하지 않습니다."));
-            project.setParent(parent);
         }
+
+        project.updateProject(projectCreateRequest.getName(),
+                projectCreateRequest.getColor(),
+                projectCreateRequest.getAccessType(),
+                projectCreateRequest.getLayoutType(),
+                parentProject);
 
         if(projectCreateRequest.isFavorite()){
             Favorite favorite = Favorite.builder()
@@ -101,11 +106,6 @@ public class ProjectService {
             ).orElseGet(()->favoriteRepository.save(favorite));
         }
 
-        project.updateProject(projectCreateRequest.getName(),
-                projectCreateRequest.getColor(),
-                projectCreateRequest.getAccessType(),
-                projectCreateRequest.getLayoutType(),
-                project);
         return ProjectResponse.from(project, projectCreateRequest.isFavorite());
     }
 
@@ -135,20 +135,17 @@ public class ProjectService {
 
     @Transactional
     public void deleteProject(Long id, UserDetails userDetails) {
-        Member member = memberRepository.findByEmail(userDetails.getUsername())
+        memberRepository.findByEmail(userDetails.getUsername())
                         .orElseThrow(()->new IllegalArgumentException("유저가 존재하지 않습니다."));
-        Project project = projectRepository.findById(id)
+        projectRepository.findById(id)
                         .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
-        ProjectUser projectUser = ProjectUser.builder()
-                .member(member)
-                .project(project)
-                .build();
-        projectUserRepository.delete(projectUser);
+        projectUserRepository.deleteByProjectId(id);
+        favoriteRepository.deleteByTargetTypeAndTargetId(TargetType.PROJECT, id);
         projectRepository.deleteById(id);
 
     }
 
-    public List<ProjectResponse> searchProjects(String keyword, UserDetails userDetails) {
+    public List<ProjectListResponse> searchProjects(String keyword, UserDetails userDetails) {
         return projectRepository.searchKeyword(keyword,userDetails.getUsername());
     }
 }

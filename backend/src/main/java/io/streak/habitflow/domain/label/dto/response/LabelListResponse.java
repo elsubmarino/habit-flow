@@ -13,16 +13,15 @@ import lombok.NoArgsConstructor;
 public class LabelListResponse {
     private Long id;
     private String name;
+    private String color;
     private long sortOrder;
-
-    private String userId;
-    private String userName;
 
     public static LabelListResponse from(Label label){
         return LabelListResponse.builder()
                 .id(label.getId())
                 .name(label.getName())
                 .sortOrder(label.getSortOrder())
+                .color(label.getColor())
                 .build();
     }
 }

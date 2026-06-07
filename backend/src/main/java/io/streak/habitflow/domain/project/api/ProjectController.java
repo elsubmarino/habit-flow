@@ -40,15 +40,15 @@ public class ProjectController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ProjectResponse> updateProject(@RequestBody ProjectCreateRequest projectCreateRequest,
-                                                         @PathVariable Long id,
+                                                         @PathVariable("id") Long projectId,
                                                          @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(projectService.updateProject(projectCreateRequest,id,userDetails));
+        return ResponseEntity.ok(projectService.updateProject(projectCreateRequest,projectId,userDetails));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProject(@PathVariable Long id,
+    public ResponseEntity<Void> deleteProject(@PathVariable("id") Long projectId,
                                               @AuthenticationPrincipal UserDetails userDetails) {
-        projectService.deleteProject(id,userDetails);
+        projectService.deleteProject(projectId,userDetails);
         return ResponseEntity.noContent().build();
     }
 
@@ -58,7 +58,7 @@ public class ProjectController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ProjectResponse>> searchProjects(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<List<ProjectListResponse>> searchProjects(@AuthenticationPrincipal UserDetails userDetails,
                                                             @RequestParam("keyword") String keyword){
         return ResponseEntity.ok(projectService.searchProjects(keyword,userDetails));
     }

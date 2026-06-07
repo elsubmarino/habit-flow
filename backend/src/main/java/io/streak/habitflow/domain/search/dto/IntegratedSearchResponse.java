@@ -1,7 +1,9 @@
 package io.streak.habitflow.domain.search.dto;
 
 
+import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
+import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.task.dto.TaskResponse;
 import lombok.AllArgsConstructor;
@@ -16,7 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class IntegratedSearchResponse {
-    private List<ProjectResponse> projects;
+    private List<ProjectListResponse> projects;
     private List<TaskResponse> tasks;
-    private List<LabelResponse> labels;
+    private List<LabelListResponse> labels;
 }

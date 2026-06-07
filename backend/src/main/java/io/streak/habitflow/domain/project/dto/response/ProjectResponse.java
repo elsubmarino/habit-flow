@@ -17,9 +17,6 @@ public class ProjectResponse {
     private String color;
     private boolean isFavorite;
 
-    @Builder.Default
-    private List<MemberResponse> users = new ArrayList<>();
-
     public static ProjectResponse from(Project project, boolean isFavorite) {
         return ProjectResponse.builder()
                 .id(project.getId())

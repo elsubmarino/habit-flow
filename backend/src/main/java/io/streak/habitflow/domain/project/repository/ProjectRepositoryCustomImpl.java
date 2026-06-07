@@ -5,6 +5,7 @@ import static io.streak.habitflow.domain.project.entity.QProjectUser.projectUser
 
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
@@ -15,11 +16,11 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<ProjectResponse> searchKeyword(String keyword, String email) {
+    public List<ProjectListResponse> searchKeyword(String keyword, String email) {
         return queryFactory
                 .select(
                         Projections.fields(
-                                ProjectResponse.class,
+                                ProjectListResponse.class,
                                 project.id,
                                 project.name,
                                 project.color

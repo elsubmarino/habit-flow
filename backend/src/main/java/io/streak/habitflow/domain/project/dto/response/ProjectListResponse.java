@@ -19,9 +19,6 @@ public class ProjectListResponse {
     private String name;
     private String color;
 
-    @Builder.Default
-    private List<MemberResponse> users = new ArrayList<>();
-
     public static ProjectListResponse from(Project project) {
         return ProjectListResponse.builder()
                 .id(project.getId())

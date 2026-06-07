@@ -1,7 +1,9 @@
 package io.streak.habitflow.domain.search.service;
 
+import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
+import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.search.dto.IntegratedSearchResponse;
@@ -22,14 +24,14 @@ public class IntegratedSearchService {
 
     public IntegratedSearchResponse searchAll(String keyword, UserDetails userDetails) {
 
-        List<ProjectResponse> projectResponses = projectRepository.searchKeyword(keyword, userDetails.getUsername());
+        List<ProjectListResponse> projectListResponses = projectRepository.searchKeyword(keyword, userDetails.getUsername());
         List<TaskResponse> taskResponses = taskRepository.searchKeyword(keyword, userDetails.getUsername());
-        List<LabelResponse> labelResponses = labelRepository.searchKeyword(keyword, userDetails.getUsername());
+        List<LabelListResponse> labelListResponses = labelRepository.searchKeyword(keyword, userDetails.getUsername());
 
         return IntegratedSearchResponse.builder()
-                .projects(projectResponses)
+                .projects(projectListResponses)
                 .tasks(taskResponses)
-                .labels(labelResponses)
+                .labels(labelListResponses)
                 .build();
     }
 }
