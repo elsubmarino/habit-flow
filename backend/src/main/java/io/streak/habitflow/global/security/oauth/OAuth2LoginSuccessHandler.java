@@ -20,13 +20,13 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
         String token = jwtTokenProvider.createToken(email);
         String targetUrl = UriComponentsBuilder
                 .fromUriString("http://localhost:3000/oauth2/redirect")
-                        .queryParam("token",token).build().toString();
+                .queryParam("token",token).build().toString();
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }

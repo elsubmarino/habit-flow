@@ -17,9 +17,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TaskUpdateRequest {
-
-    @NotBlank(message = "제목은 필수 입력 항목입니다.")
-    @Size(max = 100, message = "제목은 100자를 초과할 수 없습니다.")
     private String name;
     private String description;
     private PriorityType priorityType;

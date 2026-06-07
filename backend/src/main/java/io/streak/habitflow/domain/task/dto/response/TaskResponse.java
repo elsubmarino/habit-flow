@@ -58,7 +58,7 @@ public class TaskResponse {
                         .map(CommentResponse::from)
                         .toList())
                 .subTasks(task.getSubTasks().stream()
-                        .map(sub -> TaskResponse.from(sub, new ArrayList<>()))
+                        .map(TaskResponse::fromSimpleSubTask)
                         .toList());
 
 
@@ -82,5 +82,13 @@ public class TaskResponse {
 
 
         return builder.build();
+    }
+
+    private static TaskResponse fromSimpleSubTask(Task subTask){
+        return TaskResponse.builder()
+                .id(subTask.getId())
+                .name(subTask.getName())
+                .isCompleted(subTask.isCompleted())
+                .build();
     }
 }
