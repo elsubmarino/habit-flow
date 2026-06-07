@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.project.entity;
 
+import io.streak.habitflow.domain.project.type.AccessType;
 import io.streak.habitflow.domain.project.type.LayoutType;
 import io.streak.habitflow.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
@@ -27,12 +28,18 @@ public class Project  extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
+    @Setter
     private Project parent;
 
-    private boolean isFavorite;
-
-    public void updateProject(String name, String color){
+    public void updateProject(String name,
+                              String color,
+                              AccessType accessType,
+                              LayoutType layoutType,
+                              Project parent) {
         this.name=name;
         this.color=color;
+        this.accessType = accessType;
+        this.layoutType = layoutType;
+        this.parent = parent;
     }
 }

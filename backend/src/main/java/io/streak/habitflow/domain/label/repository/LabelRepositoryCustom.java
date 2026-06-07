@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.label.repository;
 
-import io.streak.habitflow.domain.label.dto.LabelResponse;
+import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 
 import java.util.List;
 

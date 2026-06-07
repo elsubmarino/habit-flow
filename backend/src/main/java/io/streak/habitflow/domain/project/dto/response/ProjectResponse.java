@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.project.dto;
+package io.streak.habitflow.domain.project.dto.response;
 
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.member.dto.MemberResponse;
@@ -15,17 +15,17 @@ public class ProjectResponse {
     private Long id;
     private String name;
     private String color;
-    private long sortOrder;
+    private boolean isFavorite;
 
     @Builder.Default
     private List<MemberResponse> users = new ArrayList<>();
 
-    public static ProjectResponse from(Project project) {
+    public static ProjectResponse from(Project project, boolean isFavorite) {
         return ProjectResponse.builder()
                 .id(project.getId())
                 .name(project.getName())
                 .color(project.getColor())
-                .sortOrder(project.getSortOrder())
+                .isFavorite(isFavorite)
                 .build();
     }
 }

@@ -3,7 +3,8 @@ package io.streak.habitflow.domain.task.service;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
-import io.streak.habitflow.domain.label.dto.LabelResponse;
+import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
+import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;
@@ -94,11 +95,11 @@ public class TaskService {
 
         Task savedTask = taskRepository.save(task);
 
-        List<LabelResponse> labelResponses = savedTask.getTaskLabels()
+        List<LabelListResponse> labelListResponses = savedTask.getTaskLabels()
                 .stream()
                 .map(taskLabel -> {
                     Label realLabel = taskLabel.getLabel();
-                    return LabelResponse.from(realLabel);
+                    return LabelListResponse.from(realLabel);
                 })
                 .toList();
 
@@ -123,7 +124,7 @@ public class TaskService {
 
 
         }
-        return TaskResponse.from(savedTask, labelResponses);
+        return TaskResponse.from(savedTask, labelListResponses);
     }
 
     public TaskResponse readTask(Long id, UserDetails userDetails){
@@ -134,11 +135,11 @@ public class TaskService {
             throw new IllegalStateException("조회 권한이 없습니다.");
         }
 
-        List<LabelResponse> labelResponses = task.getTaskLabels().stream()
-                .map(taskLabel -> LabelResponse.from(taskLabel.getLabel()))
+        List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
+                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
 
-        return TaskResponse.from(task,labelResponses);
+        return TaskResponse.from(task,labelListResponses);
     }
 
     public List<TaskResponse> getTasksByProject(Long ProjectId){
@@ -159,11 +160,11 @@ public class TaskService {
         }
         task.updateTask(taskRequest.getTitle(),taskRequest.getDescription());
 
-        List<LabelResponse> labelResponses = task.getTaskLabels().stream()
-                .map(taskLabel -> LabelResponse.from(taskLabel.getLabel()))
+        List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
+                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
 
-        return TaskResponse.from(task,labelResponses);
+        return TaskResponse.from(task,labelListResponses);
     }
 
 }

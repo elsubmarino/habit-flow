@@ -1,8 +1,8 @@
 package io.streak.habitflow.domain.search.dto;
 
 
-import io.streak.habitflow.domain.label.dto.LabelResponse;
-import io.streak.habitflow.domain.project.dto.ProjectResponse;
+import io.streak.habitflow.domain.label.dto.response.LabelResponse;
+import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.task.dto.TaskResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

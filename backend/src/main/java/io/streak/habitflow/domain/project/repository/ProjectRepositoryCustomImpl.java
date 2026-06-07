@@ -5,7 +5,7 @@ import static io.streak.habitflow.domain.project.entity.QProjectUser.projectUser
 
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.streak.habitflow.domain.project.dto.ProjectResponse;
+import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
 

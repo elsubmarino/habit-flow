@@ -1,8 +1,11 @@
 package io.streak.habitflow.domain.label.api;
 
-import io.streak.habitflow.domain.label.dto.LabelRequest;
-import io.streak.habitflow.domain.label.dto.LabelResponse;
+import io.streak.habitflow.domain.label.dto.request.LabelCreateRequest;
+import io.streak.habitflow.domain.label.dto.request.LabelUpdateRequest;
+import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
+import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.service.LabelService;
+import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,21 +23,27 @@ public class LabelController {
     @PostMapping
     public ResponseEntity<LabelResponse> createLabel(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody LabelRequest labelRequest) {
-        return ResponseEntity.ok(labelService.createLabel(labelRequest, userDetails));
+            @RequestBody LabelCreateRequest labelCreateRequest) {
+        return ResponseEntity.ok(labelService.createLabel(labelCreateRequest, userDetails));
     }
 
     @GetMapping
-    public ResponseEntity<List<LabelResponse>> getLabels(
+    public ResponseEntity<List<LabelListResponse>> getLabels(
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(labelService.getLabels(userDetails));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<LabelResponse> getLabelById(@PathVariable Long id,
+                                                          @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(labelService.getLabelById(id,userDetails));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<LabelResponse> updateLabel(@PathVariable Long id,
                                                      @AuthenticationPrincipal UserDetails userDetails,
-                                                     @RequestBody LabelRequest labelRequest) {
-        return ResponseEntity.ok(labelService.updateLabel(id, labelRequest, userDetails));
+                                                     @RequestBody LabelUpdateRequest labelUpdateRequest) {
+        return ResponseEntity.ok(labelService.updateLabel(id, labelUpdateRequest, userDetails));
     }
 
     @DeleteMapping("/{id}")
@@ -45,7 +54,7 @@ public class LabelController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<LabelResponse>> searchLabels(@RequestParam("keyword") String keyword) {
+    public ResponseEntity<List<LabelListResponse>> searchLabels(@RequestParam("keyword") String keyword) {
         return ResponseEntity.ok(labelService.searchLabels(keyword));
     }
 }

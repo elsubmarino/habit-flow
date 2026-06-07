@@ -1,7 +1,6 @@
 package io.streak.habitflow.domain.project.repository;
 
-import io.streak.habitflow.domain.project.dto.ProjectResponse;
-import io.streak.habitflow.domain.project.entity.Project;
+import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 
 import java.util.List;
 

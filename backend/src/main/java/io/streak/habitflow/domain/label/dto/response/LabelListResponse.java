@@ -1,13 +1,16 @@
-package io.streak.habitflow.domain.label.dto;
+package io.streak.habitflow.domain.label.dto.response;
 
 import io.streak.habitflow.domain.label.entity.Label;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LabelResponse {
+public class LabelListResponse {
     private Long id;
     private String name;
     private long sortOrder;
@@ -15,8 +18,8 @@ public class LabelResponse {
     private String userId;
     private String userName;
 
-    public static LabelResponse from(Label label){
-        return LabelResponse.builder()
+    public static LabelListResponse from(Label label){
+        return LabelListResponse.builder()
                 .id(label.getId())
                 .name(label.getName())
                 .sortOrder(label.getSortOrder())

@@ -1,7 +1,8 @@
 package io.streak.habitflow.domain.project.api;
 
-import io.streak.habitflow.domain.project.dto.ProjectRequest;
-import io.streak.habitflow.domain.project.dto.ProjectResponse;
+import io.streak.habitflow.domain.project.dto.request.ProjectCreateRequest;
+import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
+import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.service.ProjectService;
 import io.streak.habitflow.domain.task.dto.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
@@ -21,24 +22,33 @@ public class ProjectController {
     private final TaskService taskService;
 
     @PostMapping
-    public ResponseEntity<ProjectResponse> createProject(@RequestBody ProjectRequest projectRequest){
-        return ResponseEntity.ok(projectService.createProject(projectRequest));
+    public ResponseEntity<ProjectResponse> createProject(@RequestBody ProjectCreateRequest projectCreateRequest,
+                                                         @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(projectService.createProject(projectCreateRequest, userDetails));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ProjectResponse> getProjectById(@PathVariable Long id,
+                                                          @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(projectService.getProjectById(id,userDetails));
     }
 
     @GetMapping
-    public ResponseEntity<List<ProjectResponse>> getProjectsByMember(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<ProjectListResponse>> getProjectsByMember(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(projectService.getProjectsByMember(userDetails));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProjectResponse> updateProject(@RequestBody ProjectRequest projectRequest,@PathVariable Long id,
+    public ResponseEntity<ProjectResponse> updateProject(@RequestBody ProjectCreateRequest projectCreateRequest,
+                                                         @PathVariable Long id,
                                                          @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(projectService.updateProject(projectRequest,id,userDetails));
+        return ResponseEntity.ok(projectService.updateProject(projectCreateRequest,id,userDetails));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
-        projectService.deleteProject(id);
+    public ResponseEntity<Void> deleteProject(@PathVariable Long id,
+                                              @AuthenticationPrincipal UserDetails userDetails) {
+        projectService.deleteProject(id,userDetails);
         return ResponseEntity.noContent().build();
     }
 

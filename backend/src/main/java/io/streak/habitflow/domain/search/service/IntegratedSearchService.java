@@ -1,10 +1,9 @@
 package io.streak.habitflow.domain.search.service;
 
-import io.streak.habitflow.domain.label.dto.LabelResponse;
+import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
-import io.streak.habitflow.domain.project.dto.ProjectResponse;
+import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.domain.project.service.ProjectService;
 import io.streak.habitflow.domain.search.dto.IntegratedSearchResponse;
 import io.streak.habitflow.domain.task.dto.TaskResponse;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
