@@ -30,3 +30,8 @@ jwt:
 file:
   upload:
     dir: ./uploads
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
+      multiline: true
