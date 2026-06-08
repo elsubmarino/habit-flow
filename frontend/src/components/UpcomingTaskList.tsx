@@ -15,6 +15,7 @@ interface UpcomingTaskListProps {
     onOpenDetails?: (habitId: number) => void;
     onOpenProject?: (projectId: number) => void;
     onAddTask?: () => void;
+    onTaskCompleted?: (habit: Habit) => void;
 }
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -41,6 +42,7 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
     onOpenDetails,
     onOpenProject,
     onAddTask,
+    onTaskCompleted,
 }) => {
     const [weekStart, setWeekStart] = useState(() => startOfWeekMonday(new Date()));
     const [selectedDate, setSelectedDate] = useState(() => toISODate(new Date()));
@@ -241,6 +243,7 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                                 layout="upcoming"
                                 onOpenDetails={onOpenDetails}
                                 onOpenProject={onOpenProject}
+                                onTaskCompleted={onTaskCompleted}
                             />
                         ))}
                     </ul>

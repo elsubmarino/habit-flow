@@ -4417,6 +4417,73 @@
   margin-right: 4px;
 }
 
+/* Task complete toast */
+.task-complete-toast {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 280px;
+  max-width: min(420px, calc(100vw - 48px));
+  padding: 12px 14px 12px 18px;
+  border-radius: 10px;
+  background: #202020;
+  color: #fff;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  animation: task-complete-toast-in 0.2s ease;
+}
+
+@keyframes task-complete-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.task-complete-toast-message {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.task-complete-toast-undo {
+  border: none;
+  background: none;
+  color: #ff9a7a;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.task-complete-toast-undo:hover {
+  color: #ffb9a3;
+}
+
+.task-complete-toast-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #aaa;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.task-complete-toast-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .login-page {

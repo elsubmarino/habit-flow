@@ -571,11 +571,17 @@ const habitSlice = createSlice({
                     state.selectedLabelId = null;
                 }
             })
+            .addCase(checkHabit.pending, (state, action) => {
+                const habit = state.list.find(h => h.id === action.meta.arg);
+                if (habit) habit.completedToday = !habit.completedToday;
+            })
             .addCase(checkHabit.fulfilled, (state, action) => {
                 const index = state.list.findIndex(h => h.id === action.payload.id);
                 if (index !== -1) state.list[index] = action.payload;
             })
             .addCase(checkHabit.rejected, (state, action) => {
+                const habit = state.list.find(h => h.id === action.meta.arg);
+                if (habit) habit.completedToday = !habit.completedToday;
                 state.error = action.error.message ?? '완료 처리에 실패했습니다.';
             })
             .addCase(updateHabit.fulfilled, (state, action) => {

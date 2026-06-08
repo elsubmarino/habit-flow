@@ -22,6 +22,7 @@ import { CloseIcon, HashIcon } from './icons';
 interface TaskDetailModalProps {
     taskId: number;
     onClose: () => void;
+    onTaskCompleted?: (habit: Habit) => void;
 }
 
 const PRIORITY_OPTIONS = [
@@ -31,7 +32,7 @@ const PRIORITY_OPTIONS = [
     { value: 4, icon: '⚑', label: '우선 순위 4' },
 ] as const;
 
-const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose }) => {
+const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTaskCompleted }) => {
     const dispatch = useAppDispatch();
     const { projects, labels } = useAppSelector(state => state.habits);
     const [stack, setStack] = useState<number[]>([taskId]);
@@ -187,13 +188,16 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose }) =>
 
     const handleToggleCurrent = async () => {
         if (!habit) return;
-        const previousCompleted = habit.completedToday;
+        const wasCompleted = habit.completedToday;
         const result = await dispatch(checkHabit(habit.id));
         if (checkHabit.fulfilled.match(result)) {
-            const updated = result.payload.completedToday === previousCompleted
-                ? { ...result.payload, completedToday: !previousCompleted }
+            const updated = result.payload.completedToday === wasCompleted
+                ? { ...result.payload, completedToday: !wasCompleted }
                 : result.payload;
             setTasks(prev => ({ ...prev, [currentId]: updated }));
+            if (!wasCompleted && updated.completedToday) {
+                onTaskCompleted?.(updated);
+            }
         }
     };
 

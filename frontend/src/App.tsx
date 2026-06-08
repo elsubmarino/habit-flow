@@ -14,7 +14,9 @@ import {
     setSelectedProject,
     updateLabel,
     updateProject,
+    checkHabit,
     type ApiView,
+    type Habit,
     type Label,
     type Project,
 } from './store/habitSlice';
@@ -30,6 +32,8 @@ import EditProjectModal from './components/EditProjectModal';
 import ProjectsBrowseView from './components/ProjectsBrowseView';
 import UpcomingTaskList from './components/UpcomingTaskList';
 import TaskDetailModal from './components/TaskDetailModal';
+import TaskCompleteToast from './components/TaskCompleteToast';
+import { useTaskCompleteToast } from './hooks/useTaskCompleteToast';
 import InlineAddTaskButton from './components/InlineAddTaskButton';
 import type { TaskRowLayout } from './components/HabitItem';
 import SearchModal from './components/SearchModal';
@@ -124,6 +128,23 @@ function App() {
     const mainPanelRef = useRef<HTMLElement>(null);
 
     useQuickAddShortcut(() => addFormRef.current?.open());
+
+    const {
+        completedTaskId,
+        showCompleteToast,
+        dismissToast,
+        isToastVisible,
+    } = useTaskCompleteToast();
+
+    const handleTaskCompleted = useCallback((habit: Habit) => {
+        showCompleteToast(habit.id);
+    }, [showCompleteToast]);
+
+    const handleUndoComplete = useCallback(async () => {
+        if (completedTaskId == null) return;
+        await dispatch(checkHabit(completedTaskId));
+        dismissToast();
+    }, [completedTaskId, dispatch, dismissToast]);
 
     useAppUrlSync({
         activeNav,
@@ -366,6 +387,7 @@ function App() {
                     layout={taskRowLayout}
                     onOpenDetails={setSelectedHabitId}
                     onOpenProject={handleProjectSelect}
+                    onTaskCompleted={handleTaskCompleted}
                 />
             ))}
         </ul>
@@ -420,6 +442,7 @@ function App() {
                                         layout="list"
                                         onOpenDetails={setSelectedHabitId}
                                         onOpenProject={handleProjectSelect}
+                                        onTaskCompleted={handleTaskCompleted}
                                     />
                                 ))}
                             </ul>
@@ -439,6 +462,7 @@ function App() {
                     onOpenDetails={setSelectedHabitId}
                     onOpenProject={handleProjectSelect}
                     onAddTask={() => addFormRef.current?.open()}
+                    onTaskCompleted={handleTaskCompleted}
                 />
             );
         }
@@ -684,6 +708,14 @@ function App() {
                 <TaskDetailModal
                     taskId={selectedHabitId}
                     onClose={() => setSelectedHabitId(null)}
+                    onTaskCompleted={handleTaskCompleted}
+                />
+            )}
+
+            {isToastVisible && (
+                <TaskCompleteToast
+                    onUndo={() => void handleUndoComplete()}
+                    onClose={dismissToast}
                 />
             )}
 

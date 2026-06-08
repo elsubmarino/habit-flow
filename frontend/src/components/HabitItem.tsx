@@ -13,6 +13,7 @@ interface HabitItemProps {
     layout?: TaskRowLayout;
     onOpenDetails?: (habitId: number) => void;
     onOpenProject?: (projectId: number) => void;
+    onTaskCompleted?: (habit: Habit) => void;
 }
 
 const PRIORITY_BORDER: Record<1 | 2 | 3 | 4, string> = {
@@ -27,9 +28,22 @@ const HabitItem: React.FC<HabitItemProps> = ({
     layout = 'list',
     onOpenDetails,
     onOpenProject,
+    onTaskCompleted,
 }) => {
     const dispatch = useAppDispatch();
     const completed = habit.completedToday;
+
+    const handleCheck = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (completed) {
+            await dispatch(checkHabit(habit.id));
+            return;
+        }
+        const result = await dispatch(checkHabit(habit.id));
+        if (checkHabit.fulfilled.match(result) && result.payload.completedToday) {
+            onTaskCompleted?.(result.payload);
+        }
+    };
     const completedSubtasks = habit.subtasks.filter(s => s.completed).length;
     const totalSubtasks = habit.subtasks.length;
     const projectLabel = habit.projectName ?? '관리함';
@@ -40,10 +54,7 @@ const HabitItem: React.FC<HabitItemProps> = ({
             <button
                 type="button"
                 className="task-check"
-                onClick={e => {
-                    e.stopPropagation();
-                    dispatch(checkHabit(habit.id));
-                }}
+                onClick={e => void handleCheck(e)}
                 aria-label={completed ? '완료 취소' : '완료'}
                 aria-pressed={completed}
             >

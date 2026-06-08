@@ -21,7 +21,7 @@ const STORAGE_KEY = 'habitflow.viewPreferences.v1';
 
 export const DEFAULT_VIEW_PREFERENCES: ViewPreferences = {
     layout: 'list',
-    showCompleted: true,
+    showCompleted: false,
     grouping: 'none',
     sorting: 'smart',
     filterAssignee: 'me-unassigned',
