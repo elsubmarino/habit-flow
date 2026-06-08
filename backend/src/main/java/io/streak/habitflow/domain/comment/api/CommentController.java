@@ -28,15 +28,15 @@ public class CommentController {
                 .body( commentService.createComment(commentRequest,file,userDetails));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<CommentResponse> updateComment(@PathVariable("commentId") Long commentId,
+    @PutMapping("/{commentId}")
+    public ResponseEntity<CommentResponse> updateComment(@PathVariable Long commentId,
                                                          @AuthenticationPrincipal UserDetails userDetails,
                                                          @RequestBody CommentRequest commentRequest) {
         return ResponseEntity.ok(commentService.updateComment(commentId, commentRequest, userDetails));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteComment(@PathVariable("commentId") Long commentId,
+    @DeleteMapping("/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId,
                                               @AuthenticationPrincipal UserDetails userDetails) {
         commentService.deleteComment(commentId);
         return ResponseEntity.noContent().build();

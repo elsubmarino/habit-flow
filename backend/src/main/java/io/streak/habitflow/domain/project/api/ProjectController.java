@@ -27,8 +27,8 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.createProject(projectCreateRequest, userDetails));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ProjectResponse> getProjectById(@PathVariable("projectId") Long projectId,
+    @GetMapping("/{projectId}")
+    public ResponseEntity<ProjectResponse> getProjectById(@PathVariable Long projectId,
                                                           @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(projectService.getProjectById(projectId,userDetails));
     }
@@ -38,22 +38,22 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.getProjectsByMember(userDetails));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{projectId}")
     public ResponseEntity<ProjectResponse> updateProject(@RequestBody ProjectCreateRequest projectCreateRequest,
-                                                         @PathVariable("projectId") Long projectId,
+                                                         @PathVariable Long projectId,
                                                          @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(projectService.updateProject(projectCreateRequest,projectId,userDetails));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProject(@PathVariable("projectId") Long projectId,
+    @DeleteMapping("/{projectId}")
+    public ResponseEntity<Void> deleteProject(@PathVariable Long projectId,
                                               @AuthenticationPrincipal UserDetails userDetails) {
         projectService.deleteProject(projectId,userDetails);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{id}/tasks")
-    public ResponseEntity<List<TaskResponse>> getTasksByProject(@PathVariable("projectId") Long projectId) {
+    @GetMapping("/{projectId}/tasks")
+    public ResponseEntity<List<TaskResponse>> getTasksByProject(@PathVariable Long projectId) {
         return ResponseEntity.ok(taskService.getTasksByProject(projectId));
     }
 

@@ -35,8 +35,8 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(taskCreateRequest, file, userDetails));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<TaskResponse> getTaskById(@PathVariable("taskId") Long taskId,
+    @GetMapping("/{taskId}")
+    public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long taskId,
                                                     @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(taskService.getTaskById(taskId,userDetails));
     }
@@ -69,29 +69,29 @@ public class TaskController {
         return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<TaskResponse> updateTask(@PathVariable("taskId") Long taskId,
+    @PutMapping("/{taskId}")
+    public ResponseEntity<TaskResponse> updateTask(@PathVariable Long taskId,
                                                    @RequestBody TaskUpdateRequest taskUpdateRequest,
                                                    @AuthenticationPrincipal UserDetails userDetails) {
         TaskResponse taskResponse = taskService.updateTask(taskId, taskUpdateRequest,userDetails);
         return ResponseEntity.ok(taskResponse);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable("taskId") Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
-        taskService.deleteTask(id,userDetails);
+    @DeleteMapping("/{taskId}")
+    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
+        taskService.deleteTask(taskId,userDetails);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{id}/comments")
+    @GetMapping("/{taskId}/comments")
     public ResponseEntity<List<CommentResponse>> getComments(@AuthenticationPrincipal UserDetails userDetails,
-                                                             @PathVariable("taskId") Long taskId) {
+                                                             @PathVariable Long taskId) {
         return ResponseEntity.ok(commentService.getComments(taskId));
     }
 
-    @PatchMapping("/{id}/toggle")
+    @PatchMapping("/{taskId}/toggle")
     public ResponseEntity<TaskResponse> toggleCompletion(@AuthenticationPrincipal UserDetails userDetails,
-                                                         @PathVariable("taskId") Long taskId) {
+                                                         @PathVariable Long taskId) {
         return ResponseEntity.ok(taskService.toggleCompletion(taskId,userDetails));
     }
 
