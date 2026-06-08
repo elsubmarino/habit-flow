@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { mapTaskToHabit } from '../api/mappers';
+import { mapCommentDtos, mapTaskToHabit } from '../api/mappers';
+import * as commentApi from '../api/commentApi';
 import * as taskApi from '../api/taskApi';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
@@ -8,11 +9,13 @@ import {
     checkHabit,
     toggleSubtask,
     updateHabit,
+    type CommentItem,
     type Habit,
 } from '../store/habitSlice';
 import { displayLabelName } from '../api/labelMappers';
 import { formatDueLabel } from '../utils/date';
-import DatePickerDropdown from './DatePickerDropdown';
+import CommentListItem from './CommentListItem';
+import DatePickerDropdown, { type DatePickerChange } from './DatePickerDropdown';
 import TaskEditBox from './TaskEditBox';
 import { CloseIcon, HashIcon } from './icons';
 
@@ -52,6 +55,8 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose }) =>
     const [subEditName, setSubEditName] = useState('');
     const [subEditDesc, setSubEditDesc] = useState('');
     const [savingSubtask, setSavingSubtask] = useState(false);
+    const [comments, setComments] = useState<CommentItem[]>([]);
+    const [recurrence, setRecurrence] = useState<string | null>(null);
 
     const currentId = stack[stack.length - 1];
     const habit = tasks[currentId];
@@ -63,6 +68,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose }) =>
     useEffect(() => {
         setIsEditingMain(false);
         setEditingSubtaskId(null);
+        setRecurrence(null);
     }, [currentId]);
 
     useEffect(() => {
@@ -98,7 +104,14 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose }) =>
 
     const refreshCurrent = async () => {
         const task = await taskApi.fetchTaskById(currentId);
-        setTasks(prev => ({ ...prev, [currentId]: mapTaskToHabit(task) }));
+        const mapped = mapTaskToHabit(task);
+        setTasks(prev => ({ ...prev, [currentId]: mapped }));
+        try {
+            const commentDtos = await commentApi.fetchTaskComments(currentId);
+            setComments(mapCommentDtos(commentDtos));
+        } catch {
+            setComments(mapped.comments);
+        }
     };
 
     const navigateToTask = (id: number) => {
@@ -214,12 +227,21 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose }) =>
         setActiveMenu(null);
     };
 
+    const resolveProjectIdForSubtask = (): number | null => {
+        for (let i = stack.length - 1; i >= 0; i -= 1) {
+            const projectId = tasks[stack[i]]?.projectId;
+            if (projectId != null) return projectId;
+        }
+        return habit?.projectId ?? null;
+    };
+
     const handleAddSubtask = async () => {
         if (!habit || !subName.trim()) return;
         await dispatch(addSubtask({
             habitId: habit.id,
             name: subName.trim(),
             description: subDesc.trim(),
+            projectId: resolveProjectIdForSubtask(),
         }));
         await refreshCurrent();
         setSubName('');
@@ -235,9 +257,39 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose }) =>
         setShowCommentForm(false);
     };
 
+    const handleEditComment = async (item: CommentItem, text: string) => {
+        if (!habit) return;
+        if (!item.backendId) {
+            throw new Error('댓글 ID가 없어 수정할 수 없습니다.');
+        }
+        await commentApi.updateComment(item.backendId, habit.id, text);
+        await refreshCurrent();
+    };
+
+    const handleDeleteComment = async (item: CommentItem) => {
+        if (!item.backendId) {
+            throw new Error('댓글 ID가 없어 삭제할 수 없습니다.');
+        }
+        if (!window.confirm('이 댓글을 삭제할까요?')) return;
+        await commentApi.deleteComment(item.backendId);
+        await refreshCurrent();
+    };
+
+    const handleDatePickerChange = (change: DatePickerChange) => {
+        if (!habit) return;
+        setRecurrence(change.repeat ?? null);
+        void dispatch(updateHabit({
+            habitId: habit.id,
+            changes: {
+                dueDate: change.date,
+                dueTime: change.time ?? null,
+            },
+        })).then(refreshCurrent);
+    };
+
     const projectText = habit?.projectName ?? '관리함';
     const dateText = habit?.dueDate
-        ? `${formatDueLabel(habit.dueDate)}${habit.dueTime ? ` ${habit.dueTime}` : ''}`
+        ? `${formatDueLabel(habit.dueDate)}${habit.dueTime ? ` ${habit.dueTime}` : ''}${recurrence ? ` · ${recurrence}` : ''}`
         : null;
 
     return (
@@ -413,13 +465,16 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose }) =>
                                 )}
                             </div>
 
-                            {habit.comments.length > 0 && (
+                            {comments.length > 0 && (
                                 <ul className="comment-list">
-                                    {habit.comments.map(c => (
-                                        <li key={c.id}>
-                                            <p>{c.text}</p>
-                                            <small>{new Date(c.createdAt).toLocaleString('ko-KR')}</small>
-                                        </li>
+                                    {comments.map(c => (
+                                        <CommentListItem
+                                            key={c.id}
+                                            comment={c}
+                                            canManage
+                                            onEdit={handleEditComment}
+                                            onDelete={handleDeleteComment}
+                                        />
                                     ))}
                                 </ul>
                             )}
@@ -449,11 +504,19 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose }) =>
                                 </div>
                             )}
 
-                            <div className="detail-row interactive" onClick={() => setActiveMenu(m => m === 'date' ? null : 'date')}>
+                            <div
+                                className={`detail-row interactive${activeMenu === 'date' ? ' date-menu-open' : ''}`}
+                                onClick={() => setActiveMenu(m => m === 'date' ? null : 'date')}
+                            >
                                 <p className="detail-label">날짜</p>
                                 <p className="detail-value">{dateText ?? <span className="detail-add">+</span>}</p>
                                 {activeMenu === 'date' && (
-                                    <DatePickerDropdown value={habit.dueDate} onChange={iso => void dispatch(updateHabit({ habitId: habit.id, changes: { dueDate: iso } })).then(refreshCurrent)} />
+                                    <DatePickerDropdown
+                                        value={habit.dueDate}
+                                        timeValue={habit.dueTime}
+                                        repeatValue={recurrence}
+                                        onChange={handleDatePickerChange}
+                                    />
                                 )}
                             </div>
 

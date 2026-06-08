@@ -24,7 +24,7 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
                 .leftJoin(activityLog.member, member).fetchJoin()
                 .where(
                         projectIdsIn(activityLogSearchCondition.getProjectIds()),
-                        memberIdsIn(activityLogSearchCondition.getUserIds()),
+                        memberIdsIn(activityLogSearchCondition.getMemberIds()),
                         targetDateEq(activityLogSearchCondition.getTargetDate())
                 )
                 .orderBy(activityLog.createdAt.desc())

@@ -25,6 +25,7 @@ import io.streak.habitflow.domain.task.entity.TaskLabel;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
+import io.streak.habitflow.global.common.dto.ScrollResponse;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
 import lombok.RequiredArgsConstructor;
@@ -50,13 +51,13 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public void deleteTask(Long id, UserDetails userDetails){
-        Task task = taskRepository.findById(id)
+    public void deleteTask(Long taskId, UserDetails userDetails){
+        Task task = taskRepository.findById(taskId)
                         .orElseThrow(()->new IllegalArgumentException("조회된 테스크가 없습니다."));
         if(!task.getMember().getEmail().equals(userDetails.getUsername())){
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
-        taskRepository.deleteById(id);
+        taskRepository.deleteById(taskId);
     }
 
     @Transactional
@@ -140,8 +141,8 @@ public class TaskService {
         return TaskResponse.from(savedTask, labelListResponses);
     }
 
-    public TaskResponse getTaskById(Long id, UserDetails userDetails){
-        Task task = taskRepository.searchTaskInfo(id)
+    public TaskResponse getTaskById(Long taskId, UserDetails userDetails){
+        Task task = taskRepository.searchTaskInfo(taskId)
                 .orElseThrow(()->new IllegalArgumentException("해당 테스크가 존재하지 않습니다."));
 
         if(!task.getMember().getEmail().equals(userDetails.getUsername())){
@@ -164,12 +165,28 @@ public class TaskService {
                 .toList();
     }
 
-    public List<TaskListResponse> getTasks(TaskSearchCondition taskSearchCondition, UserDetails userDetails){
+    public ScrollResponse<TaskListResponse> getTasks(TaskSearchCondition taskSearchCondition, UserDetails userDetails){
         String email = userDetails.getUsername();
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        int pageSize = 20;
+
         List<Task> tasks = taskRepository.searchTasksByCondition(taskSearchCondition, member.getId());
-        return tasks.stream()
+
+        boolean hasNext = false;
+        Long nextCursor = null;
+
+        if(tasks.size() > pageSize){
+            hasNext = true;
+            tasks = tasks.subList(0, pageSize);
+        }
+
+        if(!tasks.isEmpty()){
+            nextCursor = tasks.get(tasks.size() - 1).getId();
+        }
+
+        List<TaskListResponse> taskListResponses =  tasks.stream()
                 .map(task-> {
                     List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
                             .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
@@ -177,6 +194,12 @@ public class TaskService {
                     return TaskListResponse.from(task,labelListResponses);
                 })
                 .toList();
+
+        return ScrollResponse.<TaskListResponse>builder()
+                .content(taskListResponses)
+                .hasNext(hasNext)
+                .nextCursor(nextCursor)
+                .build();
 
     }
 

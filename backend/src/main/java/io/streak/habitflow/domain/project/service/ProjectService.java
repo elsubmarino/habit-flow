@@ -111,8 +111,8 @@ public class ProjectService {
         return ProjectResponse.from(project, projectCreateRequest.isFavorite());
     }
 
-    public ProjectResponse getProjectById(Long id, UserDetails userDetails) {
-       Project project = projectRepository.findById(id)
+    public ProjectResponse getProjectById(Long projectId, UserDetails userDetails) {
+       Project project = projectRepository.findById(projectId)
                .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
        Member member = memberRepository.findByEmail(userDetails.getUsername())
                .orElseThrow(()->new IllegalArgumentException("사용자가 존재하지 않습니다."));
@@ -136,14 +136,14 @@ public class ProjectService {
 
 
     @Transactional
-    public void deleteProject(Long id, UserDetails userDetails) {
+    public void deleteProject(Long projectId, UserDetails userDetails) {
         memberRepository.findByEmail(userDetails.getUsername())
                         .orElseThrow(()->new IllegalArgumentException("유저가 존재하지 않습니다."));
-        projectRepository.findById(id)
+        projectRepository.findById(projectId)
                         .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
-        projectUserRepository.deleteByProjectId(id);
-        favoriteRepository.deleteByTargetTypeAndTargetId(TargetType.PROJECT, id);
-        projectRepository.deleteById(id);
+        projectUserRepository.deleteByProjectId(projectId);
+        favoriteRepository.deleteByTargetTypeAndTargetId(TargetType.PROJECT, projectId);
+        projectRepository.deleteById(projectId);
 
     }
 

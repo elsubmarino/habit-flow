@@ -9,4 +9,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class TaskSearchCondition {
     private String filterType;
+    private Long lastTaskId;
 }

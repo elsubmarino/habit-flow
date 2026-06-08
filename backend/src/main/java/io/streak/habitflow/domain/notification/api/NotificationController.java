@@ -24,10 +24,10 @@ public class NotificationController {
     }
 
     @PutMapping("/{id}/confirm")
-    public ResponseEntity<Void> confirmNotification(@PathVariable Long id,
+    public ResponseEntity<Void> confirmNotification(@PathVariable("notificationId") Long notificationId,
                                                                         @RequestBody NotificationRequest notificationRequest,
                                                                         @AuthenticationPrincipal UserDetails userDetails) {
-        notificationService.confirmNotification(id, notificationRequest, userDetails);
+        notificationService.confirmNotification(notificationId, notificationRequest, userDetails);
         return ResponseEntity.noContent().build();
     }
 }

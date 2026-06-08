@@ -7,7 +7,16 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': 'http://localhost:8080',
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        bypass(req) {
+          const accept = req.headers.accept ?? '';
+          if (accept.includes('text/html')) {
+            return '/index.html';
+          }
+        },
+      },
       '/uploads': 'http://localhost:8080',
       // ⚠️ '/oauth2' 전체를 프록시하면 /oauth2/redirect(프론트 콜백)까지 8080으로 가서 무한 리다이렉트 발생
       '/oauth2/authorization': {

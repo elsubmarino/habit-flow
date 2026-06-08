@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from './store/hooks';
 import {
     addLabel,
@@ -6,6 +6,7 @@ import {
     deleteLabel,
     deleteProject,
     fetchHabits,
+    fetchMoreHabits,
     fetchLabels,
     fetchProjects,
     setActiveView,
@@ -44,6 +45,9 @@ import { bootstrapAuthFromCallback } from './api/authBootstrap';
 import { fetchMember } from './api/memberApi';
 import OAuthRedirectHandler from './components/OAuthRedirectHandler';
 import { clearHabitError } from './store/habitSlice';
+import { useAppUrlSync } from './hooks/useAppUrlSync';
+import { useInfiniteScroll } from './hooks/useInfiniteScroll';
+import { parseAppPath } from './utils/appRoutes';
 import { formatSectionDate, formatTodayHeader } from './utils/date';
 import {
     filterHabits,
@@ -68,6 +72,13 @@ function toApiView(nav: NavItem): ApiView {
     return nav;
 }
 
+function getInitialNav(): NavItem {
+    const location = parseAppPath(window.location.pathname);
+    if (location.kind === 'nav') return location.nav;
+    if (location.kind === 'labelsBrowse' || location.kind === 'label') return 'filters';
+    return 'today';
+}
+
 function App() {
     const dispatch = useAppDispatch();
     const {
@@ -75,13 +86,18 @@ function App() {
         projects,
         labels,
         status,
+        loadMoreStatus,
+        tasksHasNext,
         error: habitError,
         selectedProjectId,
         selectedLabelId,
     } = useAppSelector(state => state.habits);
 
-    const [activeNav, setActiveNav] = useState<NavItem>('today');
-    const [showNotifications, setShowNotifications] = useState(false);
+    const initialLocation = parseAppPath(window.location.pathname);
+    const [activeNav, setActiveNav] = useState<NavItem>(getInitialNav);
+    const [showNotifications, setShowNotifications] = useState(
+        () => initialLocation.kind === 'notifications',
+    );
     const [sidebarCollapsed, setSidebarCollapsed] = useState(
         () => localStorage.getItem('habitflow.sidebarCollapsed') === 'true',
     );
@@ -92,7 +108,9 @@ function App() {
     const [showAddLabelModal, setShowAddLabelModal] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
     const [editingLabel, setEditingLabel] = useState<Label | null>(null);
-    const [showProjectsBrowse, setShowProjectsBrowse] = useState(false);
+    const [showProjectsBrowse, setShowProjectsBrowse] = useState(
+        () => initialLocation.kind === 'projectsBrowse',
+    );
     const [projectsListExpanded, setProjectsListExpanded] = useState(
         () => localStorage.getItem('habitflow.projectsListExpanded') !== 'false',
     );
@@ -103,8 +121,21 @@ function App() {
     const [selectedHabitId, setSelectedHabitId] = useState<number | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => bootstrapAuthFromCallback());
     const addFormRef = useRef<AddHabitFormHandle>(null);
+    const mainPanelRef = useRef<HTMLElement>(null);
 
     useQuickAddShortcut(() => addFormRef.current?.open());
+
+    useAppUrlSync({
+        activeNav,
+        setActiveNav,
+        showProjectsBrowse,
+        setShowProjectsBrowse,
+        showNotifications,
+        setShowNotifications,
+        selectedProjectId,
+        selectedLabelId,
+        dispatch,
+    });
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -306,6 +337,20 @@ function App() {
     const showLabelsPanel = showLabelsBrowse;
     const showTodaySections = activeNav === 'today' && !selectedProjectId && !selectedLabelId;
     const showUpcomingGrouped = activeNav === 'upcoming' && !selectedProjectId && !selectedLabelId;
+    const showInboxList = activeNav === 'inbox' && !selectedProjectId && !selectedLabelId;
+    const showTaskPagination = (showTodaySections || showUpcomingGrouped || showInboxList) && tasksHasNext;
+
+    const handleLoadMoreTasks = useCallback(() => {
+        dispatch(fetchMoreHabits());
+    }, [dispatch]);
+
+    const loadMoreSentinelRef = useInfiniteScroll(
+        showTaskPagination,
+        tasksHasNext,
+        loadMoreStatus === 'loading',
+        handleLoadMoreTasks,
+        mainPanelRef,
+    );
     const taskRowLayout: TaskRowLayout = selectedProjectId
         ? 'project'
         : activeNav === 'upcoming'
@@ -471,6 +516,7 @@ function App() {
             />
 
             <main
+                ref={mainPanelRef}
                 className={`main-panel ${showNotifications ? 'main-panel-notifications' : ''} ${showReport ? 'main-panel-report' : ''}`}
             >
                 {collapsedChrome}
@@ -564,6 +610,14 @@ function App() {
 
                     {renderTaskContent()}
 
+                    {showTaskPagination && (
+                        <div ref={loadMoreSentinelRef} className="tasks-scroll-sentinel" aria-hidden="true">
+                            {loadMoreStatus === 'loading' && (
+                                <p className="tasks-scroll-loading">불러오는 중…</p>
+                            )}
+                        </div>
+                    )}
+
                     {selectedProjectId && !showTodaySections && !showUpcomingGrouped && (
                         <InlineAddTaskButton onClick={() => addFormRef.current?.open()} />
                     )}
@@ -573,6 +627,7 @@ function App() {
                         view={activeNav}
                         projectId={selectedProjectId}
                         labelId={selectedLabelId}
+                        hideTrigger={showTodaySections || showUpcomingGrouped || !!selectedProjectId}
                     />
                 </section>
                 </>

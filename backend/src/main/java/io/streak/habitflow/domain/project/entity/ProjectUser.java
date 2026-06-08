@@ -13,6 +13,7 @@ import lombok.*;
 public class ProjectUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="project_user_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -13,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class ActivityLogSearchCondition {
     private List<Long> projectIds;
-    private List<Long> userIds;
+    private List<Long> memberIds;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate targetDate;

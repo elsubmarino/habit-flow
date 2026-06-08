@@ -37,8 +37,8 @@ public class MemberService {
     }
 
     @Transactional
-    public MemberResponse updateMember(Long id,MemberUpdateRequest  memberUpdateRequest,UserDetails userDetails){
-        Member member = memberRepository.findById(id)
+    public MemberResponse updateMember(Long memberId,MemberUpdateRequest  memberUpdateRequest,UserDetails userDetails){
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow((()->new IllegalArgumentException("멤버가 존재하지 않습니다.")));
 
         if(!member.getEmail().equals(userDetails.getUsername())){

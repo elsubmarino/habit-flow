@@ -39,8 +39,8 @@ public class NotificationService {
     }
 
     @Transactional
-    public void confirmNotification(Long id, NotificationRequest notificationRequest, UserDetails userDetails){
-        Notification notification = notificationRepository.findById(id)
+    public void confirmNotification(Long notificationId, NotificationRequest notificationRequest, UserDetails userDetails){
+        Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(()->new IllegalArgumentException("알림이 존재하지 않습니다."));
         if(!notification.getMember().getEmail().equals(userDetails.getUsername())){
             throw new IllegalStateException("수정 권한이 없습니다.");

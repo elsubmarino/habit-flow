@@ -15,6 +15,7 @@ import lombok.*;
 public class Attachment extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="attachment_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -14,6 +14,7 @@ import lombok.*;
 public class Favorite extends BaseCreatedTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="favorite_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

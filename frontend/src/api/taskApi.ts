@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { PriorityType, TaskDto } from './types';
+import type { PriorityType, ScrollResponse, TaskDto } from './types';
 import { dueDateToApi, readCompleted } from './mappers';
 
 export interface CreateTaskPayload {
@@ -32,14 +32,54 @@ function buildTaskFormData(body: Record<string, unknown>, file?: File | null) {
     return form;
 }
 
-export async function fetchTodayTasks(): Promise<TaskDto[]> {
-    const { data } = await apiClient.get<TaskDto[]>('/api/tasks/today');
+export async function fetchInboxTasks(
+    lastTaskId?: number,
+): Promise<ScrollResponse<TaskDto>> {
+    const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/inbox', {
+        params: lastTaskId != null ? { lastTaskId } : undefined,
+    });
     return data;
 }
 
-export async function fetchUpcomingTasks(): Promise<TaskDto[]> {
-    const { data } = await apiClient.get<TaskDto[]>('/api/tasks/upcoming');
+export async function fetchTodayTasks(
+    lastTaskId?: number,
+): Promise<ScrollResponse<TaskDto>> {
+    const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/today', {
+        params: lastTaskId != null ? { lastTaskId } : undefined,
+    });
     return data;
+}
+
+export async function fetchUpcomingTasks(
+    lastTaskId?: number,
+): Promise<ScrollResponse<TaskDto>> {
+    const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/upcoming', {
+        params: lastTaskId != null ? { lastTaskId } : undefined,
+    });
+    return data;
+}
+
+export async function fetchAllTaskPages(
+    fetchPage: (lastTaskId?: number) => Promise<ScrollResponse<TaskDto>>,
+): Promise<TaskDto[]> {
+    const all: TaskDto[] = [];
+    let lastTaskId: number | undefined;
+    let hasNext = true;
+
+    while (hasNext) {
+        const page = await fetchPage(lastTaskId);
+        if (page.content.length === 0) break;
+
+        all.push(...page.content);
+
+        if (!page.hasNext || page.nextCursor == null) break;
+        if (page.nextCursor === lastTaskId) break;
+
+        lastTaskId = page.nextCursor;
+        hasNext = page.hasNext;
+    }
+
+    return all;
 }
 
 export async function fetchProjectTasks(projectId: number): Promise<TaskDto[]> {

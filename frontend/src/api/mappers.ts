@@ -87,9 +87,21 @@ function mapComments(comments?: TaskDto['comments']): CommentItem[] {
     return comments
         .filter(c => c.content && c.content !== '첨부파일이 등록되었습니다.')
         .map((c, i) => ({
-            id: i + 1,
+            id: c.id ?? i + 1,
+            backendId: c.id,
             text: c.content,
-            createdAt: new Date().toISOString(),
+            createdAt: c.createdAt ?? new Date().toISOString(),
+        }));
+}
+
+export function mapCommentDtos(comments: { id?: number; content: string; createdAt?: string }[]): CommentItem[] {
+    return comments
+        .filter(c => c.content && c.content !== '첨부파일이 등록되었습니다.')
+        .map((c, i) => ({
+            id: c.id ?? i + 1,
+            backendId: c.id,
+            text: c.content,
+            createdAt: c.createdAt ?? new Date().toISOString(),
         }));
 }
 

@@ -58,8 +58,8 @@ public class CommentService {
         return CommentResponse.from(result);
     }
 
-    public List<CommentResponse> getComments(Long id) {
-        Task task = taskRepository.findById(id)
+    public List<CommentResponse> getComments(Long taskId) {
+        Task task = taskRepository.findById(taskId)
                 .orElseThrow(()->new IllegalArgumentException("테스크가 없습니다."));
         List<Comment> comments = commentRepository.findByTaskId(task.getId());
         return comments.stream()
@@ -68,8 +68,8 @@ public class CommentService {
     }
 
     @Transactional
-    public CommentResponse updateComment(Long id, CommentRequest request, UserDetails userDetails) {
-        Comment comment = commentRepository.findById(id)
+    public CommentResponse updateComment(Long commentId, CommentRequest request, UserDetails userDetails) {
+        Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 댓글입니다."));
         if(!comment.getMember().getEmail().equals(userDetails.getUsername())){
             throw new IllegalStateException("수정 권한이 없습니다.");
@@ -80,7 +80,7 @@ public class CommentService {
     }
 
     @Transactional
-    public void deleteComment(Long id){
-        commentRepository.deleteById(id);
+    public void deleteComment(Long commentId){
+        commentRepository.deleteById(commentId);
     }
 }

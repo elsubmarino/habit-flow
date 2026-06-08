@@ -34,22 +34,22 @@ public class LabelController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<LabelResponse> getLabelById(@PathVariable Long id,
-                                                          @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(labelService.getLabelById(id,userDetails));
+    public ResponseEntity<LabelResponse> getLabelById(@PathVariable("labelId") Long labelId,
+                                                      @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(labelService.getLabelById(labelId,userDetails));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<LabelResponse> updateLabel(@PathVariable Long id,
+    public ResponseEntity<LabelResponse> updateLabel(@PathVariable("labelId") Long labelId,
                                                      @AuthenticationPrincipal UserDetails userDetails,
                                                      @RequestBody LabelUpdateRequest labelUpdateRequest) {
-        return ResponseEntity.ok(labelService.updateLabel(id, labelUpdateRequest, userDetails));
+        return ResponseEntity.ok(labelService.updateLabel(labelId, labelUpdateRequest, userDetails));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteLabel(@PathVariable Long id,
+    public ResponseEntity<Void> deleteLabel(@PathVariable("labelId") Long labelId,
                                             @AuthenticationPrincipal UserDetails userDetails) {
-        labelService.deleteLabel(id, userDetails);
+        labelService.deleteLabel(labelId, userDetails);
         return ResponseEntity.noContent().build();
     }
 

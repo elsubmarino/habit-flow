@@ -14,6 +14,7 @@ import lombok.*;
 public class CommentUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="comment_user_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -15,6 +15,7 @@ import lombok.*;
 public class Project  extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="project_id")
     private Long id;
 
     private String name;
@@ -28,7 +29,6 @@ public class Project  extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
-    @Setter
     private Project parent;
 
     public void updateProject(String name,

@@ -1,4 +1,5 @@
 import { getStoredToken, setStoredToken } from './client';
+import { defaultAppPath } from '../utils/appRoutes';
 
 /** 백엔드 OAuth2LoginSuccessHandler 와 동일한 경로 */
 export const OAUTH_CALLBACK_PATH = '/oauth2/redirect';
@@ -19,7 +20,7 @@ export function bootstrapAuthFromCallback(): boolean {
     const token = new URLSearchParams(window.location.search).get('token');
     if (token) {
         setStoredToken(token);
-        window.history.replaceState({}, '', '/');
+        window.history.replaceState({}, '', defaultAppPath());
         return true;
     }
 

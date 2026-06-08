@@ -28,9 +28,9 @@ public class ProjectController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectResponse> getProjectById(@PathVariable Long id,
+    public ResponseEntity<ProjectResponse> getProjectById(@PathVariable("projectId") Long projectId,
                                                           @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(projectService.getProjectById(id,userDetails));
+        return ResponseEntity.ok(projectService.getProjectById(projectId,userDetails));
     }
 
     @GetMapping
@@ -40,21 +40,21 @@ public class ProjectController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ProjectResponse> updateProject(@RequestBody ProjectCreateRequest projectCreateRequest,
-                                                         @PathVariable("id") Long projectId,
+                                                         @PathVariable("projectId") Long projectId,
                                                          @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(projectService.updateProject(projectCreateRequest,projectId,userDetails));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProject(@PathVariable("id") Long projectId,
+    public ResponseEntity<Void> deleteProject(@PathVariable("projectId") Long projectId,
                                               @AuthenticationPrincipal UserDetails userDetails) {
         projectService.deleteProject(projectId,userDetails);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/tasks")
-    public ResponseEntity<List<TaskResponse>> getTasksByProject(@PathVariable Long id) {
-        return ResponseEntity.ok(taskService.getTasksByProject(id));
+    public ResponseEntity<List<TaskResponse>> getTasksByProject(@PathVariable("projectId") Long projectId) {
+        return ResponseEntity.ok(taskService.getTasksByProject(projectId));
     }
 
     @GetMapping("/search")

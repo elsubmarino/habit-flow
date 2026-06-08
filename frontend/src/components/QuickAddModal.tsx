@@ -14,6 +14,20 @@ interface QuickAddModalProps {
     labelId: number | null;
 }
 
+const PRIORITY_OPTIONS = [
+    { value: 1 as const, icon: '🚩', label: '우선 순위 1' },
+    { value: 2 as const, icon: '🟧', label: '우선 순위 2' },
+    { value: 3 as const, icon: '🟦', label: '우선 순위 3' },
+    { value: 4 as const, icon: '⚑', label: '우선 순위 4' },
+];
+
+const PRIORITY_COLORS: Record<1 | 2 | 3 | 4, string> = {
+    1: 'var(--todoist-red)',
+    2: '#eb8909',
+    3: '#4073ff',
+    4: '#808080',
+};
+
 const QuickAddModal: React.FC<QuickAddModalProps> = ({
     isOpen,
     onClose,
@@ -32,7 +46,9 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
     const [dueDate, setDueDate] = useState<string | null>(null);
     const [selectedProjectId, setSelectedProjectId] = useState<number | ''>('');
     const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>([]);
+    const [priority, setPriority] = useState<1 | 2 | 3 | 4>(4);
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showPriorityPicker, setShowPriorityPicker] = useState(false);
     const [showLabelPicker, setShowLabelPicker] = useState(false);
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [fileError, setFileError] = useState<string | null>(null);
@@ -44,7 +60,9 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
         setDueDate(null);
         setSelectedProjectId(projectId ?? '');
         setSelectedLabelIds(labelId ? [labelId] : []);
+        setPriority(4);
         setShowDatePicker(false);
+        setShowPriorityPicker(false);
         setShowLabelPicker(false);
         setPendingFiles([]);
         setFileError(null);
@@ -57,7 +75,9 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
         setSelectedLabelIds(labelId ? [labelId] : []);
         setName('');
         setDescription('');
+        setPriority(4);
         setShowDatePicker(false);
+        setShowPriorityPicker(false);
         setShowLabelPicker(false);
         setPendingFiles([]);
         setFileError(null);
@@ -91,6 +111,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 dueDate,
                 labelIds: selectedLabelIds,
                 file: pendingFiles[0] ?? null,
+                priority,
             })).unwrap();
 
             if (pendingFiles.length > 1) {
@@ -195,6 +216,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                             className={`quick-pill date-pill ${dueDate ? 'active' : ''}`}
                             onClick={() => {
                                 setShowDatePicker(v => !v);
+                                setShowPriorityPicker(false);
                                 setShowLabelPicker(false);
                                 fileInputRef.current?.blur();
                             }}
@@ -206,7 +228,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                             )}
                         </button>
                         {showDatePicker && (
-                            <DatePickerDropdown value={dueDate} onChange={setDueDate} />
+                            <DatePickerDropdown value={dueDate} onChange={change => setDueDate(change.date)} />
                         )}
                     </div>
 
@@ -224,6 +246,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                             className={`quick-pill ${pendingFiles.length > 0 ? 'active attachment-pill' : ''}`}
                             onClick={() => {
                                 setShowDatePicker(false);
+                                setShowPriorityPicker(false);
                                 setShowLabelPicker(false);
                                 fileInputRef.current?.click();
                             }}
@@ -237,6 +260,45 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                         </button>
                     </div>
 
+                    <div className="pill-wrapper">
+                        <button
+                            type="button"
+                            className={`quick-pill priority-pill${priority !== 4 ? ' active' : ''}`}
+                            style={priority !== 4 ? {
+                                borderColor: PRIORITY_COLORS[priority],
+                                color: PRIORITY_COLORS[priority],
+                                background: `${PRIORITY_COLORS[priority]}14`,
+                            } : undefined}
+                            onClick={() => {
+                                setShowPriorityPicker(v => !v);
+                                setShowDatePicker(false);
+                                setShowLabelPicker(false);
+                            }}
+                        >
+                            <FlagIcon color={priority !== 4 ? PRIORITY_COLORS[priority] : undefined} />
+                            <span>{priority !== 4 ? `우선 순위 ${priority}` : '우선 순위'}</span>
+                        </button>
+                        {showPriorityPicker && (
+                            <div className="quick-popover priority-popover">
+                                {PRIORITY_OPTIONS.map(option => (
+                                    <button
+                                        key={option.value}
+                                        type="button"
+                                        className={`popover-item priority-option${priority === option.value ? ' selected' : ''}`}
+                                        onClick={() => {
+                                            setPriority(option.value);
+                                            setShowPriorityPicker(false);
+                                        }}
+                                    >
+                                        <span className="priority-option-icon">{option.icon}</span>
+                                        <span>{option.label}</span>
+                                        {priority === option.value && <span className="priority-option-check">✓</span>}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     {labels.length > 0 && (
                         <div className="pill-wrapper">
                             <button
@@ -245,6 +307,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                                 onClick={() => {
                                     setShowLabelPicker(v => !v);
                                     setShowDatePicker(false);
+                                    setShowPriorityPicker(false);
                                 }}
                             >
                                 <LabelIcon />
@@ -361,6 +424,15 @@ function LabelIcon() {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
             <circle cx="7" cy="7" r="1.5" fill="currentColor" stroke="none" />
+        </svg>
+    );
+}
+
+function FlagIcon({ color }: { color?: string }) {
+    return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color ?? 'currentColor'} strokeWidth="2">
+            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+            <line x1="4" y1="22" x2="4" y2="15" />
         </svg>
     );
 }

@@ -11,6 +11,29 @@ export function isToday(isoDate: string | null): boolean {
     return isoDate === toISODate(new Date());
 }
 
+export function combineDateAndTime(isoDate: string, time24: string): string {
+    if (!isoDate) return isoDate;
+    if (!time24) return isoDate.slice(0, 10);
+    return `${isoDate.slice(0, 10)}T${time24}:00`;
+}
+
+export function dueDateToTimeInput(dueDate: string | null, dueTime: string | null): string {
+    if (dueDate?.includes('T')) {
+        const timePart = dueDate.split('T')[1] ?? '';
+        if (timePart && !timePart.startsWith('00:00:00')) {
+            return timePart.slice(0, 5);
+        }
+    }
+    if (!dueTime) return '09:00';
+    const match = dueTime.match(/(오전|오후)\s*(\d{1,2}):(\d{2})/);
+    if (!match) return '09:00';
+    let hour = Number(match[2]);
+    const minute = match[3];
+    if (match[1] === '오후' && hour < 12) hour += 12;
+    if (match[1] === '오전' && hour === 12) hour = 0;
+    return `${String(hour).padStart(2, '0')}:${minute}`;
+}
+
 export function toISODate(date: Date): string {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');

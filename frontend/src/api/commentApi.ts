@@ -13,7 +13,27 @@ export async function createComment(taskId: number, content: string, file?: File
     return data;
 }
 
-export async function fetchTaskComments(taskId: number) {
-    const { data } = await apiClient.get(`/api/tasks/${taskId}/comments`);
+export interface CommentResponseDto {
+    id?: number;
+    content: string;
+    createdAt?: string;
+    attachments?: { fileUrl: string; originalFileName: string }[];
+}
+
+export async function fetchTaskComments(taskId: number): Promise<CommentResponseDto[]> {
+    const { data } = await apiClient.get<CommentResponseDto[]>(`/api/tasks/${taskId}/comments`);
     return data;
+}
+
+export async function updateComment(id: number, taskId: number, content: string) {
+    const { data } = await apiClient.put<CommentResponseDto>(`/api/comments/${id}`, {
+        id,
+        taskId,
+        content,
+    });
+    return data;
+}
+
+export async function deleteComment(id: number): Promise<void> {
+    await apiClient.delete(`/api/comments/${id}`);
 }

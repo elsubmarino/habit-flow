@@ -10,10 +10,11 @@ interface AddHabitFormProps {
     view: NavItem;
     projectId: number | null;
     labelId: number | null;
+    hideTrigger?: boolean;
 }
 
 const AddHabitForm = forwardRef<AddHabitFormHandle, AddHabitFormProps>(
-    ({ view, projectId, labelId }, ref) => {
+    ({ view, projectId, labelId, hideTrigger = false }, ref) => {
         const [isOpen, setIsOpen] = useState(false);
 
         useImperativeHandle(ref, () => ({
@@ -22,11 +23,13 @@ const AddHabitForm = forwardRef<AddHabitFormHandle, AddHabitFormProps>(
 
         return (
             <>
-                <button type="button" className="add-task-btn" onClick={() => setIsOpen(true)}>
-                    <span className="add-task-icon">+</span>
-                    <span>작업 추가</span>
-                    <span className="add-task-shortcut">Q</span>
-                </button>
+                {!hideTrigger && (
+                    <button type="button" className="add-task-btn" onClick={() => setIsOpen(true)}>
+                        <span className="add-task-icon">+</span>
+                        <span>작업 추가</span>
+                        <span className="add-task-shortcut">Q</span>
+                    </button>
+                )}
                 <QuickAddModal
                     isOpen={isOpen}
                     onClose={() => setIsOpen(false)}

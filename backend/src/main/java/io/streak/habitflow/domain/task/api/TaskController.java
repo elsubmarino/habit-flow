@@ -8,6 +8,7 @@ import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
+import io.streak.habitflow.global.common.dto.ScrollResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,27 +36,41 @@ public class TaskController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long id,
+    public ResponseEntity<TaskResponse> getTaskById(@PathVariable("taskId") Long taskId,
                                                     @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(taskService.getTaskById(id,userDetails));
+        return ResponseEntity.ok(taskService.getTaskById(taskId,userDetails));
+    }
+
+    @GetMapping("/inbox")
+    public ResponseEntity<ScrollResponse<TaskListResponse>> getInboxTasks(@AuthenticationPrincipal UserDetails userDetails,
+                                                                          @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
+        TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
+        taskSearchCondition.setFilterType("INBOX");
+        taskSearchCondition.setLastTaskId(lastTaskId);
+        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));
     }
 
     @GetMapping("/today")
-    public ResponseEntity<List<TaskListResponse>> getTodayTasks(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ScrollResponse<TaskListResponse>> getTodayTasks(@AuthenticationPrincipal UserDetails userDetails,
+                                                                          @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
         taskSearchCondition.setFilterType("TODAY");
+        taskSearchCondition.setLastTaskId(lastTaskId);
         return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));
     }
 
     @GetMapping("/upcoming")
-    public ResponseEntity<List<TaskListResponse>> getUpcomingTasks(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ScrollResponse<TaskListResponse>> getUpcomingTasks(@AuthenticationPrincipal UserDetails userDetails,
+                                                                             @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
         taskSearchCondition.setFilterType("UPCOMING");
+        taskSearchCondition.setLastTaskId(lastTaskId);
+
         return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TaskResponse> updateTask(@PathVariable("id") Long taskId,
+    public ResponseEntity<TaskResponse> updateTask(@PathVariable("taskId") Long taskId,
                                                    @RequestBody TaskUpdateRequest taskUpdateRequest,
                                                    @AuthenticationPrincipal UserDetails userDetails) {
         TaskResponse taskResponse = taskService.updateTask(taskId, taskUpdateRequest,userDetails);
@@ -63,20 +78,20 @@ public class TaskController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<Void> deleteTask(@PathVariable("taskId") Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
         taskService.deleteTask(id,userDetails);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/comments")
     public ResponseEntity<List<CommentResponse>> getComments(@AuthenticationPrincipal UserDetails userDetails,
-                                                             @PathVariable Long id) {
-        return ResponseEntity.ok(commentService.getComments(id));
+                                                             @PathVariable("taskId") Long taskId) {
+        return ResponseEntity.ok(commentService.getComments(taskId));
     }
 
     @PatchMapping("/{id}/toggle")
     public ResponseEntity<TaskResponse> toggleCompletion(@AuthenticationPrincipal UserDetails userDetails,
-                                                         @PathVariable("id") Long taskId) {
+                                                         @PathVariable("taskId") Long taskId) {
         return ResponseEntity.ok(taskService.toggleCompletion(taskId,userDetails));
     }
 

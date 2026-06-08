@@ -39,6 +39,7 @@ export interface Subtask {
 
 export interface CommentItem {
     id: number;
+    backendId?: number;
     text: string;
     createdAt: string;
 }
@@ -84,12 +85,15 @@ interface HabitState {
     projects: Project[];
     labels: Label[];
     status: 'idle' | 'loading' | 'failed';
+    loadMoreStatus: 'idle' | 'loading' | 'failed';
     projectsStatus: 'idle' | 'loading' | 'failed';
     labelsStatus: 'idle' | 'loading' | 'failed';
     error: string | null;
     activeView: ApiView;
     selectedProjectId: number | null;
     selectedLabelId: number | null;
+    tasksHasNext: boolean;
+    tasksNextCursor: number | null;
 }
 
 const initialState: HabitState = {
@@ -97,12 +101,15 @@ const initialState: HabitState = {
     projects: [],
     labels: [],
     status: 'idle',
+    loadMoreStatus: 'idle',
     projectsStatus: 'idle',
     labelsStatus: 'idle',
     error: null,
     activeView: 'today',
     selectedProjectId: null,
     selectedLabelId: null,
+    tasksHasNext: false,
+    tasksNextCursor: null,
 };
 
 export type ApiView = NavItem | 'all';
@@ -121,43 +128,71 @@ function countTasksForLabel(habits: Habit[], labelId: number) {
     return habits.filter(h => h.labels.some(l => l.id === labelId)).length;
 }
 
+interface LoadedTasksPage {
+    tasks: TaskDto[];
+    hasNext: boolean;
+    nextCursor: number | null;
+}
+
 async function loadTasksForView(params: {
     view: ApiView;
     projectId?: number | null;
     labelId?: number | null;
-}): Promise<TaskDto[]> {
+}): Promise<LoadedTasksPage> {
     if (params.projectId != null) {
-        return taskApi.fetchProjectTasks(params.projectId);
+        const tasks = await taskApi.fetchProjectTasks(params.projectId);
+        return { tasks, hasNext: false, nextCursor: null };
     }
 
-    let tasks: TaskDto[] = [];
     if (params.labelId != null) {
         const [today, upcoming] = await Promise.all([
-            taskApi.fetchTodayTasks(),
-            taskApi.fetchUpcomingTasks(),
+            taskApi.fetchAllTaskPages(taskApi.fetchTodayTasks),
+            taskApi.fetchAllTaskPages(taskApi.fetchUpcomingTasks),
         ]);
-        tasks = dedupeTasks([...today, ...upcoming]).filter(t =>
+        const tasks = dedupeTasks([...today, ...upcoming]).filter(t =>
             (t.labels ?? []).some(l => l.id === params.labelId),
         );
-        return tasks;
+        return { tasks, hasNext: false, nextCursor: null };
     }
 
     switch (params.view) {
-        case 'today':
-            return taskApi.fetchTodayTasks();
-        case 'upcoming':
-            return taskApi.fetchUpcomingTasks();
-        case 'inbox':
-            return [];
+        case 'today': {
+            const page = await taskApi.fetchTodayTasks();
+            return {
+                tasks: page.content,
+                hasNext: page.hasNext,
+                nextCursor: page.nextCursor,
+            };
+        }
+        case 'upcoming': {
+            const page = await taskApi.fetchUpcomingTasks();
+            return {
+                tasks: page.content,
+                hasNext: page.hasNext,
+                nextCursor: page.nextCursor,
+            };
+        }
+        case 'inbox': {
+            const page = await taskApi.fetchInboxTasks();
+            return {
+                tasks: page.content,
+                hasNext: page.hasNext,
+                nextCursor: page.nextCursor,
+            };
+        }
         case 'filters':
         case 'report':
         case 'all':
         default: {
             const [today, upcoming] = await Promise.all([
-                taskApi.fetchTodayTasks(),
-                taskApi.fetchUpcomingTasks(),
+                taskApi.fetchAllTaskPages(taskApi.fetchTodayTasks),
+                taskApi.fetchAllTaskPages(taskApi.fetchUpcomingTasks),
             ]);
-            return dedupeTasks([...today, ...upcoming]);
+            return {
+                tasks: dedupeTasks([...today, ...upcoming]),
+                hasNext: false,
+                nextCursor: null,
+            };
         }
     }
 }
@@ -165,12 +200,43 @@ async function loadTasksForView(params: {
 export const fetchHabits = createAsyncThunk(
     'habits/fetch',
     async (params: { view: ApiView; projectId?: number | null; labelId?: number | null }) => {
-        const tasks = await loadTasksForView(params);
+        const page = await loadTasksForView(params);
         return {
-            habits: tasks.map(mapTaskToHabit),
+            habits: page.tasks.map(mapTaskToHabit),
             view: params.view,
             projectId: params.projectId ?? null,
             labelId: params.labelId ?? null,
+            hasNext: page.hasNext,
+            nextCursor: page.nextCursor,
+        };
+    },
+);
+
+export const fetchMoreHabits = createAsyncThunk(
+    'habits/fetchMore',
+    async (_, { getState }) => {
+        const state = getState() as { habits: HabitState };
+        const { activeView, selectedProjectId, selectedLabelId, tasksNextCursor } = state.habits;
+
+        if (
+            tasksNextCursor == null
+            || selectedProjectId != null
+            || selectedLabelId != null
+            || (activeView !== 'today' && activeView !== 'upcoming' && activeView !== 'inbox')
+        ) {
+            return { habits: [], hasNext: false, nextCursor: null };
+        }
+
+        const page = activeView === 'today'
+            ? await taskApi.fetchTodayTasks(tasksNextCursor)
+            : activeView === 'upcoming'
+                ? await taskApi.fetchUpcomingTasks(tasksNextCursor)
+                : await taskApi.fetchInboxTasks(tasksNextCursor);
+
+        return {
+            habits: page.content.map(mapTaskToHabit),
+            hasNext: page.hasNext,
+            nextCursor: page.nextCursor,
         };
     },
 );
@@ -301,11 +367,22 @@ export const updateHabit = createAsyncThunk(
 
 export const addSubtask = createAsyncThunk(
     'habits/addSubtask',
-    async ({ habitId, name, description }: { habitId: number; name: string; description: string }) => {
+    async ({
+        habitId,
+        name,
+        description,
+        projectId,
+    }: {
+        habitId: number;
+        name: string;
+        description: string;
+        projectId?: number | null;
+    }) => {
         const task = await taskApi.createTask({
             name,
             description,
             parentId: habitId,
+            projectId: projectId ?? null,
         });
         return {
             habitId,
@@ -380,6 +457,7 @@ const habitSlice = createSlice({
         builder
             .addCase(fetchHabits.pending, state => {
                 state.status = 'loading';
+                state.loadMoreStatus = 'idle';
                 state.error = null;
             })
             .addCase(fetchHabits.fulfilled, (state, action) => {
@@ -388,6 +466,8 @@ const habitSlice = createSlice({
                 state.activeView = action.payload.view;
                 state.selectedProjectId = action.payload.projectId;
                 state.selectedLabelId = action.payload.labelId;
+                state.tasksHasNext = action.payload.hasNext;
+                state.tasksNextCursor = action.payload.nextCursor;
                 state.projects = state.projects.map(p => ({
                     ...p,
                     taskCount: countTasksForProject(action.payload.habits, p.id),
@@ -400,6 +480,25 @@ const habitSlice = createSlice({
             .addCase(fetchHabits.rejected, (state, action) => {
                 state.status = 'failed';
                 state.error = action.error.message ?? '작업 목록을 불러오지 못했습니다.';
+            })
+            .addCase(fetchMoreHabits.pending, state => {
+                state.loadMoreStatus = 'loading';
+            })
+            .addCase(fetchMoreHabits.fulfilled, (state, action) => {
+                state.loadMoreStatus = 'idle';
+                const existingIds = new Set(state.list.map(h => h.id));
+                for (const habit of action.payload.habits) {
+                    if (!existingIds.has(habit.id)) {
+                        state.list.push(habit);
+                        existingIds.add(habit.id);
+                    }
+                }
+                state.tasksHasNext = action.payload.hasNext;
+                state.tasksNextCursor = action.payload.nextCursor;
+            })
+            .addCase(fetchMoreHabits.rejected, (state, action) => {
+                state.loadMoreStatus = 'failed';
+                state.error = action.error.message ?? '작업을 더 불러오지 못했습니다.';
             })
             .addCase(fetchProjects.pending, state => {
                 state.projectsStatus = 'loading';

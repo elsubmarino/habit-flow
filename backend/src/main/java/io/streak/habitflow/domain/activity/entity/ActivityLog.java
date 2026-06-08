@@ -19,6 +19,7 @@ import lombok.*;
 public class ActivityLog extends BaseCreatedTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="activity_log_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

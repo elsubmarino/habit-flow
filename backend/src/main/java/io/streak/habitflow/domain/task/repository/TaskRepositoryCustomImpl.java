@@ -38,11 +38,11 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public Optional<Task> searchTaskInfo(Long id) {
+    public Optional<Task> searchTaskInfo(Long taskId) {
         Task result =  queryFactory
                 .selectFrom(task)
                 .leftJoin(task.project, project).fetchJoin()
-                .where(task.id.eq(id))
+                .where(task.id.eq(taskId))
                 .fetchOne();
         return Optional.ofNullable(result);
     }
@@ -72,13 +72,18 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
 
     @Override
     public List<Task> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId) {
+        int pageSize = 20;
+
         return queryFactory
                 .selectFrom(task)
                 .leftJoin(task.taskLabels, QTaskLabel.taskLabel).fetchJoin()
                 .leftJoin(QTaskLabel.taskLabel.label, QLabel.label).fetchJoin()
                 .where(task.member.id.eq(memberId),
-                        filterTypeEq(taskSearchCondition.getFilterType()))
-                .orderBy(task.dueDate.desc(),task.createdAt.desc())
+                        filterTypeEq(taskSearchCondition.getFilterType()),
+                        ltTaskId(taskSearchCondition.getLastTaskId())
+                )
+                .orderBy(task.id.desc())
+                .limit(pageSize+1)
                 .fetch();
     }
 
@@ -86,10 +91,17 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         if(!StringUtils.hasText(filterType)) return null;
         LocalDateTime now = LocalDateTime.now();
         if("TODAY".equals(filterType)){
-            return task.dueDate.between(now.toLocalDate().atStartOfDay(), now.toLocalDate().atTime(23,59,59));
+            return task.dueDate.loe(now.toLocalDate().atTime(23,59,59));
         }else if("UPCOMING".equals(filterType)){
-            return task.dueDate.goe(now.toLocalDate().plusDays(1).atStartOfDay());
+            return task.dueDate.goe(now.toLocalDate().atStartOfDay());
+        }else if("INBOX".equals(filterType)){
+            return task.project.isNull();
         }
         return null;
+    }
+
+    private BooleanExpression ltTaskId(Long taskId){
+        if(taskId == null) return null;
+        return task.id.lt(taskId);
     }
 }

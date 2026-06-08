@@ -24,8 +24,16 @@ export interface LabelUpdatePayload {
 }
 
 export interface CommentDto {
+    id?: number;
     content: string;
+    createdAt?: string;
     attachments?: { fileUrl: string; originalFileName: string }[];
+}
+
+export interface ScrollResponse<T> {
+    content: T[];
+    hasNext: boolean;
+    nextCursor: number | null;
 }
 
 export interface TaskDto {
