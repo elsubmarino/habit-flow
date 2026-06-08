@@ -1,13 +1,13 @@
-package io.streak.habitflow.domain.activity.repository;
+package io.streak.habitflow.domain.activitylog.repository;
 
-import static io.streak.habitflow.domain.activity.entity.QActivityLog.activityLog;
+import static io.streak.habitflow.domain.activitylog.entity.QActivityLog.activityLog;
 import static io.streak.habitflow.domain.project.entity.QProject.project;
 import static io.streak.habitflow.domain.member.entity.QMember.member;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.streak.habitflow.domain.activity.dto.request.ActivityLogSearchCondition;
-import io.streak.habitflow.domain.activity.entity.ActivityLog;
+import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogSearchCondition;
+import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
 import lombok.RequiredArgsConstructor;
 import java.time.LocalDate;
 import java.util.List;

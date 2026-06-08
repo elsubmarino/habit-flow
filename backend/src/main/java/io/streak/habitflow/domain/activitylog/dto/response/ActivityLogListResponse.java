@@ -1,13 +1,12 @@
-package io.streak.habitflow.domain.activity.dto.response;
+package io.streak.habitflow.domain.activitylog.dto.response;
 
-import io.streak.habitflow.domain.activity.entity.ActivityLog;
+import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter

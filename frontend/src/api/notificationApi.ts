@@ -6,8 +6,8 @@ export async function fetchNotifications(): Promise<NotificationDto[]> {
     return data;
 }
 
-export async function confirmNotification(id: number): Promise<void> {
-    await apiClient.put(`/api/notifications/${id}/confirm`, {
+export async function confirmNotification(notificationId: number): Promise<void> {
+    await apiClient.put(`/api/notifications/${notificationId}/confirm`, {
         isConfirmed: true,
     });
 }

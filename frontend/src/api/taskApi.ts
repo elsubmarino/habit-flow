@@ -87,8 +87,8 @@ export async function fetchProjectTasks(projectId: number): Promise<TaskDto[]> {
     return data;
 }
 
-export async function fetchTaskById(id: number): Promise<TaskDto> {
-    const { data } = await apiClient.get<TaskDto>(`/api/tasks/${id}`);
+export async function fetchTaskById(taskId: number): Promise<TaskDto> {
+    const { data } = await apiClient.get<TaskDto>(`/api/tasks/${taskId}`);
     return data;
 }
 
@@ -110,7 +110,7 @@ export async function createTask(payload: CreateTaskPayload): Promise<TaskDto> {
     return data;
 }
 
-export async function updateTask(id: number, payload: UpdateTaskPayload): Promise<TaskDto> {
+export async function updateTask(taskId: number, payload: UpdateTaskPayload): Promise<TaskDto> {
     const body: Record<string, unknown> = {};
     if (payload.name !== undefined) body.name = payload.name;
     if (payload.description !== undefined) body.description = payload.description;
@@ -118,19 +118,19 @@ export async function updateTask(id: number, payload: UpdateTaskPayload): Promis
     if (payload.priorityType !== undefined) body.priorityType = payload.priorityType;
     if (payload.projectId !== undefined) body.projectId = payload.projectId;
     if (payload.labelIds !== undefined) body.labelIds = payload.labelIds;
-    const { data } = await apiClient.put<TaskDto>(`/api/tasks/${id}`, body);
+    const { data } = await apiClient.put<TaskDto>(`/api/tasks/${taskId}`, body);
     return data;
 }
 
-export async function deleteTask(id: number): Promise<void> {
-    await apiClient.delete(`/api/tasks/${id}`);
+export async function deleteTask(taskId: number): Promise<void> {
+    await apiClient.delete(`/api/tasks/${taskId}`);
 }
 
 export async function toggleTaskCompletion(
-    id: number,
+    taskId: number,
     previousCompleted?: boolean,
 ): Promise<TaskDto> {
-    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${id}/toggle`);
+    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/toggle`);
     if (
         previousCompleted !== undefined
         && readCompleted(data) === previousCompleted

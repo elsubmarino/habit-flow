@@ -18,16 +18,19 @@ export async function createProject(name: string, color?: string): Promise<Proje
     return data;
 }
 
-export async function fetchProjectById(id: number): Promise<ProjectDetailDto> {
-    const { data } = await apiClient.get<ProjectDetailDto>(`/api/projects/${id}`);
+export async function fetchProjectById(projectId: number): Promise<ProjectDetailDto> {
+    const { data } = await apiClient.get<ProjectDetailDto>(`/api/projects/${projectId}`);
     return data;
 }
 
-export async function updateProject(id: number, payload: ProjectUpdatePayload): Promise<ProjectDetailDto> {
-    const { data } = await apiClient.put<ProjectDetailDto>(`/api/projects/${id}`, toProjectWriteBody(payload));
+export async function updateProject(projectId: number, payload: ProjectUpdatePayload): Promise<ProjectDetailDto> {
+    const { data } = await apiClient.put<ProjectDetailDto>(
+        `/api/projects/${projectId}`,
+        toProjectWriteBody(payload),
+    );
     return data;
 }
 
-export async function deleteProject(id: number): Promise<void> {
-    await apiClient.delete(`/api/projects/${id}`);
+export async function deleteProject(projectId: number): Promise<void> {
+    await apiClient.delete(`/api/projects/${projectId}`);
 }

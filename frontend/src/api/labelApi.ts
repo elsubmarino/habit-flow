@@ -7,8 +7,8 @@ export async function fetchLabels(): Promise<LabelDto[]> {
     return data;
 }
 
-export async function fetchLabelById(id: number): Promise<LabelDetailDto> {
-    const { data } = await apiClient.get<LabelDetailDto>(`/api/labels/${id}`);
+export async function fetchLabelById(labelId: number): Promise<LabelDetailDto> {
+    const { data } = await apiClient.get<LabelDetailDto>(`/api/labels/${labelId}`);
     return data;
 }
 
@@ -24,14 +24,14 @@ export async function createLabel(
     return data;
 }
 
-export async function updateLabel(id: number, payload: LabelUpdatePayload): Promise<LabelDetailDto> {
+export async function updateLabel(labelId: number, payload: LabelUpdatePayload): Promise<LabelDetailDto> {
     const { data } = await apiClient.put<LabelDetailDto>(
-        `/api/labels/${id}`,
-        toLabelUpdateBody(id, payload),
+        `/api/labels/${labelId}`,
+        toLabelUpdateBody(labelId, payload),
     );
     return data;
 }
 
-export async function deleteLabel(id: number): Promise<void> {
-    await apiClient.delete(`/api/labels/${id}`);
+export async function deleteLabel(labelId: number): Promise<void> {
+    await apiClient.delete(`/api/labels/${labelId}`);
 }

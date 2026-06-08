@@ -1,8 +1,8 @@
-package io.streak.habitflow.domain.activity.api;
+package io.streak.habitflow.domain.activitylog.api;
 
-import io.streak.habitflow.domain.activity.dto.response.ActivityLogListResponse;
-import io.streak.habitflow.domain.activity.dto.request.ActivityLogSearchCondition;
-import io.streak.habitflow.domain.activity.service.ActivityLogService;
+import io.streak.habitflow.domain.activitylog.dto.response.ActivityLogListResponse;
+import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogSearchCondition;
+import io.streak.habitflow.domain.activitylog.service.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

@@ -1,13 +1,10 @@
 package io.streak.habitflow.domain.task.service;
 
-import io.streak.habitflow.domain.activity.dto.request.ActivityLogRequest;
-import io.streak.habitflow.domain.activity.repository.ActivityLogRepository;
-import io.streak.habitflow.domain.activity.service.ActivityLogService;
+import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogRequest;
+import io.streak.habitflow.domain.activitylog.service.ActivityLogService;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
-import io.streak.habitflow.domain.comment.repository.CommentRepository;
 import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
-import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;

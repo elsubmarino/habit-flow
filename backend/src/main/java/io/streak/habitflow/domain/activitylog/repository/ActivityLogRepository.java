@@ -1,6 +1,6 @@
-package io.streak.habitflow.domain.activity.repository;
+package io.streak.habitflow.domain.activitylog.repository;
 
-import io.streak.habitflow.domain.activity.entity.ActivityLog;
+import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

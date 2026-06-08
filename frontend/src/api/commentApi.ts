@@ -25,15 +25,15 @@ export async function fetchTaskComments(taskId: number): Promise<CommentResponse
     return data;
 }
 
-export async function updateComment(id: number, taskId: number, content: string) {
-    const { data } = await apiClient.put<CommentResponseDto>(`/api/comments/${id}`, {
-        id,
+export async function updateComment(commentId: number, taskId: number, content: string) {
+    const { data } = await apiClient.put<CommentResponseDto>(`/api/comments/${commentId}`, {
+        id: commentId,
         taskId,
         content,
     });
     return data;
 }
 
-export async function deleteComment(id: number): Promise<void> {
-    await apiClient.delete(`/api/comments/${id}`);
+export async function deleteComment(commentId: number): Promise<void> {
+    await apiClient.delete(`/api/comments/${commentId}`);
 }

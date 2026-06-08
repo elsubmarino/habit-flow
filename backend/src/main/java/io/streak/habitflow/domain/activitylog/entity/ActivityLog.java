@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.activity.entity;
+package io.streak.habitflow.domain.activitylog.entity;
 
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.project.entity.Project;

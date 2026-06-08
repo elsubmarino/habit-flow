@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.activity.dto.request;
+package io.streak.habitflow.domain.activitylog.dto.request;
 
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
