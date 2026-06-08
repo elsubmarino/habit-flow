@@ -1,7 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { NavItem } from '../components/Sidebar';
-import { logActivity } from '../utils/activityLog';
-import { formatDueLabel } from '../utils/date';
+import * as labelApi from '../api/labelApi';
+import * as projectApi from '../api/projectApi';
+import * as taskApi from '../api/taskApi';
+import * as commentApi from '../api/commentApi';
+import {
+    mapLabel,
+    mapProject,
+    mapTaskToHabit,
+    priorityToApi,
+} from '../api/mappers';
+import type { TaskDto } from '../api/types';
 
 export interface Label {
     id: number;
@@ -15,7 +24,7 @@ export interface Attachment {
     originalFileName: string;
     contentType: string | null;
     fileSize: number;
-    downloadUrl: string; // object URL in frontend-only mode
+    downloadUrl: string;
 }
 
 export interface Subtask {
@@ -51,7 +60,8 @@ export interface Habit {
 }
 
 export function attachmentDownloadUrl(path: string): string {
-    return path;
+    if (path.startsWith('http')) return path;
+    return path.startsWith('/') ? path : `/${path}`;
 }
 
 export interface Project {
@@ -69,6 +79,7 @@ interface HabitState {
     status: 'idle' | 'loading' | 'failed';
     projectsStatus: 'idle' | 'loading' | 'failed';
     labelsStatus: 'idle' | 'loading' | 'failed';
+    error: string | null;
     activeView: ApiView;
     selectedProjectId: number | null;
     selectedLabelId: number | null;
@@ -81,6 +92,7 @@ const initialState: HabitState = {
     status: 'idle',
     projectsStatus: 'idle',
     labelsStatus: 'idle',
+    error: null,
     activeView: 'today',
     selectedProjectId: null,
     selectedLabelId: null,
@@ -88,110 +100,67 @@ const initialState: HabitState = {
 
 export type ApiView = NavItem | 'all';
 
-interface PersistedData {
-    habits: Habit[];
-    projects: Project[];
-    labels: Label[];
-    seq: number;
+function dedupeTasks(tasks: TaskDto[]): TaskDto[] {
+    const map = new Map<number, TaskDto>();
+    for (const task of tasks) map.set(task.id, task);
+    return [...map.values()];
 }
 
-const STORAGE_KEY = 'habitflow.frontend.v1';
-
-function nowIsoDate(): string {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+function countTasksForProject(habits: Habit[], projectId: number) {
+    return habits.filter(h => h.projectId === projectId).length;
 }
 
-function nextId(data: PersistedData): number {
-    data.seq += 1;
-    return data.seq;
+function countTasksForLabel(habits: Habit[], labelId: number) {
+    return habits.filter(h => h.labels.some(l => l.id === labelId)).length;
 }
 
-function seedData(): PersistedData {
-    return {
-        seq: 1000,
-        projects: [
-            { id: 1, name: '습관', color: '#4073ff', sortOrder: 0, taskCount: 0 },
-        ],
-        labels: [
-            { id: 11, name: '@업무', color: '#4073ff', taskCount: 0 },
-            { id: 12, name: '@개인', color: '#299438', taskCount: 0 },
-            { id: 13, name: '@중요', color: '#db4c3f', taskCount: 0 },
-        ],
-        habits: [],
-    };
-}
-
-function readData(): PersistedData {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return seedData();
-    try {
-        const parsed = JSON.parse(raw) as PersistedData;
-        return {
-            seq: parsed.seq ?? 1000,
-            habits: parsed.habits ?? [],
-            projects: parsed.projects ?? [],
-            labels: parsed.labels ?? [],
-        };
-    } catch {
-        return seedData();
-    }
-}
-
-function recalcCounts(data: PersistedData) {
-    data.projects = data.projects.map(project => ({
-        ...project,
-        taskCount: data.habits.filter(h => h.projectId === project.id).length,
-    }));
-    data.labels = data.labels.map(label => ({
-        ...label,
-        taskCount: data.habits.filter(h => h.labels.some(l => l.id === label.id)).length,
-    }));
-}
-
-function writeData(data: PersistedData) {
-    recalcCounts(data);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-function getHabitsByFilter(
-    habits: Habit[],
-    params: { view: ApiView; projectId?: number | null; labelId?: number | null },
-): Habit[] {
-    const today = nowIsoDate();
-    if (params.labelId != null) {
-        return habits.filter(h => h.labels.some(l => l.id === params.labelId));
-    }
+async function loadTasksForView(params: {
+    view: ApiView;
+    projectId?: number | null;
+    labelId?: number | null;
+}): Promise<TaskDto[]> {
     if (params.projectId != null) {
-        return habits.filter(h => h.projectId === params.projectId);
+        return taskApi.fetchProjectTasks(params.projectId);
     }
+
+    let tasks: TaskDto[] = [];
+    if (params.labelId != null) {
+        const [today, upcoming] = await Promise.all([
+            taskApi.fetchTodayTasks(),
+            taskApi.fetchUpcomingTasks(),
+        ]);
+        tasks = dedupeTasks([...today, ...upcoming]).filter(t =>
+            (t.labels ?? []).some(l => l.id === params.labelId),
+        );
+        return tasks;
+    }
+
     switch (params.view) {
-        case 'inbox':
-            return habits.filter(h => !h.projectId && !h.dueDate);
         case 'today':
-            return habits.filter(h => !h.dueDate || h.dueDate <= today);
-        case 'upcoming': {
-            const end = new Date();
-            end.setDate(end.getDate() + 7);
-            const endIso = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
-            return habits.filter(h => !!h.dueDate && h.dueDate >= today && h.dueDate <= endIso);
-        }
+            return taskApi.fetchTodayTasks();
+        case 'upcoming':
+            return taskApi.fetchUpcomingTasks();
+        case 'inbox':
+            return [];
+        case 'filters':
+        case 'report':
         case 'all':
-        default:
-            return habits;
+        default: {
+            const [today, upcoming] = await Promise.all([
+                taskApi.fetchTodayTasks(),
+                taskApi.fetchUpcomingTasks(),
+            ]);
+            return dedupeTasks([...today, ...upcoming]);
+        }
     }
 }
 
 export const fetchHabits = createAsyncThunk(
     'habits/fetch',
     async (params: { view: ApiView; projectId?: number | null; labelId?: number | null }) => {
-        const data = readData();
-        const habits = getHabitsByFilter(data.habits, params);
+        const tasks = await loadTasksForView(params);
         return {
-            habits,
+            habits: tasks.map(mapTaskToHabit),
             view: params.view,
             projectId: params.projectId ?? null,
             labelId: params.labelId ?? null,
@@ -200,17 +169,18 @@ export const fetchHabits = createAsyncThunk(
 );
 
 export const fetchProjects = createAsyncThunk('habits/fetchProjects', async () => {
-    const data = readData();
-    recalcCounts(data);
-    writeData(data);
-    return data.projects;
+    const projects = await projectApi.fetchProjects();
+    return projects.map(p => mapProject(p));
 });
 
 export const fetchLabels = createAsyncThunk('habits/fetchLabels', async () => {
-    const data = readData();
-    recalcCounts(data);
-    writeData(data);
-    return data.labels;
+    const labels = await labelApi.fetchLabels();
+    return labels.map(l => mapLabel(l));
+});
+
+export const fetchHabitDetail = createAsyncThunk('habits/fetchDetail', async (habitId: number) => {
+    const task = await taskApi.fetchTaskById(habitId);
+    return mapTaskToHabit(task);
 });
 
 export const addHabit = createAsyncThunk(
@@ -222,254 +192,111 @@ export const addHabit = createAsyncThunk(
         projectId?: number | null;
         dueDate?: string | null;
         labelIds?: number[];
+        file?: File | null;
+        priority?: 1 | 2 | 3 | 4;
     }) => {
-        const data = readData();
-        const labelMap = new Map(data.labels.map(l => [l.id, l]));
-        const selectedLabels = (payload.labelIds ?? [])
-            .map(id => labelMap.get(id))
-            .filter((x): x is Label => !!x);
-        const project = payload.projectId != null
-            ? data.projects.find(p => p.id === payload.projectId) ?? null
-            : null;
-        const habit: Habit = {
-            id: nextId(data),
+        const task = await taskApi.createTask({
             name: payload.name,
             description: payload.description,
-            streak: 0,
-            lastCompletedDate: null,
-            dueDate: payload.dueDate ?? null,
-            projectId: project?.id ?? null,
-            projectName: project?.name ?? null,
-            projectColor: project?.color ?? null,
-            completedToday: false,
-            priority: 4,
-            labels: selectedLabels,
-            attachments: [],
-            reminders: [],
-            subtasks: [],
-            comments: [],
-        };
-        data.habits.push(habit);
-        writeData(data);
-        logActivity({
-            type: 'added',
-            taskId: habit.id,
-            taskName: habit.name,
-            projectId: habit.projectId,
-            projectName: habit.projectName ?? '받은 편지함',
-            projectColor: habit.projectColor,
+            dueDate: payload.dueDate,
+            projectId: payload.projectId,
+            labelIds: payload.labelIds,
+            file: payload.file,
+            priorityType: priorityToApi(payload.priority),
         });
-        return habit;
+        return mapTaskToHabit(task);
     },
 );
 
 export const addProject = createAsyncThunk(
     'habits/addProject',
     async (payload: { name: string; color?: string }) => {
-        const data = readData();
-        const project: Project = {
-            id: nextId(data),
-            name: payload.name,
-            color: payload.color ?? '#4073ff',
-            sortOrder: data.projects.length,
-            taskCount: 0,
-        };
-        data.projects.push(project);
-        writeData(data);
-        return project;
+        const project = await projectApi.createProject(payload.name, payload.color);
+        return mapProject(project);
     },
 );
 
 export const deleteProject = createAsyncThunk('habits/deleteProject', async (projectId: number) => {
-    const data = readData();
-    data.projects = data.projects.filter(p => p.id !== projectId);
-    data.habits = data.habits.map(h => h.projectId === projectId ? {
-        ...h,
-        projectId: null,
-        projectName: null,
-        projectColor: null,
-    } : h);
-    writeData(data);
+    await projectApi.deleteProject(projectId);
     return projectId;
 });
 
 export const addLabel = createAsyncThunk(
     'habits/addLabel',
     async (payload: { name: string; color?: string }) => {
-        const data = readData();
-        const normalized = payload.name.startsWith('@') ? payload.name : `@${payload.name}`;
-        if (data.labels.some(l => l.name.toLowerCase() === normalized.toLowerCase())) {
-            throw new Error('이미 존재하는 라벨입니다.');
-        }
-        const label: Label = {
-            id: nextId(data),
-            name: normalized,
-            color: payload.color ?? '#808080',
-            taskCount: 0,
-        };
-        data.labels.push(label);
-        writeData(data);
-        return label;
+        const label = await labelApi.createLabel(payload.name, payload.color);
+        return mapLabel(label);
     },
 );
 
 export const deleteLabel = createAsyncThunk('habits/deleteLabel', async (labelId: number) => {
-    const data = readData();
-    data.labels = data.labels.filter(l => l.id !== labelId);
-    data.habits = data.habits.map(h => ({
-        ...h,
-        labels: h.labels.filter(l => l.id !== labelId),
-    }));
-    writeData(data);
+    await labelApi.deleteLabel(labelId);
     return labelId;
 });
 
-export const checkHabit = createAsyncThunk('habits/check', async (habitId: number) => {
-    const data = readData();
-    const before = data.habits.find(h => h.id === habitId);
-    const today = nowIsoDate();
-    data.habits = data.habits.map(h => {
-        if (h.id !== habitId) return h;
-        if (h.completedToday) {
-            return {
-                ...h,
-                completedToday: false,
-                lastCompletedDate: null,
-                streak: Math.max(0, h.streak - 1),
-            };
-        }
-        const prevDate = h.lastCompletedDate;
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yIso = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
-        const nextStreak = prevDate === yIso ? h.streak + 1 : 1;
-        return {
-            ...h,
-            completedToday: true,
-            lastCompletedDate: today,
-            streak: nextStreak,
-        };
-    });
-    writeData(data);
-    const updated = data.habits.find(h => h.id === habitId);
-    if (!updated) throw new Error('작업을 찾을 수 없습니다.');
-    if (before) {
-        logActivity({
-            type: before.completedToday ? 'uncompleted' : 'completed',
-            taskId: updated.id,
-            taskName: updated.name,
-            projectId: updated.projectId,
-            projectName: updated.projectName ?? '받은 편지함',
-            projectColor: updated.projectColor,
-        });
-    }
-    return updated;
+export const checkHabit = createAsyncThunk('habits/check', async (_habitId: number) => {
+    throw new Error('백엔드에 작업 완료/취소 API가 없습니다. (TaskUpdateRequest에 isCompleted 없음)');
 });
 
 export const updateHabit = createAsyncThunk(
     'habits/updateHabit',
     async ({ habitId, changes }: { habitId: number; changes: Partial<Habit> }) => {
-        const data = readData();
-        const before = data.habits.find(h => h.id === habitId);
-        data.habits = data.habits.map(h => (h.id === habitId ? { ...h, ...changes } : h));
-        writeData(data);
-        const updated = data.habits.find(h => h.id === habitId);
-        if (!updated || !before) throw new Error('작업을 찾을 수 없습니다.');
-
-        if (changes.dueDate !== undefined && changes.dueDate !== before.dueDate) {
-            logActivity({
-                type: 'date_changed',
-                taskId: updated.id,
-                taskName: updated.name,
-                projectId: updated.projectId,
-                projectName: updated.projectName ?? '받은 편지함',
-                projectColor: updated.projectColor,
-                meta: changes.dueDate ? formatDueLabel(changes.dueDate) : '날짜 없음',
-            });
-        }
-        if (
-            (changes.projectId !== undefined && changes.projectId !== before.projectId)
-            || (changes.projectName !== undefined && changes.projectName !== before.projectName)
-        ) {
-            logActivity({
-                type: 'moved',
-                taskId: updated.id,
-                taskName: updated.name,
-                projectId: updated.projectId,
-                projectName: updated.projectName ?? '받은 편지함',
-                projectColor: updated.projectColor,
-            });
-        }
-
-        return updated;
+        const task = await taskApi.updateTask(habitId, {
+            name: changes.name,
+            description: changes.description,
+            dueDate: changes.dueDate,
+            priorityType: changes.priority != null ? priorityToApi(changes.priority) : undefined,
+            projectId: changes.projectId,
+            labelIds: changes.labels?.map(l => l.id),
+        });
+        return mapTaskToHabit(task);
     },
 );
 
 export const addSubtask = createAsyncThunk(
     'habits/addSubtask',
     async ({ habitId, name, description }: { habitId: number; name: string; description: string }) => {
-        const data = readData();
-        const habit = data.habits.find(h => h.id === habitId);
-        if (!habit) throw new Error('작업을 찾을 수 없습니다.');
-        const subtask: Subtask = {
-            id: nextId(data),
+        const task = await taskApi.createTask({
             name,
             description,
-            completed: false,
+            parentId: habitId,
+        });
+        return {
+            habitId,
+            subtask: {
+                id: task.id,
+                name: task.name,
+                description: description,
+                completed: false,
+            } satisfies Subtask,
         };
-        habit.subtasks = [...(habit.subtasks ?? []), subtask];
-        writeData(data);
-        return { habitId, subtask };
     },
 );
 
 export const toggleSubtask = createAsyncThunk(
     'habits/toggleSubtask',
-    async ({ habitId, subtaskId }: { habitId: number; subtaskId: number }) => {
-        const data = readData();
-        const habit = data.habits.find(h => h.id === habitId);
-        if (!habit) throw new Error('작업을 찾을 수 없습니다.');
-        habit.subtasks = (habit.subtasks ?? []).map(s =>
-            s.id === subtaskId ? { ...s, completed: !s.completed } : s,
-        );
-        writeData(data);
-        return { habitId, subtasks: habit.subtasks };
+    async (_payload: { habitId: number; subtaskId: number }) => {
+        throw new Error('백엔드에 하위 작업 완료 토글 API가 없습니다.');
     },
 );
 
 export const addComment = createAsyncThunk(
     'habits/addComment',
     async ({ habitId, text }: { habitId: number; text: string }) => {
-        const data = readData();
-        const habit = data.habits.find(h => h.id === habitId);
-        if (!habit) throw new Error('작업을 찾을 수 없습니다.');
-        const comment: CommentItem = {
-            id: nextId(data),
-            text,
-            createdAt: new Date().toISOString(),
-        };
-        habit.comments = [...(habit.comments ?? []), comment];
-        writeData(data);
-        return { habitId, comment };
+        await commentApi.createComment(habitId, text);
+        const task = await taskApi.fetchTaskById(habitId);
+        return { habitId, habit: mapTaskToHabit(task) };
     },
 );
 
 export const uploadAttachments = createAsyncThunk(
     'habits/uploadAttachments',
     async ({ habitId, files }: { habitId: number; files: File[] }) => {
-        const data = readData();
-        const habit = data.habits.find(h => h.id === habitId);
-        if (!habit) throw new Error('작업을 찾을 수 없습니다.');
-        const uploaded: Attachment[] = files.map(file => ({
-            id: nextId(data),
-            originalFileName: file.name,
-            contentType: file.type || null,
-            fileSize: file.size,
-            downloadUrl: URL.createObjectURL(file),
-        }));
-        habit.attachments = [...(habit.attachments ?? []), ...uploaded];
-        writeData(data);
-        return { habitId, attachments: uploaded };
+        for (const file of files) {
+            await commentApi.createComment(habitId, '첨부파일이 등록되었습니다.', file);
+        }
+        const task = await taskApi.fetchTaskById(habitId);
+        return { habitId, habit: mapTaskToHabit(task) };
     },
 );
 
@@ -490,32 +317,60 @@ const habitSlice = createSlice({
             state.selectedLabelId = action.payload;
             state.selectedProjectId = null;
         },
+        clearHabitError(state) {
+            state.error = null;
+        },
     },
     extraReducers: builder => {
         builder
-            .addCase(fetchHabits.pending, state => { state.status = 'loading'; })
+            .addCase(fetchHabits.pending, state => {
+                state.status = 'loading';
+                state.error = null;
+            })
             .addCase(fetchHabits.fulfilled, (state, action) => {
                 state.status = 'idle';
-                state.list = action.payload.habits.map(h => ({
-                    ...h,
-                    priority: h.priority ?? 4,
-                    attachments: h.attachments ?? [],
-                    reminders: h.reminders ?? [],
-                    subtasks: h.subtasks ?? [],
-                    comments: h.comments ?? [],
-                }));
+                state.list = action.payload.habits;
                 state.activeView = action.payload.view;
                 state.selectedProjectId = action.payload.projectId;
                 state.selectedLabelId = action.payload.labelId;
+                state.projects = state.projects.map(p => ({
+                    ...p,
+                    taskCount: countTasksForProject(action.payload.habits, p.id),
+                }));
+                state.labels = state.labels.map(l => ({
+                    ...l,
+                    taskCount: countTasksForLabel(action.payload.habits, l.id),
+                }));
             })
-            .addCase(fetchHabits.rejected, state => { state.status = 'failed'; })
+            .addCase(fetchHabits.rejected, (state, action) => {
+                state.status = 'failed';
+                state.error = action.error.message ?? '작업 목록을 불러오지 못했습니다.';
+            })
+            .addCase(fetchProjects.pending, state => {
+                state.projectsStatus = 'loading';
+            })
             .addCase(fetchProjects.fulfilled, (state, action) => {
                 state.projectsStatus = 'idle';
-                state.projects = action.payload;
+                state.projects = action.payload.map(p => ({
+                    ...p,
+                    taskCount: countTasksForProject(state.list, p.id),
+                }));
+            })
+            .addCase(fetchProjects.rejected, state => {
+                state.projectsStatus = 'failed';
+            })
+            .addCase(fetchLabels.pending, state => {
+                state.labelsStatus = 'loading';
             })
             .addCase(fetchLabels.fulfilled, (state, action) => {
                 state.labelsStatus = 'idle';
-                state.labels = action.payload;
+                state.labels = action.payload.map(l => ({
+                    ...l,
+                    taskCount: countTasksForLabel(state.list, l.id),
+                }));
+            })
+            .addCase(fetchLabels.rejected, state => {
+                state.labelsStatus = 'failed';
             })
             .addCase(addHabit.fulfilled, (state, action) => {
                 if (!state.list.some(h => h.id === action.payload.id)) {
@@ -540,22 +395,14 @@ const habitSlice = createSlice({
                     state.selectedLabelId = null;
                 }
             })
-            .addCase(checkHabit.fulfilled, (state, action) => {
-                const updated = action.payload;
-                if (state.activeView === 'inbox' && updated.completedToday) {
-                    state.list = state.list.filter(h => h.id !== updated.id);
-                    return;
-                }
-                const index = state.list.findIndex(h => h.id === updated.id);
-                if (index !== -1) state.list[index] = updated;
-            })
-            .addCase(uploadAttachments.fulfilled, (state, action) => {
-                const habit = state.list.find(h => h.id === action.payload.habitId);
-                if (habit) {
-                    habit.attachments = [...(habit.attachments ?? []), ...action.payload.attachments];
-                }
+            .addCase(checkHabit.rejected, (state, action) => {
+                state.error = action.error.message ?? '완료 처리에 실패했습니다.';
             })
             .addCase(updateHabit.fulfilled, (state, action) => {
+                const index = state.list.findIndex(h => h.id === action.payload.id);
+                if (index !== -1) state.list[index] = action.payload;
+            })
+            .addCase(fetchHabitDetail.fulfilled, (state, action) => {
                 const index = state.list.findIndex(h => h.id === action.payload.id);
                 if (index !== -1) state.list[index] = action.payload;
             })
@@ -563,16 +410,20 @@ const habitSlice = createSlice({
                 const habit = state.list.find(h => h.id === action.payload.habitId);
                 if (habit) habit.subtasks = [...(habit.subtasks ?? []), action.payload.subtask];
             })
-            .addCase(toggleSubtask.fulfilled, (state, action) => {
-                const habit = state.list.find(h => h.id === action.payload.habitId);
-                if (habit) habit.subtasks = action.payload.subtasks;
+            .addCase(toggleSubtask.rejected, (state, action) => {
+                state.error = action.error.message ?? '하위 작업 상태 변경에 실패했습니다.';
             })
             .addCase(addComment.fulfilled, (state, action) => {
-                const habit = state.list.find(h => h.id === action.payload.habitId);
-                if (habit) habit.comments = [...(habit.comments ?? []), action.payload.comment];
+                const index = state.list.findIndex(h => h.id === action.payload.habitId);
+                if (index !== -1) state.list[index] = action.payload.habit;
+            })
+            .addCase(uploadAttachments.fulfilled, (state, action) => {
+                const index = state.list.findIndex(h => h.id === action.payload.habitId);
+                if (index !== -1) state.list[index] = action.payload.habit;
             });
     },
 });
 
-export const { setActiveView, setSelectedProject, setSelectedLabel } = habitSlice.actions;
+export const { setActiveView, setSelectedProject, setSelectedLabel, clearHabitError } =
+    habitSlice.actions;
 export default habitSlice.reducer;

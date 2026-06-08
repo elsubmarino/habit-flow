@@ -28,6 +28,11 @@ import ViewMenuButton from './components/ViewMenuButton';
 import { fetchNotifications, selectUnreadCount } from './store/notificationsSlice';
 import { BellIcon, PanelToggleIcon } from './components/icons';
 import { saveUserProfile } from './utils/userProfile';
+import { clearStoredToken } from './api/client';
+import { bootstrapAuthFromCallback } from './api/authBootstrap';
+import { fetchMember } from './api/memberApi';
+import OAuthRedirectHandler from './components/OAuthRedirectHandler';
+import { clearHabitError, fetchHabitDetail } from './store/habitSlice';
 import { formatSectionDate, formatTodayHeader } from './utils/date';
 import {
     filterHabits,
@@ -59,6 +64,7 @@ function App() {
         projects,
         labels,
         status,
+        error: habitError,
         selectedProjectId,
         selectedLabelId,
     } = useAppSelector(state => state.habits);
@@ -74,9 +80,7 @@ function App() {
     const [showProjectModal, setShowProjectModal] = useState(false);
     const [showSearchModal, setShowSearchModal] = useState(false);
     const [selectedHabitId, setSelectedHabitId] = useState<number | null>(null);
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(
-        () => localStorage.getItem('habitflow.auth') === 'true',
-    );
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => bootstrapAuthFromCallback());
     const addFormRef = useRef<AddHabitFormHandle>(null);
 
     useQuickAddShortcut(() => addFormRef.current?.open());
@@ -92,15 +96,25 @@ function App() {
         return () => window.removeEventListener('keydown', onKey);
     }, []);
 
+    const handleAuthSuccess = () => {
+        setIsAuthenticated(true);
+        void fetchMember()
+            .then(member => {
+                saveUserProfile({
+                    displayName: member.name ?? '사용자',
+                    fullName: member.name ?? '사용자',
+                    email: member.email ?? '',
+                });
+            })
+            .catch(() => undefined);
+    };
+
     if (!isAuthenticated) {
         return (
-            <LoginScreen
-                onLogin={email => {
-                    localStorage.setItem('habitflow.auth', 'true');
-                    saveUserProfile({ email: email || 'jiwan@habitflow.app' });
-                    setIsAuthenticated(true);
-                }}
-            />
+            <>
+                <OAuthRedirectHandler onSuccess={handleAuthSuccess} />
+                <LoginScreen onLoginSuccess={handleAuthSuccess} />
+            </>
         );
     }
 
@@ -108,6 +122,15 @@ function App() {
         dispatch(fetchProjects());
         dispatch(fetchLabels());
         dispatch(fetchNotifications());
+        void fetchMember()
+            .then(member => {
+                saveUserProfile({
+                    displayName: member.name ?? '사용자',
+                    fullName: member.name ?? '사용자',
+                    email: member.email ?? '',
+                });
+            })
+            .catch(() => undefined);
     }, [dispatch]);
 
     useEffect(() => {
@@ -131,10 +154,16 @@ function App() {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('habitflow.auth');
+        clearStoredToken();
         setIsAuthenticated(false);
         setShowNotifications(false);
     };
+
+    useEffect(() => {
+        if (selectedHabitId != null) {
+            void dispatch(fetchHabitDetail(selectedHabitId));
+        }
+    }, [dispatch, selectedHabitId]);
 
     const toggleSidebar = () => {
         setSidebarCollapsed(prev => {
@@ -305,7 +334,17 @@ function App() {
     ) : null;
 
     return (
+        <>
+        <OAuthRedirectHandler onSuccess={handleAuthSuccess} />
         <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+            {habitError && (
+                <div className="api-error-banner" role="alert">
+                    <span>{habitError}</span>
+                    <button type="button" onClick={() => dispatch(clearHabitError())}>
+                        닫기
+                    </button>
+                </div>
+            )}
             <Sidebar
                 activeNav={activeNav}
                 projects={projects}
@@ -444,6 +483,7 @@ function App() {
                 />
             )}
         </div>
+        </>
     );
 }
 

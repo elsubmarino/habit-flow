@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -178,6 +179,16 @@ class TaskServiceTest {
         verify(taskRepository).save(any(Task.class));
 
         verify(fileStorageService).upload(mockFile);
-        verify(commentRepository).save(any(Comment.class));
+        //verify(commentRepository).save(any(Comment.class));
+        verify(taskRepository).save(argThat(task -> {
+            boolean hasComment = !task.getComments().isEmpty();
+            if (!hasComment) return false;
+
+            Comment innerComment = task.getComments().get(0);
+            boolean isContentMatch = "첨부파일이 등록되었습니다.".equals(innerComment.getContent());
+            boolean hasAttachment = !innerComment.getAttachments().isEmpty();
+
+            return isContentMatch && hasAttachment;
+        }));
     }
 }

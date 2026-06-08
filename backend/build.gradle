@@ -49,6 +49,7 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     testImplementation 'com.h2database:h2' // 추가
+    testRuntimeOnly 'com.h2database:h2'
 }
 
 def querydslDir = "$buildDir/generated/querydsl"

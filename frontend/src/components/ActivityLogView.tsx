@@ -1,98 +1,78 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Project } from '../store/habitSlice';
-import {
-    activityDateKey,
-    activityBadge,
-    formatActivityDateHeader,
-    formatActivityRelativeTime,
-    readActivities,
-    type ActivityEntry,
-    type ActivityType,
-} from '../utils/activityLog';
-import { getUserProfile } from '../utils/userProfile';
-
-interface ActivityLogViewProps {
-    projects: Project[];
-    onOpenTask: (taskId: number) => void;
-}
+import { fetchActivityLogs } from '../api/activityApi';
+import type { ActivityLogDto, ActivityType } from '../api/types';
+import { formatActivityDateHeader, formatActivityRelativeTime } from '../utils/activityLog';
 
 type ProjectFilter = 'all' | number;
 type ActivityFilter = 'all' | ActivityType;
 type DateFilter = 'all' | 'today' | 'week';
 
+interface ActivityLogViewProps {
+    projects: Project[];
+    onOpenTask?: (taskId: number) => void;
+}
+
 const ACTIVITY_FILTER_OPTIONS: { value: ActivityFilter; label: string }[] = [
     { value: 'all', label: '모든 활동' },
-    { value: 'added', label: '추가' },
-    { value: 'completed', label: '완료' },
-    { value: 'moved', label: '이동' },
-    { value: 'date_changed', label: '날짜 변경' },
-    { value: 'deleted', label: '삭제' },
+    { value: 'ADDED', label: '추가' },
+    { value: 'COMPLETED', label: '완료' },
+    { value: 'MOVED', label: '이동' },
+    { value: 'UPDATED', label: '수정' },
+    { value: 'DELETED', label: '삭제' },
 ];
 
-function renderActivityText(entry: ActivityEntry, onOpenTask: (id: number) => void) {
-    const taskBtn = (
-        <button type="button" className="activity-task-link" onClick={() => onOpenTask(entry.taskId)}>
-            {entry.taskName}
-        </button>
-    );
-    switch (entry.type) {
-        case 'added':
-            return (
-                <>
-                    {entry.actor}님이 {taskBtn}을(를) 추가했습니다
-                </>
-            );
-        case 'completed':
-            return (
-                <>
-                    {entry.actor}님이 {taskBtn}을(를) 완료했습니다
-                </>
-            );
-        case 'uncompleted':
-            return (
-                <>
-                    {entry.actor}님이 {taskBtn} 완료를 취소했습니다
-                </>
-            );
-        case 'deleted':
-            return (
-                <>
-                    {entry.actor}님이 {taskBtn}을(를) 삭제했습니다
-                </>
-            );
-        case 'moved':
-            return (
-                <>
-                    {entry.actor}님이 {taskBtn}을(를) 이동시켰습니다
-                </>
-            );
-        case 'date_changed':
-            return (
-                <>
-                    {entry.actor}님이 {taskBtn}의 날짜를 {entry.meta ?? ''}(으)로 변경했습니다
-                </>
-            );
+function activityLabel(type: ActivityType): string {
+    switch (type) {
+        case 'ADDED':
+            return '추가했습니다';
+        case 'COMPLETED':
+            return '완료했습니다';
+        case 'MOVED':
+            return '이동시켰습니다';
+        case 'DELETED':
+            return '삭제했습니다';
+        case 'UPDATED':
         default:
-            return (
-                <>
-                    {entry.actor}님이 {taskBtn}을(를) 수정했습니다
-                </>
-            );
+            return '수정했습니다';
     }
 }
 
-const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, onOpenTask }) => {
-    const [items, setItems] = useState<ActivityEntry[]>(() => readActivities());
+function activityBadge(type: ActivityType): string {
+    switch (type) {
+        case 'ADDED':
+            return '+';
+        case 'COMPLETED':
+            return '✓';
+        case 'DELETED':
+            return '−';
+        case 'MOVED':
+        case 'UPDATED':
+        default:
+            return '↻';
+    }
+}
+
+const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
+    const [items, setItems] = useState<ActivityLogDto[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [projectFilter, setProjectFilter] = useState<ProjectFilter>('all');
     const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
     const [dateFilter, setDateFilter] = useState<DateFilter>('all');
-    const profile = getUserProfile();
 
     useEffect(() => {
-        const reload = () => setItems(readActivities());
-        reload();
-        window.addEventListener('habitflow:activity', reload);
-        return () => window.removeEventListener('habitflow:activity', reload);
+        setLoading(true);
+        void fetchActivityLogs()
+            .then(data => {
+                setItems(data);
+                setError(null);
+            })
+            .catch(err => {
+                setError(err instanceof Error ? err.message : '활동 내역을 불러오지 못했습니다.');
+                setItems([]);
+            })
+            .finally(() => setLoading(false));
     }, []);
 
     const filtered = useMemo(() => {
@@ -101,19 +81,22 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, onOpenTask 
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
         return items.filter(entry => {
-            if (projectFilter !== 'all' && entry.projectId !== projectFilter) return false;
-            if (activityFilter !== 'all' && entry.type !== activityFilter) return false;
+            if (projectFilter !== 'all') {
+                const project = projects.find(p => p.id === projectFilter);
+                if (project && entry.projectName !== project.name) return false;
+            }
+            if (activityFilter !== 'all' && entry.activityType !== activityFilter) return false;
             const created = new Date(entry.createdAt);
-            if (dateFilter === 'today' && activityDateKey(entry.createdAt) !== todayKey) return false;
+            if (dateFilter === 'today' && entry.createdAt.slice(0, 10) !== todayKey) return false;
             if (dateFilter === 'week' && created < weekAgo) return false;
             return true;
         });
-    }, [items, projectFilter, activityFilter, dateFilter]);
+    }, [items, projectFilter, activityFilter, dateFilter, projects]);
 
     const grouped = useMemo(() => {
-        const map = new Map<string, ActivityEntry[]>();
+        const map = new Map<string, ActivityLogDto[]>();
         for (const entry of filtered) {
-            const key = activityDateKey(entry.createdAt);
+            const key = entry.createdAt.slice(0, 10);
             if (!map.has(key)) map.set(key, []);
             map.get(key)!.push(entry);
         }
@@ -121,17 +104,9 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, onOpenTask 
     }, [filtered]);
 
     const exportCsv = () => {
-        const header = '날짜,사용자,활동,작업,프로젝트\n';
+        const header = '날짜,사용자,활동,프로젝트\n';
         const rows = filtered
-            .map(e =>
-                [
-                    e.createdAt,
-                    e.actor,
-                    e.type,
-                    `"${e.taskName.replace(/"/g, '""')}"`,
-                    e.projectName ?? '',
-                ].join(','),
-            )
+            .map(e => [e.createdAt, e.userName, e.activityType, e.projectName].join(','))
             .join('\n');
         const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -148,23 +123,19 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, onOpenTask 
                 <div className="activity-log-title-row">
                     <h1 className="activity-log-title">보고: 전체</h1>
                     <button type="button" className="activity-export-btn" onClick={exportCsv}>
-                       보내기
+                        보내기
                     </button>
                 </div>
 
                 <div className="activity-filters">
                     <label className="activity-filter">
-                        <span className="activity-filter-icon" aria-hidden>
-                            ▦
-                        </span>
+                        <span className="activity-filter-icon" aria-hidden>▦</span>
                         <select disabled value="all">
                             <option value="all">모든 작업 영역</option>
                         </select>
                     </label>
                     <label className="activity-filter">
-                        <span className="activity-filter-icon" aria-hidden>
-                            #
-                        </span>
+                        <span className="activity-filter-icon" aria-hidden>#</span>
                         <select
                             value={String(projectFilter)}
                             onChange={e => {
@@ -181,18 +152,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, onOpenTask 
                         </select>
                     </label>
                     <label className="activity-filter">
-                        <span className="activity-filter-icon" aria-hidden>
-                            👤
-                        </span>
-                        <select defaultValue="me">
-                            <option value="me">{profile.displayName} 그리고 미할당됨</option>
-                            <option value="all">모두</option>
-                        </select>
-                    </label>
-                    <label className="activity-filter">
-                        <span className="activity-filter-icon" aria-hidden>
-                            ≡
-                        </span>
+                        <span className="activity-filter-icon" aria-hidden>≡</span>
                         <select
                             value={activityFilter}
                             onChange={e => setActivityFilter(e.target.value as ActivityFilter)}
@@ -205,9 +165,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, onOpenTask 
                         </select>
                     </label>
                     <label className="activity-filter">
-                        <span className="activity-filter-icon" aria-hidden>
-                            📅
-                        </span>
+                        <span className="activity-filter-icon" aria-hidden>📅</span>
                         <select
                             value={dateFilter}
                             onChange={e => setDateFilter(e.target.value as DateFilter)}
@@ -221,7 +179,9 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, onOpenTask 
             </header>
 
             <div className="activity-log-body">
-                {grouped.length === 0 ? (
+                {loading && <p className="activity-empty">불러오는 중…</p>}
+                {error && <p className="activity-empty">{error}</p>}
+                {!loading && !error && grouped.length === 0 ? (
                     <p className="activity-empty">활동 내역이 없습니다.</p>
                 ) : (
                     grouped.map(([dateKey, entries]) => (
@@ -233,28 +193,27 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, onOpenTask 
                                 {entries.map(entry => (
                                     <li key={entry.id} className="activity-row">
                                         <span className="activity-avatar-wrap">
-                                            <span
-                                                className="activity-avatar"
-                                                style={{ background: entry.actorColor }}
-                                            >
-                                                {entry.actor.charAt(0).toUpperCase()}
+                                            <span className="activity-avatar">
+                                                {entry.userName.charAt(0).toUpperCase()}
                                             </span>
                                             <span
-                                                className={`activity-badge badge-${entry.type}`}
+                                                className={`activity-badge badge-${entry.activityType.toLowerCase()}`}
                                                 aria-hidden
                                             >
-                                                {activityBadge(entry.type)}
+                                                {activityBadge(entry.activityType)}
                                             </span>
                                         </span>
                                         <div className="activity-content">
                                             <p className="activity-text">
-                                                {renderActivityText(entry, onOpenTask)}
+                                                <strong>{entry.userName}</strong>님이 활동을{' '}
+                                                {activityLabel(entry.activityType)}
+                                                {entry.projectName && (
+                                                    <span className="activity-project">
+                                                        {' '}
+                                                        · {entry.projectName} #
+                                                    </span>
+                                                )}
                                             </p>
-                                            {entry.projectName && (
-                                                <span className="activity-project">
-                                                    {entry.projectName} #
-                                                </span>
-                                            )}
                                         </div>
                                         <time className="activity-time" dateTime={entry.createdAt}>
                                             {formatActivityRelativeTime(entry.createdAt)}

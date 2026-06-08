@@ -90,10 +90,13 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 projectId: selectedProjectId === '' ? null : selectedProjectId,
                 dueDate,
                 labelIds: selectedLabelIds,
+                file: pendingFiles[0] ?? null,
             })).unwrap();
 
-            if (pendingFiles.length > 0) {
-                await dispatch(uploadAttachments({ habitId: created.id, files: pendingFiles })).unwrap();
+            if (pendingFiles.length > 1) {
+                await dispatch(
+                    uploadAttachments({ habitId: created.id, files: pendingFiles.slice(1) }),
+                ).unwrap();
             }
 
             const apiView: ApiView = view === 'filters' ? 'all' : view;

@@ -4,6 +4,7 @@ import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
+import io.streak.habitflow.domain.member.type.Role;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.global.config.JpaAuditingConfig;
@@ -38,6 +39,7 @@ class TaskRepositoryCustomImplTest {
     void setUp(){
         Member testMember = Member.builder().email("test@test.com")
                 .password("1234")
+                .role(Role.USER)
                 .build();
         memberRepository.save(testMember);
 

@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { searchIntegrated } from '../api/searchApi';
+import { mapLabel, mapProject, mapTaskToHabit } from '../api/mappers';
 import type { Habit, Label, Project } from '../store/habitSlice';
 
 interface SearchModalProps {
@@ -21,7 +23,37 @@ const SearchModal: React.FC<SearchModalProps> = ({
     onSelectLabel,
 }) => {
     const [query, setQuery] = useState('');
-    const q = query.trim().toLowerCase();
+    const [remoteHabits, setRemoteHabits] = useState<Habit[]>([]);
+    const [remoteProjects, setRemoteProjects] = useState<Project[]>([]);
+    const [remoteLabels, setRemoteLabels] = useState<Label[]>([]);
+    const [searching, setSearching] = useState(false);
+
+    const q = query.trim();
+
+    useEffect(() => {
+        if (!q) {
+            setRemoteHabits([]);
+            setRemoteProjects([]);
+            setRemoteLabels([]);
+            return;
+        }
+        const timer = window.setTimeout(() => {
+            setSearching(true);
+            void searchIntegrated(q)
+                .then(result => {
+                    setRemoteHabits(result.tasks.map(mapTaskToHabit));
+                    setRemoteProjects(result.projects.map(p => mapProject(p)));
+                    setRemoteLabels(result.labels.map(l => mapLabel(l)));
+                })
+                .catch(() => {
+                    setRemoteHabits([]);
+                    setRemoteProjects([]);
+                    setRemoteLabels([]);
+                })
+                .finally(() => setSearching(false));
+        }, 250);
+        return () => window.clearTimeout(timer);
+    }, [q]);
 
     const filtered = useMemo(() => {
         if (!q) {
@@ -31,14 +63,22 @@ const SearchModal: React.FC<SearchModalProps> = ({
                 labels: labels.slice(0, 8),
             };
         }
+        if (remoteHabits.length || remoteProjects.length || remoteLabels.length) {
+            return {
+                habits: remoteHabits.slice(0, 10),
+                projects: remoteProjects.slice(0, 10),
+                labels: remoteLabels.slice(0, 10),
+            };
+        }
+        const lower = q.toLowerCase();
         return {
-            habits: habits.filter(h =>
-                h.name.toLowerCase().includes(q) || h.description.toLowerCase().includes(q),
-            ).slice(0, 10),
-            projects: projects.filter(p => p.name.toLowerCase().includes(q)).slice(0, 10),
-            labels: labels.filter(l => l.name.toLowerCase().includes(q)).slice(0, 10),
+            habits: habits
+                .filter(h => h.name.toLowerCase().includes(lower) || h.description.toLowerCase().includes(lower))
+                .slice(0, 10),
+            projects: projects.filter(p => p.name.toLowerCase().includes(lower)).slice(0, 10),
+            labels: labels.filter(l => l.name.toLowerCase().includes(lower)).slice(0, 10),
         };
-    }, [habits, labels, projects, q]);
+    }, [habits, labels, projects, q, remoteHabits, remoteLabels, remoteProjects]);
 
     return (
         <div className="search-overlay" onClick={onClose}>
@@ -53,21 +93,21 @@ const SearchModal: React.FC<SearchModalProps> = ({
                     />
                     <kbd>Ctrl K</kbd>
                 </div>
+                {searching && <p className="search-status">검색 중…</p>}
 
                 <div className="search-section">
-                    <p className="search-section-title">최근 할 일</p>
+                    <p className="search-section-title">할 일</p>
                     {filtered.habits.map(habit => (
                         <button
                             key={habit.id}
                             type="button"
-                            className="search-item"
+                            className="search-result"
                             onClick={() => {
                                 onSelectHabit(habit.id);
                                 onClose();
                             }}
                         >
-                            ○ {habit.name}
-                            <span>{habit.projectName ?? '받은 편지함'}</span>
+                            {habit.name}
                         </button>
                     ))}
                 </div>
@@ -78,14 +118,13 @@ const SearchModal: React.FC<SearchModalProps> = ({
                         <button
                             key={project.id}
                             type="button"
-                            className="search-item"
+                            className="search-result"
                             onClick={() => {
                                 onSelectProject(project.id);
                                 onClose();
                             }}
                         >
-                            # {project.name}
-                            <span>{project.taskCount}</span>
+                            {project.name}
                         </button>
                     ))}
                 </div>
@@ -96,15 +135,13 @@ const SearchModal: React.FC<SearchModalProps> = ({
                         <button
                             key={label.id}
                             type="button"
-                            className="search-item"
+                            className="search-result"
                             onClick={() => {
                                 onSelectLabel(label.id);
                                 onClose();
                             }}
                         >
-                            <span className="search-label-dot" style={{ background: label.color }} />
                             {label.name}
-                            <span>{label.taskCount}</span>
                         </button>
                     ))}
                 </div>
