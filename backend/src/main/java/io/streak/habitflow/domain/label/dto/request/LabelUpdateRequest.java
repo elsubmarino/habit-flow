@@ -13,5 +13,5 @@ public class LabelUpdateRequest {
     private Long id;
     private String name;
     private String color;
-    private boolean isFavorite;
+    private boolean favorite;
 }

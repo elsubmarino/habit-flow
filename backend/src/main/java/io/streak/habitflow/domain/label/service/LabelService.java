@@ -11,8 +11,6 @@ import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
-import io.streak.habitflow.domain.project.entity.Project;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -93,6 +91,8 @@ public class LabelService {
                     TargetType.LABEL,
                     label.getId()
             ).orElseGet(() -> favoriteRepository.save(favorite));
+        }else{
+            favoriteRepository.deleteByMemberIdAndTargetTypeAndTargetId(member.getId(),TargetType.LABEL,label.getId());
         }
 
         label.updateLabel(labelUpdateRequest.getName(),

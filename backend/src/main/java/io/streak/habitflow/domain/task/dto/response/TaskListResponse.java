@@ -21,7 +21,7 @@ public class TaskListResponse {
     private Long id;
     private String name;
     private String description;
-    private boolean isCompleted;
+    private boolean completed;
     private PriorityType priorityType;
     private LocalDateTime dueDate;
     private long sortOrder;
@@ -49,7 +49,7 @@ public class TaskListResponse {
                 .id(task.getId())
                 .name(task.getName())
                 .description(task.getDescription())
-                .isCompleted(task.isCompleted())
+                .completed(task.isCompleted())
                 .priorityType(task.getPriorityType())
                 .dueDate(task.getDueDate())
                 .sortOrder(task.getSortOrder())

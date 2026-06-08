@@ -14,5 +14,5 @@ public class ProjectUpdateRequest {
     private Long parentId;
     private AccessType accessType;
     private LayoutType layoutType;
-    private boolean isFavorite;
+    private boolean favorite;
 }

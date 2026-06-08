@@ -3,17 +3,21 @@ import {
     BellIcon,
     CheckIcon,
     ChevronDownIcon,
+    ChevronUpIcon,
     FilterIcon,
     InboxIcon,
     PanelToggleIcon,
     PlusIcon,
     TodayIcon,
     ReportIcon,
+    SearchIcon,
     UpcomingIcon,
 } from './icons';
+import { displayLabelName } from '../api/labelMappers';
 import type { Label, Project } from '../store/habitSlice';
 import { getUserProfile } from '../utils/userProfile';
 import UserMenuDropdown from './UserMenuDropdown';
+import ProjectListRow from './ProjectListRow';
 
 export type NavItem = 'inbox' | 'today' | 'upcoming' | 'filters' | 'report';
 
@@ -23,10 +27,18 @@ interface SidebarProps {
     labels: Label[];
     selectedProjectId: number | null;
     selectedLabelId: number | null;
+    projectsBrowseActive: boolean;
+    projectsListExpanded: boolean;
+    favoritesListExpanded: boolean;
     onNavChange: (nav: NavItem) => void;
-    onProjectSelect: (projectId: number | null) => void;
+    onProjectSelect: (projectId: number) => void;
+    onProjectsBrowse: () => void;
+    onAddProject: () => void;
+    onEditProject: (project: Project) => void;
+    onDeleteProject: (projectId: number) => void;
+    onToggleProjectsList: () => void;
+    onToggleFavoritesList: () => void;
     onLabelSelect: (labelId: number | null) => void;
-    onManageProjects: () => void;
     onAddClick: () => void;
     onSearchClick: () => void;
     notificationsActive: boolean;
@@ -43,10 +55,18 @@ const Sidebar: React.FC<SidebarProps> = ({
     labels,
     selectedProjectId,
     selectedLabelId,
+    projectsBrowseActive,
+    projectsListExpanded,
+    favoritesListExpanded,
     onNavChange,
     onProjectSelect,
+    onProjectsBrowse,
+    onAddProject,
+    onEditProject,
+    onDeleteProject,
+    onToggleProjectsList,
+    onToggleFavoritesList,
     onLabelSelect,
-    onManageProjects,
     onAddClick,
     onSearchClick,
     notificationsActive,
@@ -57,8 +77,11 @@ const Sidebar: React.FC<SidebarProps> = ({
     onOpenActivity,
 }) => {
     const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [projectsHeaderHover, setProjectsHeaderHover] = useState(false);
+    const [favoritesHeaderHover, setFavoritesHeaderHover] = useState(false);
     const userMenuRef = useRef<HTMLDivElement>(null);
     const profile = getUserProfile();
+    const favoriteProjects = projects.filter(p => p.favorite);
 
     useEffect(() => {
         if (!userMenuOpen) return;
@@ -72,10 +95,10 @@ const Sidebar: React.FC<SidebarProps> = ({
     }, [userMenuOpen]);
 
     const navItems: { id: NavItem; label: string; icon: React.ReactNode }[] = [
-        { id: 'inbox', label: '받은 편지함', icon: <InboxIcon /> },
+        { id: 'inbox', label: '관리함', icon: <InboxIcon /> },
         { id: 'today', label: '오늘', icon: <TodayIcon /> },
-        { id: 'upcoming', label: '다음 7일', icon: <UpcomingIcon /> },
-        { id: 'filters', label: '필터 및 라벨', icon: <FilterIcon /> },
+        { id: 'upcoming', label: '다음', icon: <UpcomingIcon /> },
+        { id: 'filters', label: '라벨', icon: <FilterIcon /> },
         { id: 'report', label: '보고', icon: <ReportIcon /> },
     ];
 
@@ -136,19 +159,27 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <span>작업 추가</span>
                         <kbd className="sidebar-kbd">Q</kbd>
                     </button>
-                    <button type="button" className="sidebar-search-btn" onClick={onSearchClick} aria-label="검색">
-                        <span>검색</span>
-                        <kbd className="sidebar-kbd">Ctrl K</kbd>
-                    </button>
                 </div>
 
                 <nav className="sidebar-nav">
                     <ul>
+                        <li>
+                            <button
+                                type="button"
+                                className="nav-item"
+                                onClick={onSearchClick}
+                                aria-label="검색 (Ctrl K)"
+                            >
+                                <span className="nav-icon"><SearchIcon /></span>
+                                <span className="nav-label">검색</span>
+                                <kbd className="sidebar-kbd">Ctrl K</kbd>
+                            </button>
+                        </li>
                         {navItems.map(item => (
                             <li key={item.id}>
                                 <button
                                     type="button"
-                                    className={`nav-item ${activeNav === item.id && !selectedProjectId && !selectedLabelId ? 'active' : ''}`}
+                                    className={`nav-item ${activeNav === item.id && !selectedProjectId && !selectedLabelId && !projectsBrowseActive ? 'active' : ''}`}
                                     onClick={() => onNavChange(item.id)}
                                 >
                                     <span className="nav-icon">{item.icon}</span>
@@ -159,32 +190,105 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </ul>
                 </nav>
 
-                <div className="sidebar-section">
-                    <div className="sidebar-section-header">
-                        <h3 className="sidebar-section-title">내 프로젝트</h3>
-                        <button type="button" className="section-action-btn" onClick={onManageProjects}>
-                            관리
-                        </button>
+                {favoriteProjects.length > 0 && (
+                    <div
+                        className="sidebar-section sidebar-favorites-section"
+                        onMouseEnter={() => setFavoritesHeaderHover(true)}
+                        onMouseLeave={() => setFavoritesHeaderHover(false)}
+                    >
+                        <div className="sidebar-projects-header">
+                            <span className="sidebar-favorites-title">즐겨찾기</span>
+                            {favoritesHeaderHover && (
+                                <div className="sidebar-projects-actions">
+                                    <button
+                                        type="button"
+                                        className="sidebar-projects-action-btn"
+                                        aria-label={favoritesListExpanded ? '목록 숨기기' : '목록 펼치기'}
+                                        onClick={onToggleFavoritesList}
+                                    >
+                                        {favoritesListExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {favoritesListExpanded && (
+                            <ul className="project-list">
+                                {favoriteProjects.map(project => (
+                                    <ProjectListRow
+                                        key={`fav-${project.id}`}
+                                        project={project}
+                                        variant="sidebar"
+                                        active={selectedProjectId === project.id}
+                                        onSelect={onProjectSelect}
+                                        onEdit={onEditProject}
+                                        onDelete={onDeleteProject}
+                                    />
+                                ))}
+                            </ul>
+                        )}
                     </div>
-                    <ul className="project-list">
-                        {projects.map(project => (
-                            <li key={project.id}>
+                )}
+
+                <div
+                    className="sidebar-section sidebar-projects-section"
+                    onMouseEnter={() => setProjectsHeaderHover(true)}
+                    onMouseLeave={() => setProjectsHeaderHover(false)}
+                >
+                    <div className="sidebar-projects-header">
+                        <button
+                            type="button"
+                            className={`sidebar-projects-title-btn ${projectsBrowseActive && !selectedProjectId ? 'active' : ''}`}
+                            onClick={onProjectsBrowse}
+                        >
+                            <span>프로젝트</span>
+                            <span className="sidebar-projects-usage">
+                                {projects.length}/5
+                            </span>
+                        </button>
+                        {projectsHeaderHover && (
+                            <div className="sidebar-projects-actions">
                                 <button
                                     type="button"
-                                    className={`project-item ${selectedProjectId === project.id ? 'active' : ''}`}
-                                    onClick={() => onProjectSelect(
-                                        selectedProjectId === project.id ? null : project.id,
-                                    )}
+                                    className="sidebar-projects-action-btn"
+                                    aria-label="프로젝트 추가"
+                                    onClick={e => {
+                                        e.stopPropagation();
+                                        onAddProject();
+                                    }}
                                 >
-                                    <span className="project-dot" style={{ background: project.color }} />
-                                    <span>{project.name}</span>
-                                    {project.taskCount > 0 && (
-                                        <span className="project-count">{project.taskCount}</span>
-                                    )}
+                                    <PlusIcon />
                                 </button>
-                            </li>
-                        ))}
-                    </ul>
+                                <button
+                                    type="button"
+                                    className="sidebar-projects-action-btn"
+                                    aria-label={projectsListExpanded ? '목록 숨기기' : '목록 펼치기'}
+                                    onClick={e => {
+                                        e.stopPropagation();
+                                        onToggleProjectsList();
+                                    }}
+                                >
+                                    {projectsListExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {projectsListExpanded && (
+                        <ul className="project-list">
+                            {projects.map(project => (
+                                <ProjectListRow
+                                    key={project.id}
+                                    project={project}
+                                    variant="sidebar"
+                                    active={selectedProjectId === project.id}
+                                    onSelect={onProjectSelect}
+                                    onEdit={onEditProject}
+                                    onDelete={onDeleteProject}
+                                />
+                            ))}
+                        </ul>
+                    )}
                 </div>
 
                 {labels.length > 0 && (
@@ -201,7 +305,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         )}
                                     >
                                         <span className="project-dot" style={{ background: label.color }} />
-                                        <span>{label.name}</span>
+                                        <span>{displayLabelName(label.name)}</span>
                                         {label.taskCount > 0 && (
                                             <span className="project-count">{label.taskCount}</span>
                                         )}

@@ -1,9 +1,13 @@
 package io.streak.habitflow.domain.task.service;
 
+import io.streak.habitflow.domain.activity.dto.request.ActivityLogRequest;
+import io.streak.habitflow.domain.activity.repository.ActivityLogRepository;
+import io.streak.habitflow.domain.activity.service.ActivityLogService;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
 import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
+import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;
@@ -19,6 +23,7 @@ import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.entity.TaskLabel;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
+import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
@@ -38,7 +43,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final MemberRepository memberRepository;
     private final ProjectRepository projectRepository;
-    private final CommentRepository commentRepository;
+    private final ActivityLogService activityLogService;
     private final FileStorageService fileStorageService;
     private final LabelRepository labelRepository;
     private final ProjectUserRepository projectUserRepository;
@@ -218,6 +223,31 @@ public class TaskService {
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
 
+        return TaskResponse.from(task,labelListResponses);
+    }
+
+    @Transactional
+    public TaskResponse toggleCompletion(Long taskId, UserDetails userDetails){
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(()->new IllegalArgumentException("TASK가 존재하지 않습니다."));
+        if(!task.getMember().getEmail().equals(userDetails.getUsername())){
+            throw new IllegalStateException("수정 권한이 없습니다.");
+        }
+        boolean nextCompletion = !task.isCompleted();
+        task.updateCompleted(nextCompletion);
+
+
+        if(nextCompletion){
+            ActivityLogRequest activityLogRequest = ActivityLogRequest.builder()
+                    .activityType(ActivityType.COMPLETED)
+                    .taskId(taskId)
+                    .build();
+            activityLogService.create(activityLogRequest,userDetails);
+        }
+
+        List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
+                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
+                .toList();
         return TaskResponse.from(task,labelListResponses);
     }
 

@@ -11,15 +11,15 @@ public class LabelResponse {
     private Long id;
     private String name;
     private long sortOrder;
-    private boolean isFavorite;
+    private boolean favorite;
     private String color;
 
-    public static LabelResponse from(Label label,boolean isFavorite){
+    public static LabelResponse from(Label label,boolean favorite){
         return LabelResponse.builder()
                 .id(label.getId())
                 .name(label.getName())
                 .sortOrder(label.getSortOrder())
-                .isFavorite(isFavorite)
+                .favorite(favorite)
                 .color(label.getColor())
                 .build();
     }

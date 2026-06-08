@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 import type { PriorityType, TaskDto } from './types';
-import { dueDateToApi } from './mappers';
+import { dueDateToApi, readCompleted } from './mappers';
 
 export interface CreateTaskPayload {
     name: string;
@@ -84,4 +84,18 @@ export async function updateTask(id: number, payload: UpdateTaskPayload): Promis
 
 export async function deleteTask(id: number): Promise<void> {
     await apiClient.delete(`/api/tasks/${id}`);
+}
+
+export async function toggleTaskCompletion(
+    id: number,
+    previousCompleted?: boolean,
+): Promise<TaskDto> {
+    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${id}/toggle`);
+    if (
+        previousCompleted !== undefined
+        && readCompleted(data) === previousCompleted
+    ) {
+        return { ...data, completed: !previousCompleted };
+    }
+    return data;
 }

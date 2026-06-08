@@ -4,6 +4,16 @@ export const CheckIcon = () => (
     </svg>
 );
 
+export const SearchIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+        <path
+            fillRule="evenodd"
+            d="M10.5 4a6.5 6.5 0 014.2 11.4l4.3 4.3-1.4 1.4-4.3-4.3A6.5 6.5 0 1110.5 4zm0 2a4.5 4.5 0 100 9 4.5 4.5 0 000-9z"
+            clipRule="evenodd"
+        />
+    </svg>
+);
+
 export const InboxIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
         <path fillRule="evenodd" d="M4 4h16v2H4V4zm0 4h10v2H4V8zm0 4h16v2H4v-2zm0 4h10v2H4v-2z" clipRule="evenodd" />
@@ -66,6 +76,12 @@ export const CalendarLayoutIcon = () => (
     </svg>
 );
 
+export const ChevronUpIcon = () => (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+        <path d="M3 7.5 6 4.5 9 7.5" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
 export const ChevronDownIcon = () => (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
         <path d="M3 4.5 6 7.5 9 4.5" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
@@ -95,6 +111,50 @@ export const BellIcon = () => (
 export const PlusIcon = () => (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
         <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+);
+
+export const CloseIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+        <path d="M4.1 3 8 6.9 11.9 3 13 4.1 9.1 8 13 11.9 11.9 13 8 9.1 4.1 13 3 11.9 6.9 8 3 4.1z" />
+    </svg>
+);
+
+export const HelpCircleIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+        <path
+            fillRule="evenodd"
+            d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM7.25 5.5a.75.75 0 011.5 0v.2c0 .5-.3.9-.7 1.2-.5.4-.8.9-.8 1.5v.15a.75.75 0 01-1.5 0v-.15c0-1 .6-1.6 1.1-2.05.2-.15.4-.35.4-.65v-.2zM8 11.25a.9.9 0 100-1.8.9.9 0 000 1.8z"
+            clipRule="evenodd"
+        />
+    </svg>
+);
+
+export const LockIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+        <path
+            fillRule="evenodd"
+            d="M5 6V4.5a3 3 0 116 0V6h.5A1.5 1.5 0 0113 7.5v6A1.5 1.5 0 0111.5 15h-7A1.5 1.5 0 013 13.5v-6A1.5 1.5 0 014.5 6H5zm1.5-.5a1.5 1.5 0 113 0V6h-3V5.5z"
+            clipRule="evenodd"
+        />
+    </svg>
+);
+
+export const MoreHorizontalIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+        <circle cx="3.5" cy="8" r="1.25" />
+        <circle cx="8" cy="8" r="1.25" />
+        <circle cx="12.5" cy="8" r="1.25" />
+    </svg>
+);
+
+export const TagIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+        <path
+            fillRule="evenodd"
+            d="M3 2.5h4.2l6.3 6.3-3 3L3 5.5V2.5zm2 1.5v1.8l4.5 4.5 1.2-1.2L6.2 4H5zm5.8 5.8 1.2-1.2.7.7-1.2 1.2-.7-.7z"
+            clipRule="evenodd"
+        />
     </svg>
 );
 

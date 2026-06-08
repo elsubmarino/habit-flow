@@ -1,5 +1,6 @@
 import { apiClient } from './client';
-import type { ProjectDto } from './types';
+import { toProjectWriteBody } from './projectMappers';
+import type { ProjectDetailDto, ProjectDto, ProjectUpdatePayload } from './types';
 
 export async function fetchProjects(): Promise<ProjectDto[]> {
     const { data } = await apiClient.get<ProjectDto[]>('/api/projects');
@@ -7,13 +8,23 @@ export async function fetchProjects(): Promise<ProjectDto[]> {
 }
 
 export async function createProject(name: string, color?: string): Promise<ProjectDto> {
-    const { data } = await apiClient.post<ProjectDto>('/api/projects', {
+    const { data } = await apiClient.post<ProjectDto>('/api/projects', toProjectWriteBody({
         name,
         color: color ?? '#4073ff',
         accessType: 'PRIVATE',
         layoutType: 'LIST',
-        isFavorite: false,
-    });
+        favorite: false,
+    }));
+    return data;
+}
+
+export async function fetchProjectById(id: number): Promise<ProjectDetailDto> {
+    const { data } = await apiClient.get<ProjectDetailDto>(`/api/projects/${id}`);
+    return data;
+}
+
+export async function updateProject(id: number, payload: ProjectUpdatePayload): Promise<ProjectDetailDto> {
+    const { data } = await apiClient.put<ProjectDetailDto>(`/api/projects/${id}`, toProjectWriteBody(payload));
     return data;
 }
 

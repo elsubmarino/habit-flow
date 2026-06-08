@@ -104,7 +104,7 @@ export function groupHabits(
                 break;
             case 'project':
                 key = habit.projectId != null ? String(habit.projectId) : 'none';
-                title = habit.projectName ?? '받은 편지함';
+                title = habit.projectName ?? '관리함';
                 break;
             case 'priority':
                 key = String(habit.priority);

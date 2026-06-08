@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 public class LabelCreateRequest {
     private String name;
     private String color;
-    private boolean isFavorite;
+    private boolean favorite;
 }

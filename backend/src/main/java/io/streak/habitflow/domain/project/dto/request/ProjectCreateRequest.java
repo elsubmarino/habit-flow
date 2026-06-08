@@ -13,7 +13,7 @@ public class ProjectCreateRequest {
     private String color;
     private Long parentId;
     private AccessType accessType;
-    private boolean isFavorite;
+    private boolean favorite;
     private LayoutType layoutType;
 
 }

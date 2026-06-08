@@ -11,6 +11,4 @@ import lombok.*;
 public class ActivityLogRequest {
     private Long taskId;
     private ActivityType activityType;
-    private TargetType targetType;
-    private Long targetId;
 }

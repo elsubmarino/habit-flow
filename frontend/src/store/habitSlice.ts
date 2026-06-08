@@ -9,6 +9,7 @@ import {
     mapProject,
     mapTaskToHabit,
     priorityToApi,
+    readCompleted,
 } from '../api/mappers';
 import type { TaskDto } from '../api/types';
 
@@ -17,6 +18,7 @@ export interface Label {
     name: string;
     color: string;
     taskCount: number;
+    favorite: boolean;
 }
 
 export interface Attachment {
@@ -32,6 +34,7 @@ export interface Subtask {
     name: string;
     description: string;
     completed: boolean;
+    childCount: number;
 }
 
 export interface CommentItem {
@@ -47,6 +50,9 @@ export interface Habit {
     streak: number;
     lastCompletedDate: string | null;
     dueDate: string | null;
+    dueTime: string | null;
+    parentId: number | null;
+    userName: string | null;
     projectId: number | null;
     projectName: string | null;
     projectColor: string | null;
@@ -70,6 +76,7 @@ export interface Project {
     color: string;
     sortOrder: number;
     taskCount: number;
+    favorite: boolean;
 }
 
 interface HabitState {
@@ -170,12 +177,22 @@ export const fetchHabits = createAsyncThunk(
 
 export const fetchProjects = createAsyncThunk('habits/fetchProjects', async () => {
     const projects = await projectApi.fetchProjects();
-    return projects.map(p => mapProject(p));
+    const details = await Promise.all(
+        projects.map(p =>
+            projectApi.fetchProjectById(p.id).catch(() => ({ ...p, favorite: false })),
+        ),
+    );
+    return details.map(p => mapProject(p));
 });
 
 export const fetchLabels = createAsyncThunk('habits/fetchLabels', async () => {
     const labels = await labelApi.fetchLabels();
-    return labels.map(l => mapLabel(l));
+    const details = await Promise.all(
+        labels.map(l =>
+            labelApi.fetchLabelById(l.id).catch(() => ({ ...l, favorite: false })),
+        ),
+    );
+    return details.map(l => mapLabel(l));
 });
 
 export const fetchHabitDetail = createAsyncThunk('habits/fetchDetail', async (habitId: number) => {
@@ -216,6 +233,23 @@ export const addProject = createAsyncThunk(
     },
 );
 
+export const updateProject = createAsyncThunk(
+    'habits/updateProject',
+    async (payload: {
+        id: number;
+        name: string;
+        color?: string;
+        parentId?: number | null;
+        accessType?: 'PRIVATE' | 'PUBLIC';
+        layoutType?: 'LIST' | 'BOARD';
+        favorite?: boolean;
+    }) => {
+        const { id, ...body } = payload;
+        const project = await projectApi.updateProject(id, body);
+        return mapProject(project);
+    },
+);
+
 export const deleteProject = createAsyncThunk('habits/deleteProject', async (projectId: number) => {
     await projectApi.deleteProject(projectId);
     return projectId;
@@ -223,8 +257,17 @@ export const deleteProject = createAsyncThunk('habits/deleteProject', async (pro
 
 export const addLabel = createAsyncThunk(
     'habits/addLabel',
-    async (payload: { name: string; color?: string }) => {
-        const label = await labelApi.createLabel(payload.name, payload.color);
+    async (payload: { name: string; color?: string; favorite?: boolean }) => {
+        const label = await labelApi.createLabel(payload.name, payload.color, payload.favorite);
+        return mapLabel(label);
+    },
+);
+
+export const updateLabel = createAsyncThunk(
+    'habits/updateLabel',
+    async (payload: { id: number; name: string; color?: string; favorite?: boolean }) => {
+        const { id, ...body } = payload;
+        const label = await labelApi.updateLabel(id, body);
         return mapLabel(label);
     },
 );
@@ -234,8 +277,11 @@ export const deleteLabel = createAsyncThunk('habits/deleteLabel', async (labelId
     return labelId;
 });
 
-export const checkHabit = createAsyncThunk('habits/check', async (_habitId: number) => {
-    throw new Error('백엔드에 작업 완료/취소 API가 없습니다. (TaskUpdateRequest에 isCompleted 없음)');
+export const checkHabit = createAsyncThunk('habits/check', async (habitId: number, { getState }) => {
+    const state = getState() as { habits: HabitState };
+    const existing = state.habits.list.find(h => h.id === habitId);
+    const task = await taskApi.toggleTaskCompletion(habitId, existing?.completedToday);
+    return mapTaskToHabit(task);
 });
 
 export const updateHabit = createAsyncThunk(
@@ -268,6 +314,7 @@ export const addSubtask = createAsyncThunk(
                 name: task.name,
                 description: description,
                 completed: false,
+                childCount: 0,
             } satisfies Subtask,
         };
     },
@@ -275,8 +322,16 @@ export const addSubtask = createAsyncThunk(
 
 export const toggleSubtask = createAsyncThunk(
     'habits/toggleSubtask',
-    async (_payload: { habitId: number; subtaskId: number }) => {
-        throw new Error('백엔드에 하위 작업 완료 토글 API가 없습니다.');
+    async ({ habitId, subtaskId }: { habitId: number; subtaskId: number }, { getState }) => {
+        const state = getState() as { habits: HabitState };
+        const habit = state.habits.list.find(h => h.id === habitId);
+        const subtask = habit?.subtasks.find(s => s.id === subtaskId);
+        const task = await taskApi.toggleTaskCompletion(subtaskId, subtask?.completed);
+        return {
+            habitId,
+            subtaskId,
+            completed: readCompleted(task),
+        };
     },
 );
 
@@ -380,6 +435,17 @@ const habitSlice = createSlice({
             .addCase(addProject.fulfilled, (state, action) => {
                 state.projects.push(action.payload);
             })
+            .addCase(updateProject.fulfilled, (state, action) => {
+                const index = state.projects.findIndex(p => p.id === action.payload.id);
+                if (index !== -1) {
+                    state.projects[index] = {
+                        ...state.projects[index],
+                        name: action.payload.name,
+                        color: action.payload.color,
+                        favorite: action.payload.favorite,
+                    };
+                }
+            })
             .addCase(deleteProject.fulfilled, (state, action) => {
                 state.projects = state.projects.filter(p => p.id !== action.payload);
                 if (state.selectedProjectId === action.payload) {
@@ -389,11 +455,26 @@ const habitSlice = createSlice({
             .addCase(addLabel.fulfilled, (state, action) => {
                 state.labels.push(action.payload);
             })
+            .addCase(updateLabel.fulfilled, (state, action) => {
+                const index = state.labels.findIndex(l => l.id === action.payload.id);
+                if (index !== -1) {
+                    state.labels[index] = {
+                        ...state.labels[index],
+                        name: action.payload.name,
+                        color: action.payload.color,
+                        favorite: action.payload.favorite,
+                    };
+                }
+            })
             .addCase(deleteLabel.fulfilled, (state, action) => {
                 state.labels = state.labels.filter(l => l.id !== action.payload);
                 if (state.selectedLabelId === action.payload) {
                     state.selectedLabelId = null;
                 }
+            })
+            .addCase(checkHabit.fulfilled, (state, action) => {
+                const index = state.list.findIndex(h => h.id === action.payload.id);
+                if (index !== -1) state.list[index] = action.payload;
             })
             .addCase(checkHabit.rejected, (state, action) => {
                 state.error = action.error.message ?? '완료 처리에 실패했습니다.';
@@ -409,6 +490,14 @@ const habitSlice = createSlice({
             .addCase(addSubtask.fulfilled, (state, action) => {
                 const habit = state.list.find(h => h.id === action.payload.habitId);
                 if (habit) habit.subtasks = [...(habit.subtasks ?? []), action.payload.subtask];
+            })
+            .addCase(toggleSubtask.fulfilled, (state, action) => {
+                const { habitId, subtaskId, completed } = action.payload;
+                const habit = state.list.find(h => h.id === habitId);
+                if (habit) {
+                    const subtask = habit.subtasks.find(s => s.id === subtaskId);
+                    if (subtask) subtask.completed = completed;
+                }
             })
             .addCase(toggleSubtask.rejected, (state, action) => {
                 state.error = action.error.message ?? '하위 작업 상태 변경에 실패했습니다.';

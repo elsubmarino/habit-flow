@@ -304,7 +304,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                                 e.target.value === '' ? '' : Number(e.target.value),
                             )}
                         >
-                            <option value="">받은 편지함</option>
+                            <option value="">관리함</option>
                             {projects.map(p => (
                                 <option key={p.id} value={p.id}>{p.name}</option>
                             ))}

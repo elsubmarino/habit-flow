@@ -26,7 +26,7 @@ public class Task extends BaseTimeEntity {
     private String name;
     private String description;
 
-    private boolean isCompleted;
+    private boolean completed;
 
     @Enumerated(EnumType.STRING)
     private PriorityType priorityType;
@@ -86,5 +86,9 @@ public class Task extends BaseTimeEntity {
 
     public void changeProject(Project project){
         this.project = project;
+    }
+
+    public void updateCompleted(boolean completed){
+        this.completed = completed;
     }
 }

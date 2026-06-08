@@ -104,6 +104,8 @@ public class ProjectService {
                     TargetType.PROJECT,
                     project.getId()
             ).orElseGet(()->favoriteRepository.save(favorite));
+        }else{
+            favoriteRepository.deleteByMemberIdAndTargetTypeAndTargetId(member.getId(),TargetType.PROJECT,project.getId());
         }
 
         return ProjectResponse.from(project, projectCreateRequest.isFavorite());

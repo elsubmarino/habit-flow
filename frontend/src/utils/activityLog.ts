@@ -65,7 +65,7 @@ function seedActivities(): ActivityEntry[] {
             taskId: 902,
             taskName: '만보 걷기',
             projectId: null,
-            projectName: '받은 편지함',
+            projectName: '관리함',
             projectColor: '#808080',
             createdAt: new Date(now - 3 * 60 * 60 * 1000).toISOString(),
         },

@@ -13,6 +13,16 @@ export interface LabelDto {
     sortOrder?: number;
 }
 
+export interface LabelDetailDto extends LabelDto {
+    favorite?: boolean;
+}
+
+export interface LabelUpdatePayload {
+    name: string;
+    color?: string;
+    favorite?: boolean;
+}
+
 export interface CommentDto {
     content: string;
     attachments?: { fileUrl: string; originalFileName: string }[];
@@ -42,6 +52,26 @@ export interface ProjectDto {
     id: number;
     name: string;
     color: string;
+}
+
+export interface ProjectDetailDto extends ProjectDto {
+    favorite?: boolean;
+    parentId?: number | null;
+    parentName?: string | null;
+    accessType?: ProjectAccessType | string;
+    layoutType?: ProjectLayoutType | 'CALENDAR' | string;
+}
+
+export type ProjectAccessType = 'PRIVATE' | 'PUBLIC';
+export type ProjectLayoutType = 'LIST' | 'BOARD';
+
+export interface ProjectUpdatePayload {
+    name: string;
+    color?: string;
+    parentId?: number | null;
+    accessType?: ProjectAccessType;
+    layoutType?: ProjectLayoutType;
+    favorite?: boolean;
 }
 
 export interface MemberDto {

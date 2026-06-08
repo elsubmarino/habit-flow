@@ -74,5 +74,11 @@ public class TaskController {
         return ResponseEntity.ok(commentService.getComments(id));
     }
 
+    @PatchMapping("/{id}/toggle")
+    public ResponseEntity<TaskResponse> toggleCompletion(@AuthenticationPrincipal UserDetails userDetails,
+                                                         @PathVariable("id") Long taskId) {
+        return ResponseEntity.ok(taskService.toggleCompletion(taskId,userDetails));
+    }
+
 
 }

@@ -11,15 +11,26 @@ import {
     setActiveView,
     setSelectedLabel,
     setSelectedProject,
+    updateLabel,
+    updateProject,
     type ApiView,
+    type Label,
+    type Project,
 } from './store/habitSlice';
 import HabitItem from './components/HabitItem';
 import AddHabitForm, { type AddHabitFormHandle } from './components/AddHabitForm';
 import Sidebar, { type NavItem } from './components/Sidebar';
-import LabelsPanel from './components/LabelsPanel';
-import ProjectModal from './components/ProjectModal';
+import LabelsBrowseView from './components/LabelsBrowseView';
+import AddLabelModal from './components/AddLabelModal';
+import EditLabelModal from './components/EditLabelModal';
+import { displayLabelName } from './api/labelMappers';
+import AddProjectModal from './components/AddProjectModal';
+import EditProjectModal from './components/EditProjectModal';
+import ProjectsBrowseView from './components/ProjectsBrowseView';
 import UpcomingTaskList from './components/UpcomingTaskList';
 import TaskDetailModal from './components/TaskDetailModal';
+import InlineAddTaskButton from './components/InlineAddTaskButton';
+import type { TaskRowLayout } from './components/HabitItem';
 import SearchModal from './components/SearchModal';
 import LoginScreen from './components/LoginScreen';
 import NotificationsView from './components/NotificationsView';
@@ -32,7 +43,7 @@ import { clearStoredToken } from './api/client';
 import { bootstrapAuthFromCallback } from './api/authBootstrap';
 import { fetchMember } from './api/memberApi';
 import OAuthRedirectHandler from './components/OAuthRedirectHandler';
-import { clearHabitError, fetchHabitDetail } from './store/habitSlice';
+import { clearHabitError } from './store/habitSlice';
 import { formatSectionDate, formatTodayHeader } from './utils/date';
 import {
     filterHabits,
@@ -45,10 +56,10 @@ import { useQuickAddShortcut } from './hooks/useQuickAddShortcut';
 import './App.css';
 
 const NAV_META: Record<NavItem, { title: string; subtitle?: string }> = {
-    inbox: { title: '받은 편지함' },
+    inbox: { title: '관리함' },
     today: { title: '오늘', subtitle: formatTodayHeader() },
-    upcoming: { title: '다음 7일' },
-    filters: { title: '필터 및 라벨' },
+    upcoming: { title: '다음' },
+    filters: { title: '라벨' },
     report: { title: '보고' },
 };
 
@@ -77,7 +88,17 @@ function App() {
     const [viewPrefs, setViewPrefs] = useState<ViewPreferences>(loadViewPreferences);
     const notificationItems = useAppSelector(state => state.notifications.items);
     const unreadNotificationCount = selectUnreadCount(notificationItems);
-    const [showProjectModal, setShowProjectModal] = useState(false);
+    const [showAddProjectModal, setShowAddProjectModal] = useState(false);
+    const [showAddLabelModal, setShowAddLabelModal] = useState(false);
+    const [editingProject, setEditingProject] = useState<Project | null>(null);
+    const [editingLabel, setEditingLabel] = useState<Label | null>(null);
+    const [showProjectsBrowse, setShowProjectsBrowse] = useState(false);
+    const [projectsListExpanded, setProjectsListExpanded] = useState(
+        () => localStorage.getItem('habitflow.projectsListExpanded') !== 'false',
+    );
+    const [favoritesListExpanded, setFavoritesListExpanded] = useState(
+        () => localStorage.getItem('habitflow.favoritesListExpanded') !== 'false',
+    );
     const [showSearchModal, setShowSearchModal] = useState(false);
     const [selectedHabitId, setSelectedHabitId] = useState<number | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => bootstrapAuthFromCallback());
@@ -133,14 +154,17 @@ function App() {
             .catch(() => undefined);
     }, [dispatch]);
 
+    const showLabelsBrowse = activeNav === 'filters' && !selectedLabelId && !selectedProjectId && !showProjectsBrowse;
+
     useEffect(() => {
-        if (activeNav === 'report') return;
+        if (activeNav === 'report' || showProjectsBrowse || showLabelsBrowse) return;
         const view = selectedLabelId != null ? 'all' : toApiView(activeNav);
         dispatch(fetchHabits({ view, projectId: selectedProjectId, labelId: selectedLabelId }));
-    }, [dispatch, activeNav, selectedProjectId, selectedLabelId]);
+    }, [dispatch, activeNav, selectedProjectId, selectedLabelId, showProjectsBrowse, showLabelsBrowse]);
 
     const handleNavChange = (nav: NavItem) => {
         setShowNotifications(false);
+        setShowProjectsBrowse(false);
         setActiveNav(nav);
         dispatch(setActiveView(nav));
         dispatch(setSelectedProject(null));
@@ -149,6 +173,7 @@ function App() {
 
     const handleNotificationsClick = () => {
         setShowNotifications(prev => !prev);
+        setShowProjectsBrowse(false);
         dispatch(setSelectedProject(null));
         dispatch(setSelectedLabel(null));
     };
@@ -159,12 +184,6 @@ function App() {
         setShowNotifications(false);
     };
 
-    useEffect(() => {
-        if (selectedHabitId != null) {
-            void dispatch(fetchHabitDetail(selectedHabitId));
-        }
-    }, [dispatch, selectedHabitId]);
-
     const toggleSidebar = () => {
         setSidebarCollapsed(prev => {
             const next = !prev;
@@ -173,18 +192,85 @@ function App() {
         });
     };
 
-    const handleProjectSelect = (projectId: number | null) => {
+    const handleProjectsBrowse = () => {
         setShowNotifications(false);
-        if (projectId != null) setActiveNav('today');
+        setShowProjectsBrowse(true);
+        dispatch(setSelectedProject(null));
+        dispatch(setSelectedLabel(null));
+    };
+
+    const handleProjectSelect = (projectId: number) => {
+        setShowNotifications(false);
+        setShowProjectsBrowse(false);
+        setActiveNav('today');
         dispatch(setSelectedProject(projectId));
         dispatch(setSelectedLabel(null));
     };
 
+    const handleLabelsBrowse = () => {
+        setShowNotifications(false);
+        setShowProjectsBrowse(false);
+        setActiveNav('filters');
+        dispatch(setSelectedLabel(null));
+        dispatch(setSelectedProject(null));
+    };
+
     const handleLabelSelect = (labelId: number | null) => {
         setShowNotifications(false);
+        setShowProjectsBrowse(false);
         if (labelId != null) setActiveNav('filters');
         dispatch(setSelectedLabel(labelId));
         dispatch(setSelectedProject(null));
+    };
+
+    const handleLabelOpen = (labelId: number) => {
+        handleLabelSelect(labelId);
+    };
+
+    const handleEditLabel = (label: Label) => {
+        setEditingLabel(label);
+    };
+
+    const handleDeleteLabel = (labelId: number) => {
+        const label = labels.find(l => l.id === labelId);
+        if (!label) return;
+        if (!window.confirm(`"${displayLabelName(label.name)}" 라벨을 삭제할까요?`)) return;
+        dispatch(deleteLabel(labelId));
+        if (selectedLabelId === labelId) {
+            handleLabelsBrowse();
+        }
+    };
+
+    const toggleProjectsList = () => {
+        setProjectsListExpanded(prev => {
+            const next = !prev;
+            localStorage.setItem('habitflow.projectsListExpanded', String(next));
+            return next;
+        });
+    };
+
+    const toggleFavoritesList = () => {
+        setFavoritesListExpanded(prev => {
+            const next = !prev;
+            localStorage.setItem('habitflow.favoritesListExpanded', String(next));
+            return next;
+        });
+    };
+
+    const handleEditProject = (project: Project) => {
+        setEditingProject(project);
+    };
+
+    const handleDeleteProject = (projectId: number) => {
+        const project = projects.find(p => p.id === projectId);
+        if (!project) return;
+        if (!window.confirm(`"${project.name}" 프로젝트를 삭제할까요?\n작업은 프로젝트 없이 유지됩니다.`)) {
+            return;
+        }
+        dispatch(deleteProject(projectId));
+        if (selectedProjectId === projectId) {
+            setShowProjectsBrowse(true);
+        }
     };
 
     const handleViewPrefsChange = (prefs: ViewPreferences) => {
@@ -204,18 +290,27 @@ function App() {
     const completedToday = useMemo(() => displayHabits.filter(h => h.completedToday), [displayHabits]);
 
     const meta = selectedLabelId
-        ? { title: labels.find(l => l.id === selectedLabelId)?.name ?? '라벨' }
+        ? {
+            title: displayLabelName(labels.find(l => l.id === selectedLabelId)?.name ?? '라벨'),
+            subtitle: '라벨',
+        }
         : selectedProjectId
-            ? { title: projects.find(p => p.id === selectedProjectId)?.name ?? '프로젝트' }
+            ? {
+                title: projects.find(p => p.id === selectedProjectId)?.name ?? '프로젝트',
+                subtitle: '프로젝트',
+            }
             : NAV_META[activeNav];
 
-    const showReport = activeNav === 'report' && !selectedProjectId && !selectedLabelId;
+    const showReport = activeNav === 'report' && !selectedProjectId && !selectedLabelId && !showProjectsBrowse;
+    const showProjectsPanel = showProjectsBrowse && !selectedProjectId && !selectedLabelId;
+    const showLabelsPanel = showLabelsBrowse;
     const showTodaySections = activeNav === 'today' && !selectedProjectId && !selectedLabelId;
-    const showFiltersPanel = activeNav === 'filters' && !selectedLabelId;
     const showUpcomingGrouped = activeNav === 'upcoming' && !selectedProjectId && !selectedLabelId;
-    const selectedHabit = selectedHabitId != null
-        ? habits.find(h => h.id === selectedHabitId) ?? null
-        : null;
+    const taskRowLayout: TaskRowLayout = selectedProjectId
+        ? 'project'
+        : activeNav === 'upcoming'
+            ? 'upcoming'
+            : 'list';
 
     const renderTaskList = (list: typeof displayHabits) => (
         <ul className="task-list">
@@ -223,7 +318,9 @@ function App() {
                 <HabitItem
                     key={habit.id}
                     habit={habit}
+                    layout={taskRowLayout}
                     onOpenDetails={setSelectedHabitId}
+                    onOpenProject={handleProjectSelect}
                 />
             ))}
         </ul>
@@ -264,12 +361,7 @@ function App() {
         if (showTodaySections && viewPrefs.grouping === 'none') {
             return (
                 <>
-                    {pending.length > 0 && (
-                        <>
-                            <h2 className="section-label">작업</h2>
-                            {renderTaskList(pending)}
-                        </>
-                    )}
+                    {pending.length > 0 && renderTaskList(pending)}
                     {completedToday.length > 0 && (
                         <>
                             <h2 className="section-label completed-label">
@@ -280,12 +372,15 @@ function App() {
                                     <HabitItem
                                         key={habit.id}
                                         habit={habit}
+                                        layout="list"
                                         onOpenDetails={setSelectedHabitId}
+                                        onOpenProject={handleProjectSelect}
                                     />
                                 ))}
                             </ul>
                         </>
                     )}
+                    <InlineAddTaskButton onClick={() => addFormRef.current?.open()} />
                 </>
             );
         }
@@ -297,6 +392,8 @@ function App() {
                 <UpcomingTaskList
                     habits={displayHabits}
                     onOpenDetails={setSelectedHabitId}
+                    onOpenProject={handleProjectSelect}
+                    onAddTask={() => addFormRef.current?.open()}
                 />
             );
         }
@@ -351,10 +448,18 @@ function App() {
                 labels={labels}
                 selectedProjectId={selectedProjectId}
                 selectedLabelId={selectedLabelId}
+                projectsBrowseActive={showProjectsBrowse}
+                projectsListExpanded={projectsListExpanded}
+                favoritesListExpanded={favoritesListExpanded}
                 onNavChange={handleNavChange}
                 onProjectSelect={handleProjectSelect}
+                onProjectsBrowse={handleProjectsBrowse}
+                onAddProject={() => setShowAddProjectModal(true)}
+                onEditProject={handleEditProject}
+                onDeleteProject={handleDeleteProject}
+                onToggleProjectsList={toggleProjectsList}
+                onToggleFavoritesList={toggleFavoritesList}
                 onLabelSelect={handleLabelSelect}
-                onManageProjects={() => setShowProjectModal(true)}
                 onAddClick={() => addFormRef.current?.open()}
                 onSearchClick={() => setShowSearchModal(true)}
                 notificationsActive={showNotifications}
@@ -385,15 +490,51 @@ function App() {
                         projects={projects}
                         onOpenTask={id => setSelectedHabitId(id)}
                     />
+                ) : showProjectsPanel ? (
+                    <ProjectsBrowseView
+                        projects={projects}
+                        onSelectProject={handleProjectSelect}
+                        onAddProject={() => setShowAddProjectModal(true)}
+                        onEditProject={handleEditProject}
+                        onDeleteProject={handleDeleteProject}
+                    />
+                ) : showLabelsPanel ? (
+                    <LabelsBrowseView
+                        labels={labels}
+                        onSelectLabel={handleLabelOpen}
+                        onAddLabel={() => setShowAddLabelModal(true)}
+                        onEditLabel={handleEditLabel}
+                        onDeleteLabel={handleDeleteLabel}
+                    />
                 ) : (
                 <>
                 <header className="view-header">
                     <div className="view-header-main">
                         <div className="view-header-text">
+                            {selectedProjectId && (
+                                <button
+                                    type="button"
+                                    className="view-breadcrumb"
+                                    onClick={handleProjectsBrowse}
+                                >
+                                    프로젝트 /
+                                </button>
+                            )}
+                            {selectedLabelId && (
+                                <button
+                                    type="button"
+                                    className="view-breadcrumb"
+                                    onClick={handleLabelsBrowse}
+                                >
+                                    라벨 /
+                                </button>
+                            )}
                             <h1 className="view-title">{meta.title}</h1>
-                            {meta.subtitle && <p className="view-subtitle">{meta.subtitle}</p>}
+                            {meta.subtitle && !selectedProjectId && !selectedLabelId && (
+                                <p className="view-subtitle">{meta.subtitle}</p>
+                            )}
                         </div>
-                        {!showFiltersPanel && (
+                        {!showLabelsPanel && (
                             <ViewMenuButton
                                 preferences={viewPrefs}
                                 labels={labels}
@@ -401,32 +542,18 @@ function App() {
                             />
                         )}
                     </div>
-                    {showTodaySections && displayHabits.length > 0 && (
-                        <p className="task-summary">
-                            {pending.length > 0
-                                ? `${pending.length}개 남음`
-                                : '오늘 할 일을 모두 완료했습니다 🎉'}
+                    {showTodaySections && pending.length > 0 && (
+                        <p className="task-summary today-task-count">
+                            <span className="today-count-icon">✓</span>
+                            {pending.length} 작업
                         </p>
                     )}
                 </header>
 
-                <section className="task-section">
+                <section className={`task-section ${showUpcomingGrouped ? 'task-section-upcoming' : ''} ${selectedProjectId ? 'task-section-project' : ''}`}>
                     {status === 'loading' && <p className="status-message">불러오는 중…</p>}
 
-                    {showFiltersPanel && (
-                        <LabelsPanel
-                            labels={labels}
-                            selectedLabelId={selectedLabelId}
-                            onSelect={handleLabelSelect}
-                            onAdd={name => dispatch(addLabel({ name }))}
-                            onDelete={id => {
-                                dispatch(deleteLabel(id));
-                                dispatch(fetchLabels());
-                            }}
-                        />
-                    )}
-
-                    {status !== 'loading' && displayHabits.length === 0 && !showFiltersPanel && !showReport && (
+                    {status !== 'loading' && displayHabits.length === 0 && !showLabelsPanel && !showReport && !showProjectsPanel && (
                         <div className="empty-state">
                             <p className="empty-title">할 일이 없습니다</p>
                             <p className="empty-desc">
@@ -436,6 +563,10 @@ function App() {
                     )}
 
                     {renderTaskContent()}
+
+                    {selectedProjectId && !showTodaySections && !showUpcomingGrouped && (
+                        <InlineAddTaskButton onClick={() => addFormRef.current?.open()} />
+                    )}
 
                     <AddHabitForm
                         ref={addFormRef}
@@ -448,25 +579,55 @@ function App() {
                 )}
             </main>
 
-            {showProjectModal && (
-                <ProjectModal
-                    projects={projects}
-                    onClose={() => setShowProjectModal(false)}
+            {showAddProjectModal && (
+                <AddProjectModal
+                    onClose={() => setShowAddProjectModal(false)}
                     onAdd={(name, color) => {
                         dispatch(addProject({ name, color }));
                         dispatch(fetchProjects());
                     }}
-                    onDelete={id => {
-                        dispatch(deleteProject(id));
-                        dispatch(fetchProjects());
-                        if (selectedProjectId === id) dispatch(setSelectedProject(null));
+                />
+            )}
+
+            {editingProject && (
+                <EditProjectModal
+                    project={editingProject}
+                    allProjects={projects}
+                    onClose={() => setEditingProject(null)}
+                    onSave={payload => {
+                        void dispatch(updateProject(payload)).then(() => {
+                            dispatch(fetchProjects());
+                        });
                     }}
                 />
             )}
 
-            {selectedHabit && (
+            {showAddLabelModal && (
+                <AddLabelModal
+                    onClose={() => setShowAddLabelModal(false)}
+                    onAdd={payload => {
+                        void dispatch(addLabel(payload)).then(() => {
+                            dispatch(fetchLabels());
+                        });
+                    }}
+                />
+            )}
+
+            {editingLabel && (
+                <EditLabelModal
+                    label={editingLabel}
+                    onClose={() => setEditingLabel(null)}
+                    onSave={(id, payload) => {
+                        void dispatch(updateLabel({ id, ...payload })).then(() => {
+                            dispatch(fetchLabels());
+                        });
+                    }}
+                />
+            )}
+
+            {selectedHabitId != null && (
                 <TaskDetailModal
-                    habit={selectedHabit}
+                    taskId={selectedHabitId}
                     onClose={() => setSelectedHabitId(null)}
                 />
             )}
