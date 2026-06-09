@@ -1,16 +1,47 @@
 import { apiClient } from './client';
 import type { MemberDto } from './types';
 
+export interface MemberSignUpPayload {
+    email: string;
+    password: string;
+    name: string;
+}
+
+export interface MemberLoginPayload {
+    email: string;
+    password: string;
+}
+
+export interface MemberLoginResponse {
+    accessToken: string;
+}
+
 export async function fetchMember(): Promise<MemberDto> {
     const { data } = await apiClient.get<MemberDto>('/api/members');
     return data;
 }
 
-export async function signUpMember(payload: {
-    email: string;
-    password: string;
-    name: string;
-}) {
-    const { data } = await apiClient.post<MemberDto>('/api/members', payload);
+export async function loginMember(payload: MemberLoginPayload): Promise<MemberLoginResponse> {
+    const { data } = await apiClient.post<MemberLoginResponse>(
+        '/api/members/login',
+        {
+            email: payload.email,
+            password: payload.password,
+        },
+        { headers: { 'Content-Type': 'application/json' } },
+    );
+    return data;
+}
+
+export async function signUpMember(payload: MemberSignUpPayload): Promise<MemberDto> {
+    const { data } = await apiClient.post<MemberDto>(
+        '/api/members',
+        {
+            email: payload.email,
+            password: payload.password,
+            name: payload.name,
+        },
+        { headers: { 'Content-Type': 'application/json' } },
+    );
     return data;
 }

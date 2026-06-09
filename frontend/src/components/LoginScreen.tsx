@@ -1,50 +1,105 @@
 import { useState } from 'react';
-import { signUpMember } from '../api/memberApi';
+import { getApiErrorMessage } from '../api/apiError';
+import { setStoredToken } from '../api/client';
+import { loginMember, signUpMember } from '../api/memberApi';
 
 interface LoginScreenProps {
     onLoginSuccess: () => void;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = () => {
+type StatusMessage = { type: 'error' | 'success'; text: string };
+
+const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
     const [mode, setMode] = useState<'login' | 'signup'>('login');
-    const [error, setError] = useState<string | null>(null);
+    const [status, setStatus] = useState<StatusMessage | null>(null);
     const [loading, setLoading] = useState(false);
 
     const startGoogleLogin = () => {
-        // Vite 프록시 대신 백엔드(8080)로 직접 이동 → Google redirect_uri가 8080으로 고정됨
         window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    };
+
+    const switchMode = (next: 'login' | 'signup') => {
+        setMode(next);
+        setStatus(null);
     };
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!email.trim() || !password.trim() || !name.trim()) return;
+        const trimmedName = name.trim();
+        const trimmedEmail = email.trim();
+        const trimmedPassword = password.trim();
+
+        if (!trimmedName) {
+            setStatus({ type: 'error', text: '이름을 입력해 주세요.' });
+            return;
+        }
+        if (!trimmedEmail) {
+            setStatus({ type: 'error', text: '이메일을 입력해 주세요.' });
+            return;
+        }
+        if (!trimmedPassword) {
+            setStatus({ type: 'error', text: '패스워드를 입력해 주세요.' });
+            return;
+        }
+
         setLoading(true);
-        setError(null);
+        setStatus(null);
         try {
             await signUpMember({
-                email: email.trim(),
-                password: password.trim(),
-                name: name.trim(),
+                email: trimmedEmail,
+                password: trimmedPassword,
+                name: trimmedName,
             });
-            setError('가입이 완료되었습니다. 로그인은 Google OAuth를 사용해 주세요. (이메일 로그인 API 없음)');
+            setStatus({
+                type: 'success',
+                text: '가입이 완료되었습니다. 이메일로 로그인해 주세요.',
+            });
+            setPassword('');
             setMode('login');
         } catch (err) {
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : '가입에 실패했습니다. (백엔드: POST /api/members 는 인증이 필요할 수 있음)',
-            );
+            setStatus({
+                type: 'error',
+                text: getApiErrorMessage(err, '가입에 실패했습니다.'),
+            });
         } finally {
             setLoading(false);
         }
     };
 
-    const handleEmailLogin = (e: React.FormEvent) => {
+    const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        setError('이메일/비밀번호 로그인 API가 백엔드에 없습니다. Google로 로그인해 주세요.');
+        const trimmedEmail = email.trim();
+        const trimmedPassword = password.trim();
+
+        if (!trimmedEmail) {
+            setStatus({ type: 'error', text: '이메일을 입력해 주세요.' });
+            return;
+        }
+        if (!trimmedPassword) {
+            setStatus({ type: 'error', text: '패스워드를 입력해 주세요.' });
+            return;
+        }
+
+        setLoading(true);
+        setStatus(null);
+        try {
+            const { accessToken } = await loginMember({
+                email: trimmedEmail,
+                password: trimmedPassword,
+            });
+            setStoredToken(accessToken);
+            onLoginSuccess();
+        } catch (err) {
+            setStatus({
+                type: 'error',
+                text: getApiErrorMessage(err, '로그인에 실패했습니다.'),
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -61,47 +116,59 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
                     G 구글로 계속 진행
                 </button>
 
-                {error && <p className="login-error">{error}</p>}
+                {status && (
+                    <p className={status.type === 'success' ? 'login-success' : 'login-error'}>
+                        {status.text}
+                    </p>
+                )}
 
                 <form
                     className="login-form"
                     onSubmit={mode === 'signup' ? handleSignup : handleEmailLogin}
+                    noValidate
                 >
                     {mode === 'signup' && (
                         <>
-                            <label className="login-label">이름</label>
+                            <label className="login-label" htmlFor="signup-name">이름</label>
                             <input
+                                id="signup-name"
                                 type="text"
                                 className="login-input"
                                 placeholder="이름 입력..."
                                 value={name}
                                 onChange={e => setName(e.target.value)}
+                                autoComplete="name"
+                                disabled={loading}
                             />
                         </>
                     )}
 
-                    <label className="login-label">이메일</label>
+                    <label className="login-label" htmlFor="login-email">이메일</label>
                     <input
+                        id="login-email"
                         type="email"
                         className="login-input"
                         placeholder="이메일 입력..."
                         value={email}
                         onChange={e => setEmail(e.target.value)}
                         autoComplete="email"
+                        disabled={loading}
                     />
 
-                    <label className="login-label">패스워드</label>
+                    <label className="login-label" htmlFor="login-password">패스워드</label>
                     <input
+                        id="login-password"
                         type="password"
                         className="login-input"
                         placeholder="패스워드 입력..."
                         value={password}
                         onChange={e => setPassword(e.target.value)}
-                        autoComplete="current-password"
+                        autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                        disabled={loading}
                     />
 
                     <button type="submit" className="login-submit" disabled={loading}>
-                        {mode === 'signup' ? '가입하기' : '로그인'}
+                        {loading ? '처리 중…' : mode === 'signup' ? '가입하기' : '로그인'}
                     </button>
                 </form>
 
@@ -109,14 +176,14 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
                     {mode === 'login' ? (
                         <>
                             계정이 없습니까?{' '}
-                            <button type="button" className="login-link-btn" onClick={() => setMode('signup')}>
+                            <button type="button" className="login-link-btn" onClick={() => switchMode('signup')}>
                                 가입하세요
                             </button>
                         </>
                     ) : (
                         <>
                             이미 계정이 있습니까?{' '}
-                            <button type="button" className="login-link-btn" onClick={() => setMode('login')}>
+                            <button type="button" className="login-link-btn" onClick={() => switchMode('login')}>
                                 로그인
                             </button>
                         </>
