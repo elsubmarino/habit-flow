@@ -22,6 +22,8 @@ export type NavItem = 'inbox' | 'today' | 'upcoming' | 'filters' | 'report';
 
 interface SidebarProps {
     activeNav: NavItem;
+    inboxTaskCount: number;
+    todayTaskCount: number;
     projects: Project[];
     selectedProjectId: number | null;
     selectedLabelId: number | null;
@@ -48,6 +50,8 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({
     activeNav,
+    inboxTaskCount,
+    todayTaskCount,
     projects,
     selectedProjectId,
     selectedLabelId,
@@ -170,18 +174,30 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 <kbd className="sidebar-kbd">Ctrl K</kbd>
                             </button>
                         </li>
-                        {navItems.map(item => (
-                            <li key={item.id}>
-                                <button
-                                    type="button"
-                                    className={`nav-item ${activeNav === item.id && !selectedProjectId && !selectedLabelId && !projectsBrowseActive ? 'active' : ''}`}
-                                    onClick={() => onNavChange(item.id)}
-                                >
-                                    <span className="nav-icon">{item.icon}</span>
-                                    <span className="nav-label">{item.label}</span>
-                                </button>
-                            </li>
-                        ))}
+                        {navItems.map(item => {
+                            const count = item.id === 'inbox'
+                                ? inboxTaskCount
+                                : item.id === 'today'
+                                    ? todayTaskCount
+                                    : 0;
+                            const showCount = item.id !== 'upcoming' && count > 0;
+
+                            return (
+                                <li key={item.id}>
+                                    <button
+                                        type="button"
+                                        className={`nav-item ${activeNav === item.id && !selectedProjectId && !selectedLabelId && !projectsBrowseActive ? 'active' : ''}`}
+                                        onClick={() => onNavChange(item.id)}
+                                    >
+                                        <span className="nav-icon">{item.icon}</span>
+                                        <span className="nav-label">{item.label}</span>
+                                        {showCount && (
+                                            <span className="nav-count">{count}</span>
+                                        )}
+                                    </button>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </nav>
 

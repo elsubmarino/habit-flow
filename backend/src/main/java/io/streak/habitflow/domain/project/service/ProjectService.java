@@ -131,10 +131,7 @@ public class ProjectService {
 
     public List<ProjectListResponse> getProjectsByMember(UserDetails userDetails) {
         String email = userDetails.getUsername();
-        List<Project> projects = projectRepository.findByMemberEmail(email);
-        return projects.stream()
-                .map(ProjectListResponse::from)
-                .toList();
+        return projectRepository.findByEmail(email);
     }
 
 

@@ -9,6 +9,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.label.entity.QLabel;
 import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
+import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.QTaskLabel;
 import io.streak.habitflow.domain.task.entity.Task;
@@ -107,4 +108,18 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         if(taskId == null) return null;
         return task.id.lt(taskId);
     }
+
+    @Override
+    public long countTasksByCondition(TaskFilterType taskFilterType, String email) {
+        Long totalCount =  queryFactory
+                .select(task.count())
+                .from(task)
+                .where(
+                        task.member.email.eq(email),
+                        filterTypeEq(taskFilterType)
+                )
+                .fetchOne();
+        return totalCount != null ? totalCount : 0;
+    }
+
 }

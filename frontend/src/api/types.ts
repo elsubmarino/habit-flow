@@ -1,8 +1,4 @@
-export type PriorityType =
-    | 'FIRST_PRIORITY'
-    | 'SECOND_PRIORITY'
-    | 'THIRD_PRIORITY'
-    | 'FOURTH_PRIORITY';
+export type PriorityType = 'P1' | 'P2' | 'P3' | 'P4';
 
 export type ActivityType = 'ADDED' | 'COMPLETED' | 'UPDATED' | 'DELETED' | 'MOVED';
 
@@ -56,10 +52,13 @@ export interface TaskDto {
     comments?: CommentDto[];
 }
 
+export type TaskFilterType = 'INBOX' | 'TODAY' | 'UPCOMING';
+
 export interface ProjectDto {
     id: number;
     name: string;
     color: string;
+    taskCount?: number;
 }
 
 export interface ProjectDetailDto extends ProjectDto {

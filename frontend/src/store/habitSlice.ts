@@ -42,6 +42,7 @@ export interface CommentItem {
     backendId?: number;
     text: string;
     createdAt: string;
+    attachments: Attachment[];
 }
 
 export interface Habit {
@@ -97,6 +98,8 @@ interface HabitState {
     selectedLabelId: number | null;
     tasksHasNext: boolean;
     tasksNextCursor: number | null;
+    inboxTaskCount: number;
+    todayTaskCount: number;
 }
 
 const initialState: HabitState = {
@@ -116,6 +119,8 @@ const initialState: HabitState = {
     selectedLabelId: null,
     tasksHasNext: false,
     tasksNextCursor: null,
+    inboxTaskCount: 0,
+    todayTaskCount: 0,
 };
 
 export type ApiView = NavItem | 'all';
@@ -124,10 +129,6 @@ function dedupeTasks(tasks: TaskDto[]): TaskDto[] {
     const map = new Map<number, TaskDto>();
     for (const task of tasks) map.set(task.id, task);
     return [...map.values()];
-}
-
-function countTasksForProject(habits: Habit[], projectId: number) {
-    return habits.filter(h => h.projectId === projectId).length;
 }
 
 function countTasksForLabel(habits: Habit[], labelId: number) {
@@ -247,14 +248,25 @@ export const fetchMoreHabits = createAsyncThunk(
     },
 );
 
+export const fetchNavTaskCounts = createAsyncThunk('habits/fetchNavTaskCounts', async () => {
+    const [inbox, today] = await Promise.all([
+        taskApi.fetchTaskCount('INBOX'),
+        taskApi.fetchTaskCount('TODAY'),
+    ]);
+    return { inbox, today };
+});
+
 export const fetchProjects = createAsyncThunk('habits/fetchProjects', async () => {
-    const projects = await projectApi.fetchProjects();
+    const list = await projectApi.fetchProjects();
     const details = await Promise.all(
-        projects.map(p =>
+        list.map(p =>
             projectApi.fetchProjectById(p.id).catch(() => ({ ...p, favorite: false })),
         ),
     );
-    return details.map(p => mapProject(p));
+    return list.map((p, i) => mapProject(
+        { ...details[i], id: p.id, name: p.name, color: p.color },
+        p.taskCount ?? 0,
+    ));
 });
 
 async function enrichLabels(labels: { id: number; name: string; color: string }[]) {
@@ -406,6 +418,11 @@ export const updateHabit = createAsyncThunk(
     },
 );
 
+export const deleteHabit = createAsyncThunk('habits/delete', async (habitId: number) => {
+    await taskApi.deleteTask(habitId);
+    return habitId;
+});
+
 export const addSubtask = createAsyncThunk(
     'habits/addSubtask',
     async ({
@@ -509,10 +526,6 @@ const habitSlice = createSlice({
                 state.selectedLabelId = action.payload.labelId;
                 state.tasksHasNext = action.payload.hasNext;
                 state.tasksNextCursor = action.payload.nextCursor;
-                state.projects = state.projects.map(p => ({
-                    ...p,
-                    taskCount: countTasksForProject(action.payload.habits, p.id),
-                }));
                 state.labels = state.labels.map(l => ({
                     ...l,
                     taskCount: countTasksForLabel(action.payload.habits, l.id),
@@ -544,12 +557,13 @@ const habitSlice = createSlice({
             .addCase(fetchProjects.pending, state => {
                 state.projectsStatus = 'loading';
             })
+            .addCase(fetchNavTaskCounts.fulfilled, (state, action) => {
+                state.inboxTaskCount = action.payload.inbox;
+                state.todayTaskCount = action.payload.today;
+            })
             .addCase(fetchProjects.fulfilled, (state, action) => {
                 state.projectsStatus = 'idle';
-                state.projects = action.payload.map(p => ({
-                    ...p,
-                    taskCount: countTasksForProject(state.list, p.id),
-                }));
+                state.projects = action.payload;
             })
             .addCase(fetchProjects.rejected, state => {
                 state.projectsStatus = 'failed';
@@ -653,6 +667,12 @@ const habitSlice = createSlice({
             .addCase(updateHabit.fulfilled, (state, action) => {
                 const index = state.list.findIndex(h => h.id === action.payload.id);
                 if (index !== -1) state.list[index] = action.payload;
+            })
+            .addCase(deleteHabit.fulfilled, (state, action) => {
+                state.list = state.list.filter(h => h.id !== action.payload);
+            })
+            .addCase(deleteHabit.rejected, (state, action) => {
+                state.error = action.error.message ?? '작업을 삭제하지 못했습니다.';
             })
             .addCase(fetchHabitDetail.fulfilled, (state, action) => {
                 const index = state.list.findIndex(h => h.id === action.payload.id);

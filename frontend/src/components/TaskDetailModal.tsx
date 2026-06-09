@@ -44,10 +44,9 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     const [subName, setSubName] = useState('');
     const [subDesc, setSubDesc] = useState('');
     const [comment, setComment] = useState('');
-    const [activeMenu, setActiveMenu] = useState<'project' | 'date' | 'priority' | 'label' | 'reminder' | null>(null);
+    const [activeMenu, setActiveMenu] = useState<'project' | 'date' | 'priority' | 'label' | null>(null);
     const [projectQuery, setProjectQuery] = useState('');
     const [labelQuery, setLabelQuery] = useState('');
-    const [reminderDraft, setReminderDraft] = useState('작업 시간에');
     const [isEditingMain, setIsEditingMain] = useState(false);
     const [editName, setEditName] = useState('');
     const [editDesc, setEditDesc] = useState('');
@@ -76,9 +75,16 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         let cancelled = false;
         setLoading(true);
         void taskApi.fetchTaskById(currentId)
-            .then(task => {
+            .then(async task => {
                 if (cancelled) return;
-                setTasks(prev => ({ ...prev, [currentId]: mapTaskToHabit(task) }));
+                const mapped = mapTaskToHabit(task);
+                setTasks(prev => ({ ...prev, [currentId]: mapped }));
+                try {
+                    const commentDtos = await commentApi.fetchTaskComments(currentId);
+                    if (!cancelled) setComments(mapCommentDtos(commentDtos));
+                } catch {
+                    if (!cancelled) setComments(mapped.comments);
+                }
             })
             .catch(() => undefined)
             .finally(() => {
@@ -467,17 +473,21 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
                             </div>
 
                             {comments.length > 0 && (
-                                <ul className="comment-list">
-                                    {comments.map(c => (
-                                        <CommentListItem
-                                            key={c.id}
-                                            comment={c}
-                                            canManage
-                                            onEdit={handleEditComment}
-                                            onDelete={handleDeleteComment}
-                                        />
-                                    ))}
-                                </ul>
+                                <>
+                                    <h3 className="task-comments-title">댓글 {comments.length}</h3>
+                                    <ul className="comment-list">
+                                        {comments.map(c => (
+                                            <CommentListItem
+                                                key={c.id}
+                                                comment={c}
+                                                authorName={habit.userName}
+                                                canManage
+                                                onEdit={handleEditComment}
+                                                onDelete={handleDeleteComment}
+                                            />
+                                        ))}
+                                    </ul>
+                                </>
                             )}
                         </div>
 
@@ -556,28 +566,6 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
                                                 </button>
                                             );
                                         })}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="detail-row interactive" onClick={() => setActiveMenu(m => m === 'reminder' ? null : 'reminder')}>
-                                <p className="detail-label">미리 알림</p>
-                                <p className="detail-value">
-                                    {habit.reminders.length > 0 ? `${habit.reminders.length}개` : <span className="detail-add">+</span>}
-                                </p>
-                                {activeMenu === 'reminder' && (
-                                    <div className="reminder-panel">
-                                        <select value={reminderDraft} onChange={e => setReminderDraft(e.target.value)}>
-                                            <option value="작업 시간에">작업 시간에</option>
-                                            <option value="10분 전">10분 전</option>
-                                            <option value="1시간 전">1시간 전</option>
-                                        </select>
-                                        <button type="button" className="quick-submit reminder-add-btn" onClick={() => {
-                                            const next = Array.from(new Set([...(habit.reminders ?? []), reminderDraft]));
-                                            void dispatch(updateHabit({ habitId: habit.id, changes: { reminders: next } })).then(refreshCurrent);
-                                        }}>
-                                            미리 알림 추가
-                                        </button>
                                     </div>
                                 )}
                             </div>

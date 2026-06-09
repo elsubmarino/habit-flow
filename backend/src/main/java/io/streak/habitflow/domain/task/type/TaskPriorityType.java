@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum PriorityType {
+public enum TaskPriorityType {
     P1(1,"우선순위1"),
     P2(2,"우선순위2"),
     P3(3,"우선순위3"),

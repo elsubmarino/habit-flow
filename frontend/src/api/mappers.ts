@@ -7,13 +7,13 @@ export function readCompleted(task: TaskDto): boolean {
 
 export function priorityFromApi(value?: PriorityType | null): 1 | 2 | 3 | 4 {
     switch (value) {
-        case 'FIRST_PRIORITY':
+        case 'P1':
             return 1;
-        case 'SECOND_PRIORITY':
+        case 'P2':
             return 2;
-        case 'THIRD_PRIORITY':
+        case 'P3':
             return 3;
-        case 'FOURTH_PRIORITY':
+        case 'P4':
         default:
             return 4;
     }
@@ -22,14 +22,14 @@ export function priorityFromApi(value?: PriorityType | null): 1 | 2 | 3 | 4 {
 export function priorityToApi(value?: 1 | 2 | 3 | 4): PriorityType {
     switch (value) {
         case 1:
-            return 'FIRST_PRIORITY';
+            return 'P1';
         case 2:
-            return 'SECOND_PRIORITY';
+            return 'P2';
         case 3:
-            return 'THIRD_PRIORITY';
+            return 'P3';
         case 4:
         default:
-            return 'FOURTH_PRIORITY';
+            return 'P4';
     }
 }
 
@@ -54,7 +54,10 @@ export function mapLabel(dto: LabelDto & { favorite?: boolean }, taskCount = 0):
     };
 }
 
-export function mapProject(dto: ProjectDto & { favorite?: boolean }, taskCount = 0): Project {
+export function mapProject(
+    dto: ProjectDto & { favorite?: boolean },
+    taskCount = dto.taskCount ?? 0,
+): Project {
     return {
         id: dto.id,
         name: dto.name,
@@ -82,27 +85,54 @@ function mapAttachments(comments?: TaskDto['comments']): Attachment[] {
     );
 }
 
+const ATTACHMENT_COMMENT_PLACEHOLDER = '첨부파일이 등록되었습니다.';
+
+type CommentDtoLike = {
+    id?: number;
+    content: string;
+    createdAt?: string;
+    attachments?: { fileUrl: string; originalFileName: string }[];
+};
+
+function mapCommentAttachments(
+    attachments?: { fileUrl: string; originalFileName: string }[],
+): Attachment[] {
+    return (attachments ?? []).map((att, i) => ({
+        id: i + 1,
+        originalFileName: att.originalFileName,
+        contentType: null,
+        fileSize: 0,
+        downloadUrl: att.fileUrl.startsWith('http') ? att.fileUrl : att.fileUrl,
+    }));
+}
+
+function mapSingleComment(comment: CommentDtoLike, index: number): CommentItem | null {
+    const attachments = mapCommentAttachments(comment.attachments);
+    const isPlaceholder = comment.content === ATTACHMENT_COMMENT_PLACEHOLDER;
+    const hasText = Boolean(comment.content?.trim()) && !isPlaceholder;
+
+    if (!hasText && attachments.length === 0) return null;
+
+    return {
+        id: comment.id ?? index + 1,
+        backendId: comment.id,
+        text: hasText ? comment.content : '',
+        createdAt: comment.createdAt ?? new Date().toISOString(),
+        attachments,
+    };
+}
+
 function mapComments(comments?: TaskDto['comments']): CommentItem[] {
     if (!comments) return [];
     return comments
-        .filter(c => c.content && c.content !== '첨부파일이 등록되었습니다.')
-        .map((c, i) => ({
-            id: c.id ?? i + 1,
-            backendId: c.id,
-            text: c.content,
-            createdAt: c.createdAt ?? new Date().toISOString(),
-        }));
+        .map((c, i) => mapSingleComment(c, i))
+        .filter((c): c is CommentItem => c != null);
 }
 
-export function mapCommentDtos(comments: { id?: number; content: string; createdAt?: string }[]): CommentItem[] {
+export function mapCommentDtos(comments: CommentDtoLike[]): CommentItem[] {
     return comments
-        .filter(c => c.content && c.content !== '첨부파일이 등록되었습니다.')
-        .map((c, i) => ({
-            id: c.id ?? i + 1,
-            backendId: c.id,
-            text: c.content,
-            createdAt: c.createdAt ?? new Date().toISOString(),
-        }));
+        .map((c, i) => mapSingleComment(c, i))
+        .filter((c): c is CommentItem => c != null);
 }
 
 function mapSubtasks(subTasks?: TaskDto[]): Subtask[] {

@@ -3,7 +3,7 @@ package io.streak.habitflow.domain.task.dto.response;
 import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
 import io.streak.habitflow.domain.task.entity.Task;
-import io.streak.habitflow.domain.task.type.PriorityType;
+import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,7 +22,7 @@ public class TaskResponse {
     private String name;
     private String description;
     private boolean completed;
-    private PriorityType priorityType;
+    private TaskPriorityType taskPriorityType;
     private LocalDateTime dueDate;
     private long sortOrder;
 
@@ -50,7 +50,7 @@ public class TaskResponse {
                 .name(task.getName())
                 .description(task.getDescription())
                 .completed(task.isCompleted())
-                .priorityType(task.getPriorityType())
+                .taskPriorityType(task.getTaskPriorityType())
                 .dueDate(task.getDueDate())
                 .sortOrder(task.getSortOrder())
                 .labels(labelListResponses)

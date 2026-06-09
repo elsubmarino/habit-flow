@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { PriorityType, ScrollResponse, TaskDto } from './types';
+import type { PriorityType, ScrollResponse, TaskDto, TaskFilterType } from './types';
 import { dueDateToApi, readCompleted } from './mappers';
 
 export interface CreateTaskPayload {
@@ -30,6 +30,13 @@ function buildTaskFormData(body: Record<string, unknown>, file?: File | null) {
     );
     if (file) form.append('file', file);
     return form;
+}
+
+export async function fetchTaskCount(taskFilterType: TaskFilterType): Promise<number> {
+    const { data } = await apiClient.get<number>('/api/tasks/count', {
+        params: { taskFilterType },
+    });
+    return data;
 }
 
 export async function fetchInboxTasks(
@@ -97,7 +104,7 @@ export async function createTask(payload: CreateTaskPayload): Promise<TaskDto> {
         name: payload.name,
         description: payload.description ?? '',
         dueDate: dueDateToApi(payload.dueDate),
-        priorityType: payload.priorityType ?? 'FOURTH_PRIORITY',
+        priorityType: payload.priorityType ?? 'P4',
         projectId: payload.projectId ?? null,
         parentId: payload.parentId ?? null,
         labelIds: payload.labelIds ?? [],

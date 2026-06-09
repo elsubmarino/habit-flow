@@ -14,6 +14,7 @@ public class ProjectListResponse {
     private Long id;
     private String name;
     private String color;
+    private long taskCount;
 
     public static ProjectListResponse from(Project project) {
         return ProjectListResponse.builder()

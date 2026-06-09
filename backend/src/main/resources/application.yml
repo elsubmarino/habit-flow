@@ -36,3 +36,11 @@ decorator:
     p6spy:
       enable-logging: true
       multiline: true
+springdoc:
+  packages-to-scan: io.streak.habitflow.domain
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha

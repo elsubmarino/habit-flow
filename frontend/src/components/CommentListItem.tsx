@@ -1,15 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
-import type { CommentItem } from '../store/habitSlice';
+import { attachmentDownloadUrl, type CommentItem } from '../store/habitSlice';
+import { getUserProfile } from '../utils/userProfile';
 
 interface CommentListItemProps {
     comment: CommentItem;
+    authorName?: string | null;
     canManage: boolean;
     onEdit: (comment: CommentItem, text: string) => Promise<void>;
     onDelete: (comment: CommentItem) => Promise<void>;
 }
 
+function attachmentIconClass(fileName: string): string {
+    const ext = fileName.includes('.') ? fileName.split('.').pop()?.toLowerCase() : '';
+    if (ext === 'pdf') return 'comment-attachment-icon pdf';
+    if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext ?? '')) return 'comment-attachment-icon image';
+    return 'comment-attachment-icon file';
+}
+
 const CommentListItem: React.FC<CommentListItemProps> = ({
     comment,
+    authorName,
     canManage,
     onEdit,
     onDelete,
@@ -19,6 +29,8 @@ const CommentListItem: React.FC<CommentListItemProps> = ({
     const [draft, setDraft] = useState(comment.text);
     const [saving, setSaving] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const displayName = authorName ?? getUserProfile().displayName;
+    const canEdit = Boolean(comment.text.trim());
 
     useEffect(() => {
         setDraft(comment.text);
@@ -89,8 +101,30 @@ const CommentListItem: React.FC<CommentListItemProps> = ({
             onMouseLeave={() => setMenuOpen(false)}
         >
             <div className="comment-list-body">
-                <p>{comment.text}</p>
-                <small>{new Date(comment.createdAt).toLocaleString('ko-KR')}</small>
+                <div className="comment-list-meta">
+                    <span className="comment-author">{displayName}</span>
+                    <small>{new Date(comment.createdAt).toLocaleString('ko-KR')}</small>
+                </div>
+                {comment.text && <p>{comment.text}</p>}
+                {comment.attachments.length > 0 && (
+                    <ul className="comment-attachment-list">
+                        {comment.attachments.map(att => (
+                            <li key={`${att.id}-${att.originalFileName}`}>
+                                <a
+                                    className="comment-attachment-card"
+                                    href={attachmentDownloadUrl(att.downloadUrl)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <span className={attachmentIconClass(att.originalFileName)}>
+                                        {att.originalFileName.split('.').pop()?.toUpperCase() ?? 'FILE'}
+                                    </span>
+                                    <span className="comment-attachment-name">{att.originalFileName}</span>
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
             <div className={`comment-list-actions${canManage ? '' : ' disabled'}`} ref={menuRef}>
                 <button
@@ -103,15 +137,17 @@ const CommentListItem: React.FC<CommentListItemProps> = ({
                 </button>
                 {menuOpen && (
                     <div className="comment-action-menu">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setMenuOpen(false);
-                                setEditing(true);
-                            }}
-                        >
-                            편집
-                        </button>
+                        {canEdit && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setMenuOpen(false);
+                                    setEditing(true);
+                                }}
+                            >
+                                편집
+                            </button>
+                        )}
                         <button
                             type="button"
                             className="danger"

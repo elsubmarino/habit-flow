@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { addHabit, fetchHabits, uploadAttachments, type ApiView } from '../store/habitSlice';
+import { addHabit, fetchHabits, fetchNavTaskCounts, fetchProjects, type ApiView } from '../store/habitSlice';
 import { formatFileSize, validateFile } from '../utils/file';
 import type { NavItem } from './Sidebar';
 import { defaultDueDateForView, formatDueLabel } from '../utils/date';
@@ -103,7 +103,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
         if (!name.trim() || submitting) return;
         setSubmitting(true);
         try {
-            const created = await dispatch(addHabit({
+            await dispatch(addHabit({
                 name: name.trim(),
                 description: description.trim(),
                 view,
@@ -114,18 +114,14 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 priority,
             })).unwrap();
 
-            if (pendingFiles.length > 1) {
-                await dispatch(
-                    uploadAttachments({ habitId: created.id, files: pendingFiles.slice(1) }),
-                ).unwrap();
-            }
-
             const apiView: ApiView = view === 'filters' ? 'all' : view;
             await dispatch(fetchHabits({
                 view: apiView,
                 projectId,
                 labelId,
             }));
+            dispatch(fetchNavTaskCounts());
+            dispatch(fetchProjects());
             reset();
             onClose();
         } finally {
@@ -145,13 +141,19 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
             else valid.push(file);
         }
 
-        if (errors.length > 0) setFileError(errors[0]);
-        else setFileError(null);
+        if (valid.length === 0) {
+            if (errors.length > 0) setFileError(errors[0]);
+            e.target.value = '';
+            return;
+        }
 
-        setPendingFiles(prev => {
-            const combined = [...prev, ...valid];
-            return combined.slice(0, 10);
-        });
+        if (files.length > 1 || pendingFiles.length > 0) {
+            setFileError('작업당 파일은 하나만 첨부할 수 있습니다.');
+        } else {
+            setFileError(null);
+        }
+
+        setPendingFiles([valid[0]]);
         e.target.value = '';
     };
 

@@ -2,10 +2,12 @@ package io.streak.habitflow.domain.project.repository;
 
 import static io.streak.habitflow.domain.project.entity.QProject.project;
 import static io.streak.habitflow.domain.project.entity.QProjectMember.projectMember;
+import static io.streak.habitflow.domain.task.entity.QTask.task;
 
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
+
 import lombok.RequiredArgsConstructor;
 import java.util.List;
 
@@ -31,6 +33,23 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                         project.name.contains(keyword)
                 )
                 .limit(5)
+                .fetch();
+    }
+
+    @Override
+    public List<ProjectListResponse> findByEmail(String email) {
+        return queryFactory
+                .select(Projections.constructor(
+                        ProjectListResponse.class,
+                        project.id,
+                        project.name,
+                        project.color,
+                        task.count()
+                ))
+                .from(project)
+                .leftJoin(task).on(task.project.eq(project).and(task.completed.eq(false)))
+                .innerJoin(projectMember).on(projectMember.project.eq(project).and(projectMember.member.email.eq(email)))
+                .groupBy(project.id)
                 .fetch();
     }
 }

@@ -1,8 +1,6 @@
 package io.streak.habitflow.domain.task.dto.request;
 
-import io.streak.habitflow.domain.task.type.PriorityType;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,7 +17,7 @@ import java.util.List;
 public class TaskUpdateRequest {
     private String name;
     private String description;
-    private PriorityType priorityType;
+    private TaskPriorityType taskPriorityType;
     private LocalDateTime dueDate;
     private Long projectId;
     private Long parentId;

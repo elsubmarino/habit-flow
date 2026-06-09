@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.task.service;
 
+import com.querydsl.core.QueryFactory;
 import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogRequest;
 import io.streak.habitflow.domain.activitylog.service.ActivityLogService;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
@@ -22,6 +23,7 @@ import io.streak.habitflow.domain.task.entity.TaskLabel;
 import io.streak.habitflow.domain.task.event.TaskCompletedEvent;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
 import io.streak.habitflow.global.infra.file.FileDto;
@@ -48,6 +50,7 @@ public class TaskService {
     private final LabelRepository labelRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final QueryFactory queryFactory;
 
     @Transactional
     @CheckOwnership(type="TASK")
@@ -90,7 +93,7 @@ public class TaskService {
                 .name(taskCreateRequest.getName())
                 .description(taskCreateRequest.getDescription())
                 .dueDate(taskCreateRequest.getDueDate())
-                .priorityType(taskCreateRequest.getPriorityType())
+                .taskPriorityType(taskCreateRequest.getTaskPriorityType())
                 .member(member)
                 .project(project)
                 .parent(parentTask)
@@ -230,8 +233,8 @@ public class TaskService {
             task.updateDueDate(taskUpdateRequest.getDueDate());
         }
 
-        if(taskUpdateRequest.getPriorityType()!=null){
-            task.updatePriorityType(taskUpdateRequest.getPriorityType());
+        if(taskUpdateRequest.getTaskPriorityType()!=null){
+            task.updatePriorityType(taskUpdateRequest.getTaskPriorityType());
         }
 
         if(taskUpdateRequest.getProjectId()!=null){
@@ -288,6 +291,10 @@ public class TaskService {
         if(!task.getMember().getEmail().equals(email)){
             throw new IllegalStateException("해당 테스크에 대한 접근 권한이 없습니다.");
         }
+    }
+
+    public long getTaskCount(TaskFilterType taskFilterType, String email){
+        return taskRepository.countTasksByCondition(taskFilterType, email);
     }
 
 }

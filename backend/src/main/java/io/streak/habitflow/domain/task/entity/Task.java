@@ -3,7 +3,7 @@ package io.streak.habitflow.domain.task.entity;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.project.entity.Project;
-import io.streak.habitflow.domain.task.type.PriorityType;
+import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -30,7 +30,7 @@ public class Task extends BaseTimeEntity {
     private boolean completed;
 
     @Enumerated(EnumType.STRING)
-    private PriorityType priorityType;
+    private TaskPriorityType taskPriorityType;
 
     private LocalDateTime dueDate;
     private long sortOrder;
@@ -77,8 +77,8 @@ public class Task extends BaseTimeEntity {
         this.description = description;
     }
 
-    public void updatePriorityType(PriorityType priorityType){
-        this.priorityType = priorityType;
+    public void updatePriorityType(TaskPriorityType taskPriorityType){
+        this.taskPriorityType = taskPriorityType;
     }
 
     public void updateDueDate(LocalDateTime dueDate){

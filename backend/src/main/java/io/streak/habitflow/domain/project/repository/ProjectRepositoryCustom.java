@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ProjectRepositoryCustom {
     List<ProjectListResponse> searchKeyword(String keyword, String email);
+    List<ProjectListResponse> findByEmail(String email);
 }

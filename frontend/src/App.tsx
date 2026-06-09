@@ -9,6 +9,7 @@ import {
     fetchMoreHabits,
     fetchLabels,
     fetchMoreLabels,
+    fetchNavTaskCounts,
     fetchProjects,
     setActiveView,
     setSelectedLabel,
@@ -99,6 +100,8 @@ function App() {
         error: habitError,
         selectedProjectId,
         selectedLabelId,
+        inboxTaskCount,
+        todayTaskCount,
     } = useAppSelector(state => state.habits);
 
     const initialLocation = parseAppPath(window.location.pathname);
@@ -140,15 +143,27 @@ function App() {
         isToastVisible,
     } = useTaskCompleteToast();
 
+    const refreshSidebarCounts = useCallback(() => {
+        dispatch(fetchNavTaskCounts());
+        dispatch(fetchProjects());
+    }, [dispatch]);
+
     const handleTaskCompleted = useCallback((habit: Habit) => {
         showCompleteToast(habit.id);
-    }, [showCompleteToast]);
+        refreshSidebarCounts();
+    }, [showCompleteToast, refreshSidebarCounts]);
+
+    const handleTaskDeleted = useCallback((habitId: number) => {
+        if (selectedHabitId === habitId) setSelectedHabitId(null);
+        refreshSidebarCounts();
+    }, [selectedHabitId, refreshSidebarCounts]);
 
     const handleUndoComplete = useCallback(async () => {
         if (completedTaskId == null) return;
         await dispatch(checkHabit({ habitId: completedTaskId, wasCompleted: true }));
         dismissToast();
-    }, [completedTaskId, dispatch, dismissToast]);
+        refreshSidebarCounts();
+    }, [completedTaskId, dispatch, dismissToast, refreshSidebarCounts]);
 
     useAppUrlSync({
         activeNav,
@@ -213,6 +228,7 @@ function App() {
 
     useEffect(() => {
         dispatch(fetchProjects());
+        dispatch(fetchNavTaskCounts());
         dispatch(fetchLabels());
         dispatch(fetchNotifications());
         void fetchMember()
@@ -232,6 +248,7 @@ function App() {
         if (activeNav === 'report' || showProjectsBrowse || showLabelsBrowse) return;
         const view = selectedLabelId != null ? 'all' : toApiView(activeNav);
         dispatch(fetchHabits({ view, projectId: selectedProjectId, labelId: selectedLabelId }));
+        dispatch(fetchNavTaskCounts());
     }, [dispatch, activeNav, selectedProjectId, selectedLabelId, showProjectsBrowse, showLabelsBrowse]);
 
     const handleNavChange = (nav: NavItem) => {
@@ -421,6 +438,7 @@ function App() {
                     onOpenDetails={setSelectedHabitId}
                     onOpenProject={handleProjectSelect}
                     onTaskCompleted={handleTaskCompleted}
+                    onTaskDeleted={handleTaskDeleted}
                 />
             ))}
         </ul>
@@ -476,6 +494,7 @@ function App() {
                                         onOpenDetails={setSelectedHabitId}
                                         onOpenProject={handleProjectSelect}
                                         onTaskCompleted={handleTaskCompleted}
+                                        onTaskDeleted={handleTaskDeleted}
                                     />
                                 ))}
                             </ul>
@@ -496,6 +515,7 @@ function App() {
                     onOpenProject={handleProjectSelect}
                     onAddTask={() => addFormRef.current?.open()}
                     onTaskCompleted={handleTaskCompleted}
+                    onTaskDeleted={handleTaskDeleted}
                 />
             );
         }
@@ -546,6 +566,8 @@ function App() {
             )}
             <Sidebar
                 activeNav={activeNav}
+                inboxTaskCount={inboxTaskCount}
+                todayTaskCount={todayTaskCount}
                 projects={projects}
                 selectedProjectId={selectedProjectId}
                 selectedLabelId={selectedLabelId}

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppDispatch } from '../store/hooks';
-import { checkHabit } from '../store/habitSlice';
+import { checkHabit, deleteHabit } from '../store/habitSlice';
 import type { Habit } from '../store/habitSlice';
 import { displayLabelName } from '../api/labelMappers';
 import { formatDueLabel, toISODate } from '../utils/date';
@@ -14,6 +14,7 @@ interface HabitItemProps {
     onOpenDetails?: (habitId: number) => void;
     onOpenProject?: (projectId: number) => void;
     onTaskCompleted?: (habit: Habit) => void;
+    onTaskDeleted?: (habitId: number) => void;
 }
 
 const PRIORITY_BORDER: Record<1 | 2 | 3 | 4, string> = {
@@ -29,9 +30,23 @@ const HabitItem: React.FC<HabitItemProps> = ({
     onOpenDetails,
     onOpenProject,
     onTaskCompleted,
+    onTaskDeleted,
 }) => {
     const dispatch = useAppDispatch();
+    const [menuOpen, setMenuOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
     const completed = habit.completedToday;
+
+    useEffect(() => {
+        if (!menuOpen) return;
+        const handleClick = (e: MouseEvent) => {
+            if (!menuRef.current?.contains(e.target as Node)) {
+                setMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClick);
+        return () => document.removeEventListener('mousedown', handleClick);
+    }, [menuOpen]);
 
     const handleCheck = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -41,13 +56,36 @@ const HabitItem: React.FC<HabitItemProps> = ({
             onTaskCompleted?.(result.payload);
         }
     };
+
+    const handleEdit = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setMenuOpen(false);
+        onOpenDetails?.(habit.id);
+    };
+
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setMenuOpen(false);
+        if (!window.confirm(`"${habit.name}" 작업을 삭제할까요?`)) return;
+
+        const result = await dispatch(deleteHabit(habit.id));
+        if (deleteHabit.fulfilled.match(result)) {
+            onTaskDeleted?.(habit.id);
+        } else {
+            window.alert('작업을 삭제하지 못했습니다.');
+        }
+    };
+
     const completedSubtasks = habit.subtasks.filter(s => s.completed).length;
     const totalSubtasks = habit.subtasks.length;
     const projectLabel = habit.projectName ?? '관리함';
     const showProjectAside = layout !== 'project';
 
     return (
-        <li className={`task-item task-item-todoist ${completed ? 'completed' : ''}`}>
+        <li
+            className={`task-item task-item-todoist ${completed ? 'completed' : ''}`}
+            onMouseLeave={() => setMenuOpen(false)}
+        >
             <button
                 type="button"
                 className="task-check"
@@ -119,6 +157,30 @@ const HabitItem: React.FC<HabitItemProps> = ({
                         </span>
                     ))}
                 </div>
+            </div>
+
+            <div className="task-item-actions" ref={menuRef}>
+                <button
+                    type="button"
+                    className="task-more-btn"
+                    aria-label="작업 메뉴"
+                    onClick={e => {
+                        e.stopPropagation();
+                        setMenuOpen(v => !v);
+                    }}
+                >
+                    ···
+                </button>
+                {menuOpen && (
+                    <div className="task-action-menu">
+                        <button type="button" onClick={handleEdit}>
+                            편집
+                        </button>
+                        <button type="button" className="danger" onClick={e => void handleDelete(e)}>
+                            삭제
+                        </button>
+                    </div>
+                )}
             </div>
         </li>
     );

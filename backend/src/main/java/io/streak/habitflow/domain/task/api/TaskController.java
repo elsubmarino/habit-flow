@@ -96,5 +96,12 @@ public class TaskController {
         return ResponseEntity.ok(taskService.toggleCompletion(taskId,userDetails));
     }
 
+    @GetMapping("/count")
+    public ResponseEntity<Long> getTaskCount(@AuthenticationPrincipal UserDetails userDetails,
+                                             @RequestParam(required = false) TaskFilterType taskFilterType) {
+        long totalCount = taskService.getTaskCount(taskFilterType,userDetails.getUsername());
+        return ResponseEntity.ok(totalCount);
+    }
+
 
 }
