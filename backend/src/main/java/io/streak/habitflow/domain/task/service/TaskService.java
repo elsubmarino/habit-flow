@@ -19,6 +19,7 @@ import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.entity.TaskLabel;
+import io.streak.habitflow.domain.task.event.TaskCompletedEvent;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
@@ -26,6 +27,7 @@ import io.streak.habitflow.global.common.dto.ScrollResponse;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,6 +47,7 @@ public class TaskService {
     private final FileStorageService fileStorageService;
     private final LabelRepository labelRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     @CheckOwnership(type="TASK")
@@ -270,6 +273,9 @@ public class TaskService {
                     .taskId(taskId)
                     .build();
             activityLogService.create(activityLogRequest,userDetails);
+            applicationEventPublisher.publishEvent(new TaskCompletedEvent(
+                    taskId,userDetails.getUsername(),ActivityType.COMPLETED
+            ));
         }
 
         List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()

@@ -60,6 +60,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 queryFactory
                         .select(Projections.fields(
                                 TaskResponse.class,
+                                task.id,
                                 task.name
                         ))
                         .from(task)

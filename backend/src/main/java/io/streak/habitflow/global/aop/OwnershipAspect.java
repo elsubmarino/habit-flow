@@ -18,13 +18,13 @@ public class OwnershipAspect {
 
     private final TaskRepository taskRepository;
 
-    @Before(value = "@annotation(checkOwnership) && args(id, userDetails, ..)", argNames = "joinPoint,checkOwnership,id,userDetails")
-    public void validateOwnership(JoinPoint joinPoint, CheckOwnership checkOwnership, Long id, UserDetails userDetails) throws AccessDeniedException {
+    @Before(value = "@annotation(checkOwnership) && args(taskId, userDetails, ..)", argNames = "joinPoint,checkOwnership,taskId,userDetails")
+    public void validateOwnership(JoinPoint joinPoint, CheckOwnership checkOwnership, Long taskId, UserDetails userDetails) throws AccessDeniedException {
         String currentEmail = userDetails.getUsername();
         String domainType = checkOwnership.type();
 
         if("TASK".equals(domainType)){
-            Task task = taskRepository.findById(id)
+            Task task = taskRepository.findById(taskId)
                     .orElseThrow(()->new IllegalArgumentException("존재하지 않는 테스크입니다."));
 
             if(!task.getMember().getEmail().equals(currentEmail)){
