@@ -11,7 +11,8 @@ import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.domain.project.repository.ProjectUserRepository;
+import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
+import io.streak.habitflow.domain.task.entity.Task;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ import java.util.Optional;
 public class ProjectService {
     private final ProjectRepository projectRepository;
     private final FavoriteRepository favoriteRepository;
-    private final ProjectUserRepository projectUserRepository;
+    private final ProjectMemberRepository projectMemberRepository;
     private final MemberRepository memberRepository;
 
     @Transactional
@@ -56,7 +57,7 @@ public class ProjectService {
                 .project(savedProject)
                 .member(member)
                 .build();
-        projectUserRepository.save(projectMember);
+        projectMemberRepository.save(projectMember);
 
         if(projectCreateRequest.isFavorite()){
             Favorite favorite = Favorite.builder()
@@ -81,11 +82,14 @@ public class ProjectService {
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
+        validateOwner(project,member);
+
         Project parentProject = null;
         if(projectCreateRequest.getParentId() != null){
             parentProject = projectRepository.findById(projectCreateRequest.getParentId())
                     .orElseThrow(()->new IllegalArgumentException("부모 프로젝트가 존재하지 않습니다."));
         }
+
 
         project.updateProject(projectCreateRequest.getName(),
                 projectCreateRequest.getColor(),
@@ -137,11 +141,12 @@ public class ProjectService {
 
     @Transactional
     public void deleteProject(Long projectId, UserDetails userDetails) {
-        memberRepository.findByEmail(userDetails.getUsername())
+        Member member = memberRepository.findByEmail(userDetails.getUsername())
                         .orElseThrow(()->new IllegalArgumentException("유저가 존재하지 않습니다."));
-        projectRepository.findById(projectId)
+        Project project = projectRepository.findById(projectId)
                         .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
-        projectUserRepository.deleteByProjectId(projectId);
+        validateOwner(project,member);
+        projectMemberRepository.deleteByProjectId(projectId);
         favoriteRepository.deleteByTargetTypeAndTargetId(TargetType.PROJECT, projectId);
         projectRepository.deleteById(projectId);
 
@@ -149,5 +154,12 @@ public class ProjectService {
 
     public List<ProjectListResponse> searchProjects(String keyword, UserDetails userDetails) {
         return projectRepository.searchKeyword(keyword,userDetails.getUsername());
+    }
+
+    public void validateOwner(Project project, Member member){
+        boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
+        if(!isMember){
+            throw new IllegalStateException("해당 프로젝트에 대한 접근 권한이 없습니다.");
+        }
     }
 }

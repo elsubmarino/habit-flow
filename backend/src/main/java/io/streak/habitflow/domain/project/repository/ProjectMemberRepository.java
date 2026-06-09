@@ -5,7 +5,7 @@ import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ProjectUserRepository extends JpaRepository<ProjectMember, Long> {
+public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Long> {
     void deleteByProjectId(Long projectId);
     boolean existsByProjectAndMember(Project project, Member member);
 }

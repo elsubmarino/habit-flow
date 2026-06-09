@@ -11,7 +11,7 @@ import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.domain.project.repository.ProjectUserRepository;
+import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
 import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
@@ -44,7 +44,7 @@ public class TaskService {
     private final ActivityLogService activityLogService;
     private final FileStorageService fileStorageService;
     private final LabelRepository labelRepository;
-    private final ProjectUserRepository projectUserRepository;
+    private final ProjectMemberRepository projectMemberRepository;
 
     @Transactional
     @CheckOwnership(type="TASK")
@@ -75,7 +75,7 @@ public class TaskService {
         if(taskCreateRequest.getProjectId() != null){
             project = projectRepository.findById(taskCreateRequest.getProjectId())
                     .orElseThrow(()->new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
-            boolean isMember = projectUserRepository.existsByProjectAndMember(project, member);
+            boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
             if(!isMember){
                 throw new IllegalStateException("해당 프로젝트에 대한 접근 권한이 없습니다.");
             }
