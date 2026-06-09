@@ -9,7 +9,7 @@ import io.streak.habitflow.domain.project.dto.request.ProjectCreateRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.entity.Project;
-import io.streak.habitflow.domain.project.entity.ProjectUser;
+import io.streak.habitflow.domain.project.entity.ProjectMember;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.project.repository.ProjectUserRepository;
 import lombok.RequiredArgsConstructor;
@@ -52,11 +52,11 @@ public class ProjectService {
                 .orElseThrow(()->new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
 
-        ProjectUser projectUser = ProjectUser.builder()
+        ProjectMember projectMember = ProjectMember.builder()
                 .project(savedProject)
                 .member(member)
                 .build();
-        projectUserRepository.save(projectUser);
+        projectUserRepository.save(projectMember);
 
         if(projectCreateRequest.isFavorite()){
             Favorite favorite = Favorite.builder()

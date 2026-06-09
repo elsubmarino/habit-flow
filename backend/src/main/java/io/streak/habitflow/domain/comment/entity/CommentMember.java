@@ -6,15 +6,14 @@ import lombok.*;
 
 @Entity
 @Getter
-@Setter
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access =  AccessLevel.PROTECTED)
 @Builder
-@Table(name="comment_users")
-public class CommentUser {
+@Table(name="comment_members",uniqueConstraints = {@UniqueConstraint(name = "uk_comment_member", columnNames = {"comment_id","member_id"})})
+public class CommentMember {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="comment_user_id")
+    @Column(name="comment_member_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

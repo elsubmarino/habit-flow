@@ -9,11 +9,13 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor
 @Builder
-@Table(name="project_users")
-public class ProjectUser {
+@Table(name="project_members",uniqueConstraints = {
+        @UniqueConstraint(name = "uk_project_member",columnNames = {"project_id","member_id"})
+})
+public class ProjectMember {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="project_user_id")
+    @Column(name="project_member_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

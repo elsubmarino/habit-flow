@@ -1,12 +1,11 @@
 package io.streak.habitflow.domain.project.repository;
 
 import static io.streak.habitflow.domain.project.entity.QProject.project;
-import static io.streak.habitflow.domain.project.entity.QProjectUser.projectUser;
+import static io.streak.habitflow.domain.project.entity.QProjectMember.projectMember;
 
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
-import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
 
@@ -26,9 +25,9 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                                 project.color
                         )
                 ).from(project)
-                .join(projectUser).on(projectUser.project.eq(project))
+                .join(projectMember).on(projectMember.project.eq(project))
                 .where(
-                        projectUser.member.email.eq(email),
+                        projectMember.member.email.eq(email),
                         project.name.contains(keyword)
                 )
                 .fetch();
