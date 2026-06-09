@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.task.dto.request;
 
+import io.streak.habitflow.domain.task.type.TaskFilterType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -8,6 +9,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class TaskSearchCondition {
-    private String filterType;
+    private TaskFilterType taskFilterType;
     private Long lastTaskId;
 }

@@ -8,6 +8,7 @@ import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
+import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -45,7 +46,7 @@ public class TaskController {
     public ResponseEntity<ScrollResponse<TaskListResponse>> getInboxTasks(@AuthenticationPrincipal UserDetails userDetails,
                                                                           @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
-        taskSearchCondition.setFilterType("INBOX");
+        taskSearchCondition.setTaskFilterType(TaskFilterType.INBOX);
         taskSearchCondition.setLastTaskId(lastTaskId);
         return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));
     }
@@ -54,7 +55,7 @@ public class TaskController {
     public ResponseEntity<ScrollResponse<TaskListResponse>> getTodayTasks(@AuthenticationPrincipal UserDetails userDetails,
                                                                           @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
-        taskSearchCondition.setFilterType("TODAY");
+        taskSearchCondition.setTaskFilterType(TaskFilterType.TODAY);
         taskSearchCondition.setLastTaskId(lastTaskId);
         return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));
     }
@@ -63,7 +64,7 @@ public class TaskController {
     public ResponseEntity<ScrollResponse<TaskListResponse>> getUpcomingTasks(@AuthenticationPrincipal UserDetails userDetails,
                                                                              @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
-        taskSearchCondition.setFilterType("UPCOMING");
+        taskSearchCondition.setTaskFilterType(TaskFilterType.UPCOMING);
         taskSearchCondition.setLastTaskId(lastTaskId);
 
         return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));

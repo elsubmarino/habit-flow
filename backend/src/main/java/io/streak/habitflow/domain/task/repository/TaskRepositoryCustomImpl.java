@@ -12,6 +12,7 @@ import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.QTaskLabel;
 import io.streak.habitflow.domain.task.entity.Task;
+import io.streak.habitflow.domain.task.type.TaskFilterType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 
@@ -80,7 +81,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .leftJoin(task.taskLabels, QTaskLabel.taskLabel).fetchJoin()
                 .leftJoin(QTaskLabel.taskLabel.label, QLabel.label).fetchJoin()
                 .where(task.member.id.eq(memberId),
-                        filterTypeEq(taskSearchCondition.getFilterType()),
+                        filterTypeEq(taskSearchCondition.getTaskFilterType()),
                         ltTaskId(taskSearchCondition.getLastTaskId())
                 )
                 .orderBy(task.id.desc())
@@ -88,14 +89,14 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .fetch();
     }
 
-    private BooleanExpression filterTypeEq(String filterType){
-        if(!StringUtils.hasText(filterType)) return null;
+    private BooleanExpression filterTypeEq(TaskFilterType taskFilterType){
+        if(taskFilterType == null) return null;
         LocalDateTime now = LocalDateTime.now();
-        if("TODAY".equals(filterType)){
+        if(TaskFilterType.TODAY == taskFilterType){
             return task.dueDate.loe(now.toLocalDate().atTime(23,59,59));
-        }else if("UPCOMING".equals(filterType)){
+        }else if(TaskFilterType.UPCOMING == taskFilterType){
             return task.dueDate.goe(now.toLocalDate().atStartOfDay());
-        }else if("INBOX".equals(filterType)){
+        }else if(TaskFilterType.INBOX == taskFilterType){
             return task.project.isNull();
         }
         return null;

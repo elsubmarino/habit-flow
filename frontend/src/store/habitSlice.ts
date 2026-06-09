@@ -343,12 +343,22 @@ export const deleteLabel = createAsyncThunk('habits/deleteLabel', async (labelId
     return labelId;
 });
 
-export const checkHabit = createAsyncThunk('habits/check', async (habitId: number, { getState }) => {
-    const state = getState() as { habits: HabitState };
-    const existing = state.habits.list.find(h => h.id === habitId);
-    const task = await taskApi.toggleTaskCompletion(habitId, existing?.completedToday);
-    return mapTaskToHabit(task);
-});
+export interface CheckHabitPayload {
+    habitId: number;
+    wasCompleted: boolean;
+}
+
+export const checkHabit = createAsyncThunk(
+    'habits/check',
+    async ({ habitId, wasCompleted }: CheckHabitPayload) => {
+        const task = await taskApi.toggleTaskCompletion(habitId, wasCompleted);
+        const habit = mapTaskToHabit(task);
+        return {
+            ...habit,
+            completedToday: !wasCompleted,
+        };
+    },
+);
 
 export const updateHabit = createAsyncThunk(
     'habits/updateHabit',
@@ -572,16 +582,16 @@ const habitSlice = createSlice({
                 }
             })
             .addCase(checkHabit.pending, (state, action) => {
-                const habit = state.list.find(h => h.id === action.meta.arg);
-                if (habit) habit.completedToday = !habit.completedToday;
+                const habit = state.list.find(h => h.id === action.meta.arg.habitId);
+                if (habit) habit.completedToday = !action.meta.arg.wasCompleted;
             })
             .addCase(checkHabit.fulfilled, (state, action) => {
                 const index = state.list.findIndex(h => h.id === action.payload.id);
                 if (index !== -1) state.list[index] = action.payload;
             })
             .addCase(checkHabit.rejected, (state, action) => {
-                const habit = state.list.find(h => h.id === action.meta.arg);
-                if (habit) habit.completedToday = !habit.completedToday;
+                const habit = state.list.find(h => h.id === action.meta.arg.habitId);
+                if (habit) habit.completedToday = action.meta.arg.wasCompleted;
                 state.error = action.error.message ?? '완료 처리에 실패했습니다.';
             })
             .addCase(updateHabit.fulfilled, (state, action) => {

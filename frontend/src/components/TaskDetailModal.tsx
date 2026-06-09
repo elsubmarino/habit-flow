@@ -189,14 +189,11 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     const handleToggleCurrent = async () => {
         if (!habit) return;
         const wasCompleted = habit.completedToday;
-        const result = await dispatch(checkHabit(habit.id));
+        const result = await dispatch(checkHabit({ habitId: habit.id, wasCompleted }));
         if (checkHabit.fulfilled.match(result)) {
-            const updated = result.payload.completedToday === wasCompleted
-                ? { ...result.payload, completedToday: !wasCompleted }
-                : result.payload;
-            setTasks(prev => ({ ...prev, [currentId]: updated }));
-            if (!wasCompleted && updated.completedToday) {
-                onTaskCompleted?.(updated);
+            setTasks(prev => ({ ...prev, [currentId]: result.payload }));
+            if (!wasCompleted && result.payload.completedToday) {
+                onTaskCompleted?.(result.payload);
             }
         }
     };

@@ -142,7 +142,7 @@ function App() {
 
     const handleUndoComplete = useCallback(async () => {
         if (completedTaskId == null) return;
-        await dispatch(checkHabit(completedTaskId));
+        await dispatch(checkHabit({ habitId: completedTaskId, wasCompleted: true }));
         dismissToast();
     }, [completedTaskId, dispatch, dismissToast]);
 

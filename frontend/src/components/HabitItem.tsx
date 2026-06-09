@@ -35,12 +35,9 @@ const HabitItem: React.FC<HabitItemProps> = ({
 
     const handleCheck = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (completed) {
-            await dispatch(checkHabit(habit.id));
-            return;
-        }
-        const result = await dispatch(checkHabit(habit.id));
-        if (checkHabit.fulfilled.match(result) && result.payload.completedToday) {
+        const payload = { habitId: habit.id, wasCompleted: completed };
+        const result = await dispatch(checkHabit(payload));
+        if (checkHabit.fulfilled.match(result) && !completed && result.payload.completedToday) {
             onTaskCompleted?.(result.payload);
         }
     };
