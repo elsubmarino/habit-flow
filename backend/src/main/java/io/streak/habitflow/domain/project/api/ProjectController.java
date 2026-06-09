@@ -4,6 +4,7 @@ import io.streak.habitflow.domain.project.dto.request.ProjectCreateRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.service.ProjectService;
+import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +54,7 @@ public class ProjectController {
     }
 
     @GetMapping("/{projectId}/tasks")
-    public ResponseEntity<List<TaskResponse>> getTasksByProject(@PathVariable Long projectId) {
+    public ResponseEntity<List<TaskListResponse>> getTasksByProject(@PathVariable Long projectId) {
         return ResponseEntity.ok(taskService.getTasksByProject(projectId));
     }
 

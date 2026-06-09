@@ -160,12 +160,12 @@ public class TaskService {
         return TaskResponse.from(task,labelListResponses);
     }
 
-    public List<TaskResponse> getTasksByProject(Long ProjectId){
+    public List<TaskListResponse> getTasksByProject(Long ProjectId){
         List<Task> tasks = taskRepository.findByProjectId(ProjectId);
 
 
         return tasks.stream()
-                .map(task -> TaskResponse.from(task,new ArrayList<>()))
+                .map(task -> TaskListResponse.from(task,new ArrayList<>()))
                 .toList();
     }
 
