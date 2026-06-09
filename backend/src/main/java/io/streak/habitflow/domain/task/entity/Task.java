@@ -91,5 +91,8 @@ public class Task extends BaseTimeEntity {
 
     public void updateCompleted(boolean completed){
         this.completed = completed;
+        if(this.subTasks != null){
+            this.subTasks.forEach(subTask->subTask.updateCompleted(completed));
+        }
     }
 }

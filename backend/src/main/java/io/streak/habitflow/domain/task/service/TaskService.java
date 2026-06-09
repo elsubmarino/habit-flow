@@ -64,6 +64,13 @@ public class TaskService {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 회원입니다."));
 
+        Task parentTask = null;
+        if(taskCreateRequest.getParentId() != null){
+            parentTask = taskRepository.findById(taskCreateRequest.getParentId())
+                    .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 테스크입니다."));
+            validateOwner(parentTask,email);
+        }
+
         Project project = null;
         if(taskCreateRequest.getProjectId() != null){
             project = projectRepository.findById(taskCreateRequest.getProjectId())
@@ -72,12 +79,8 @@ public class TaskService {
             if(!isMember){
                 throw new IllegalStateException("해당 프로젝트에 대한 접근 권한이 없습니다.");
             }
-        }
-
-        Task parentTask = null;
-        if(taskCreateRequest.getParentId() != null){
-            parentTask = taskRepository.findById(taskCreateRequest.getParentId())
-                    .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 테스크입니다."));
+        }else if(parentTask != null){
+            project = parentTask.getProject();
         }
 
         Task task = Task.builder()
@@ -92,6 +95,10 @@ public class TaskService {
                 .taskLabels(new ArrayList<>())
                 .comments(new ArrayList<>())
                 .build();
+
+        if(parentTask != null){
+            parentTask.getSubTasks().add(task);
+        }
 
         if(taskCreateRequest.getLabelIds() != null && !taskCreateRequest.getLabelIds().isEmpty()){
             for(Long labelId : taskCreateRequest.getLabelIds()){
@@ -250,9 +257,9 @@ public class TaskService {
     public TaskResponse toggleCompletion(Long taskId, UserDetails userDetails){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(()->new IllegalArgumentException("TASK가 존재하지 않습니다."));
-        if(!task.getMember().getEmail().equals(userDetails.getUsername())){
-            throw new IllegalStateException("수정 권한이 없습니다.");
-        }
+
+        validateOwner(task, userDetails.getUsername());
+
         boolean nextCompletion = !task.isCompleted();
         task.updateCompleted(nextCompletion);
 
@@ -269,6 +276,12 @@ public class TaskService {
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
         return TaskResponse.from(task,labelListResponses);
+    }
+
+    public void validateOwner(Task task, String email){
+        if(!task.getMember().getEmail().equals(email)){
+            throw new IllegalStateException("해당 테스크에 대한 접근 권한이 없습니다.");
+        }
     }
 
 }
