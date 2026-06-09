@@ -8,6 +8,7 @@ import {
     fetchHabits,
     fetchMoreHabits,
     fetchLabels,
+    fetchMoreLabels,
     fetchProjects,
     setActiveView,
     setSelectedLabel,
@@ -92,6 +93,9 @@ function App() {
         status,
         loadMoreStatus,
         tasksHasNext,
+        labelsLoadMoreStatus,
+        labelsHasNext,
+        labelsStatus,
         error: habitError,
         selectedProjectId,
         selectedLabelId,
@@ -376,9 +380,14 @@ function App() {
     const showUpcomingGrouped = activeNav === 'upcoming' && !selectedProjectId && !selectedLabelId;
     const showInboxList = activeNav === 'inbox' && !selectedProjectId && !selectedLabelId;
     const showTaskPagination = (showTodaySections || showUpcomingGrouped || showInboxList) && tasksHasNext;
+    const showLabelsPagination = showLabelsPanel && labelsHasNext;
 
     const handleLoadMoreTasks = useCallback(() => {
         dispatch(fetchMoreHabits());
+    }, [dispatch]);
+
+    const handleLoadMoreLabels = useCallback(() => {
+        dispatch(fetchMoreLabels());
     }, [dispatch]);
 
     const loadMoreSentinelRef = useInfiniteScroll(
@@ -386,6 +395,14 @@ function App() {
         tasksHasNext,
         loadMoreStatus === 'loading',
         handleLoadMoreTasks,
+        mainPanelRef,
+    );
+
+    const labelsLoadMoreSentinelRef = useInfiniteScroll(
+        showLabelsPagination,
+        labelsHasNext,
+        labelsLoadMoreStatus === 'loading',
+        handleLoadMoreLabels,
         mainPanelRef,
     );
     const taskRowLayout: TaskRowLayout = selectedProjectId
@@ -572,6 +589,7 @@ function App() {
                 ) : showReport ? (
                     <ActivityLogView
                         projects={projects}
+                        scrollRootRef={mainPanelRef}
                         onOpenTask={id => setSelectedHabitId(id)}
                     />
                 ) : showProjectsPanel ? (
@@ -583,13 +601,23 @@ function App() {
                         onDeleteProject={handleDeleteProject}
                     />
                 ) : showLabelsPanel ? (
-                    <LabelsBrowseView
-                        labels={labels}
-                        onSelectLabel={handleLabelOpen}
-                        onAddLabel={() => setShowAddLabelModal(true)}
-                        onEditLabel={handleEditLabel}
-                        onDeleteLabel={handleDeleteLabel}
-                    />
+                    <>
+                        <LabelsBrowseView
+                            labels={labels}
+                            loading={labelsStatus === 'loading'}
+                            onSelectLabel={handleLabelOpen}
+                            onAddLabel={() => setShowAddLabelModal(true)}
+                            onEditLabel={handleEditLabel}
+                            onDeleteLabel={handleDeleteLabel}
+                        />
+                        {showLabelsPagination && (
+                            <div ref={labelsLoadMoreSentinelRef} className="tasks-scroll-sentinel" aria-hidden="true">
+                                {labelsLoadMoreStatus === 'loading' && (
+                                    <p className="tasks-scroll-loading">불러오는 중…</p>
+                                )}
+                            </div>
+                        )}
+                    </>
                 ) : (
                 <>
                 <header className="view-header">

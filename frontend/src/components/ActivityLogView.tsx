@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useMemo, useState } from 'react';
 import type { Project } from '../store/habitSlice';
 import { fetchActivityLogs } from '../api/activityApi';
 import type { ActivityLogDto, ActivityType } from '../api/types';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { formatActivityDateHeader, formatActivityRelativeTime } from '../utils/activityLog';
 
 type ProjectFilter = 'all' | number;
@@ -10,6 +11,7 @@ type DateFilter = 'all' | 'today' | 'week';
 
 interface ActivityLogViewProps {
     projects: Project[];
+    scrollRootRef?: RefObject<HTMLElement | null>;
     onOpenTask?: (taskId: number) => void;
 }
 
@@ -53,9 +55,12 @@ function activityBadge(type: ActivityType): string {
     }
 }
 
-const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
+const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, scrollRootRef }) => {
     const [items, setItems] = useState<ActivityLogDto[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadMoreStatus, setLoadMoreStatus] = useState<'idle' | 'loading' | 'failed'>('idle');
+    const [hasNext, setHasNext] = useState(false);
+    const [nextCursor, setNextCursor] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [projectFilter, setProjectFilter] = useState<ProjectFilter>('all');
     const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
@@ -63,17 +68,51 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
 
     useEffect(() => {
         setLoading(true);
+        setLoadMoreStatus('idle');
         void fetchActivityLogs()
-            .then(data => {
-                setItems(data);
+            .then(page => {
+                setItems(page.content);
+                setHasNext(page.hasNext);
+                setNextCursor(page.nextCursor);
                 setError(null);
             })
             .catch(err => {
                 setError(err instanceof Error ? err.message : '활동 내역을 불러오지 못했습니다.');
                 setItems([]);
+                setHasNext(false);
+                setNextCursor(null);
             })
             .finally(() => setLoading(false));
     }, []);
+
+    const handleLoadMore = useCallback(() => {
+        if (nextCursor == null || loadMoreStatus === 'loading') return;
+
+        setLoadMoreStatus('loading');
+        void fetchActivityLogs(nextCursor)
+            .then(page => {
+                setItems(prev => {
+                    const existingIds = new Set(prev.map(item => item.id));
+                    const appended = page.content.filter(item => !existingIds.has(item.id));
+                    return [...prev, ...appended];
+                });
+                setHasNext(page.hasNext);
+                setNextCursor(page.nextCursor);
+                setLoadMoreStatus('idle');
+            })
+            .catch(err => {
+                setError(err instanceof Error ? err.message : '활동 내역을 더 불러오지 못했습니다.');
+                setLoadMoreStatus('failed');
+            });
+    }, [loadMoreStatus, nextCursor]);
+
+    const loadMoreSentinelRef = useInfiniteScroll(
+        !loading && hasNext,
+        hasNext,
+        loadMoreStatus === 'loading',
+        handleLoadMore,
+        scrollRootRef,
+    );
 
     const filtered = useMemo(() => {
         const now = new Date();
@@ -223,6 +262,13 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
                             </ul>
                         </section>
                     ))
+                )}
+                {!loading && hasNext && (
+                    <div ref={loadMoreSentinelRef} className="tasks-scroll-sentinel" aria-hidden="true">
+                        {loadMoreStatus === 'loading' && (
+                            <p className="tasks-scroll-loading">불러오는 중…</p>
+                        )}
+                    </div>
                 )}
             </div>
         </div>

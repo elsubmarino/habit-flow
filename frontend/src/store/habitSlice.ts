@@ -88,6 +88,9 @@ interface HabitState {
     loadMoreStatus: 'idle' | 'loading' | 'failed';
     projectsStatus: 'idle' | 'loading' | 'failed';
     labelsStatus: 'idle' | 'loading' | 'failed';
+    labelsLoadMoreStatus: 'idle' | 'loading' | 'failed';
+    labelsHasNext: boolean;
+    labelsNextCursor: number | null;
     error: string | null;
     activeView: ApiView;
     selectedProjectId: number | null;
@@ -104,6 +107,9 @@ const initialState: HabitState = {
     loadMoreStatus: 'idle',
     projectsStatus: 'idle',
     labelsStatus: 'idle',
+    labelsLoadMoreStatus: 'idle',
+    labelsHasNext: false,
+    labelsNextCursor: null,
     error: null,
     activeView: 'today',
     selectedProjectId: null,
@@ -251,14 +257,39 @@ export const fetchProjects = createAsyncThunk('habits/fetchProjects', async () =
     return details.map(p => mapProject(p));
 });
 
-export const fetchLabels = createAsyncThunk('habits/fetchLabels', async () => {
-    const labels = await labelApi.fetchLabels();
+async function enrichLabels(labels: { id: number; name: string; color: string }[]) {
     const details = await Promise.all(
         labels.map(l =>
             labelApi.fetchLabelById(l.id).catch(() => ({ ...l, favorite: false })),
         ),
     );
     return details.map(l => mapLabel(l));
+}
+
+export const fetchLabels = createAsyncThunk('habits/fetchLabels', async () => {
+    const page = await labelApi.fetchLabels();
+    const labels = await enrichLabels(page.content);
+    return {
+        labels,
+        hasNext: page.hasNext,
+        nextCursor: page.nextCursor,
+    };
+});
+
+export const fetchMoreLabels = createAsyncThunk('habits/fetchMoreLabels', async (_, { getState }) => {
+    const state = getState() as { habits: HabitState };
+    const { labelsNextCursor } = state.habits;
+    if (labelsNextCursor == null) {
+        return { labels: [], hasNext: false, nextCursor: null };
+    }
+
+    const page = await labelApi.fetchLabels(labelsNextCursor);
+    const labels = await enrichLabels(page.content);
+    return {
+        labels,
+        hasNext: page.hasNext,
+        nextCursor: page.nextCursor,
+    };
 });
 
 export const fetchHabitDetail = createAsyncThunk('habits/fetchDetail', async (habitId: number) => {
@@ -525,16 +556,39 @@ const habitSlice = createSlice({
             })
             .addCase(fetchLabels.pending, state => {
                 state.labelsStatus = 'loading';
+                state.labelsLoadMoreStatus = 'idle';
             })
             .addCase(fetchLabels.fulfilled, (state, action) => {
                 state.labelsStatus = 'idle';
-                state.labels = action.payload.map(l => ({
+                state.labels = action.payload.labels.map(l => ({
                     ...l,
                     taskCount: countTasksForLabel(state.list, l.id),
                 }));
+                state.labelsHasNext = action.payload.hasNext;
+                state.labelsNextCursor = action.payload.nextCursor;
             })
             .addCase(fetchLabels.rejected, state => {
                 state.labelsStatus = 'failed';
+            })
+            .addCase(fetchMoreLabels.pending, state => {
+                state.labelsLoadMoreStatus = 'loading';
+            })
+            .addCase(fetchMoreLabels.fulfilled, (state, action) => {
+                state.labelsLoadMoreStatus = 'idle';
+                const existingIds = new Set(state.labels.map(l => l.id));
+                for (const label of action.payload.labels) {
+                    if (!existingIds.has(label.id)) {
+                        state.labels.push({
+                            ...label,
+                            taskCount: countTasksForLabel(state.list, label.id),
+                        });
+                    }
+                }
+                state.labelsHasNext = action.payload.hasNext;
+                state.labelsNextCursor = action.payload.nextCursor;
+            })
+            .addCase(fetchMoreLabels.rejected, state => {
+                state.labelsLoadMoreStatus = 'failed';
             })
             .addCase(addHabit.fulfilled, (state, action) => {
                 if (!state.list.some(h => h.id === action.payload.id)) {

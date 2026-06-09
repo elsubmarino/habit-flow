@@ -1,9 +1,11 @@
 import { apiClient } from './client';
 import { toLabelUpdateBody, toLabelWriteBody } from './labelMappers';
-import type { LabelDetailDto, LabelDto, LabelUpdatePayload } from './types';
+import type { LabelDetailDto, LabelDto, LabelUpdatePayload, ScrollResponse } from './types';
 
-export async function fetchLabels(): Promise<LabelDto[]> {
-    const { data } = await apiClient.get<LabelDto[]>('/api/labels');
+export async function fetchLabels(lastLabelId?: number): Promise<ScrollResponse<LabelDto>> {
+    const { data } = await apiClient.get<ScrollResponse<LabelDto>>('/api/labels', {
+        params: lastLabelId != null ? { lastLabelId } : undefined,
+    });
     return data;
 }
 

@@ -5,6 +5,7 @@ import LabelListRow from './LabelListRow';
 
 interface LabelsBrowseViewProps {
     labels: Label[];
+    loading?: boolean;
     onSelectLabel: (labelId: number) => void;
     onAddLabel: () => void;
     onEditLabel: (label: Label) => void;
@@ -13,6 +14,7 @@ interface LabelsBrowseViewProps {
 
 const LabelsBrowseView: React.FC<LabelsBrowseViewProps> = ({
     labels,
+    loading = false,
     onSelectLabel,
     onAddLabel,
     onEditLabel,
@@ -53,7 +55,9 @@ const LabelsBrowseView: React.FC<LabelsBrowseViewProps> = ({
                 </div>
 
                 {sectionExpanded && (
-                    labels.length === 0 ? (
+                    loading ? (
+                        <p className="labels-browse-empty">불러오는 중…</p>
+                    ) : labels.length === 0 ? (
                         <p className="labels-browse-empty">라벨이 없습니다.</p>
                     ) : (
                         <ul className="labels-browse-list">
