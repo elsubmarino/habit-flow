@@ -1,11 +1,13 @@
 package io.streak.habitflow.domain.project.api;
 
 import io.streak.habitflow.domain.project.dto.request.ProjectCreateRequest;
+import io.streak.habitflow.domain.project.dto.request.ProjectInviteRequest;
+import io.streak.habitflow.domain.project.dto.request.ProjectMemberRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
+import io.streak.habitflow.domain.project.dto.response.ProjectMemberListResponse;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.service.ProjectService;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
-import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -72,5 +74,18 @@ public class ProjectController {
     public ResponseEntity<List<ProjectListResponse>> searchProjects(@AuthenticationPrincipal UserDetails userDetails,
                                                             @RequestParam("keyword") String keyword){
         return ResponseEntity.ok(projectService.searchProjects(keyword,userDetails));
+    }
+
+    @PostMapping("/invitation")
+    public ResponseEntity<Void> invite(@AuthenticationPrincipal UserDetails userDetails,
+                                       @RequestBody ProjectInviteRequest projectInviteRequest){
+        projectService.invite(projectInviteRequest, userDetails);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{projectId}/members")
+    public ResponseEntity<List<ProjectMemberListResponse>> getProjectMembers(@AuthenticationPrincipal UserDetails userDetails,
+                                                                   @PathVariable Long projectId){
+        return ResponseEntity.ok(projectService.getProjectMembers(projectId,userDetails));
     }
 }

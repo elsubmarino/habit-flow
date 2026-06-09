@@ -6,7 +6,9 @@ import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.project.dto.request.ProjectCreateRequest;
+import io.streak.habitflow.domain.project.dto.request.ProjectInviteRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
+import io.streak.habitflow.domain.project.dto.response.ProjectMemberListResponse;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
@@ -158,5 +160,34 @@ public class ProjectService {
         if(!isMember){
             throw new IllegalStateException("해당 프로젝트에 대한 접근 권한이 없습니다.");
         }
+    }
+
+    public void invite(ProjectInviteRequest projectInviteRequest, UserDetails userDetails){
+        Project project = projectRepository.findById(projectInviteRequest.getId())
+                .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
+        Member _member = memberRepository.findByEmail(userDetails.getUsername())
+                        .orElseThrow(()->new IllegalArgumentException("멤버가 존재하지 않습니다."));
+        validateOwner(project,_member);
+        for(String email : projectInviteRequest.getEmails()){
+            Member member = memberRepository.findByEmail(email)
+                    .orElseThrow(()->new IllegalArgumentException("해당 이메일이 존재하지 않습니다."));
+            ProjectMember projectMember = ProjectMember.builder()
+                    .project(project)
+                    .member(member)
+                    .build();
+            projectMemberRepository.save(projectMember);
+        }
+    }
+
+    public List<ProjectMemberListResponse> getProjectMembers(Long projectId,UserDetails userDetails) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
+        Member member = memberRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(()->new IllegalArgumentException("멤버가 존재하지 않습니다."));
+        validateOwner(project,member);
+        List<ProjectMember> projectMembers = projectMemberRepository.findByProject(project);
+        return projectMembers.stream()
+                .map(ProjectMemberListResponse::from)
+                .toList();
     }
 }

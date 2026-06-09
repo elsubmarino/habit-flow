@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 import { toProjectWriteBody } from './projectMappers';
-import type { ProjectDetailDto, ProjectDto, ProjectUpdatePayload } from './types';
+import type { ProjectDetailDto, ProjectDto, ProjectMemberListDto, ProjectUpdatePayload } from './types';
 
 export async function fetchProjects(): Promise<ProjectDto[]> {
     const { data } = await apiClient.get<ProjectDto[]>('/api/projects');
@@ -33,4 +33,24 @@ export async function updateProject(projectId: number, payload: ProjectUpdatePay
 
 export async function deleteProject(projectId: number): Promise<void> {
     await apiClient.delete(`/api/projects/${projectId}`);
+}
+
+export interface ProjectInvitePayload {
+    id: number;
+    emails: string[];
+}
+
+export async function fetchProjectMembers(projectId: number): Promise<ProjectMemberListDto[]> {
+    const { data } = await apiClient.get<ProjectMemberListDto[]>(`/api/projects/${projectId}/members`);
+    return data;
+}
+
+export async function inviteToProject(projectId: number, emails: string[]): Promise<void> {
+    const body: ProjectInvitePayload = {
+        id: projectId,
+        emails,
+    };
+    await apiClient.post('/api/projects/invitation/', body, {
+        headers: { 'Content-Type': 'application/json' },
+    });
 }

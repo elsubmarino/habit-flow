@@ -35,6 +35,7 @@ interface SidebarProps {
     onProjectsBrowse: () => void;
     onAddProject: () => void;
     onEditProject: (project: Project) => void;
+    onShareProject: (project: Project) => void;
     onDeleteProject: (projectId: number) => void;
     onToggleProjectsList: () => void;
     onToggleFavoritesList: () => void;
@@ -63,6 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     onProjectsBrowse,
     onAddProject,
     onEditProject,
+    onShareProject,
     onDeleteProject,
     onToggleProjectsList,
     onToggleFavoritesList,
@@ -233,6 +235,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         active={selectedProjectId === project.id}
                                         onSelect={onProjectSelect}
                                         onEdit={onEditProject}
+                                        onShare={onShareProject}
                                         onDelete={onDeleteProject}
                                     />
                                 ))}
@@ -295,6 +298,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     active={selectedProjectId === project.id}
                                     onSelect={onProjectSelect}
                                     onEdit={onEditProject}
+                                    onShare={onShareProject}
                                     onDelete={onDeleteProject}
                                 />
                             ))}

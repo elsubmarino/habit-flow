@@ -4526,6 +4526,364 @@
   margin-right: 4px;
 }
 
+/* Project share modal */
+.project-share-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 240;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding: 72px 48px 24px;
+}
+
+.project-share-modal {
+  width: min(420px, calc(100vw - 32px));
+  max-height: calc(100vh - 96px);
+  overflow: auto;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e6e6e6;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.16);
+}
+
+.project-share-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 8px;
+}
+
+.project-share-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-share-hash {
+  font-weight: 700;
+}
+
+.project-share-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.project-share-close:hover {
+  background: var(--bg-hover);
+}
+
+.project-share-invite-wrap {
+  padding: 0 16px 12px;
+}
+
+.project-share-invite-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 6px 8px 6px 12px;
+  border: 1px solid #d8d8d8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.project-share-invite-input:focus-within {
+  border-color: #b8b8b8;
+  box-shadow: 0 0 0 3px rgba(219, 76, 63, 0.08);
+}
+
+.project-share-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+}
+
+.project-share-inline-invite {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: var(--todoist-red);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.project-share-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 999px;
+  background: #f3f3f3;
+}
+
+.project-share-chip-avatar,
+.project-share-member-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.project-share-chip-label {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.project-share-chip-remove {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-share-section {
+  padding: 8px 16px 0;
+}
+
+.project-share-section-label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.project-share-access {
+  position: relative;
+}
+
+.project-share-access-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  background: #fafafa;
+  cursor: pointer;
+  text-align: left;
+}
+
+.project-share-access-icon {
+  color: var(--text-muted);
+}
+
+.project-share-access-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.project-share-access-text strong {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.project-share-access-text small {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.project-share-access-chevron {
+  color: var(--text-muted);
+}
+
+.project-share-access-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 2;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.project-share-access-menu button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: #fff;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.project-share-access-menu button.selected,
+.project-share-access-menu button:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.project-share-access-menu button:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.project-share-member-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 8px;
+}
+
+.project-share-member-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.project-share-member-row:last-child {
+  border-bottom: none;
+}
+
+.project-share-member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.project-share-member-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.project-share-you {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.project-share-member-email,
+.project-share-member-status {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.project-share-member-action,
+.project-share-role-btn,
+.project-share-member-action.muted {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text-secondary);
+  font-size: 13px;
+  padding: 6px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.project-share-member-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-share-role-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.project-share-remove-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.project-share-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 16px;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 8px;
+}
+
+.project-share-help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.project-share-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.project-share-cancel-btn,
+.project-share-copy-btn {
+  border: 1px solid #d8d8d8;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-primary);
+  font-size: 14px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.project-share-submit-btn {
+  border: none;
+  border-radius: 8px;
+  background: var(--todoist-red);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.project-share-submit-btn:hover {
+  background: var(--todoist-red-hover);
+}
+
 /* Task complete toast */
 .task-complete-toast {
   position: fixed;

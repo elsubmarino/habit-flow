@@ -1,0 +1,338 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { getApiErrorMessage } from '../api/apiError';
+import { fetchProjectMembers, inviteToProject } from '../api/projectApi';
+import type { ProjectMemberListDto } from '../api/types';
+import type { Project } from '../store/habitSlice';
+import { getUserProfile } from '../utils/userProfile';
+import { ChevronDownIcon, CloseIcon, HelpCircleIcon, LockIcon } from './icons';
+
+interface ProjectShareModalProps {
+    project: Project;
+    onClose: () => void;
+}
+
+interface ShareMember {
+    id: string;
+    name: string;
+    email: string;
+    role: 'owner' | 'collaborator' | 'pending';
+    isSelf?: boolean;
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isValidEmail(value: string): boolean {
+    return EMAIL_PATTERN.test(value.trim());
+}
+
+function memberInitial(name: string, email: string): string {
+    const source = name.trim() || email.trim();
+    return source.charAt(0).toUpperCase() || '?';
+}
+
+function toShareMember(dto: ProjectMemberListDto, selfEmail: string): ShareMember {
+    const isSelf = dto.email.toLowerCase() === selfEmail.toLowerCase();
+    return {
+        id: dto.email,
+        name: dto.memberName,
+        email: dto.email,
+        role: isSelf ? 'owner' : 'collaborator',
+        isSelf,
+    };
+}
+
+const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose }) => {
+    const profile = getUserProfile();
+    const selfEmail = profile.email;
+    const [draft, setDraft] = useState('');
+    const [chipEmail, setChipEmail] = useState<string | null>(null);
+    const [members, setMembers] = useState<ShareMember[]>([]);
+    const [membersLoading, setMembersLoading] = useState(true);
+    const [membersError, setMembersError] = useState<string | null>(null);
+    const [accessOpen, setAccessOpen] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
+    const [inviteSubmitting, setInviteSubmitting] = useState(false);
+
+    const loadMembers = useCallback(async () => {
+        setMembersLoading(true);
+        setMembersError(null);
+        try {
+            const data = await fetchProjectMembers(project.id);
+            const mapped = data.map(dto => toShareMember(dto, selfEmail));
+            mapped.sort((a, b) => Number(b.isSelf) - Number(a.isSelf));
+            setMembers(mapped);
+        } catch (err) {
+            setMembersError(getApiErrorMessage(err, '멤버 목록을 불러오지 못했습니다.'));
+            setMembers([]);
+        } finally {
+            setMembersLoading(false);
+        }
+    }, [project.id, selfEmail]);
+
+    const draftTrimmed = draft.trim();
+    const showInlineInvite = isValidEmail(draftTrimmed) && chipEmail == null;
+    const showFooterInvite = chipEmail != null || showInlineInvite;
+
+    useEffect(() => {
+        void loadMembers();
+    }, [loadMembers]);
+
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [onClose]);
+
+    const memberEmails = useMemo(
+        () => new Set(members.map(m => m.email.toLowerCase())),
+        [members],
+    );
+
+    const resetInviteInput = () => {
+        setDraft('');
+        setChipEmail(null);
+    };
+
+    const sendInvite = async (email: string) => {
+        const normalized = email.trim().toLowerCase();
+        if (!isValidEmail(normalized)) return;
+        if (normalized === selfEmail.toLowerCase()) {
+            window.alert('본인은 초대할 수 없습니다.');
+            return;
+        }
+        if (memberEmails.has(normalized)) {
+            window.alert('이미 프로젝트에 참여 중인 이메일입니다.');
+            resetInviteInput();
+            return;
+        }
+
+        setInviteSubmitting(true);
+        try {
+            await inviteToProject(project.id, [normalized]);
+            resetInviteInput();
+            await loadMembers();
+        } catch (err) {
+            window.alert(getApiErrorMessage(err, '초대에 실패했습니다.'));
+        } finally {
+            setInviteSubmitting(false);
+        }
+    };
+
+    const handleInlineInvite = () => {
+        if (chipEmail) {
+            void sendInvite(chipEmail);
+            return;
+        }
+        if (showInlineInvite) {
+            setChipEmail(draftTrimmed.toLowerCase());
+            setDraft('');
+        }
+    };
+
+    const handleFooterInvite = () => {
+        if (chipEmail) {
+            void sendInvite(chipEmail);
+            return;
+        }
+        if (showInlineInvite) {
+            void sendInvite(draftTrimmed);
+        }
+    };
+
+    const handleCopyLink = async () => {
+        const url = `${window.location.origin}/api/projects/${project.id}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            setLinkCopied(true);
+            window.setTimeout(() => setLinkCopied(false), 2000);
+        } catch {
+            window.alert('링크를 복사하지 못했습니다.');
+        }
+    };
+
+    return (
+        <div className="project-share-overlay" onClick={onClose}>
+            <div
+                className="project-share-modal"
+                role="dialog"
+                aria-labelledby="project-share-title"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="project-share-header">
+                    <h2 id="project-share-title" className="project-share-title">
+                        <span className="project-share-hash" style={{ color: project.color }}>#</span>
+                        {project.name}
+                    </h2>
+                    <button
+                        type="button"
+                        className="project-share-close"
+                        aria-label="닫기"
+                        onClick={onClose}
+                    >
+                        <CloseIcon />
+                    </button>
+                </div>
+
+                <div className="project-share-invite-wrap">
+                    <div className="project-share-invite-input">
+                        {chipEmail && (
+                            <span className="project-share-chip">
+                                <span className="project-share-chip-avatar">
+                                    {memberInitial(chipEmail, chipEmail)}
+                                </span>
+                                <span className="project-share-chip-label">{chipEmail}</span>
+                                <button
+                                    type="button"
+                                    className="project-share-chip-remove"
+                                    aria-label="초대 대상 제거"
+                                    onClick={() => setChipEmail(null)}
+                                    disabled={inviteSubmitting}
+                                >
+                                    <CloseIcon />
+                                </button>
+                            </span>
+                        )}
+                        {!chipEmail && (
+                            <input
+                                type="text"
+                                className="project-share-input"
+                                placeholder="이름 또는 이메일로 사람 초대"
+                                value={draft}
+                                onChange={e => setDraft(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter' && showInlineInvite && !inviteSubmitting) {
+                                        e.preventDefault();
+                                        handleInlineInvite();
+                                    }
+                                }}
+                                disabled={inviteSubmitting}
+                                autoFocus
+                            />
+                        )}
+                        {showInlineInvite && (
+                            <button
+                                type="button"
+                                className="project-share-inline-invite"
+                                onClick={handleInlineInvite}
+                                disabled={inviteSubmitting}
+                            >
+                                초대
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                <section className="project-share-section">
+                    <h3 className="project-share-section-label">접근</h3>
+                    <div className="project-share-access">
+                        <button
+                            type="button"
+                            className="project-share-access-btn"
+                            onClick={() => setAccessOpen(v => !v)}
+                        >
+                            <span className="project-share-access-icon"><LockIcon /></span>
+                            <span className="project-share-access-text">
+                                <strong>비공개</strong>
+                                <small>초대된 사람만 편집할 수 있습니다</small>
+                            </span>
+                            <span className="project-share-access-chevron">
+                                <ChevronDownIcon />
+                            </span>
+                        </button>
+                        {accessOpen && (
+                            <div className="project-share-access-menu">
+                                <button type="button" className="selected">비공개</button>
+                                <button type="button" disabled>공개 (준비 중)</button>
+                            </div>
+                        )}
+                    </div>
+                </section>
+
+                <section className="project-share-section">
+                    <h3 className="project-share-section-label">이 프로젝트에</h3>
+                    {membersLoading && (
+                        <p className="project-share-member-status">멤버를 불러오는 중…</p>
+                    )}
+                    {!membersLoading && membersError && (
+                        <p className="project-share-member-status error">{membersError}</p>
+                    )}
+                    {!membersLoading && !membersError && members.length === 0 && (
+                        <p className="project-share-member-status">멤버가 없습니다.</p>
+                    )}
+                    {!membersLoading && !membersError && members.length > 0 && (
+                        <ul className="project-share-member-list">
+                            {members.map(member => (
+                                <li key={member.id} className="project-share-member-row">
+                                    <span
+                                        className="project-share-member-avatar"
+                                        style={{ background: member.isSelf ? project.color : '#eb8909' }}
+                                    >
+                                        {memberInitial(member.name, member.email)}
+                                    </span>
+                                    <div className="project-share-member-info">
+                                        <p className="project-share-member-name">
+                                            {member.name}
+                                            {member.isSelf && <span className="project-share-you"> (나)</span>}
+                                        </p>
+                                        <p className="project-share-member-email">{member.email}</p>
+                                    </div>
+                                    {member.isSelf ? (
+                                        <button type="button" className="project-share-member-action muted">
+                                            나가기
+                                        </button>
+                                    ) : (
+                                        <button type="button" className="project-share-role-btn">
+                                            공동 작업자 <ChevronDownIcon />
+                                        </button>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+
+                <div className="project-share-footer">
+                    <button type="button" className="project-share-help-link">
+                        <HelpCircleIcon />
+                        공유에 대해 알아보기
+                    </button>
+                    <div className="project-share-footer-actions">
+                        {showFooterInvite && (
+                            <>
+                                <button
+                                    type="button"
+                                    className="project-share-cancel-btn"
+                                    onClick={resetInviteInput}
+                                    disabled={inviteSubmitting}
+                                >
+                                    취소
+                                </button>
+                                <button
+                                    type="button"
+                                    className="project-share-submit-btn"
+                                    onClick={handleFooterInvite}
+                                    disabled={inviteSubmitting}
+                                >
+                                    {inviteSubmitting ? '초대 중…' : '초대'}
+                                </button>
+                            </>
+                        )}
+                        {!showFooterInvite && (
+                            <button
+                                type="button"
+                                className="project-share-copy-btn"
+                                onClick={() => void handleCopyLink()}
+                            >
+                                {linkCopied ? '복사됨' : '링크 복사'}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default ProjectShareModal;

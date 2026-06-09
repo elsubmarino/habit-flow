@@ -31,6 +31,7 @@ import EditLabelModal from './components/EditLabelModal';
 import { displayLabelName } from './api/labelMappers';
 import AddProjectModal from './components/AddProjectModal';
 import EditProjectModal from './components/EditProjectModal';
+import ProjectShareModal from './components/ProjectShareModal';
 import ProjectsBrowseView from './components/ProjectsBrowseView';
 import UpcomingTaskList from './components/UpcomingTaskList';
 import TaskDetailModal from './components/TaskDetailModal';
@@ -118,6 +119,7 @@ function App() {
     const [showAddProjectModal, setShowAddProjectModal] = useState(false);
     const [showAddLabelModal, setShowAddLabelModal] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
+    const [sharingProject, setSharingProject] = useState<Project | null>(null);
     const [editingLabel, setEditingLabel] = useState<Label | null>(null);
     const [showProjectsBrowse, setShowProjectsBrowse] = useState(
         () => initialLocation.kind === 'projectsBrowse',
@@ -350,6 +352,10 @@ function App() {
         setEditingProject(project);
     };
 
+    const handleShareProject = (project: Project) => {
+        setSharingProject(project);
+    };
+
     const handleDeleteProject = (projectId: number) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
@@ -579,6 +585,7 @@ function App() {
                 onProjectsBrowse={handleProjectsBrowse}
                 onAddProject={() => setShowAddProjectModal(true)}
                 onEditProject={handleEditProject}
+                onShareProject={handleShareProject}
                 onDeleteProject={handleDeleteProject}
                 onToggleProjectsList={toggleProjectsList}
                 onToggleFavoritesList={toggleFavoritesList}
@@ -730,6 +737,13 @@ function App() {
                             dispatch(fetchProjects());
                         });
                     }}
+                />
+            )}
+
+            {sharingProject && (
+                <ProjectShareModal
+                    project={sharingProject}
+                    onClose={() => setSharingProject(null)}
                 />
             )}
 

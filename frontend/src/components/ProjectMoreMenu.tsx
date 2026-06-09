@@ -4,10 +4,16 @@ import { MoreHorizontalIcon } from './icons';
 interface ProjectMoreMenuProps {
     onEdit: () => void;
     onDelete: () => void;
+    onShare?: () => void;
     onOpenChange?: (open: boolean) => void;
 }
 
-const ProjectMoreMenu: React.FC<ProjectMoreMenuProps> = ({ onEdit, onDelete, onOpenChange }) => {
+const ProjectMoreMenu: React.FC<ProjectMoreMenuProps> = ({
+    onEdit,
+    onDelete,
+    onShare,
+    onOpenChange,
+}) => {
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
 
@@ -51,6 +57,20 @@ const ProjectMoreMenu: React.FC<ProjectMoreMenuProps> = ({ onEdit, onDelete, onO
             </button>
             {open && (
                 <div className="project-menu-dropdown" role="menu">
+                    {onShare && (
+                        <button
+                            type="button"
+                            className="project-menu-item"
+                            role="menuitem"
+                            onClick={e => {
+                                e.stopPropagation();
+                                setMenuOpen(false);
+                                onShare();
+                            }}
+                        >
+                            공유
+                        </button>
+                    )}
                     <button
                         type="button"
                         className="project-menu-item"

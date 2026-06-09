@@ -69,6 +69,11 @@ export interface ProjectDetailDto extends ProjectDto {
     layoutType?: ProjectLayoutType | 'CALENDAR' | string;
 }
 
+export interface ProjectMemberListDto {
+    memberName: string;
+    email: string;
+}
+
 export type ProjectAccessType = 'PRIVATE' | 'PUBLIC';
 export type ProjectLayoutType = 'LIST' | 'BOARD';
 

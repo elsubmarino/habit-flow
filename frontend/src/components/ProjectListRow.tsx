@@ -10,6 +10,7 @@ interface ProjectListRowProps {
     onSelect: (projectId: number) => void;
     onEdit: (project: Project) => void;
     onDelete: (projectId: number) => void;
+    onShare?: (project: Project) => void;
 }
 
 const ProjectListRow: React.FC<ProjectListRowProps> = ({
@@ -19,6 +20,7 @@ const ProjectListRow: React.FC<ProjectListRowProps> = ({
     onSelect,
     onEdit,
     onDelete,
+    onShare,
 }) => {
     const [hovered, setHovered] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
@@ -64,6 +66,7 @@ const ProjectListRow: React.FC<ProjectListRowProps> = ({
                 <ProjectMoreMenu
                     onEdit={() => onEdit(project)}
                     onDelete={() => onDelete(project.id)}
+                    onShare={onShare ? () => onShare(project) : undefined}
                     onOpenChange={open => {
                         setMenuOpen(open);
                         if (!open) setHovered(false);
