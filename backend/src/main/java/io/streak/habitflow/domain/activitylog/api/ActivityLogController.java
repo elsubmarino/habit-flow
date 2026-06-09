@@ -3,6 +3,7 @@ package io.streak.habitflow.domain.activitylog.api;
 import io.streak.habitflow.domain.activitylog.dto.response.ActivityLogListResponse;
 import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogSearchCondition;
 import io.streak.habitflow.domain.activitylog.service.ActivityLogService;
+import io.streak.habitflow.global.common.dto.ScrollResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,8 +19,9 @@ public class ActivityLogController {
     private final ActivityLogService activityLogService;
 
     @GetMapping
-    public ResponseEntity<List<ActivityLogListResponse>> getActivityLogs(@AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(activityLogService.getActivityLogs(userDetails));
+    public ResponseEntity<ScrollResponse<ActivityLogListResponse>> getActivityLogs(@AuthenticationPrincipal UserDetails userDetails,
+                                                                                   @RequestParam(value = "lastActivityLogId",required = false) Long lastActivityLogId) {
+        return ResponseEntity.ok(activityLogService.getActivityLogs(lastActivityLogId,userDetails));
     }
 
     @GetMapping("/search")

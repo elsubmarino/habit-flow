@@ -13,8 +13,7 @@ import {
     SearchIcon,
     UpcomingIcon,
 } from './icons';
-import { displayLabelName } from '../api/labelMappers';
-import type { Label, Project } from '../store/habitSlice';
+import type { Project } from '../store/habitSlice';
 import { getUserProfile } from '../utils/userProfile';
 import UserMenuDropdown from './UserMenuDropdown';
 import ProjectListRow from './ProjectListRow';
@@ -24,7 +23,6 @@ export type NavItem = 'inbox' | 'today' | 'upcoming' | 'filters' | 'report';
 interface SidebarProps {
     activeNav: NavItem;
     projects: Project[];
-    labels: Label[];
     selectedProjectId: number | null;
     selectedLabelId: number | null;
     projectsBrowseActive: boolean;
@@ -38,7 +36,6 @@ interface SidebarProps {
     onDeleteProject: (projectId: number) => void;
     onToggleProjectsList: () => void;
     onToggleFavoritesList: () => void;
-    onLabelSelect: (labelId: number | null) => void;
     onAddClick: () => void;
     onSearchClick: () => void;
     notificationsActive: boolean;
@@ -52,7 +49,6 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({
     activeNav,
     projects,
-    labels,
     selectedProjectId,
     selectedLabelId,
     projectsBrowseActive,
@@ -66,7 +62,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     onDeleteProject,
     onToggleProjectsList,
     onToggleFavoritesList,
-    onLabelSelect,
     onAddClick,
     onSearchClick,
     notificationsActive,
@@ -290,31 +285,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </ul>
                     )}
                 </div>
-
-                {labels.length > 0 && (
-                    <div className="sidebar-section">
-                        <h3 className="sidebar-section-title">라벨</h3>
-                        <ul className="project-list">
-                            {labels.map(label => (
-                                <li key={label.id}>
-                                    <button
-                                        type="button"
-                                        className={`project-item ${selectedLabelId === label.id ? 'active' : ''}`}
-                                        onClick={() => onLabelSelect(
-                                            selectedLabelId === label.id ? null : label.id,
-                                        )}
-                                    >
-                                        <span className="project-dot" style={{ background: label.color }} />
-                                        <span>{displayLabelName(label.name)}</span>
-                                        {label.taskCount > 0 && (
-                                            <span className="project-count">{label.taskCount}</span>
-                                        )}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                )}
             </div>
         </aside>
     );

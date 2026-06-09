@@ -11,6 +11,7 @@ import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
+import io.streak.habitflow.global.common.dto.ScrollResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -100,14 +101,36 @@ public class LabelService {
         return LabelResponse.from(label, labelUpdateRequest.isFavorite());
     }
 
-    public List<LabelListResponse> getLabels(UserDetails userDetails) {
+    public ScrollResponse<LabelListResponse> getLabels(Long labelId, UserDetails userDetails) {
         String email  = userDetails.getUsername();
         Member member = memberRepository.findByEmail(email)
                         .orElseThrow(()->new IllegalArgumentException("멤버를 찾을 수 없습니다."));
-        List<Label> labels = labelRepository.findByMemberId(member.getId());
-        return labels.stream()
+
+        int pageSize = 20;
+
+        List<Label> labels = labelRepository.searchLabelsByCondition(labelId,member.getId());
+
+        boolean hasNext = false;
+        Long nextCursor = null;
+
+        if(labels.size() > pageSize){
+            hasNext = true;
+            labels = labels.subList(0, pageSize);
+        }
+
+        if(!labels.isEmpty()){
+            nextCursor = labels.get(labels.size()-1).getId();
+        }
+
+        List<LabelListResponse> labelResponses =  labels.stream()
                 .map(LabelListResponse::from)
                 .toList();
+
+        return ScrollResponse.<LabelListResponse>builder()
+                .content(labelResponses)
+                .hasNext(hasNext)
+                .nextCursor(nextCursor)
+                .build();
     }
 
     @Transactional

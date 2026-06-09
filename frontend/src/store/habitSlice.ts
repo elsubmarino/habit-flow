@@ -542,7 +542,9 @@ const habitSlice = createSlice({
                 }
             })
             .addCase(addProject.fulfilled, (state, action) => {
-                state.projects.push(action.payload);
+                if (!state.projects.some(p => p.id === action.payload.id)) {
+                    state.projects.push(action.payload);
+                }
             })
             .addCase(updateProject.fulfilled, (state, action) => {
                 const index = state.projects.findIndex(p => p.id === action.payload.id);

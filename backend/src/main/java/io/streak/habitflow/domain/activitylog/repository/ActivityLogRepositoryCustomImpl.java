@@ -31,6 +31,20 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
                 .fetch();
     }
 
+    @Override
+    public List<ActivityLog> searchActivityLogsByCondition(Long activityLogId, Long memberId) {
+        int pageSize = 20;
+        return queryFactory
+                .selectFrom(activityLog)
+                .where(
+                        activityLog.member.id.eq(memberId),
+                        ltActivityLogId(activityLogId)
+                )
+                .orderBy(activityLog.id.desc())
+                .limit(pageSize+1)
+                .fetch();
+    }
+
     private BooleanExpression projectIdsIn(List<Long> projectIds){
         return (projectIds == null || projectIds.isEmpty() ? null : activityLog.project.id.in(projectIds));
     }
@@ -42,6 +56,11 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
     private BooleanExpression targetDateEq(LocalDate targetDate){
         if(targetDate == null) return null;
         return activityLog.createdAt.between(targetDate.atStartOfDay(),targetDate.atTime(23,59,59));
+    }
+
+    private BooleanExpression ltActivityLogId(Long activityLogId){
+        if(activityLogId == null) return null;
+        return activityLog.id.lt(activityLogId);
     }
 }
 

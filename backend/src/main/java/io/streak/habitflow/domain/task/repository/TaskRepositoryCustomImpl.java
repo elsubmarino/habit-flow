@@ -69,6 +69,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                                 task.name.contains(keyword),
                                 task.member.email.eq(email)
                         )
+                        .limit(5)
                         .fetch();
     }
 

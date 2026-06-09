@@ -9,11 +9,13 @@ import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
+import io.streak.habitflow.global.common.dto.ScrollResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -41,14 +43,36 @@ public class ActivityLogService {
         activityLogRepository.save(activityLog);
     }
 
-    public List<ActivityLogListResponse> getActivityLogs(UserDetails userDetails) {
+    public ScrollResponse<ActivityLogListResponse> getActivityLogs(Long lastActivityLogId, UserDetails userDetails) {
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(()->new IllegalArgumentException("멤버가 없습니다."));
 
-        List<ActivityLog> activityLogs = activityLogRepository.findByMemberId(member.getId());
-        return activityLogs.stream()
+        int pageSize = 20;
+        boolean hasNext = false;
+        Long nextCursor = null;
+
+        List<ActivityLog> activityLogs = activityLogRepository.searchActivityLogsByCondition(lastActivityLogId, member.getId());
+
+        if(activityLogs.size() > pageSize){
+            hasNext = true;
+            activityLogs = activityLogs.subList(0, pageSize);
+        }
+
+        if(!activityLogs.isEmpty()){
+            nextCursor = activityLogs.get(activityLogs.size()-1).getId();
+        }
+
+        List<ActivityLogListResponse> activityLogListResponses = activityLogs.stream()
                 .map(ActivityLogListResponse::from)
                 .toList();
+
+        return ScrollResponse.<ActivityLogListResponse>builder()
+                .content(activityLogListResponses)
+                .hasNext(hasNext)
+                .nextCursor(nextCursor)
+                .build();
+
+
     }
 
     public List<ActivityLogListResponse> searchActivityLogs(ActivityLogSearchCondition activityLogSearchCondition){

@@ -30,6 +30,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                         projectMember.member.email.eq(email),
                         project.name.contains(keyword)
                 )
+                .limit(5)
                 .fetch();
     }
 }

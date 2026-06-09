@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from './store/hooks';
 import {
     addLabel,
@@ -157,6 +157,22 @@ function App() {
         selectedLabelId,
         dispatch,
     });
+
+    const viewScrollKey = useMemo(
+        () => [
+            activeNav,
+            selectedProjectId,
+            selectedLabelId,
+            showProjectsBrowse,
+            showNotifications,
+        ].join(':'),
+        [activeNav, selectedProjectId, selectedLabelId, showProjectsBrowse, showNotifications],
+    );
+
+    useLayoutEffect(() => {
+        if (!isAuthenticated) return;
+        mainPanelRef.current?.scrollTo(0, 0);
+    }, [viewScrollKey, isAuthenticated]);
 
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
@@ -514,7 +530,6 @@ function App() {
             <Sidebar
                 activeNav={activeNav}
                 projects={projects}
-                labels={labels}
                 selectedProjectId={selectedProjectId}
                 selectedLabelId={selectedLabelId}
                 projectsBrowseActive={showProjectsBrowse}
@@ -528,7 +543,6 @@ function App() {
                 onDeleteProject={handleDeleteProject}
                 onToggleProjectsList={toggleProjectsList}
                 onToggleFavoritesList={toggleFavoritesList}
-                onLabelSelect={handleLabelSelect}
                 onAddClick={() => addFormRef.current?.open()}
                 onSearchClick={() => setShowSearchModal(true)}
                 notificationsActive={showNotifications}
@@ -662,8 +676,9 @@ function App() {
                 <AddProjectModal
                     onClose={() => setShowAddProjectModal(false)}
                     onAdd={(name, color) => {
-                        dispatch(addProject({ name, color }));
-                        dispatch(fetchProjects());
+                        void dispatch(addProject({ name, color })).then(() => {
+                            dispatch(fetchProjects());
+                        });
                     }}
                 />
             )}
