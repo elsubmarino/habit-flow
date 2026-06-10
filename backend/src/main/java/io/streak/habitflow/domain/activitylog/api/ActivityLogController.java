@@ -24,10 +24,10 @@ public class ActivityLogController {
         return ResponseEntity.ok(activityLogService.getActivityLogs(lastActivityLogId,userPrincipal.getMemberId()));
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<List<ActivityLogListResponse>> searchActivityLogs(@ModelAttribute ActivityLogSearchCondition activityLogSearchCondition
-                                                                        ) {
-        return ResponseEntity.ok(activityLogService.searchActivityLogs(activityLogSearchCondition));
-    }
+//    @GetMapping("/search")
+//    public ResponseEntity<List<ActivityLogListResponse>> searchActivityLogs(@ModelAttribute ActivityLogSearchCondition activityLogSearchCondition
+//                                                                        ) {
+//        return ResponseEntity.ok(activityLogService.searchActivityLogs(activityLogSearchCondition));
+//    }
 
 }

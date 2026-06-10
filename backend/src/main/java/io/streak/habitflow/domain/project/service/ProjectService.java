@@ -14,6 +14,7 @@ import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
+import io.streak.habitflow.global.aop.CheckOwnership;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,13 +75,12 @@ public class ProjectService {
     }
 
     @Transactional
+    @CheckOwnership(type="PROJECT")
     public ProjectResponse updateProject(ProjectCreateRequest projectCreateRequest, Long projectId, Long memberId) {
         Project project =  projectRepository.findById(projectId)
                 .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
 
         Member member = memberRepository.getReferenceById(memberId);
-
-        validateOwner(project,member);
 
         Project parentProject = null;
         if(projectCreateRequest.getParentId() != null){
@@ -132,11 +132,9 @@ public class ProjectService {
 
 
     @Transactional
+    @CheckOwnership(type="PROJECT")
+    @SuppressWarnings("unused")
     public void deleteProject(Long projectId, Long memberId) {
-        Member member = memberRepository.getReferenceById(memberId);
-        Project project = projectRepository.findById(projectId)
-                        .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
-        validateOwner(project,member);
         projectMemberRepository.deleteByProjectId(projectId);
         favoriteRepository.deleteByTargetTypeAndTargetId(TargetType.PROJECT, projectId);
         projectRepository.deleteById(projectId);
@@ -147,19 +145,12 @@ public class ProjectService {
         return projectRepository.searchKeyword(keyword,memberId);
     }
 
-    public void validateOwner(Project project, Member member){
-        boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
-        if(!isMember){
-            throw new IllegalStateException("해당 프로젝트에 대한 접근 권한이 없습니다.");
-        }
-    }
-
+    @Transactional
+    @CheckOwnership(type="PROJECT")
+    @SuppressWarnings("unused")
     public void invite(ProjectInviteRequest projectInviteRequest, Long memberId){
         Project project = projectRepository.findById(projectInviteRequest.getId())
                 .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
-
-        Member _member = memberRepository.getReferenceById(memberId);
-        validateOwner(project,_member);
 
         List<String> inviteEmails  = projectInviteRequest.getEmails();
         if(inviteEmails == null || inviteEmails.isEmpty()) return;
@@ -180,11 +171,11 @@ public class ProjectService {
         projectMemberRepository.saveAll(projectMembers);
     }
 
+    @CheckOwnership(type="PROJECT")
+    @SuppressWarnings("unused")
     public List<ProjectMemberListResponse> getProjectMembers(Long projectId,Long memberId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
-        Member member = memberRepository.getReferenceById(memberId);
-        validateOwner(project,member);
+                .orElseThrow();
         List<ProjectMember> projectMembers = projectMemberRepository.findByProject(project);
         return projectMembers.stream()
                 .map(ProjectMemberListResponse::from)

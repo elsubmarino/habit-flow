@@ -1,10 +1,10 @@
 package io.streak.habitflow.domain.notification.service;
 
-import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.notification.dto.request.NotificationRequest;
 import io.streak.habitflow.domain.notification.dto.response.NotificationListResponse;
 import io.streak.habitflow.domain.notification.entity.Notification;
 import io.streak.habitflow.domain.notification.repository.NotificationRepository;
+import io.streak.habitflow.global.aop.CheckOwnership;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +16,6 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class NotificationService {
     private final NotificationRepository notificationRepository;
-    private final MemberRepository memberRepository;
 
     @Transactional
     @SuppressWarnings("unused")
@@ -35,12 +34,11 @@ public class NotificationService {
     }
 
     @Transactional
+    @CheckOwnership(type="NOTIFICATION")
+    @SuppressWarnings("unused")
     public void confirmNotification(Long notificationId, NotificationRequest notificationRequest, Long memberId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new IllegalArgumentException("알림이 존재하지 않습니다."));
-        if (!notification.getMember().getId().equals(memberId)) {
-            throw new IllegalStateException("수정 권한이 없습니다.");
-        }
+                .orElseThrow();
         notification.confirmNotification(notificationRequest.isConfirmed());
     }
 }

@@ -70,9 +70,9 @@ public class ActivityLogService {
 
     }
 
-    public List<ActivityLogListResponse> searchActivityLogs(ActivityLogSearchCondition activityLogSearchCondition){
-        return  activityLogRepository.searchActivityLogs(activityLogSearchCondition).stream()
-                .map(ActivityLogListResponse::from)
-                .toList();
-    }
+//    public List<ActivityLogListResponse> searchActivityLogs(ActivityLogSearchCondition activityLogSearchCondition){
+//        return  activityLogRepository.searchActivityLogs(activityLogSearchCondition).stream()
+//                .map(ActivityLogListResponse::from)
+//                .toList();
+//    }
 }

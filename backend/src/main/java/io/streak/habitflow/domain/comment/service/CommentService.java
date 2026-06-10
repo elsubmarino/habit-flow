@@ -9,6 +9,7 @@ import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
+import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
 import lombok.RequiredArgsConstructor;
@@ -65,26 +66,21 @@ public class CommentService {
     }
 
     @Transactional
+    @CheckOwnership(type="COMMENT")
+    @SuppressWarnings("unused")
     public CommentResponse updateComment(Long commentId, CommentRequest request, Long memberId) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 댓글입니다."));
-        validateOwner(comment,memberId);
+                .orElseThrow();
 
         comment.updateContent(request.getContent());
         return CommentResponse.from(comment);
     }
 
     @Transactional
+    @CheckOwnership(type="COMMENT")
+    @SuppressWarnings("unused")
     public void deleteComment(Long commentId, Long memberId){
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(()->new IllegalArgumentException("조회된 코멘트가 없습니다."));
-        validateOwner(comment,memberId);
         commentRepository.deleteById(commentId);
     }
 
-    public void validateOwner(Comment comment, Long memberId){
-        if(!comment.getMember().getId().equals(memberId)){
-            throw new IllegalStateException("해당 코멘트에 대한 접근 권한이 없습니다.");
-        }
-    }
 }

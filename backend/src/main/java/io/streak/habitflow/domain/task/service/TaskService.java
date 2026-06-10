@@ -1,6 +1,5 @@
 package io.streak.habitflow.domain.task.service;
 
-import com.querydsl.core.QueryFactory;
 import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogRequest;
 import io.streak.habitflow.domain.activitylog.service.ActivityLogService;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
@@ -16,7 +15,6 @@ import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.project.service.ProjectService;
 import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
 import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
-import io.streak.habitflow.domain.task.dto.request.TaskUpdateProjectRequest;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
@@ -57,14 +55,13 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="TASK")
+    @SuppressWarnings("unused")
     public void deleteTask(Long taskId, Long memberId){
-        Task task = taskRepository.findById(taskId)
-                        .orElseThrow(()->new IllegalArgumentException("조회된 테스크가 없습니다."));
-        validateOwner(task,memberId);
         taskRepository.deleteById(taskId);
     }
 
     @Transactional
+    @CheckOwnership(type="SUB_TASK")
     public TaskResponse createTask(TaskCreateRequest taskCreateRequest, MultipartFile file, Long memberId){
 
         Member member = memberRepository.getReferenceById(memberId);
@@ -73,7 +70,6 @@ public class TaskService {
         if(taskCreateRequest.getParentId() != null){
             parentTask = taskRepository.findById(taskCreateRequest.getParentId())
                     .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 테스크입니다."));
-            validateOwner(parentTask,memberId);
         }
 
         Project project = null;
@@ -150,11 +146,11 @@ public class TaskService {
         return TaskResponse.from(savedTask, labelListResponses);
     }
 
+    @CheckOwnership(type="TASK")
+    @SuppressWarnings("unused")
     public TaskResponse getTaskById(Long taskId, Long memberId){
-        Task task = taskRepository.searchTaskInfo(taskId)
-                .orElseThrow(()->new IllegalArgumentException("해당 테스크가 존재하지 않습니다."));
-
-        validateOwner(task,memberId);
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow();
 
         List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
@@ -199,11 +195,11 @@ public class TaskService {
     }
 
     @Transactional
+    @CheckOwnership(type="TASK")
+    @SuppressWarnings("unused")
     public TaskResponse updateTask(Long taskId, TaskUpdateRequest taskUpdateRequest, Long memberId){
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(()->new IllegalArgumentException("TASK가 존재하지 않습니다."));
-
-        validateOwner(task,memberId);
+                .orElseThrow();
 
         if(taskUpdateRequest.getName()!=null){
             task.updateName(taskUpdateRequest.getName());
@@ -244,11 +240,10 @@ public class TaskService {
     }
 
     @Transactional
+    @CheckOwnership(type="TASK")
     public TaskResponse toggleCompletion(Long taskId, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(()->new IllegalArgumentException("TASK가 존재하지 않습니다."));
-
-        validateOwner(task, memberId);
 
         boolean nextCompletion = !task.isCompleted();
         task.updateCompleted(nextCompletion);
@@ -271,21 +266,16 @@ public class TaskService {
         return TaskResponse.from(task,labelListResponses);
     }
 
-    public void validateOwner(Task task, Long memberId){
-        if(!task.getMember().getId().equals(memberId)){
-            throw new IllegalStateException("해당 테스크에 대한 접근 권한이 없습니다.");
-        }
-    }
-
     public long getTaskCount(TaskFilterType taskFilterType, Long memberId){
         return taskRepository.countTasksByCondition(taskFilterType, memberId);
     }
 
     @Transactional
+    @CheckOwnership(type="TASK")
+    @SuppressWarnings("unused")
     public TaskResponse updateTaskDueDate(Long taskId, LocalDateTime dueDate, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
-        validateOwner(task, memberId);
         task.updateDueDate(dueDate);
         List<LabelListResponse> labelListResponses = task.getTaskLabels()
                 .stream()
@@ -295,10 +285,11 @@ public class TaskService {
     }
 
     @Transactional
+    @CheckOwnership(type="TASK")
+    @SuppressWarnings("unused")
     public TaskResponse updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
-        validateOwner(task, memberId);
         task.updatePriorityType(taskPriorityType);
         List<LabelListResponse> labelListResponses = task.getTaskLabels()
                 .stream()
@@ -308,10 +299,11 @@ public class TaskService {
     }
 
     @Transactional
+    @CheckOwnership(type="TASK")
+    @SuppressWarnings("unused")
     public TaskResponse updateTaskLabels(Long taskId, List<Long> labelIds, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
-        validateOwner(task, memberId);
 
         if(labelIds == null || labelIds.isEmpty()){
             task.getSubTasks().clear();
@@ -336,14 +328,14 @@ public class TaskService {
     }
 
     @Transactional
+    @CheckOwnership(type="TASK")
+    @CheckOwnership(type="PROJECT")
+    @SuppressWarnings("unused")
     public TaskResponse updateProject(Long taskId, Long projectId, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
         Project project = projectRepository.findById(projectId)
                         .orElseThrow();
-        Member member = memberRepository.getReferenceById(memberId);
-        projectService.validateOwner(project,member);
-        validateOwner(task, memberId);
         task.updateProject(project);
         List<LabelListResponse> labelListResponses = task.getTaskLabels()
                 .stream()

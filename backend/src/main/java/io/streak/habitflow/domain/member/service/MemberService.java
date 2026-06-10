@@ -7,6 +7,7 @@ import io.streak.habitflow.domain.member.dto.response.MemberResponse;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.member.type.Role;
+import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,13 +35,11 @@ public class MemberService {
     }
 
     @Transactional
+    @CheckOwnership(type = "MEMBER")
+    @SuppressWarnings("unused")
     public MemberResponse updateMember(Long memberId,MemberUpdateRequest  memberUpdateRequest,Long loginMemberId){
         Member member = memberRepository.findById(memberId)
-                .orElseThrow((()->new IllegalArgumentException("멤버가 존재하지 않습니다.")));
-
-        if(!member.getId().equals(loginMemberId)){
-            throw new IllegalStateException("수정 권한이 없습니다.");
-        }
+                .orElseThrow();
 
         member.updateMember(memberUpdateRequest.getPassword());
 

@@ -411,6 +411,12 @@ function App() {
     const showTaskPagination = (showTodaySections || showUpcomingGrouped || showInboxList) && tasksHasNext;
     const showLabelsPagination = showLabelsPanel && labelsHasNext;
 
+    const headerTaskCount = showTodaySections
+        ? todayTaskCount
+        : showInboxList
+            ? inboxTaskCount
+            : null;
+
     const handleLoadMoreTasks = useCallback(() => {
         dispatch(fetchMoreHabits());
     }, [dispatch]);
@@ -708,10 +714,10 @@ function App() {
                             />
                         )}
                     </div>
-                    {showTodaySections && pending.length > 0 && (
+                    {headerTaskCount != null && headerTaskCount > 0 && (
                         <p className="task-summary today-task-count">
                             <span className="today-count-icon">✓</span>
-                            {pending.length} 작업
+                            {headerTaskCount} 작업
                         </p>
                     )}
                 </header>
