@@ -5,12 +5,11 @@ import io.streak.habitflow.domain.label.dto.request.LabelUpdateRequest;
 import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.service.LabelService;
-import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
+import io.streak.habitflow.global.security.dto.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,35 +22,35 @@ public class LabelController {
 
     @PostMapping
     public ResponseEntity<LabelResponse> createLabel(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestBody LabelCreateRequest labelCreateRequest) {
-        return ResponseEntity.ok(labelService.createLabel(labelCreateRequest, userDetails));
+        return ResponseEntity.ok(labelService.createLabel(labelCreateRequest, userPrincipal.getMemberId()));
     }
 
     @GetMapping
     public ResponseEntity<ScrollResponse<LabelListResponse>> getLabels(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestParam(value = "lastLabelId",required = false) Long lastLabelId) {
-        return ResponseEntity.ok(labelService.getLabels(lastLabelId,userDetails));
+        return ResponseEntity.ok(labelService.getLabels(lastLabelId,userPrincipal.getMemberId()));
     }
 
     @GetMapping("/{labelId}")
     public ResponseEntity<LabelResponse> getLabelById(@PathVariable Long labelId,
-                                                      @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(labelService.getLabelById(labelId,userDetails));
+                                                      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        return ResponseEntity.ok(labelService.getLabelById(labelId,userPrincipal.getMemberId()));
     }
 
     @PutMapping("/{labelId}")
     public ResponseEntity<LabelResponse> updateLabel(@PathVariable Long labelId,
-                                                     @AuthenticationPrincipal UserDetails userDetails,
+                                                     @AuthenticationPrincipal UserPrincipal userPrincipal,
                                                      @RequestBody LabelUpdateRequest labelUpdateRequest) {
-        return ResponseEntity.ok(labelService.updateLabel(labelId, labelUpdateRequest, userDetails));
+        return ResponseEntity.ok(labelService.updateLabel(labelId, labelUpdateRequest, userPrincipal.getMemberId()));
     }
 
     @DeleteMapping("/{labelId}")
     public ResponseEntity<Void> deleteLabel(@PathVariable Long labelId,
-                                            @AuthenticationPrincipal UserDetails userDetails) {
-        labelService.deleteLabel(labelId, userDetails);
+                                            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        labelService.deleteLabel(labelId, userPrincipal.getMemberId());
         return ResponseEntity.noContent().build();
     }
 

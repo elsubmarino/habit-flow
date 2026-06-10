@@ -65,6 +65,9 @@ export interface Habit {
     reminders: string[];
     subtasks: Subtask[];
     comments: CommentItem[];
+    subtaskCount: number;
+    subtaskCompletedCount: number;
+    commentCount: number;
 }
 
 export function attachmentDownloadUrl(path: string): string {
@@ -680,7 +683,10 @@ const habitSlice = createSlice({
             })
             .addCase(addSubtask.fulfilled, (state, action) => {
                 const habit = state.list.find(h => h.id === action.payload.habitId);
-                if (habit) habit.subtasks = [...(habit.subtasks ?? []), action.payload.subtask];
+                if (habit) {
+                    habit.subtasks = [...(habit.subtasks ?? []), action.payload.subtask];
+                    habit.subtaskCount = habit.subtasks.length;
+                }
             })
             .addCase(toggleSubtask.fulfilled, (state, action) => {
                 const { habitId, subtaskId, completed } = action.payload;
@@ -688,6 +694,7 @@ const habitSlice = createSlice({
                 if (habit) {
                     const subtask = habit.subtasks.find(s => s.id === subtaskId);
                     if (subtask) subtask.completed = completed;
+                    habit.subtaskCompletedCount = habit.subtasks.filter(s => s.completed).length;
                 }
             })
             .addCase(toggleSubtask.rejected, (state, action) => {

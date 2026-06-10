@@ -161,9 +161,35 @@ function parseDueDateTime(value?: string | null): { date: string | null; time: s
     return { date, time };
 }
 
+function resolveTaskCounts(task: TaskDto): {
+    subtaskCount: number;
+    subtaskCompletedCount: number;
+    commentCount: number;
+} {
+    if (task.countSubTasks != null) {
+        return {
+            subtaskCount: task.countSubTasks,
+            subtaskCompletedCount: task.countSubTasksCompleted ?? 0,
+            commentCount: task.countComments ?? 0,
+        };
+    }
+
+    const subtasks = task.subTasks ?? [];
+    return {
+        subtaskCount: subtasks.length,
+        subtaskCompletedCount: subtasks.filter(st => readCompleted(st)).length,
+        commentCount: task.comments?.length ?? 0,
+    };
+}
+
+function readTaskPriority(task: TaskDto): PriorityType | null | undefined {
+    return task.priorityType ?? task.taskPriorityType;
+}
+
 export function mapTaskToHabit(task: TaskDto): Habit {
     const completed = readCompleted(task);
     const { date: dueDate, time: dueTime } = parseDueDateTime(task.dueDate);
+    const counts = resolveTaskCounts(task);
     return {
         id: task.id,
         name: task.name,
@@ -178,11 +204,14 @@ export function mapTaskToHabit(task: TaskDto): Habit {
         projectName: task.projectName ?? null,
         projectColor: task.projectColor ?? null,
         completedToday: completed,
-        priority: priorityFromApi(task.priorityType),
+        priority: priorityFromApi(readTaskPriority(task)),
         labels: (task.labels ?? []).map(l => mapLabel(l)),
         attachments: mapAttachments(task.comments),
         reminders: [],
         subtasks: mapSubtasks(task.subTasks),
         comments: mapComments(task.comments),
+        subtaskCount: counts.subtaskCount,
+        subtaskCompletedCount: counts.subtaskCompletedCount,
+        commentCount: counts.commentCount,
     };
 }

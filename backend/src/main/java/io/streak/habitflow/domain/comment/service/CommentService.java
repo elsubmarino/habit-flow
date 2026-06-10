@@ -12,7 +12,6 @@ import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,10 +28,8 @@ public class CommentService {
     private final FileStorageService fileStorageService;
 
     @Transactional
-    public CommentResponse createComment(CommentRequest commentRequest, MultipartFile file, UserDetails userDetails) {
-        String email = userDetails.getUsername();
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(()->new IllegalArgumentException("사용자가 없습니다."));
+    public CommentResponse createComment(CommentRequest commentRequest, MultipartFile file, Long memberId) {
+        Member member = memberRepository.getReferenceById(memberId);
 
         Task task = taskRepository.findById(commentRequest.getTaskId())
                 .orElseThrow(()->new IllegalArgumentException("테스크가 없습니다."));
@@ -68,10 +65,10 @@ public class CommentService {
     }
 
     @Transactional
-    public CommentResponse updateComment(Long commentId, CommentRequest request, UserDetails userDetails) {
+    public CommentResponse updateComment(Long commentId, CommentRequest request, Long memberId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 댓글입니다."));
-        if(!comment.getMember().getEmail().equals(userDetails.getUsername())){
+        if(!comment.getMember().getId().equals(memberId)){
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 

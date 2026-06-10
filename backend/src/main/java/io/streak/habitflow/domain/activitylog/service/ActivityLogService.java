@@ -1,8 +1,8 @@
 package io.streak.habitflow.domain.activitylog.service;
 
 import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogRequest;
-import io.streak.habitflow.domain.activitylog.dto.response.ActivityLogListResponse;
 import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogSearchCondition;
+import io.streak.habitflow.domain.activitylog.dto.response.ActivityLogListResponse;
 import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
 import io.streak.habitflow.domain.activitylog.repository.ActivityLogRepository;
 import io.streak.habitflow.domain.member.entity.Member;
@@ -11,11 +11,9 @@ import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -27,9 +25,9 @@ public class ActivityLogService {
     private final TaskRepository taskRepository;
 
     @Transactional
-    public void create(ActivityLogRequest activityLogRequest, UserDetails userDetails) {
-        Member member = memberRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(()->new IllegalArgumentException("멤버가 없습니다."));
+    public void create(ActivityLogRequest activityLogRequest, Long memberId) {
+        Member member = memberRepository.getReferenceById(memberId);
+
 
         Long taskId = activityLogRequest.getTaskId();
         Task task = taskRepository.findById(taskId)
@@ -43,15 +41,12 @@ public class ActivityLogService {
         activityLogRepository.save(activityLog);
     }
 
-    public ScrollResponse<ActivityLogListResponse> getActivityLogs(Long lastActivityLogId, UserDetails userDetails) {
-        Member member = memberRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(()->new IllegalArgumentException("멤버가 없습니다."));
-
+    public ScrollResponse<ActivityLogListResponse> getActivityLogs(Long lastActivityLogId, Long memberId) {
         int pageSize = 20;
         boolean hasNext = false;
         Long nextCursor = null;
 
-        List<ActivityLog> activityLogs = activityLogRepository.searchActivityLogsByCondition(lastActivityLogId, member.getId());
+        List<ActivityLog> activityLogs = activityLogRepository.searchActivityLogsByCondition(lastActivityLogId, memberId);
 
         if(activityLogs.size() > pageSize){
             hasNext = true;

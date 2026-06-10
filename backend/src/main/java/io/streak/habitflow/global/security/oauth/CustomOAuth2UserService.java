@@ -29,15 +29,13 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String name = (String)attributes.get("name");
 
         Member member = memberRepository.findByEmail(email)
-                .orElseGet(()->{
-                    return memberRepository.save(
-                            Member.builder()
-                                    .email(email)
-                                    .name(name)
-                                    .role(Role.USER)
-                                    .build()
-                    );
-                });
+                .orElseGet(()-> memberRepository.save(
+                        Member.builder()
+                                .email(email)
+                                .name(name)
+                                .role(Role.USER)
+                                .build()
+                ));
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority(member.getRole().getKey())),
                 attributes,

@@ -8,6 +8,6 @@ import io.streak.habitflow.domain.label.entity.Label;
 import java.util.List;
 
 public interface LabelRepositoryCustom {
-    List<LabelListResponse> searchKeyword(String name, String email);
+    List<LabelListResponse> searchKeyword(String name, Long memberId);
     List<Label> searchLabelsByCondition(Long labelId, Long memberId);
 }

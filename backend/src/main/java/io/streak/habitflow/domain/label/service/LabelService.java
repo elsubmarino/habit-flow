@@ -13,7 +13,6 @@ import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,9 +28,8 @@ public class LabelService {
     private final FavoriteRepository favoriteRepository;
 
     @Transactional
-    public LabelResponse createLabel(LabelCreateRequest labelCreateRequest, UserDetails userDetails) {
-        Member member = memberRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(()->new IllegalArgumentException("멤버가 존재하지 않습니다."));
+    public LabelResponse createLabel(LabelCreateRequest labelCreateRequest, Long memberId) {
+        Member member = memberRepository.getReferenceById(memberId);
         Label label = Label.builder()
                 .name(labelCreateRequest.getName())
                 .color(labelCreateRequest.getColor())
@@ -55,14 +53,12 @@ public class LabelService {
         return LabelResponse.from(savedLabel, labelCreateRequest.isFavorite());
     }
 
-    public LabelResponse getLabelById(Long labelId, UserDetails userDetails) {
+    public LabelResponse getLabelById(Long labelId, Long memberId) {
         Label label = labelRepository.findById(labelId)
                 .orElseThrow(()->new IllegalArgumentException("라벨이 존재하지 않습니다."));
-        Member member = memberRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(()->new IllegalArgumentException("사용자가 존재하지 않습니다."));
         boolean isFavorite = false;
         Optional<Favorite> favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(
-                member.getId(), TargetType.LABEL, label.getId());
+                memberId,TargetType.LABEL, label.getId());
         if(favorite.isPresent()){
             isFavorite = true;
         }
@@ -70,14 +66,13 @@ public class LabelService {
     }
 
     @Transactional
-    public LabelResponse updateLabel(Long labelId, LabelUpdateRequest labelUpdateRequest, UserDetails userDetails) {
+    public LabelResponse updateLabel(Long labelId, LabelUpdateRequest labelUpdateRequest, Long memberId) {
         Label label = labelRepository.findById(labelId)
                 .orElseThrow(()->new IllegalArgumentException("라벨이 존재하지 않습니다."));
 
-        Member member = memberRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(()->new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        Member member = memberRepository.getReferenceById(memberId);
 
-        if(!label.getMember().getEmail().equals(userDetails.getUsername())) {
+        if(!label.getMember().getId().equals(memberId)) {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
@@ -101,14 +96,10 @@ public class LabelService {
         return LabelResponse.from(label, labelUpdateRequest.isFavorite());
     }
 
-    public ScrollResponse<LabelListResponse> getLabels(Long labelId, UserDetails userDetails) {
-        String email  = userDetails.getUsername();
-        Member member = memberRepository.findByEmail(email)
-                        .orElseThrow(()->new IllegalArgumentException("멤버를 찾을 수 없습니다."));
-
+    public ScrollResponse<LabelListResponse> getLabels(Long labelId, Long memberId) {
         int pageSize = 20;
 
-        List<Label> labels = labelRepository.searchLabelsByCondition(labelId,member.getId());
+        List<Label> labels = labelRepository.searchLabelsByCondition(labelId,memberId);
 
         boolean hasNext = false;
         Long nextCursor = null;
@@ -134,11 +125,11 @@ public class LabelService {
     }
 
     @Transactional
-    public void deleteLabel(Long labelId, UserDetails userDetails){
+    public void deleteLabel(Long labelId, Long memberId){
         Label label = labelRepository.findById(labelId)
                         .orElseThrow(()->new IllegalArgumentException("검색된 라벨이 존재하지 않습니다."));
 
-        if(!label.getMember().getEmail().equals(userDetails.getUsername())) {
+        if(!label.getMember().getId().equals(memberId)) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
         }
         labelRepository.deleteById(labelId);

@@ -1,14 +1,13 @@
 package io.streak.habitflow.global.security;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import io.streak.habitflow.global.security.dto.UserPrincipal;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -32,13 +31,15 @@ public class JwtTokenProvider {
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String createToken(String email){
+    public String createToken(String email, Long memberId){
         Date now = new Date();
         long tokenValidityInMilliseconds = 1000L * 60 * 60 * 24;
         Date validity = new Date(now.getTime() + tokenValidityInMilliseconds);
 
         return Jwts.builder()
                 .setSubject(email)
+                .claim("memberId",memberId)
+                .claim("role","ROLE_USER")
                 .setIssuedAt(now)
                 .setExpiration(validity)
                 .signWith(secretKey, SignatureAlgorithm.HS256)
@@ -46,16 +47,20 @@ public class JwtTokenProvider {
     }
 
     public Authentication getAuthentication(String token){
-        String email = Jwts.parserBuilder().setSigningKey(secretKey).build()
-                .parseClaimsJws(token).getBody().getSubject();
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
 
-        UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
-                .username(email)
-                .password("") // 무상태 서버이므로 비밀번호는 공란 처리
-                .authorities("ROLE_USER") // 기본 권한 주입
-                .build();
+        String email = claims.getSubject();
 
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        Long memberId = claims.get("memberId", Long.class);
+        String role = claims.get("role", String.class);
+
+        UserPrincipal userPrincipal = new UserPrincipal(memberId, email, role);
+
+        return new UsernamePasswordAuthenticationToken(userPrincipal, "", userPrincipal.getAuthorities());
     }
 
     public boolean validateToken(String token){

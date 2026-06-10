@@ -39,6 +39,7 @@ export interface TaskDto {
     isCompleted?: boolean;
     completed?: boolean;
     priorityType?: PriorityType | null;
+    taskPriorityType?: PriorityType | null;
     dueDate?: string | null;
     sortOrder?: number;
     userId?: number | null;
@@ -47,6 +48,9 @@ export interface TaskDto {
     projectName?: string | null;
     projectColor?: string | null;
     parentId?: number | null;
+    countSubTasks?: number;
+    countSubTasksCompleted?: number;
+    countComments?: number;
     subTasks?: TaskDto[];
     labels?: LabelDto[];
     comments?: CommentDto[];

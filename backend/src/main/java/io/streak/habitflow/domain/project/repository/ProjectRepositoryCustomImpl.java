@@ -17,7 +17,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<ProjectListResponse> searchKeyword(String keyword, String email) {
+    public List<ProjectListResponse> searchKeyword(String keyword, Long memberId) {
         return queryFactory
                 .select(
                         Projections.fields(
@@ -29,7 +29,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                 ).from(project)
                 .join(projectMember).on(projectMember.project.eq(project))
                 .where(
-                        projectMember.member.email.eq(email),
+                        projectMember.member.id.eq(memberId),
                         project.name.contains(keyword)
                 )
                 .limit(5)
@@ -37,7 +37,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     }
 
     @Override
-    public List<ProjectListResponse> findByEmail(String email) {
+    public List<ProjectListResponse> findByMemberId(Long memberId) {
         return queryFactory
                 .select(Projections.constructor(
                         ProjectListResponse.class,
@@ -48,7 +48,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                 ))
                 .from(project)
                 .leftJoin(task).on(task.project.eq(project).and(task.completed.eq(false)))
-                .innerJoin(projectMember).on(projectMember.project.eq(project).and(projectMember.member.email.eq(email)))
+                .innerJoin(projectMember).on(projectMember.project.eq(project).and(projectMember.member.id.eq(memberId)))
                 .groupBy(project.id)
                 .fetch();
     }

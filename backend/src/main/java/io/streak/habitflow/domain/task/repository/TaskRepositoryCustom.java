@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface TaskRepositoryCustom {
     List<Task> searchTasks(TaskUpdateRequest taskUpdateRequest, String email);
     Optional<Task> searchTaskInfo(Long taskId);
-    List<TaskResponse> searchKeyword(String keyword, String email);
-    List<Task> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId);
-    long countTasksByCondition(TaskFilterType taskFilterType, String email);
+    List<TaskResponse> searchKeyword(String keyword, Long memberId);
+    List<TaskListResponse> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId);
+    long countTasksByCondition(TaskFilterType taskFilterType, Long memberId);
 }

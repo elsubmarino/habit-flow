@@ -2,6 +2,7 @@ package io.streak.habitflow.domain.favorite.repository;
 
 import io.streak.habitflow.domain.favorite.entity.Favorite;
 import io.streak.habitflow.domain.favorite.type.TargetType;
+import io.streak.habitflow.domain.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -10,4 +11,6 @@ public interface FavoriteRepository extends JpaRepository<Favorite, Long> {
     Optional<Favorite> findByMemberIdAndTargetTypeAndTargetId(Long memberId, TargetType targetType, Long targetId);
     void deleteByTargetTypeAndTargetId(TargetType targetType, Long targetId);
     void deleteByMemberIdAndTargetTypeAndTargetId(Long memberId, TargetType targetType, Long targetId);
+
+    Long member(Member member);
 }

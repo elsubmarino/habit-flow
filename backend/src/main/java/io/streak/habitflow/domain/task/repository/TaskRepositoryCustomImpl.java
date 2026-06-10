@@ -3,14 +3,19 @@ package io.streak.habitflow.domain.task.repository;
 import static io.streak.habitflow.domain.project.entity.QProject.project;
 import static io.streak.habitflow.domain.task.entity.QTask.task;
 
+import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import io.streak.habitflow.domain.comment.entity.QComment;
 import io.streak.habitflow.domain.label.entity.QLabel;
 import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
+import io.streak.habitflow.domain.task.entity.QTask;
 import io.streak.habitflow.domain.task.entity.QTaskLabel;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
@@ -57,7 +62,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskResponse> searchKeyword(String keyword, String email) {
+    public List<TaskResponse> searchKeyword(String keyword, Long memberId) {
         return
                 queryFactory
                         .select(Projections.fields(
@@ -68,20 +73,48 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         .from(task)
                         .where(
                                 task.name.contains(keyword),
-                                task.member.email.eq(email)
+                                task.member.id.eq(memberId)
                         )
                         .limit(5)
                         .fetch();
     }
 
     @Override
-    public List<Task> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId) {
+    public List<TaskListResponse> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId) {
+        QTask subTask = new QTask("subTask");
+        QComment comment = QComment.comment;
         int pageSize = 20;
 
         return queryFactory
-                .selectFrom(task)
-                .leftJoin(task.taskLabels, QTaskLabel.taskLabel).fetchJoin()
-                .leftJoin(QTaskLabel.taskLabel.label, QLabel.label).fetchJoin()
+                .select(
+                        Projections.fields(
+                                TaskListResponse.class,
+                                task.id,
+                                task.name,
+                                task.description,
+                                task.taskPriorityType,
+                                task.dueDate,
+                                task.sortOrder,
+                                task.project.name.as("projectName"),
+                                ExpressionUtils.as(
+                                        JPAExpressions.select(subTask.count())
+                                                .from(subTask)
+                                                .where(subTask.parent.eq(task)),"countSubTasks"),
+                                ExpressionUtils.as(
+                                        JPAExpressions.select(subTask.count())
+                                                .from(subTask)
+                                                .where(subTask.parent.eq(task),
+                                                        subTask.completed),"countSubTasksCompleted"),
+                                ExpressionUtils.as(
+                                        JPAExpressions.select(comment.count())
+                                                .from(comment)
+                                                .where(comment.task.eq(task)),"countComments")
+                                )
+                )
+                .from(task)
+                .leftJoin(task.project, project)
+                .leftJoin(task.taskLabels, QTaskLabel.taskLabel)
+                .leftJoin(QTaskLabel.taskLabel.label, QLabel.label)
                 .where(task.member.id.eq(memberId),
                         filterTypeEq(taskSearchCondition.getTaskFilterType()),
                         ltTaskId(taskSearchCondition.getLastTaskId())
@@ -108,12 +141,12 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public long countTasksByCondition(TaskFilterType taskFilterType, String email) {
+    public long countTasksByCondition(TaskFilterType taskFilterType, Long memberId) {
         Long totalCount =  queryFactory
                 .select(task.count())
                 .from(task)
                 .where(
-                        task.member.email.eq(email),
+                        task.member.id.eq(memberId),
                         filterTypeEq(taskFilterType)
                 )
                 .fetchOne();

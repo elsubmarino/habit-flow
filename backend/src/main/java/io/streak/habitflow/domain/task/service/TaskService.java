@@ -11,8 +11,8 @@ import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.project.entity.Project;
-import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
+import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
 import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
@@ -30,7 +30,6 @@ import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -50,31 +49,26 @@ public class TaskService {
     private final LabelRepository labelRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final QueryFactory queryFactory;
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public void deleteTask(Long taskId, UserDetails userDetails){
+    public void deleteTask(Long taskId, Long memberId){
         Task task = taskRepository.findById(taskId)
                         .orElseThrow(()->new IllegalArgumentException("조회된 테스크가 없습니다."));
-        if(!task.getMember().getEmail().equals(userDetails.getUsername())){
-            throw new IllegalStateException("삭제 권한이 없습니다.");
-        }
+        validateOwner(task,memberId);
         taskRepository.deleteById(taskId);
     }
 
     @Transactional
-    public TaskResponse createTask(TaskCreateRequest taskCreateRequest, MultipartFile file, UserDetails userDetails){
-        String email = userDetails.getUsername();
+    public TaskResponse createTask(TaskCreateRequest taskCreateRequest, MultipartFile file, Long memberId){
 
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 회원입니다."));
+        Member member = memberRepository.getReferenceById(memberId);
 
         Task parentTask = null;
         if(taskCreateRequest.getParentId() != null){
             parentTask = taskRepository.findById(taskCreateRequest.getParentId())
                     .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 테스크입니다."));
-            validateOwner(parentTask,email);
+            validateOwner(parentTask,memberId);
         }
 
         Project project = null;
@@ -151,13 +145,11 @@ public class TaskService {
         return TaskResponse.from(savedTask, labelListResponses);
     }
 
-    public TaskResponse getTaskById(Long taskId, UserDetails userDetails){
+    public TaskResponse getTaskById(Long taskId, Long memberId){
         Task task = taskRepository.searchTaskInfo(taskId)
                 .orElseThrow(()->new IllegalArgumentException("해당 테스크가 존재하지 않습니다."));
 
-        if(!task.getMember().getEmail().equals(userDetails.getUsername())){
-            throw new IllegalStateException("조회 권한이 없습니다.");
-        }
+        validateOwner(task,memberId);
 
         List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
@@ -175,35 +167,23 @@ public class TaskService {
                 .toList();
     }
 
-    public ScrollResponse<TaskListResponse> getTasks(TaskSearchCondition taskSearchCondition, UserDetails userDetails){
-        String email = userDetails.getUsername();
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 회원입니다."));
+    public ScrollResponse<TaskListResponse> getTasks(TaskSearchCondition taskSearchCondition, Long memberId){
 
         int pageSize = 20;
 
-        List<Task> tasks = taskRepository.searchTasksByCondition(taskSearchCondition, member.getId());
+        List<TaskListResponse> taskListResponses = taskRepository.searchTasksByCondition(taskSearchCondition, memberId);
 
         boolean hasNext = false;
         Long nextCursor = null;
 
-        if(tasks.size() > pageSize){
+        if(taskListResponses.size() > pageSize){
             hasNext = true;
-            tasks = tasks.subList(0, pageSize);
+            taskListResponses = taskListResponses.subList(0, pageSize);
         }
 
-        if(!tasks.isEmpty()){
-            nextCursor = tasks.get(tasks.size() - 1).getId();
+        if(!taskListResponses.isEmpty()){
+            nextCursor = taskListResponses.get(taskListResponses.size() - 1).getId();
         }
-
-        List<TaskListResponse> taskListResponses =  tasks.stream()
-                .map(task-> {
-                    List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
-                            .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
-                            .toList();
-                    return TaskListResponse.from(task,labelListResponses);
-                })
-                .toList();
 
         return ScrollResponse.<TaskListResponse>builder()
                 .content(taskListResponses)
@@ -214,12 +194,11 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskResponse updateTask(Long taskId, TaskUpdateRequest taskUpdateRequest, UserDetails userDetails){
+    public TaskResponse updateTask(Long taskId, TaskUpdateRequest taskUpdateRequest, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(()->new IllegalArgumentException("TASK가 존재하지 않습니다."));
-        if(!task.getMember().getEmail().equals(userDetails.getUsername())){
-            throw new IllegalStateException("수정 권한이 없습니다.");
-        }
+
+        validateOwner(task,memberId);
 
         if(taskUpdateRequest.getName()!=null){
             task.updateName(taskUpdateRequest.getName());
@@ -260,11 +239,11 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskResponse toggleCompletion(Long taskId, UserDetails userDetails){
+    public TaskResponse toggleCompletion(Long taskId, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(()->new IllegalArgumentException("TASK가 존재하지 않습니다."));
 
-        validateOwner(task, userDetails.getUsername());
+        validateOwner(task, memberId);
 
         boolean nextCompletion = !task.isCompleted();
         task.updateCompleted(nextCompletion);
@@ -275,9 +254,9 @@ public class TaskService {
                     .activityType(ActivityType.COMPLETED)
                     .taskId(taskId)
                     .build();
-            activityLogService.create(activityLogRequest,userDetails);
+            activityLogService.create(activityLogRequest,memberId);
             applicationEventPublisher.publishEvent(new TaskCompletedEvent(
-                    taskId,userDetails.getUsername(),ActivityType.COMPLETED
+                    taskId,memberId,ActivityType.COMPLETED
             ));
         }
 
@@ -287,14 +266,14 @@ public class TaskService {
         return TaskResponse.from(task,labelListResponses);
     }
 
-    public void validateOwner(Task task, String email){
-        if(!task.getMember().getEmail().equals(email)){
+    public void validateOwner(Task task, Long memberId){
+        if(!task.getMember().getId().equals(memberId)){
             throw new IllegalStateException("해당 테스크에 대한 접근 권한이 없습니다.");
         }
     }
 
-    public long getTaskCount(TaskFilterType taskFilterType, String email){
-        return taskRepository.countTasksByCondition(taskFilterType, email);
+    public long getTaskCount(TaskFilterType taskFilterType, Long memberId){
+        return taskRepository.countTasksByCondition(taskFilterType, memberId);
     }
 
 }

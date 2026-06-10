@@ -3,13 +3,13 @@ package io.streak.habitflow.domain.comment.api;
 import io.streak.habitflow.domain.comment.dto.request.CommentRequest;
 import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.comment.service.CommentService;
+import io.streak.habitflow.global.security.dto.UserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,23 +21,22 @@ public class CommentController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CommentResponse> createComment(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestPart(value="file",required = false) MultipartFile file,
             @RequestPart("commentRequest") @Valid CommentRequest commentRequest) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body( commentService.createComment(commentRequest,file,userDetails));
+                .body( commentService.createComment(commentRequest,file,userPrincipal.getMemberId()));
     }
 
     @PutMapping("/{commentId}")
     public ResponseEntity<CommentResponse> updateComment(@PathVariable Long commentId,
-                                                         @AuthenticationPrincipal UserDetails userDetails,
+                                                         @AuthenticationPrincipal UserPrincipal userPrincipal,
                                                          @RequestBody CommentRequest commentRequest) {
-        return ResponseEntity.ok(commentService.updateComment(commentId, commentRequest, userDetails));
+        return ResponseEntity.ok(commentService.updateComment(commentId, commentRequest, userPrincipal.getMemberId()));
     }
 
     @DeleteMapping("/{commentId}")
-    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId,
-                                              @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
         commentService.deleteComment(commentId);
         return ResponseEntity.noContent().build();
     }

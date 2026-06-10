@@ -10,6 +10,7 @@ import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
+import io.streak.habitflow.global.security.dto.UserPrincipal;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,10 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collections;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -45,7 +43,8 @@ class TaskServiceTest {
     @Mock private FileStorageService fileStorageService;
 
     private Member testMember;
-    private UserDetails userDetails;
+    private UserPrincipal userPrincipal;
+    private Long memberId;
 
 
     @BeforeEach
@@ -53,7 +52,8 @@ class TaskServiceTest {
         testMember = Member.builder().email("test@test.com")
                 .password("1234")
                 .build();
-        userDetails = new User("test@test.com", "password", Collections.emptyList());
+        Member savedMember = memberRepository.save(testMember);
+        this.memberId = savedMember.getId();
     }
 
     @Test
@@ -68,7 +68,7 @@ class TaskServiceTest {
 
         given(taskRepository.searchTaskInfo(taskId)).willReturn(Optional.of(testTask));
 
-        TaskResponse response = taskService.getTaskById(taskId, userDetails);
+        TaskResponse response = taskService.getTaskById(taskId, memberId);
 
         assertThat(response).isNotNull();
         assertThat(response.getName()).isEqualTo("조회할 업무");
@@ -83,7 +83,7 @@ class TaskServiceTest {
 
         given(taskRepository.searchTaskInfo(invalidTaskId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> taskService.getTaskById(invalidTaskId, userDetails))
+        assertThatThrownBy(() -> taskService.getTaskById(invalidTaskId, memberId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("해당 테스크가 존재하지 않습니다.");
 
@@ -105,13 +105,13 @@ class TaskServiceTest {
                 .member(testMember)
                 .build();
 
-        given(memberRepository.findByEmail("test@test.com")).willReturn(Optional.of(testMember));
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(testMember));
         given(taskRepository.findById(parentId)).willReturn(Optional.of(parentTask));
 
         Task savedTask = Task.builder().name("하위 업무 추가").parent(parentTask).member(testMember).build();
         given(taskRepository.save(any(Task.class))).willReturn(savedTask);
 
-        TaskResponse response = taskService.createTask(request, null, userDetails);
+        TaskResponse response = taskService.createTask(request, null, memberId);
 
         assertThat(response).isNotNull();
 
@@ -135,12 +135,12 @@ class TaskServiceTest {
                 .description("내용")
                 .build();
 
-        given(memberRepository.findByEmail("test@test.com")).willReturn(Optional.of(testMember));
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(testMember));
 
         Task savedTask = Task.builder().name("테스트 업무").member(testMember).build();
         given(taskRepository.save(any(Task.class))).willReturn(savedTask);
 
-        TaskResponse response = taskService.createTask(request, null, userDetails);
+        TaskResponse response = taskService.createTask(request, null, memberId);
 
         assertThat(response).isNotNull();
         verify(taskRepository).save(any(Task.class));
@@ -166,14 +166,14 @@ class TaskServiceTest {
                 .fileUrl("/uploads/uuid-test.png")
                 .build();
 
-        given(memberRepository.findByEmail("test@test.com")).willReturn(Optional.of(testMember));
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(testMember));
 
         Task savedTask = Task.builder().name("파일 첨부 업무").member(testMember).build();
         given(taskRepository.save(any(Task.class))).willReturn(savedTask);
 
         given(fileStorageService.upload(mockFile)).willReturn(mockFileDto);
 
-        TaskResponse response = taskService.createTask(request, mockFile, userDetails);
+        TaskResponse response = taskService.createTask(request, mockFile, memberId);
 
         assertThat(response).isNotNull();
         verify(taskRepository).save(any(Task.class));

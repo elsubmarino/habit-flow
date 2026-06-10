@@ -1,7 +1,8 @@
 package io.streak.habitflow.global.security.oauth;
 
+import io.streak.habitflow.domain.member.entity.Member;
+import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.global.security.JwtTokenProvider;
-import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,15 +19,23 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     private final JwtTokenProvider jwtTokenProvider;
+    private final MemberRepository memberRepository;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
-        String token = jwtTokenProvider.createToken(email);
+
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        String token = jwtTokenProvider.createToken(email,member.getId());
         String targetUrl = UriComponentsBuilder
                 .fromUriString("http://localhost:3000/oauth2/redirect")
-                .queryParam("token",token).build().toString();
+                .queryParam("token",token)
+                .build()
+                .toString();
+
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }

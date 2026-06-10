@@ -1146,6 +1146,18 @@
   color: var(--text-muted);
 }
 
+.task-meta-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.task-meta-chip.subtask-chip,
+.task-meta-chip.comment-chip {
+  gap: 3px;
+}
+
 .task-meta-chip.due-chip.today {
   color: #299438;
 }

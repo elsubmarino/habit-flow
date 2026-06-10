@@ -21,35 +21,22 @@ public class TaskListResponse {
     private Long id;
     private String name;
     private String description;
-    private boolean completed;
     private TaskPriorityType taskPriorityType;
     private LocalDateTime dueDate;
     private long sortOrder;
-
-    private Long userId;
-    private String userName;
-
-    private Long projectId;
     private String projectName;
-    private String projectColor;
-
-    private Long parentId;
-
-    @Builder.Default
-    private List<TaskListResponse> subTasks = new ArrayList<>();
+    private long countSubTasks;
+    private long countSubTasksCompleted;
+    private long countComments;
 
     @Builder.Default
     private List<LabelListResponse> labels = new ArrayList<>();
 
-    @Builder.Default
-    private List<CommentResponse> comments = new ArrayList<>();
 
     public static TaskListResponse from(Task task, List<LabelListResponse> labelListResponses) {
         TaskListResponse.TaskListResponseBuilder builder = TaskListResponse.builder()
                 .id(task.getId())
                 .name(task.getName())
-                .description(task.getDescription())
-                .completed(task.isCompleted())
                 .taskPriorityType(task.getTaskPriorityType())
                 .dueDate(task.getDueDate())
                 .sortOrder(task.getSortOrder())
@@ -57,21 +44,9 @@ public class TaskListResponse {
 
 
         if(task.getProject() != null){
-            builder.projectId(task.getProject().getId())
-                    .projectName(task.getProject().getName())
-                    .projectColor(task.getProject().getColor());
+            builder.projectName(task.getProject().getName());
         }else{
-            builder.projectId(null)
-                    .projectName("관리함")
-                    .projectColor("#808080");
-        }
-
-        if(task.getMember() != null){
-            builder.userId(task.getMember().getId());
-        }
-
-        if(task.getParent() != null){
-            builder.parentId(task.getParent().getId());
+            builder.projectName("관리함");
         }
 
 

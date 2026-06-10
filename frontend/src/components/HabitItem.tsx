@@ -5,7 +5,7 @@ import type { Habit } from '../store/habitSlice';
 import { displayLabelName } from '../api/labelMappers';
 import { formatDueLabel, toISODate } from '../utils/date';
 import { formatOverdueDueLabel, isOverdueHabit } from '../utils/overdueTasks';
-import { HashIcon } from './icons';
+import { CommentBubbleIcon, HashIcon, SubtaskCountIcon } from './icons';
 
 export type TaskRowLayout = 'list' | 'project' | 'upcoming';
 
@@ -79,8 +79,9 @@ const HabitItem: React.FC<HabitItemProps> = ({
         }
     };
 
-    const completedSubtasks = habit.subtasks.filter(s => s.completed).length;
-    const totalSubtasks = habit.subtasks.length;
+    const completedSubtasks = habit.subtaskCompletedCount;
+    const totalSubtasks = habit.subtaskCount;
+    const commentCount = habit.commentCount;
     const projectLabel = habit.projectName ?? '관리함';
     const showProjectAside = layout !== 'project';
     const overdue = variant === 'overdue' || isOverdueHabit(habit);
@@ -146,15 +147,21 @@ const HabitItem: React.FC<HabitItemProps> = ({
                     )}
                 </div>
 
-                {(layout === 'project' && habit.description) && (
+                {(layout === 'project' || layout === 'list' || layout === 'upcoming') && habit.description && (
                     <p className="task-desc-inline">{habit.description}</p>
                 )}
 
                 <div className="task-meta-row">
                     {totalSubtasks > 0 && (
                         <span className="task-meta-chip subtask-chip">
-                            <span className="task-meta-icon">☰</span>
+                            <span className="task-meta-icon"><SubtaskCountIcon /></span>
                             {completedSubtasks}/{totalSubtasks}
+                        </span>
+                    )}
+                    {commentCount > 0 && (
+                        <span className="task-meta-chip comment-chip">
+                            <span className="task-meta-icon"><CommentBubbleIcon /></span>
+                            {commentCount}
                         </span>
                     )}
                     {dueLabel && (

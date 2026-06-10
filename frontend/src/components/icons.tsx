@@ -163,3 +163,20 @@ export const HashIcon = () => (
         <path d="M8.5 1L7.2 5h2.3l-.4 1.5H6.8L5.8 9h2.3l-.4 1.5H2.5l.4-1.5h2.3L5.2 6.5H3l.4-1.5h2.3L6.7 1h2.8z" />
     </svg>
 );
+
+export const SubtaskCountIcon = () => (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+        <path d="M2 2.5h5v1.5H2V2.5zm0 3h5v1.5H2V5.5zm0 3h5V10H2V8.5z" />
+        <path d="M8.5 4.5 11 7l-2.5 2.5" stroke="currentColor" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
+export const CommentBubbleIcon = () => (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+        <path
+            fillRule="evenodd"
+            d="M2 2.5A1.5 1.5 0 013.5 1h5A1.5 1.5 0 0110 2.5v4A1.5 1.5 0 018.5 8H5.6L3.2 10.1a.5.5 0 01-.82-.4V8H3.5A1.5 1.5 0 012 6.5v-4z"
+            clipRule="evenodd"
+        />
+    </svg>
+);

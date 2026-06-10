@@ -18,7 +18,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
     @Override
-    public List<LabelListResponse> searchKeyword(String name, String email) {
+    public List<LabelListResponse> searchKeyword(String name, Long memberId) {
         return queryFactory
                 .select(Projections.fields(
                         LabelListResponse.class,
@@ -29,7 +29,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
                 ))
                 .from(label)
                 .where(
-                        label.member.email.eq(email),
+                        label.member.id.eq(memberId),
                         label.name.contains(name)
                 )
                 .limit(5)

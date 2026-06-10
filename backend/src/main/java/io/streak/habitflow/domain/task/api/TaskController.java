@@ -10,13 +10,13 @@ import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
+import io.streak.habitflow.global.security.dto.UserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,75 +30,74 @@ public class TaskController {
     private final CommentService commentService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<TaskResponse> createTask(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<TaskResponse> createTask(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                            @RequestPart(value = "file", required = false) MultipartFile file,
                                            @RequestPart("taskRequest") @Valid TaskCreateRequest taskCreateRequest){
-        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(taskCreateRequest, file, userDetails));
+        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(taskCreateRequest, file, userPrincipal.getMemberId()));
     }
 
     @GetMapping("/{taskId}")
     public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long taskId,
-                                                    @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(taskService.getTaskById(taskId,userDetails));
+                                                    @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        return ResponseEntity.ok(taskService.getTaskById(taskId,userPrincipal.getMemberId()));
     }
 
     @GetMapping("/inbox")
-    public ResponseEntity<ScrollResponse<TaskListResponse>> getInboxTasks(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<ScrollResponse<TaskListResponse>> getInboxTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                                           @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
         taskSearchCondition.setTaskFilterType(TaskFilterType.INBOX);
         taskSearchCondition.setLastTaskId(lastTaskId);
-        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));
+        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition, userPrincipal.getMemberId()));
     }
 
     @GetMapping("/today")
-    public ResponseEntity<ScrollResponse<TaskListResponse>> getTodayTasks(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<ScrollResponse<TaskListResponse>> getTodayTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                                           @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
         taskSearchCondition.setTaskFilterType(TaskFilterType.TODAY);
         taskSearchCondition.setLastTaskId(lastTaskId);
-        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));
+        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userPrincipal.getMemberId()));
     }
 
     @GetMapping("/upcoming")
-    public ResponseEntity<ScrollResponse<TaskListResponse>> getUpcomingTasks(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<ScrollResponse<TaskListResponse>> getUpcomingTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                                              @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
         taskSearchCondition.setLastTaskId(lastTaskId);
 
-        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));
+        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userPrincipal.getMemberId()));
     }
 
     @PutMapping("/{taskId}")
     public ResponseEntity<TaskResponse> updateTask(@PathVariable Long taskId,
                                                    @RequestBody TaskUpdateRequest taskUpdateRequest,
-                                                   @AuthenticationPrincipal UserDetails userDetails) {
-        TaskResponse taskResponse = taskService.updateTask(taskId, taskUpdateRequest,userDetails);
+                                                   @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        TaskResponse taskResponse = taskService.updateTask(taskId, taskUpdateRequest,userPrincipal.getMemberId());
         return ResponseEntity.ok(taskResponse);
     }
 
     @DeleteMapping("/{taskId}")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId, @AuthenticationPrincipal UserDetails userDetails) {
-        taskService.deleteTask(taskId,userDetails);
+    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId, @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        taskService.deleteTask(taskId,userPrincipal.getMemberId());
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{taskId}/comments")
-    public ResponseEntity<List<CommentResponse>> getComments(@AuthenticationPrincipal UserDetails userDetails,
-                                                             @PathVariable Long taskId) {
+    public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long taskId) {
         return ResponseEntity.ok(commentService.getComments(taskId));
     }
 
     @PatchMapping("/{taskId}/toggle")
-    public ResponseEntity<TaskResponse> toggleCompletion(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<TaskResponse> toggleCompletion(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                          @PathVariable Long taskId) {
-        return ResponseEntity.ok(taskService.toggleCompletion(taskId,userDetails));
+        return ResponseEntity.ok(taskService.toggleCompletion(taskId,userPrincipal.getMemberId()));
     }
 
     @GetMapping("/count")
-    public ResponseEntity<Long> getTaskCount(@AuthenticationPrincipal UserDetails userDetails,
+    public ResponseEntity<Long> getTaskCount(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                              @RequestParam(required = false) TaskFilterType taskFilterType) {
-        long totalCount = taskService.getTaskCount(taskFilterType,userDetails.getUsername());
+        long totalCount = taskService.getTaskCount(taskFilterType,userPrincipal.getMemberId());
         return ResponseEntity.ok(totalCount);
     }
 
