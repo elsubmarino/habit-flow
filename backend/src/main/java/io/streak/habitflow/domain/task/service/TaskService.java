@@ -12,7 +12,6 @@ import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.domain.project.service.ProjectService;
 import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
 import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
@@ -51,7 +50,6 @@ public class TaskService {
     private final LabelRepository labelRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final ProjectService projectService;
 
     @Transactional
     @CheckOwnership(type="TASK")
