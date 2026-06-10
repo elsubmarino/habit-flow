@@ -64,7 +64,6 @@ public class TaskController {
     public ResponseEntity<ScrollResponse<TaskListResponse>> getUpcomingTasks(@AuthenticationPrincipal UserDetails userDetails,
                                                                              @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
-        taskSearchCondition.setTaskFilterType(TaskFilterType.UPCOMING);
         taskSearchCondition.setLastTaskId(lastTaskId);
 
         return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userDetails));
