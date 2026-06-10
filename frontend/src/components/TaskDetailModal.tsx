@@ -16,6 +16,7 @@ import {
     type CommentItem,
     type Habit,
 } from '../store/habitSlice';
+import { getApiErrorMessage } from '../api/apiError';
 import { displayLabelName } from '../api/labelMappers';
 import { formatDueLabel } from '../utils/date';
 import CommentListItem from './CommentListItem';
@@ -28,6 +29,11 @@ interface TaskDetailModalProps {
     onClose: () => void;
     onTaskCompleted?: (habit: Habit) => void;
 }
+
+/** 루트 포함 탐색 스택 최대 깊이 (루트 → 하위 4단계) */
+const MAX_SUBTASK_DEPTH = 4;
+/** 부모 작업당 직계 하위 작업 최대 개수 (백엔드와 동일) */
+const MAX_SUBTASKS_PER_PARENT = 4;
 
 const PRIORITY_OPTIONS = [
     { value: 1, icon: '🚩', label: '우선 순위 1' },
@@ -106,6 +112,18 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         () => habit?.subtasks.filter(s => s.completed).length ?? 0,
         [habit?.subtasks],
     );
+    const canAddSubtaskByDepth = stack.length <= MAX_SUBTASK_DEPTH;
+    const canAddSubtaskByCount = (habit?.subtasks.length ?? 0) < MAX_SUBTASKS_PER_PARENT;
+    const canAddSubtask = canAddSubtaskByDepth && canAddSubtaskByCount;
+    const subtaskLimitHint = !canAddSubtaskByDepth
+        ? `하위 작업은 최대 ${MAX_SUBTASK_DEPTH}단계까지만 추가할 수 있습니다.`
+        : `하위 작업은 부모당 최대 ${MAX_SUBTASKS_PER_PARENT}개까지 추가할 수 있습니다.`;
+
+    useEffect(() => {
+        if (!canAddSubtask) {
+            setShowSubtaskForm(false);
+        }
+    }, [canAddSubtask, currentId, stack.length]);
 
     const filteredProjects = useMemo(
         () => projects.filter(p => p.name.toLowerCase().includes(projectQuery.toLowerCase())),
@@ -255,12 +273,29 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
 
     const handleAddSubtask = async () => {
         if (!habit || !subName.trim()) return;
-        await dispatch(addSubtask({
+        if (!canAddSubtaskByDepth) {
+            window.alert(`하위 작업은 최대 ${MAX_SUBTASK_DEPTH}단계까지만 추가할 수 있습니다.`);
+            setShowSubtaskForm(false);
+            return;
+        }
+        if (!canAddSubtaskByCount) {
+            window.alert(`하위 작업은 부모당 최대 ${MAX_SUBTASKS_PER_PARENT}개까지 추가할 수 있습니다.`);
+            setShowSubtaskForm(false);
+            return;
+        }
+
+        const result = await dispatch(addSubtask({
             habitId: habit.id,
             name: subName.trim(),
             description: subDesc.trim(),
             projectId: resolveProjectIdForSubtask(),
         }));
+
+        if (addSubtask.rejected.match(result)) {
+            window.alert(getApiErrorMessage(result.error, '하위 작업을 추가하지 못했습니다.'));
+            return;
+        }
+
         await refreshCurrent();
         setSubName('');
         setSubDesc('');
@@ -537,10 +572,14 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
                                 </div>
                             )}
 
-                            <button type="button" className="subtask-btn" onClick={() => setShowSubtaskForm(v => !v)}>
-                                + 하위 작업 추가
-                            </button>
-                            {showSubtaskForm && (
+                            {canAddSubtask ? (
+                                <button type="button" className="subtask-btn" onClick={() => setShowSubtaskForm(v => !v)}>
+                                    + 하위 작업 추가
+                                </button>
+                            ) : (
+                                <p className="subtask-limit-hint">{subtaskLimitHint}</p>
+                            )}
+                            {showSubtaskForm && canAddSubtask && (
                                 <div className="subtask-form">
                                     <input value={subName} onChange={e => setSubName(e.target.value)} placeholder="작업 이름" />
                                     <input value={subDesc} onChange={e => setSubDesc(e.target.value)} placeholder="설명" />

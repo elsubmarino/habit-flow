@@ -2409,6 +2409,12 @@
   color: var(--todoist-red);
 }
 
+.subtask-limit-hint {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
 .task-comment-box {
   margin: 20px 0;
 }
