@@ -68,16 +68,23 @@ public class CommentService {
     public CommentResponse updateComment(Long commentId, CommentRequest request, Long memberId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 댓글입니다."));
-        if(!comment.getMember().getId().equals(memberId)){
-            throw new IllegalStateException("수정 권한이 없습니다.");
-        }
+        validateOwner(comment,memberId);
 
         comment.updateContent(request.getContent());
         return CommentResponse.from(comment);
     }
 
     @Transactional
-    public void deleteComment(Long commentId){
+    public void deleteComment(Long commentId, Long memberId){
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(()->new IllegalArgumentException("조회된 코멘트가 없습니다."));
+        validateOwner(comment,memberId);
         commentRepository.deleteById(commentId);
+    }
+
+    public void validateOwner(Comment comment, Long memberId){
+        if(!comment.getMember().getId().equals(memberId)){
+            throw new IllegalStateException("해당 코멘트에 대한 접근 권한이 없습니다.");
+        }
     }
 }
