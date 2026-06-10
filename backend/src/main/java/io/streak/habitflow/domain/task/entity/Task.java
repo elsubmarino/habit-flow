@@ -1,6 +1,7 @@
 package io.streak.habitflow.domain.task.entity;
 
 import io.streak.habitflow.domain.comment.entity.Comment;
+import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
@@ -81,8 +82,15 @@ public class Task extends BaseTimeEntity {
         this.taskPriorityType = taskPriorityType;
     }
 
+    public void updateProject(Project project){
+        this.project = project;
+    }
+
     public void updateDueDate(LocalDateTime dueDate){
         this.dueDate = dueDate;
+    }
+    public void updateTaskLabels(List<TaskLabel> taskLabels){
+        this.taskLabels = taskLabels;
     }
 
     public void changeProject(Project project){

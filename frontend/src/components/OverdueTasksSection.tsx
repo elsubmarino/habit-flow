@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAppDispatch } from '../store/hooks';
-import { updateHabit } from '../store/habitSlice';
+import { patchTaskDueDate } from '../store/habitSlice';
 import type { Habit } from '../store/habitSlice';
 import { rescheduleHabitToToday } from '../utils/overdueTasks';
 import HabitItem, { type TaskRowLayout } from './HabitItem';
@@ -34,9 +34,9 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
         try {
             await Promise.all(
                 habits.map(habit =>
-                    dispatch(updateHabit({
+                    dispatch(patchTaskDueDate({
                         habitId: habit.id,
-                        changes: { dueDate: rescheduleHabitToToday(habit) },
+                        dueDate: rescheduleHabitToToday(habit),
                     })).unwrap(),
                 ),
             );

@@ -121,11 +121,35 @@ export async function updateTask(taskId: number, payload: UpdateTaskPayload): Pr
     const body: Record<string, unknown> = {};
     if (payload.name !== undefined) body.name = payload.name;
     if (payload.description !== undefined) body.description = payload.description;
-    if (payload.dueDate !== undefined) body.dueDate = dueDateToApi(payload.dueDate);
-    if (payload.priorityType !== undefined) body.priorityType = payload.priorityType;
-    if (payload.projectId !== undefined) body.projectId = payload.projectId;
-    if (payload.labelIds !== undefined) body.labelIds = payload.labelIds;
     const { data } = await apiClient.put<TaskDto>(`/api/tasks/${taskId}`, body);
+    return data;
+}
+
+export async function patchTaskDueDate(taskId: number, dueDate: string | null): Promise<TaskDto> {
+    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/due-date`, {
+        dueDate: dueDate == null ? null : dueDateToApi(dueDate),
+    });
+    return data;
+}
+
+export async function patchTaskPriority(taskId: number, priorityType: PriorityType): Promise<TaskDto> {
+    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/priority`, {
+        taskPriorityType: priorityType,
+    });
+    return data;
+}
+
+export async function patchTaskLabels(taskId: number, labelIds: number[]): Promise<TaskDto> {
+    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/labels`, {
+        labelIds,
+    });
+    return data;
+}
+
+export async function patchTaskProject(taskId: number, projectId: number | null): Promise<TaskDto> {
+    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/project`, {
+        projectId,
+    });
     return data;
 }
 

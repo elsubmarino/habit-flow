@@ -13,8 +13,10 @@ import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
+import io.streak.habitflow.domain.project.service.ProjectService;
 import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
 import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
+import io.streak.habitflow.domain.task.dto.request.TaskUpdateProjectRequest;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
@@ -24,6 +26,7 @@ import io.streak.habitflow.domain.task.event.TaskCompletedEvent;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
+import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
 import io.streak.habitflow.global.infra.file.FileDto;
@@ -34,6 +37,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +53,7 @@ public class TaskService {
     private final LabelRepository labelRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final ProjectService projectService;
 
     @Transactional
     @CheckOwnership(type="TASK")
@@ -274,6 +279,77 @@ public class TaskService {
 
     public long getTaskCount(TaskFilterType taskFilterType, Long memberId){
         return taskRepository.countTasksByCondition(taskFilterType, memberId);
+    }
+
+    @Transactional
+    public TaskResponse updateTaskDueDate(Long taskId, LocalDateTime dueDate, Long memberId){
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow();
+        validateOwner(task, memberId);
+        task.updateDueDate(dueDate);
+        List<LabelListResponse> labelListResponses = task.getTaskLabels()
+                .stream()
+                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
+                .toList();
+        return TaskResponse.from(task,labelListResponses);
+    }
+
+    @Transactional
+    public TaskResponse updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow();
+        validateOwner(task, memberId);
+        task.updatePriorityType(taskPriorityType);
+        List<LabelListResponse> labelListResponses = task.getTaskLabels()
+                .stream()
+                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
+                .toList();
+        return TaskResponse.from(task,labelListResponses);
+    }
+
+    @Transactional
+    public TaskResponse updateTaskLabels(Long taskId, List<Long> labelIds, Long memberId){
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow();
+        validateOwner(task, memberId);
+
+        if(labelIds == null || labelIds.isEmpty()){
+            task.getSubTasks().clear();
+            return TaskResponse.from(task,new ArrayList<>());
+        }
+
+        List<Label> realLabels  =labelRepository.findAllById(labelIds);
+
+        if(realLabels.size() != labelIds.size()){
+            throw new IllegalArgumentException("존재하지 않는 라벨이 포함되어 있습니다.");
+        }
+
+        task.getTaskLabels().clear();
+
+        realLabels.forEach(label->task.addTaskLabel(TaskLabel.builder().label(label).build()));
+
+        List<LabelListResponse> labelListResponses = task.getTaskLabels()
+                .stream()
+                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
+                .toList();
+        return TaskResponse.from(task,labelListResponses);
+    }
+
+    @Transactional
+    public TaskResponse updateProject(Long taskId, Long projectId, Long memberId){
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow();
+        Project project = projectRepository.findById(projectId)
+                        .orElseThrow();
+        Member member = memberRepository.getReferenceById(memberId);
+        projectService.validateOwner(project,member);
+        validateOwner(task, memberId);
+        task.updateProject(project);
+        List<LabelListResponse> labelListResponses = task.getTaskLabels()
+                .stream()
+                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
+                .toList();
+        return TaskResponse.from(task,labelListResponses);
     }
 
 }

@@ -2511,6 +2511,41 @@
   outline: none;
 }
 
+.detail-menu-labels {
+  padding-bottom: 4px;
+}
+
+.detail-menu-label-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.detail-menu-label-option:hover {
+  background: #f5f5f5;
+}
+
+.detail-menu-label-option input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.detail-menu-empty {
+  margin: 0;
+  padding: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.detail-saving {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .task-edit-box {
   border: 1px solid #ddd;
   border-radius: 10px;

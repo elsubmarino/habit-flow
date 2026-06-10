@@ -2,9 +2,7 @@ package io.streak.habitflow.domain.task.api;
 
 import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.comment.service.CommentService;
-import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
-import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
-import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
+import io.streak.habitflow.domain.task.dto.request.*;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
@@ -74,6 +72,38 @@ public class TaskController {
                                                    @RequestBody TaskUpdateRequest taskUpdateRequest,
                                                    @AuthenticationPrincipal UserPrincipal userPrincipal) {
         TaskResponse taskResponse = taskService.updateTask(taskId, taskUpdateRequest,userPrincipal.getMemberId());
+        return ResponseEntity.ok(taskResponse);
+    }
+
+    @PatchMapping("/{taskId}/due-date")
+    public ResponseEntity<TaskResponse> updateTaskDueDate(@PathVariable Long taskId,
+                                                          @RequestBody TaskUpdateDueDateRequest taskUpdateDueDateRequest,
+                                                          @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        TaskResponse taskResponse = taskService.updateTaskDueDate(taskId, taskUpdateDueDateRequest.getDueDate(), userPrincipal.getMemberId());
+        return ResponseEntity.ok(taskResponse);
+    }
+
+    @PatchMapping("/{taskId}/priority")
+    public ResponseEntity<TaskResponse> updatePriority(@PathVariable Long taskId,
+                                                          @RequestBody TaskUpdatePriorityRequest taskUpdatePriorityRequest,
+                                                          @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        TaskResponse taskResponse = taskService.updatePriority(taskId, taskUpdatePriorityRequest.getTaskPriorityType(), userPrincipal.getMemberId());
+        return ResponseEntity.ok(taskResponse);
+    }
+
+    @PatchMapping("/{taskId}/labels")
+    public ResponseEntity<TaskResponse> updateLabels(@PathVariable Long taskId,
+                                                       @RequestBody TaskUpdateLabelRequest taskUpdateLabelRequest,
+                                                       @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        TaskResponse taskResponse = taskService.updateTaskLabels(taskId, taskUpdateLabelRequest.getLabelIds(), userPrincipal.getMemberId());
+        return ResponseEntity.ok(taskResponse);
+    }
+
+    @PatchMapping("/{taskId}/project")
+    public ResponseEntity<TaskResponse> updateProject(@PathVariable Long taskId,
+                                                      @RequestBody TaskUpdateProjectRequest taskUpdateProjectRequest,
+                                                      @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        TaskResponse taskResponse = taskService.updateProject(taskId, taskUpdateProjectRequest.getProjectId(), userPrincipal.getMemberId());
         return ResponseEntity.ok(taskResponse);
     }
 

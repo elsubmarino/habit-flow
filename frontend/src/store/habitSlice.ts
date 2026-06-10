@@ -412,11 +412,39 @@ export const updateHabit = createAsyncThunk(
         const task = await taskApi.updateTask(habitId, {
             name: changes.name,
             description: changes.description,
-            dueDate: changes.dueDate,
-            priorityType: changes.priority != null ? priorityToApi(changes.priority) : undefined,
-            projectId: changes.projectId,
-            labelIds: changes.labels?.map(l => l.id),
         });
+        return mapTaskToHabit(task);
+    },
+);
+
+export const patchTaskProject = createAsyncThunk(
+    'habits/patchProject',
+    async ({ habitId, projectId }: { habitId: number; projectId: number | null }) => {
+        const task = await taskApi.patchTaskProject(habitId, projectId);
+        return mapTaskToHabit(task);
+    },
+);
+
+export const patchTaskDueDate = createAsyncThunk(
+    'habits/patchDueDate',
+    async ({ habitId, dueDate }: { habitId: number; dueDate: string | null }) => {
+        const task = await taskApi.patchTaskDueDate(habitId, dueDate);
+        return mapTaskToHabit(task);
+    },
+);
+
+export const patchTaskPriority = createAsyncThunk(
+    'habits/patchPriority',
+    async ({ habitId, priority }: { habitId: number; priority: 1 | 2 | 3 | 4 }) => {
+        const task = await taskApi.patchTaskPriority(habitId, priorityToApi(priority));
+        return mapTaskToHabit(task);
+    },
+);
+
+export const patchTaskLabels = createAsyncThunk(
+    'habits/patchLabels',
+    async ({ habitId, labelIds }: { habitId: number; labelIds: number[] }) => {
+        const task = await taskApi.patchTaskLabels(habitId, labelIds);
         return mapTaskToHabit(task);
     },
 );
@@ -668,6 +696,22 @@ const habitSlice = createSlice({
                 state.error = action.error.message ?? '완료 처리에 실패했습니다.';
             })
             .addCase(updateHabit.fulfilled, (state, action) => {
+                const index = state.list.findIndex(h => h.id === action.payload.id);
+                if (index !== -1) state.list[index] = action.payload;
+            })
+            .addCase(patchTaskDueDate.fulfilled, (state, action) => {
+                const index = state.list.findIndex(h => h.id === action.payload.id);
+                if (index !== -1) state.list[index] = action.payload;
+            })
+            .addCase(patchTaskPriority.fulfilled, (state, action) => {
+                const index = state.list.findIndex(h => h.id === action.payload.id);
+                if (index !== -1) state.list[index] = action.payload;
+            })
+            .addCase(patchTaskLabels.fulfilled, (state, action) => {
+                const index = state.list.findIndex(h => h.id === action.payload.id);
+                if (index !== -1) state.list[index] = action.payload;
+            })
+            .addCase(patchTaskProject.fulfilled, (state, action) => {
                 const index = state.list.findIndex(h => h.id === action.payload.id);
                 if (index !== -1) state.list[index] = action.payload;
             })

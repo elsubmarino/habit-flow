@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { mapCommentDtos, mapTaskToHabit } from '../api/mappers';
 import * as commentApi from '../api/commentApi';
 import * as taskApi from '../api/taskApi';
@@ -7,6 +7,10 @@ import {
     addComment,
     addSubtask,
     checkHabit,
+    patchTaskDueDate,
+    patchTaskLabels,
+    patchTaskPriority,
+    patchTaskProject,
     toggleSubtask,
     updateHabit,
     type CommentItem,
@@ -57,6 +61,9 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     const [savingSubtask, setSavingSubtask] = useState(false);
     const [comments, setComments] = useState<CommentItem[]>([]);
     const [recurrence, setRecurrence] = useState<string | null>(null);
+    const [draftLabelIds, setDraftLabelIds] = useState<number[]>([]);
+    const [savingLabels, setSavingLabels] = useState(false);
+    const labelMenuRef = useRef<HTMLDivElement>(null);
 
     const currentId = stack[stack.length - 1];
     const habit = tasks[currentId];
@@ -108,6 +115,10 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         () => labels.filter(l => l.name.toLowerCase().includes(labelQuery.toLowerCase())),
         [labels, labelQuery],
     );
+
+    const applyLocalHabit = useCallback((mapped: Habit) => {
+        setTasks(prev => ({ ...prev, [currentId]: mapped }));
+    }, [currentId]);
 
     const refreshCurrent = async () => {
         const task = await taskApi.fetchTaskById(currentId);
@@ -285,16 +296,102 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     const handleDatePickerChange = (change: DatePickerChange) => {
         if (!habit) return;
         setRecurrence(change.repeat ?? null);
-        void dispatch(updateHabit({
+        void dispatch(patchTaskDueDate({
             habitId: habit.id,
-            changes: {
-                dueDate: change.date,
-                dueTime: change.time ?? null,
-            },
-        })).then(refreshCurrent);
+            dueDate: change.date,
+        })).then(result => {
+            if (patchTaskDueDate.fulfilled.match(result)) {
+                applyLocalHabit(result.payload);
+            }
+        });
     };
 
+    const handlePriorityChange = (priority: 1 | 2 | 3 | 4) => {
+        if (!habit) return;
+        void dispatch(patchTaskPriority({ habitId: habit.id, priority })).then(result => {
+            if (patchTaskPriority.fulfilled.match(result)) {
+                applyLocalHabit(result.payload);
+            }
+        });
+    };
+
+    const handleProjectChange = (projectId: number | null) => {
+        if (!habit) return;
+        void dispatch(patchTaskProject({ habitId: habit.id, projectId })).then(result => {
+            if (patchTaskProject.fulfilled.match(result)) {
+                applyLocalHabit(result.payload);
+            } else {
+                window.alert('프로젝트를 변경하지 못했습니다.');
+            }
+            setActiveMenu(null);
+        });
+    };
+
+    const openLabelMenu = () => {
+        if (!habit) return;
+        setDraftLabelIds(habit.labels.map(l => l.id));
+        setLabelQuery('');
+        setActiveMenu('label');
+    };
+
+    const commitLabelSelection = useCallback(async () => {
+        if (!habit) return;
+
+        const savedIds = habit.labels.map(l => l.id).sort((a, b) => a - b);
+        const draftSorted = [...draftLabelIds].sort((a, b) => a - b);
+        const unchanged = savedIds.length === draftSorted.length
+            && savedIds.every((id, index) => id === draftSorted[index]);
+
+        if (unchanged) return;
+
+        setSavingLabels(true);
+        try {
+            const result = await dispatch(patchTaskLabels({
+                habitId: habit.id,
+                labelIds: draftLabelIds,
+            }));
+            if (patchTaskLabels.fulfilled.match(result)) {
+                applyLocalHabit(result.payload);
+            } else {
+                window.alert('라벨을 저장하지 못했습니다.');
+            }
+        } finally {
+            setSavingLabels(false);
+        }
+    }, [applyLocalHabit, dispatch, draftLabelIds, habit]);
+
+    const closeLabelMenu = useCallback(async () => {
+        await commitLabelSelection();
+        setActiveMenu(null);
+    }, [commitLabelSelection]);
+
+    const toggleDraftLabel = (labelId: number) => {
+        setDraftLabelIds(prev =>
+            prev.includes(labelId) ? prev.filter(id => id !== labelId) : [...prev, labelId],
+        );
+    };
+
+    useEffect(() => {
+        if (activeMenu !== 'label') return;
+
+        const handlePointerDown = (event: MouseEvent) => {
+            if (!labelMenuRef.current?.contains(event.target as Node)) {
+                void closeLabelMenu();
+            }
+        };
+
+        document.addEventListener('mousedown', handlePointerDown);
+        return () => document.removeEventListener('mousedown', handlePointerDown);
+    }, [activeMenu, closeLabelMenu]);
+
     const projectText = habit?.projectName ?? '관리함';
+    const visibleLabels = useMemo(() => {
+        if (!habit) return [];
+        if (activeMenu === 'label') {
+            return labels.filter(l => draftLabelIds.includes(l.id));
+        }
+        return habit.labels;
+    }, [activeMenu, draftLabelIds, habit, labels]);
     const dateText = habit?.dueDate
         ? `${formatDueLabel(habit.dueDate)}${habit.dueTime ? ` ${habit.dueTime}` : ''}${recurrence ? ` · ${recurrence}` : ''}`
         : null;
@@ -498,9 +595,9 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
                                 {activeMenu === 'project' && (
                                     <div className="detail-menu">
                                         <input className="detail-menu-search" placeholder="프로젝트 이름 입력" value={projectQuery} onChange={e => setProjectQuery(e.target.value)} onClick={e => e.stopPropagation()} />
-                                        <button type="button" onClick={() => void dispatch(updateHabit({ habitId: habit.id, changes: { projectId: null, projectName: null, projectColor: null } })).then(refreshCurrent)}>관리함</button>
+                                        <button type="button" onClick={() => handleProjectChange(null)}>관리함</button>
                                         {filteredProjects.map(project => (
-                                            <button key={project.id} type="button" onClick={() => void dispatch(updateHabit({ habitId: habit.id, changes: { projectId: project.id, projectName: project.name, projectColor: project.color } })).then(refreshCurrent)}>
+                                            <button key={project.id} type="button" onClick={() => handleProjectChange(project.id)}>
                                                 {project.name}
                                             </button>
                                         ))}
@@ -537,7 +634,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
                                 {activeMenu === 'priority' && (
                                     <div className="detail-menu">
                                         {PRIORITY_OPTIONS.map(p => (
-                                            <button key={p.value} type="button" onClick={() => void dispatch(updateHabit({ habitId: habit.id, changes: { priority: p.value } })).then(refreshCurrent)}>
+                                            <button key={p.value} type="button" onClick={() => handlePriorityChange(p.value)}>
                                                 {p.icon} {p.label}{habit.priority === p.value ? ' ✓' : ''}
                                             </button>
                                         ))}
@@ -545,27 +642,45 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
                                 )}
                             </div>
 
-                            <div className="detail-row interactive" onClick={() => setActiveMenu(m => m === 'label' ? null : 'label')}>
+                            <div
+                                ref={labelMenuRef}
+                                className="detail-row interactive"
+                                onClick={() => {
+                                    if (activeMenu === 'label') {
+                                        void closeLabelMenu();
+                                    } else {
+                                        openLabelMenu();
+                                    }
+                                }}
+                            >
                                 <p className="detail-label">라벨</p>
                                 <p className="detail-value">
-                                    {habit.labels.length > 0
-                                        ? habit.labels.map(l => displayLabelName(l.name)).join(', ')
+                                    {visibleLabels.length > 0
+                                        ? visibleLabels.map(l => displayLabelName(l.name)).join(', ')
                                         : <span className="detail-add">+</span>}
+                                    {savingLabels && <span className="detail-saving"> 저장 중…</span>}
                                 </p>
                                 {activeMenu === 'label' && (
-                                    <div className="detail-menu">
-                                        <input className="detail-menu-search" placeholder="라벨 입력" value={labelQuery} onChange={e => setLabelQuery(e.target.value)} onClick={e => e.stopPropagation()} />
-                                        {filteredLabels.map(label => {
-                                            const selected = habit.labels.some(l => l.id === label.id);
-                                            return (
-                                                <button key={label.id} type="button" onClick={() => {
-                                                    const next = selected ? habit.labels.filter(l => l.id !== label.id) : [...habit.labels, label];
-                                                    void dispatch(updateHabit({ habitId: habit.id, changes: { labels: next } })).then(refreshCurrent);
-                                                }}>
-                                                    {selected ? '✓ ' : ''}{displayLabelName(label.name)}
-                                                </button>
-                                            );
-                                        })}
+                                    <div className="detail-menu detail-menu-labels" onClick={e => e.stopPropagation()}>
+                                        <input
+                                            className="detail-menu-search"
+                                            placeholder="라벨 입력"
+                                            value={labelQuery}
+                                            onChange={e => setLabelQuery(e.target.value)}
+                                        />
+                                        {filteredLabels.map(label => (
+                                            <label key={label.id} className="detail-menu-label-option">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={draftLabelIds.includes(label.id)}
+                                                    onChange={() => toggleDraftLabel(label.id)}
+                                                />
+                                                <span>{displayLabelName(label.name)}</span>
+                                            </label>
+                                        ))}
+                                        {filteredLabels.length === 0 && (
+                                            <p className="detail-menu-empty">일치하는 라벨이 없습니다.</p>
+                                        )}
                                     </div>
                                 )}
                             </div>
