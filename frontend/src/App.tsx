@@ -34,6 +34,7 @@ import EditProjectModal from './components/EditProjectModal';
 import ProjectShareModal from './components/ProjectShareModal';
 import ProjectsBrowseView from './components/ProjectsBrowseView';
 import UpcomingTaskList from './components/UpcomingTaskList';
+import OverdueTasksSection from './components/OverdueTasksSection';
 import TaskDetailModal from './components/TaskDetailModal';
 import TaskCompleteToast from './components/TaskCompleteToast';
 import { useTaskCompleteToast } from './hooks/useTaskCompleteToast';
@@ -55,7 +56,8 @@ import { clearHabitError } from './store/habitSlice';
 import { useAppUrlSync } from './hooks/useAppUrlSync';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll';
 import { parseAppPath } from './utils/appRoutes';
-import { formatSectionDate, formatTodayHeader } from './utils/date';
+import { formatSectionDate, formatTodayHeader, formatUpcomingSectionTitle, toISODate } from './utils/date';
+import { splitOverdueTasks } from './utils/overdueTasks';
 import {
     filterHabits,
     groupHabits,
@@ -383,6 +385,10 @@ function App() {
 
     const pending = useMemo(() => displayHabits.filter(h => !h.completedToday), [displayHabits]);
     const completedToday = useMemo(() => displayHabits.filter(h => h.completedToday), [displayHabits]);
+    const { overdue: overduePending, rest: todayPending } = useMemo(
+        () => splitOverdueTasks(pending),
+        [pending],
+    );
 
     const meta = selectedLabelId
         ? {
@@ -485,7 +491,26 @@ function App() {
         if (showTodaySections && viewPrefs.grouping === 'none') {
             return (
                 <>
-                    {pending.length > 0 && renderTaskList(pending)}
+                    {overduePending.length > 0 && (
+                        <OverdueTasksSection
+                            habits={overduePending}
+                            layout="list"
+                            onOpenDetails={setSelectedHabitId}
+                            onOpenProject={handleProjectSelect}
+                            onTaskCompleted={handleTaskCompleted}
+                            onTaskDeleted={handleTaskDeleted}
+                        />
+                    )}
+                    {todayPending.length > 0 && (
+                        <>
+                            {overduePending.length > 0 && (
+                                <h2 className="section-label today-date-title">
+                                    {formatUpcomingSectionTitle(toISODate(new Date()))}
+                                </h2>
+                            )}
+                            {renderTaskList(todayPending)}
+                        </>
+                    )}
                     {completedToday.length > 0 && (
                         <>
                             <h2 className="section-label completed-label">

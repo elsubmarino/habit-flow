@@ -7,8 +7,10 @@ import {
     startOfWeekMonday,
     toISODate,
 } from '../utils/date';
+import { splitOverdueTasks } from '../utils/overdueTasks';
 import HabitItem from './HabitItem';
 import InlineAddTaskButton from './InlineAddTaskButton';
+import OverdueTasksSection from './OverdueTasksSection';
 
 interface UpcomingTaskListProps {
     habits: Habit[];
@@ -57,9 +59,19 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
     const weekDays = useMemo(() => getWeekStrip(weekStart, 7), [weekStart]);
     const todayIso = toISODate(new Date());
 
+    const activeHabits = useMemo(
+        () => habits.filter(h => !h.completedToday),
+        [habits],
+    );
+
+    const { overdue: overdueHabits, rest: upcomingHabits } = useMemo(
+        () => splitOverdueTasks(activeHabits),
+        [activeHabits],
+    );
+
     const grouped = useMemo(() => {
         const map = new Map<string, Habit[]>();
-        const sorted = [...habits].sort((a, b) => {
+        const sorted = [...upcomingHabits].sort((a, b) => {
             const ad = a.dueDate ?? '9999-12-31';
             const bd = b.dueDate ?? '9999-12-31';
             return ad.localeCompare(bd);
@@ -70,7 +82,7 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
             map.get(key)!.push(habit);
         }
         return map;
-    }, [habits]);
+    }, [upcomingHabits]);
 
     const groupedKeys = useMemo(
         () => Array.from(grouped.keys()).filter(k => k !== 'none').sort(),
@@ -227,6 +239,17 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                 ))}
             </div>
 
+            {overdueHabits.length > 0 && (
+                <OverdueTasksSection
+                    habits={overdueHabits}
+                    layout="upcoming"
+                    onOpenDetails={onOpenDetails}
+                    onOpenProject={onOpenProject}
+                    onTaskCompleted={onTaskCompleted}
+                    onTaskDeleted={onTaskDeleted}
+                />
+            )}
+
             {Array.from(grouped.entries()).map(([dateKey, list]) => (
                 <section
                     key={dateKey}
@@ -254,7 +277,9 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                 </section>
             ))}
 
-            {grouped.size === 0 && onAddTask && <InlineAddTaskButton onClick={onAddTask} />}
+            {grouped.size === 0 && overdueHabits.length === 0 && onAddTask && (
+                <InlineAddTaskButton onClick={onAddTask} />
+            )}
         </div>
     );
 };

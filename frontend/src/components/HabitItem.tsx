@@ -4,6 +4,7 @@ import { checkHabit, deleteHabit } from '../store/habitSlice';
 import type { Habit } from '../store/habitSlice';
 import { displayLabelName } from '../api/labelMappers';
 import { formatDueLabel, toISODate } from '../utils/date';
+import { formatOverdueDueLabel, isOverdueHabit } from '../utils/overdueTasks';
 import { HashIcon } from './icons';
 
 export type TaskRowLayout = 'list' | 'project' | 'upcoming';
@@ -11,6 +12,7 @@ export type TaskRowLayout = 'list' | 'project' | 'upcoming';
 interface HabitItemProps {
     habit: Habit;
     layout?: TaskRowLayout;
+    variant?: 'default' | 'overdue';
     onOpenDetails?: (habitId: number) => void;
     onOpenProject?: (projectId: number) => void;
     onTaskCompleted?: (habit: Habit) => void;
@@ -27,6 +29,7 @@ const PRIORITY_BORDER: Record<1 | 2 | 3 | 4, string> = {
 const HabitItem: React.FC<HabitItemProps> = ({
     habit,
     layout = 'list',
+    variant = 'default',
     onOpenDetails,
     onOpenProject,
     onTaskCompleted,
@@ -80,6 +83,15 @@ const HabitItem: React.FC<HabitItemProps> = ({
     const totalSubtasks = habit.subtasks.length;
     const projectLabel = habit.projectName ?? '관리함';
     const showProjectAside = layout !== 'project';
+    const overdue = variant === 'overdue' || isOverdueHabit(habit);
+    const dueChipClass = overdue
+        ? 'overdue'
+        : habit.dueDate === toISODate(new Date()) ? 'today' : '';
+    const dueLabel = habit.dueDate
+        ? overdue
+            ? formatOverdueDueLabel(habit)
+            : habit.dueTime ?? formatDueLabel(habit.dueDate)
+        : null;
 
     return (
         <li
@@ -145,10 +157,10 @@ const HabitItem: React.FC<HabitItemProps> = ({
                             {completedSubtasks}/{totalSubtasks}
                         </span>
                     )}
-                    {habit.dueDate && (
-                        <span className={`task-meta-chip due-chip ${habit.dueDate === toISODate(new Date()) ? 'today' : ''}`}>
-                            {habit.dueTime && <span className="task-meta-icon">🕐</span>}
-                            {habit.dueTime ?? formatDueLabel(habit.dueDate)}
+                    {dueLabel && (
+                        <span className={`task-meta-chip due-chip ${dueChipClass}`.trim()}>
+                            {habit.dueTime && !overdue && <span className="task-meta-icon">🕐</span>}
+                            {dueLabel}
                         </span>
                     )}
                     {layout === 'project' && habit.labels.map(label => (

@@ -1150,6 +1150,66 @@
   color: #299438;
 }
 
+.task-meta-chip.due-chip.overdue {
+  color: var(--todoist-red);
+}
+
+.overdue-section {
+  margin-bottom: 20px;
+}
+
+.overdue-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.overdue-section-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.overdue-section-chevron {
+  display: inline-flex;
+  align-items: center;
+  transition: transform 0.15s ease;
+}
+
+.overdue-section-toggle.collapsed .overdue-section-chevron {
+  transform: rotate(-90deg);
+}
+
+.overdue-reschedule-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--todoist-red);
+  cursor: pointer;
+}
+
+.overdue-reschedule-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.section-label.today-date-title {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
 .task-desc-inline {
   margin: 2px 0 4px;
   font-size: 13px;

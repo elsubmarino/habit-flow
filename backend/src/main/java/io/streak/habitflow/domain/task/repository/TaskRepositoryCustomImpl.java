@@ -97,7 +97,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         if(TaskFilterType.TODAY == taskFilterType){
             return task.dueDate.loe(now.toLocalDate().atTime(23,59,59));
         }else if(TaskFilterType.UPCOMING == taskFilterType){
-            return task.dueDate.goe(now.toLocalDate().atStartOfDay());
+            return null;
         }else if(TaskFilterType.INBOX == taskFilterType){
             return task.project.isNull();
         }
