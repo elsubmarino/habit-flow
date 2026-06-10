@@ -70,6 +70,10 @@ public class TaskService {
         if(taskCreateRequest.getParentId() != null){
             parentTask = taskRepository.findById(taskCreateRequest.getParentId())
                     .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 테스크입니다."));
+
+            if(parentTask.getSubTasks().size() >= 4){
+                throw new IllegalStateException("하위 테스크는 최대 4개 까지만 생성할 수 있습니다.");
+            }
         }
 
         Project project = null;
