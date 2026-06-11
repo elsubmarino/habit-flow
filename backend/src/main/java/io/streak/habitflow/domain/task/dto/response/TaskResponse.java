@@ -5,10 +5,7 @@ import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
 import io.streak.habitflow.domain.task.entity.TaskInstance;
 import io.streak.habitflow.domain.task.entity.TaskMaster;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -47,7 +44,7 @@ public record TaskResponse(
             comments = new ArrayList<>();
         }
     }
-    public static TaskResponse from(TaskMaster taskMaster, TaskInstance taskInstance, List<LabelListResponse> labelListResponses) {
+    public static TaskResponse of(TaskMaster taskMaster, TaskInstance taskInstance, List<LabelListResponse> labelListResponses) {
         TaskResponseBuilder builder = TaskResponse.builder()
                 .id(taskMaster.getId())
                 .name(taskMaster.getName())

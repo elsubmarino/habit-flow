@@ -51,7 +51,7 @@ public class LabelService {
                     savedLabel.getId()
             ).orElseGet(()->favoriteRepository.save(favorite));
         }
-        return LabelResponse.from(savedLabel, labelCreateRequest.isFavorite());
+        return LabelResponse.of(savedLabel, labelCreateRequest.isFavorite());
     }
 
     public LabelResponse getLabelById(Long labelId, Long memberId) {
@@ -63,7 +63,7 @@ public class LabelService {
         if(favorite.isPresent()){
             isFavorite = true;
         }
-        return LabelResponse.from(label,isFavorite);
+        return LabelResponse.of(label,isFavorite);
     }
 
     @Transactional
@@ -94,7 +94,7 @@ public class LabelService {
 
         label.updateLabel(labelUpdateRequest.getName(),
                 labelUpdateRequest.getColor());
-        return LabelResponse.from(label, labelUpdateRequest.isFavorite());
+        return LabelResponse.of(label, labelUpdateRequest.isFavorite());
     }
 
     public ScrollResponse<LabelListResponse> getLabels(Long labelId, Long memberId, Pageable pageable) {

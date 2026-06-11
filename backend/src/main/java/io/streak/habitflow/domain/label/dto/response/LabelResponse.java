@@ -11,7 +11,7 @@ public record LabelResponse(
         boolean favorite,
         String color
 ) {
-    public static LabelResponse from(Label label,boolean favorite){
+    public static LabelResponse of(Label label, boolean favorite){
         return LabelResponse.builder()
                 .id(label.getId())
                 .name(label.getName())

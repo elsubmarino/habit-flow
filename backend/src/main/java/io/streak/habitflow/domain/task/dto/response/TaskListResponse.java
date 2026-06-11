@@ -3,10 +3,7 @@ package io.streak.habitflow.domain.task.dto.response;
 import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
 import io.streak.habitflow.domain.task.entity.TaskMaster;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -32,7 +29,7 @@ public record TaskListResponse(
             labels = new ArrayList<>();
         }
     }
-    public static TaskListResponse from(TaskMaster taskMaster, List<LabelListResponse> labelListResponses) {
+    public static TaskListResponse of(TaskMaster taskMaster, List<LabelListResponse> labelListResponses) {
         TaskListResponse.TaskListResponseBuilder builder = TaskListResponse.builder()
                 .id(taskMaster.getId())
                 .name(taskMaster.getName())

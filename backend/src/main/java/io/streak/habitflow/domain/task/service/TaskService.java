@@ -181,7 +181,7 @@ public class TaskService {
                 })
                 .toList();
 
-        return TaskResponse.from(savedTaskMaster, firstInstance, labelListResponses);
+        return TaskResponse.of(savedTaskMaster, firstInstance, labelListResponses);
     }
 
     @CheckOwnership(type="TASK")
@@ -196,7 +196,7 @@ public class TaskService {
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
 
-        return TaskResponse.from(taskMaster, taskInstance, labelListResponses);
+        return TaskResponse.of(taskMaster, taskInstance, labelListResponses);
     }
 
     public List<TaskListResponse> getTasksByProject(Long ProjectId){
@@ -204,7 +204,7 @@ public class TaskService {
 
 
         return taskMasters.stream()
-                .map(task -> TaskListResponse.from(task,new ArrayList<>()))
+                .map(task -> TaskListResponse.of(task,new ArrayList<>()))
                 .toList();
     }
 
@@ -290,7 +290,7 @@ public class TaskService {
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
 
-        return TaskResponse.from(taskMaster,activeInstance, labelListResponses);
+        return TaskResponse.of(taskMaster,activeInstance, labelListResponses);
     }
 
     @Transactional
@@ -338,7 +338,7 @@ public class TaskService {
         List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels().stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.from(taskMaster,taskInstance, labelListResponses);
+        return TaskResponse.of(taskMaster,taskInstance, labelListResponses);
     }
 
     public long getTaskCount(TaskFilterType taskFilterType, Long memberId){
@@ -407,7 +407,7 @@ public class TaskService {
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.from(taskMaster,taskInstance, labelListResponses);
+        return TaskResponse.of(taskMaster,taskInstance, labelListResponses);
     }
 
     @Transactional
@@ -435,7 +435,7 @@ public class TaskService {
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.from(taskMaster,activeInstance, labelListResponses);
+        return TaskResponse.of(taskMaster,activeInstance, labelListResponses);
     }
 
     @Transactional
@@ -451,7 +451,7 @@ public class TaskService {
 
         if(labelIds == null || labelIds.isEmpty()){
             taskMaster.getSubTaskMasters().clear();
-            return TaskResponse.from(taskMaster,activeInstance, new ArrayList<>());
+            return TaskResponse.of(taskMaster,activeInstance, new ArrayList<>());
         }
 
         List<Label> realLabels  =labelRepository.findAllById(labelIds);
@@ -478,7 +478,7 @@ public class TaskService {
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.from(taskMaster,activeInstance, labelListResponses);
+        return TaskResponse.of(taskMaster,activeInstance, labelListResponses);
     }
 
     @Transactional
@@ -508,7 +508,7 @@ public class TaskService {
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.from(taskMaster,activeInstance, labelListResponses);
+        return TaskResponse.of(taskMaster,activeInstance, labelListResponses);
     }
 
 }

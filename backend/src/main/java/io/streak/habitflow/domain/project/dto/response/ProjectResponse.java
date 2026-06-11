@@ -16,7 +16,7 @@ public record ProjectResponse(
         AccessType accessType,
         LayoutType layoutType
 ) {
-    public static ProjectResponse from(Project project, boolean favorite) {
+    public static ProjectResponse of(Project project, boolean favorite) {
         ProjectResponseBuilder builder = ProjectResponse.builder()
                 .id(project.getId())
                 .name(project.getName())

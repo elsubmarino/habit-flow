@@ -6,7 +6,6 @@ import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.notification.dto.request.NotificationRequest;
-import io.streak.habitflow.domain.notification.dto.response.ProjectNotificationResponse;
 import io.streak.habitflow.domain.notification.service.NotificationService;
 import io.streak.habitflow.domain.notification.type.NotificationType;
 import io.streak.habitflow.domain.project.dto.request.ProjectCreateRequest;
@@ -18,7 +17,6 @@ import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
-import io.streak.habitflow.domain.task.event.ProjectChangedEvent;
 import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
@@ -28,7 +26,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.annotation.Target;
 import java.util.List;
 import java.util.Optional;
 
@@ -93,7 +90,7 @@ public class ProjectService {
                 "당신이 프로젝트 "+project.getName()+"을(를) 추가했습니다"
         ));
 
-        return ProjectResponse.from(savedProject, projectCreateRequest.isFavorite());
+        return ProjectResponse.of(savedProject, projectCreateRequest.isFavorite());
     }
 
     @Transactional
@@ -140,7 +137,7 @@ public class ProjectService {
                 "당신이 프로젝트 "+project.getName()+"을(를) 변경했습니다"
         ));
 
-        return ProjectResponse.from(project, projectCreateRequest.isFavorite());
+        return ProjectResponse.of(project, projectCreateRequest.isFavorite());
     }
 
     public ProjectResponse getProjectById(Long projectId, Long memberId) {
@@ -152,7 +149,7 @@ public class ProjectService {
        if(favorite.isPresent()){
            isFavorite = true;
        }
-       return ProjectResponse.from(project,isFavorite);
+       return ProjectResponse.of(project,isFavorite);
     }
 
     public List<ProjectListResponse> getProjectsByMember(Long memberId) {

@@ -16,7 +16,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadRequestException(RuntimeException ex, HttpServletRequest request) {
         log.warn("[비지니스 규격 경고] -> Path: {}, Message: {}",request.getRequestURI(), ex.getMessage());
 
-        ErrorResponse errorResponse = ErrorResponse.from(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.name(),
                 ex.getMessage(),
@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(RuntimeException ex, HttpServletRequest request) {
         log.warn("[보안 무단 침입 차단] -> Path: {}, Message: {}",request.getRequestURI(), ex.getMessage());
 
-        ErrorResponse errorResponse = ErrorResponse.from(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.FORBIDDEN.value(),
                 HttpStatus.FORBIDDEN.name(),
                 ex.getMessage(),
@@ -42,7 +42,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleException(Exception ex, HttpServletRequest request) {
         log.error("[시스템 내부 오류 발생] -> Path: {}, Message: {}",request.getRequestURI(), ex.getMessage());
 
-        ErrorResponse errorResponse = ErrorResponse.from(
+        ErrorResponse errorResponse = ErrorResponse.of(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.name(),
                 "서버 내부 에러가 발생했습니다. 시스템 관리자에게 문의하세요.",
