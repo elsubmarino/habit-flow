@@ -1,8 +1,7 @@
 package io.streak.habitflow.domain.task.dto.response;
 
-import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
-import io.streak.habitflow.domain.task.entity.Task;
+import io.streak.habitflow.domain.task.entity.TaskMaster;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,18 +32,19 @@ public class TaskListResponse {
     private List<LabelListResponse> labels = new ArrayList<>();
 
 
-    public static TaskListResponse from(Task task, List<LabelListResponse> labelListResponses) {
+    public static TaskListResponse from(TaskMaster taskMaster, List<LabelListResponse> labelListResponses) {
         TaskListResponse.TaskListResponseBuilder builder = TaskListResponse.builder()
-                .id(task.getId())
-                .name(task.getName())
-                .taskPriorityType(task.getTaskPriorityType())
-                .dueDate(task.getDueDate())
-                .sortOrder(task.getSortOrder())
+                .id(taskMaster.getId())
+                .name(taskMaster.getName())
+                .taskPriorityType(taskMaster.getTaskPriorityType())
+                //TODO
+//                .dueDate(taskMaster.getDueDate())
+                .sortOrder(taskMaster.getSortOrder())
                 .labels(labelListResponses);
 
 
-        if(task.getProject() != null){
-            builder.projectName(task.getProject().getName());
+        if(taskMaster.getProject() != null){
+            builder.projectName(taskMaster.getProject().getName());
         }else{
             builder.projectName("관리함");
         }

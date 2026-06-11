@@ -133,8 +133,8 @@ public class TaskController {
 
     @PatchMapping("/{taskId}/toggle")
     public ResponseEntity<TaskResponse> toggleCompletion(@AuthenticationPrincipal UserPrincipal userPrincipal,
-                                                         @PathVariable Long taskId) {
-        return ResponseEntity.ok(taskService.toggleCompletion(taskId,userPrincipal.getMemberId()));
+                                                         @PathVariable Long taskInstanceId) {
+        return ResponseEntity.ok(taskService.toggleCompletion(taskInstanceId,userPrincipal.getMemberId()));
     }
 
     @GetMapping("/count")

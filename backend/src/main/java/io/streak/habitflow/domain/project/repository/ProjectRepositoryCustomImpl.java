@@ -1,18 +1,16 @@
 package io.streak.habitflow.domain.project.repository;
 
-import static io.streak.habitflow.domain.project.entity.QProject.project;
-import static io.streak.habitflow.domain.project.entity.QProjectMember.projectMember;
-import static io.streak.habitflow.domain.task.entity.QTask.task;
-
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
-
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+
+import static io.streak.habitflow.domain.project.entity.QProject.project;
+import static io.streak.habitflow.domain.project.entity.QProjectMember.projectMember;
+import static io.streak.habitflow.domain.task.entity.QTaskMaster.taskMaster;
 
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
@@ -47,10 +45,13 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                         project.id,
                         project.name,
                         project.color,
-                        task.count()
+                        taskMaster.count()
                 ))
                 .from(project)
-                .leftJoin(task).on(task.project.eq(project).and(task.completed.eq(false)))
+                .leftJoin(taskMaster).on(taskMaster.project.eq(project)
+                        //TODO
+                        //.and(taskMaster.completed.eq(false))
+                )
                 .innerJoin(projectMember).on(projectMember.project.eq(project).and(projectMember.member.id.eq(memberId)))
                 .groupBy(project.id)
                 .fetch();

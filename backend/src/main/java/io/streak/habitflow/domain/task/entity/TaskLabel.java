@@ -17,14 +17,14 @@ public class TaskLabel {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_id")
-    private Task task;
+    @JoinColumn(name = "task_master_id")
+    private TaskMaster taskMaster;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "label_id")
     private Label label;
 
-    public void assignTask(Task task){
-        this.task = task;
+    public void assignTask(TaskMaster taskMaster){
+        this.taskMaster = taskMaster;
     }
 }

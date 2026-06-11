@@ -1,9 +1,8 @@
 package io.streak.habitflow.domain.task.repository;
 
 import static io.streak.habitflow.domain.project.entity.QProject.project;
-import static io.streak.habitflow.domain.task.entity.QTask.task;
+import static io.streak.habitflow.domain.task.entity.QTaskMaster.taskMaster;
 
-import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -15,51 +14,53 @@ import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
-import io.streak.habitflow.domain.task.entity.QTask;
+import io.streak.habitflow.domain.task.entity.QTaskInstance;
+import io.streak.habitflow.domain.task.entity.QTaskMaster;
 import io.streak.habitflow.domain.task.entity.QTaskLabel;
-import io.streak.habitflow.domain.task.entity.Task;
+import io.streak.habitflow.domain.task.entity.TaskMaster;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
-public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
+public class TaskMasterRepositoryCustomImpl implements TaskMasterRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<Task> searchTasks(TaskUpdateRequest taskUpdateRequest, String email) {
+    public List<TaskMaster> searchTasks(TaskUpdateRequest taskUpdateRequest, String email) {
         return queryFactory
-                .selectFrom(task)
+                .selectFrom(taskMaster)
                 .where(
                         nameContains(taskUpdateRequest.getName()),
                         descriptionContains(taskUpdateRequest.getDescription()),
-                        task.member.email.eq(email)
+                        taskMaster.member.email.eq(email)
                 )
-                .orderBy(task.createdAt.desc())
+                .orderBy(taskMaster.createdAt.desc())
                 .fetch();
     }
 
     @Override
-    public Optional<Task> searchTaskInfo(Long taskId) {
-        Task result =  queryFactory
-                .selectFrom(task)
-                .leftJoin(task.project, project).fetchJoin()
-                .where(task.id.eq(taskId))
+    public Optional<TaskMaster> searchTaskInfo(Long taskId) {
+        TaskMaster result =  queryFactory
+                .selectFrom(taskMaster)
+                .leftJoin(taskMaster.project, project).fetchJoin()
+                .where(taskMaster.id.eq(taskId))
                 .fetchOne();
         return Optional.ofNullable(result);
     }
 
     private BooleanExpression nameContains(String name) {
-        return StringUtils.hasText(name) ? task.name.contains(name) : null;
+        return StringUtils.hasText(name) ? taskMaster.name.contains(name) : null;
     }
     private BooleanExpression descriptionContains(String description) {
-        return StringUtils.hasText(description) ? task.description.contains(description) : null;
+        return StringUtils.hasText(description) ? taskMaster.description.contains(description) : null;
     }
 
     @Override
@@ -68,13 +69,13 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 queryFactory
                         .select(Projections.fields(
                                 TaskResponse.class,
-                                task.id,
-                                task.name
+                                taskMaster.id,
+                                taskMaster.name
                         ))
-                        .from(task)
+                        .from(taskMaster)
                         .where(
-                                task.name.contains(keyword),
-                                task.member.id.eq(memberId)
+                                taskMaster.name.contains(keyword),
+                                taskMaster.member.id.eq(memberId)
                         )
                         .limit(pageable.getPageSize())
                         .fetch();
@@ -82,72 +83,77 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
 
     @Override
     public List<TaskListResponse> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId, Pageable pageable) {
-        QTask subTask = new QTask("subTask");
+        QTaskMaster subTask = new QTaskMaster("subTask");
+        QTaskInstance taskInstance = QTaskInstance.taskInstance;
+        QTaskInstance subTaskInstance = new QTaskInstance("subTaskInstance");
         QComment comment = QComment.comment;
 
         return queryFactory
                 .select(
                         Projections.fields(
                                 TaskListResponse.class,
-                                task.id,
-                                task.name,
-                                task.description,
-                                task.taskPriorityType,
-                                task.dueDate,
-                                task.sortOrder,
-                                task.project.name.as("projectName"),
+                                taskMaster.id,
+                                taskMaster.name,
+                                taskMaster.description,
+                                taskMaster.taskPriorityType,
+                                taskInstance.targetDate.as("dueDate"),
+                                taskMaster.sortOrder,
+                                taskMaster.project.name.as("projectName"),
                                 ExpressionUtils.as(
                                         JPAExpressions.select(subTask.count())
                                                 .from(subTask)
-                                                .where(subTask.parent.eq(task)),"countSubTasks"),
+                                                .where(subTask.parent.eq(taskMaster)),"countSubTasks"),
                                 ExpressionUtils.as(
-                                        JPAExpressions.select(subTask.count())
-                                                .from(subTask)
-                                                .where(subTask.parent.eq(task),
-                                                        subTask.completed),"countSubTasksCompleted"),
+                                        JPAExpressions.select(subTaskInstance.count())
+                                                .from(subTaskInstance)
+                                                .join(subTaskInstance.taskMaster, subTask)
+                                                .where(subTask.parent.eq(taskMaster)
+                                                        .and(subTaskInstance.isCompleted.eq(true))),"countSubTasksCompleted"),
                                 ExpressionUtils.as(
                                         JPAExpressions.select(comment.count())
                                                 .from(comment)
-                                                .where(comment.task.eq(task)),"countComments")
+                                                .where(comment.taskMaster.eq(taskMaster)),"countComments")
                                 )
                 )
-                .from(task)
-                .leftJoin(task.project, project)
-                .leftJoin(task.taskLabels, QTaskLabel.taskLabel)
+                .from(taskMaster)
+                .leftJoin(taskMaster.project, project)
+                .leftJoin(taskMaster.taskLabels, QTaskLabel.taskLabel)
                 .leftJoin(QTaskLabel.taskLabel.label, QLabel.label)
-                .where(task.member.id.eq(memberId),
-                        filterTypeEq(taskSearchCondition.getTaskFilterType()),
+                .where(taskMaster.member.id.eq(memberId),
+                        filterTypeEq(taskSearchCondition.getTaskFilterType(), taskInstance),
                         ltTaskId(taskSearchCondition.getLastTaskId())
                 )
-                .orderBy(task.id.desc())
+                .orderBy(taskMaster.id.desc())
                 .limit(pageable.getPageSize()+1)
                 .fetch();
     }
 
-    private BooleanExpression filterTypeEq(TaskFilterType taskFilterType){
+    private BooleanExpression filterTypeEq(TaskFilterType taskFilterType, QTaskInstance taskInstance) {
         if(taskFilterType == null) return null;
-        LocalDateTime now = LocalDateTime.now();
+        LocalDate localDateTime = LocalDate.now();
         if(TaskFilterType.TODAY == taskFilterType){
-            return task.dueDate.loe(now.toLocalDate().atTime(23,59,59));
+            return taskInstance.targetDate.loe(localDateTime);
         }else if(TaskFilterType.INBOX == taskFilterType){
-            return task.project.isNull();
+            return taskMaster.project.isNull();
         }
         return null;
     }
 
     private BooleanExpression ltTaskId(Long taskId){
         if(taskId == null) return null;
-        return task.id.lt(taskId);
+        return taskMaster.id.lt(taskId);
     }
 
     @Override
     public long countTasksByCondition(TaskFilterType taskFilterType, Long memberId) {
+        QTaskInstance taskInstance = QTaskInstance.taskInstance;
         Long totalCount =  queryFactory
-                .select(task.count())
-                .from(task)
+                .select(taskMaster.count())
+                .from(taskMaster)
+                .join(taskMaster.taskInstances, taskInstance).on(taskInstance.isCompleted.eq(false))
                 .where(
-                        task.member.id.eq(memberId),
-                        filterTypeEq(taskFilterType)
+                        taskMaster.member.id.eq(memberId),
+                        filterTypeEq(taskFilterType, taskInstance)
                 )
                 .fetchOne();
         return totalCount != null ? totalCount : 0;

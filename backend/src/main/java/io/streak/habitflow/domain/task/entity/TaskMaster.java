@@ -1,7 +1,6 @@
 package io.streak.habitflow.domain.task.entity;
 
 import io.streak.habitflow.domain.comment.entity.Comment;
-import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
@@ -19,25 +18,25 @@ import java.util.List;
 @Builder
 @Getter
 @Table(name="tasks")
-public class Task extends BaseTimeEntity {
+public class TaskMaster extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="task_id")
+    @Column(name="task_master_id")
     private Long id;
 
+    @Column(nullable = false, length=100)
     private String name;
-    private String description;
 
-    private boolean completed;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     @Enumerated(EnumType.STRING)
     private TaskPriorityType taskPriorityType;
 
-    private LocalDateTime dueDate;
     private long sortOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="member_id")
+    @JoinColumn(name="member_id", nullable = false)
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -46,19 +45,31 @@ public class Task extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="parent_id")
-    private Task parent;
+    private TaskMaster parent;
 
     @OneToMany(mappedBy = "parent",cascade = CascadeType.ALL)
     @Builder.Default
-    private List<Task> subTasks = new ArrayList<>();
+    private List<TaskMaster> subTaskMasters = new ArrayList<>();
 
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "taskMaster", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Comment> comments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "taskMaster", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<TaskLabel> taskLabels = new ArrayList<>();
+
+    private boolean isRecurring;
+
+    private String recurrenceRule; //DAILY, WEEKLY, MONTHLY
+    private int recurrenceInterval;  //1(매일,매주) 2(이틀마다, 격주 등)
+    private String recurrenceDays; //MON, WED, FRI (WEEKLY 일 때 사용)
+    private Integer recurrenceDayOfMonth; //11 (MONTHLY 일 때 사용. NULL 허용을 위해 Integer
+
+    @OneToMany(mappedBy = "taskMaster", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<TaskInstance> taskInstances = new ArrayList<>();
+
 
     public void addTaskLabel(TaskLabel taskLabel){
         this.taskLabels.add(taskLabel);
@@ -86,9 +97,6 @@ public class Task extends BaseTimeEntity {
         this.project = project;
     }
 
-    public void updateDueDate(LocalDateTime dueDate){
-        this.dueDate = dueDate;
-    }
     public void updateTaskLabels(List<TaskLabel> taskLabels){
         this.taskLabels = taskLabels;
     }
@@ -97,10 +105,5 @@ public class Task extends BaseTimeEntity {
         this.project = project;
     }
 
-    public void updateCompleted(boolean completed){
-        this.completed = completed;
-        if(this.subTasks != null){
-            this.subTasks.forEach(subTask->subTask.updateCompleted(completed));
-        }
-    }
+
 }

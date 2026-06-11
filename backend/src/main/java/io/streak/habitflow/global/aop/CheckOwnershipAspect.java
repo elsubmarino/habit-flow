@@ -10,8 +10,8 @@ import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
-import io.streak.habitflow.domain.task.entity.Task;
-import io.streak.habitflow.domain.task.repository.TaskRepository;
+import io.streak.habitflow.domain.task.entity.TaskMaster;
+import io.streak.habitflow.domain.task.repository.TaskMasterMasterRepository;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
@@ -27,7 +27,7 @@ import java.lang.reflect.Method;
 @Component
 @RequiredArgsConstructor
 public class CheckOwnershipAspect {
-    private final TaskRepository taskRepository;
+    private final TaskMasterMasterRepository taskMasterRepository;
     private final CommentRepository commentRepository;
     private final MemberRepository memberRepository;
     private final NotificationRepository notificationRepository;
@@ -84,10 +84,10 @@ public class CheckOwnershipAspect {
     }
 
     public void checkTaskOwner(Long taskId, Long memberId){
-        Task task = taskRepository.findById(taskId)
+        TaskMaster taskMaster = taskMasterRepository.findById(taskId)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 테스크입니다."));
 
-        if(!task.getMember().getId().equals(memberId)){
+        if(!taskMaster.getMember().getId().equals(memberId)){
             throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
         }
     }

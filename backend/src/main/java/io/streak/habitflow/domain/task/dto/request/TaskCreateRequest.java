@@ -40,4 +40,10 @@ public class TaskCreateRequest {
     @Builder.Default
     @Schema(description = "매핑할 라벨 ID 리스트")
     private List<Long> labelIds = new ArrayList<>();
+
+    private boolean isRecurring;
+    private String recurrenceRule;
+    private int recurrenceInterval;
+    private String recurrenceDays;
+    private Integer recurrenceDayOfMonth;
 }

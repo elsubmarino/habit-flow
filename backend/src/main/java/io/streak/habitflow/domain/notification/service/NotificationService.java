@@ -6,13 +6,11 @@ import io.streak.habitflow.domain.notification.dto.request.NotificationRequest;
 import io.streak.habitflow.domain.notification.dto.response.NotificationListResponse;
 import io.streak.habitflow.domain.notification.entity.Notification;
 import io.streak.habitflow.domain.notification.repository.NotificationRepository;
-import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.infra.sse.SseEmitters;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 

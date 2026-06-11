@@ -1,9 +1,9 @@
 package io.streak.habitflow.domain.comment.entity;
 
+import io.streak.habitflow.domain.task.entity.TaskMaster;
 import io.streak.habitflow.global.common.BaseTimeEntity;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.member.entity.Member;
-import io.streak.habitflow.domain.task.entity.Task;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,8 +25,8 @@ public class Comment extends BaseTimeEntity {
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_id")
-    private Task task;
+    @JoinColumn(name = "task_master_id")
+    private TaskMaster taskMaster;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="member_id")
@@ -45,8 +45,8 @@ public class Comment extends BaseTimeEntity {
         this.content = content;
     }
 
-    public void assignTask(Task task){
-        this.task = task;
+    public void assignTask(TaskMaster taskMaster){
+        this.taskMaster = taskMaster;
     }
 
 }

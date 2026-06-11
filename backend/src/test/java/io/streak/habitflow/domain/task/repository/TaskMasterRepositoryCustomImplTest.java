@@ -6,7 +6,7 @@ import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.member.type.Role;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
-import io.streak.habitflow.domain.task.entity.Task;
+import io.streak.habitflow.domain.task.entity.TaskMaster;
 import io.streak.habitflow.global.config.JpaAuditingConfig;
 import io.streak.habitflow.global.config.QuerydslConfig;
 import jakarta.persistence.EntityManager;
@@ -25,15 +25,15 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 @DataJpaTest
 @Import({QuerydslConfig.class, JpaAuditingConfig.class})
-class TaskRepositoryCustomImplTest {
+class TaskMasterRepositoryCustomImplTest {
 
-    @Autowired private TaskRepository taskRepository;
+    @Autowired private TaskMasterMasterRepository taskMasterRepository;
     @Autowired private MemberRepository memberRepository;
     @Autowired private CommentRepository commentRepository;
 
     @Autowired private EntityManager em;
 
-    private Task testTask;
+    private TaskMaster testTaskMaster;
 
     @BeforeEach
     void setUp(){
@@ -43,16 +43,16 @@ class TaskRepositoryCustomImplTest {
                 .build();
         memberRepository.save(testMember);
 
-        testTask = Task.builder().name("스프링 부트 복습").description("Query DSL").member(testMember).build();
+        testTaskMaster = TaskMaster.builder().name("스프링 부트 복습").description("Query DSL").member(testMember).build();
 
-        taskRepository.save(testTask);
-        taskRepository.save(Task.builder().name("리액트 복습").description("프론트엔드").member(testMember).parent(testTask).build());
-        taskRepository.save(Task.builder().name("운동하기").description("헬스장가기").member(testMember).parent(testTask).build());
+        taskMasterRepository.save(testTaskMaster);
+        taskMasterRepository.save(TaskMaster.builder().name("리액트 복습").description("프론트엔드").member(testMember).parent(testTaskMaster).build());
+        taskMasterRepository.save(TaskMaster.builder().name("운동하기").description("헬스장가기").member(testMember).parent(testTaskMaster).build());
 
         for(int i=0;i<3;i++){
             commentRepository.save(Comment.builder()
                     .content("코멘트"+i)
-                    .task(testTask)
+                    .taskMaster(testTaskMaster)
                     .member(testMember)
                     .build());
         }
@@ -65,18 +65,18 @@ class TaskRepositoryCustomImplTest {
     @Test
     @DisplayName("서브 테스크 등록")
     void create_SubTask(){
-        Long targetId = testTask.getId();
+        Long targetId = testTaskMaster.getId();
 
-        Optional<Task> resultOpt = taskRepository.searchTaskInfo(targetId);
+        Optional<TaskMaster> resultOpt = taskMasterRepository.searchTaskInfo(targetId);
 
         assertThat(resultOpt).isPresent();
-        Task result = resultOpt.orElseThrow(()->new AssertionError("테스크 결과가 존재하지 않습니다."));
-        Task subTask = Task.builder()
+        TaskMaster result = resultOpt.orElseThrow(()->new AssertionError("테스크 결과가 존재하지 않습니다."));
+        TaskMaster subTaskMaster = TaskMaster.builder()
                 .name("서브테스크")
                 .parent(result)
                 .build();
 
-        taskRepository.save(subTask);
+        taskMasterRepository.save(subTaskMaster);
 
     }
 
@@ -85,19 +85,19 @@ class TaskRepositoryCustomImplTest {
     @Test
     @DisplayName("코멘트 불러들임")
     void searchTaskInfo_WithComments(){
-        Long targetId = testTask.getId();
+        Long targetId = testTaskMaster.getId();
 
-        Optional<Task> resultOpt = taskRepository.searchTaskInfo(targetId);
+        Optional<TaskMaster> resultOpt = taskMasterRepository.searchTaskInfo(targetId);
 
         assertThat(resultOpt).isPresent();
-        Task result = resultOpt.orElseThrow(()->new AssertionError("테스크 결과가 존재하지 않습니다."));
+        TaskMaster result = resultOpt.orElseThrow(()->new AssertionError("테스크 결과가 존재하지 않습니다."));
         assertThat(result.getName()).isEqualTo("스프링 부트 복습");
         assertThat(result.getDescription()).isEqualTo("Query DSL");
 
         assertThat(result.getComments()).hasSize(3);
         assertThat(result.getComments().get(0).getContent()).contains("코멘트");
 
-        assertThat(result.getSubTasks()).hasSize(2);
+        assertThat(result.getSubTaskMasters()).hasSize(2);
     }
 
     @Test
@@ -106,7 +106,7 @@ class TaskRepositoryCustomImplTest {
         TaskUpdateRequest taskUpdateRequest = TaskUpdateRequest.builder()
                 .name("복습").build();
 
-        List<Task> result = taskRepository.searchTasks(taskUpdateRequest,"test@test.com");
+        List<TaskMaster> result = taskMasterRepository.searchTasks(taskUpdateRequest,"test@test.com");
 
         assertThat(result).hasSize(2);
         assertThat(result).extracting("name")

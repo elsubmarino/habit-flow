@@ -6,8 +6,7 @@ import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
 import io.streak.habitflow.domain.activitylog.repository.ActivityLogRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.task.entity.Task;
-import io.streak.habitflow.domain.task.repository.TaskRepository;
+import io.streak.habitflow.domain.task.repository.TaskMasterMasterRepository;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -22,7 +21,7 @@ import java.util.List;
 public class ActivityLogService {
     private final ActivityLogRepository activityLogRepository;
     private final MemberRepository memberRepository;
-    private final TaskRepository taskRepository;
+    private final TaskMasterMasterRepository taskMasterRepository;
 
     @Transactional
     public void create(ActivityLogRequest activityLogRequest, Long memberId) {
