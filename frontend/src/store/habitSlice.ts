@@ -1,5 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { NavItem } from '../components/Sidebar';
+import {
+    applyFavoriteFlags,
+    normalizeFavoriteDto,
+    upsertFavoriteFromLabel,
+    upsertFavoriteFromProject,
+} from '../api/favoriteMappers';
+import * as favoriteApi from '../api/favoriteApi';
 import * as labelApi from '../api/labelApi';
 import * as projectApi from '../api/projectApi';
 import * as taskApi from '../api/taskApi';
@@ -13,7 +20,7 @@ import {
     readInstanceId,
     repeatLabelToRecurrence,
 } from '../api/mappers';
-import type { TaskDto } from '../api/types';
+import type { FavoriteDto, TaskDto } from '../api/types';
 
 export interface Label {
     id: number;
@@ -109,6 +116,8 @@ interface HabitState {
     list: Habit[];
     projects: Project[];
     labels: Label[];
+    favorites: FavoriteDto[];
+    favoritesStatus: 'idle' | 'loading' | 'failed';
     status: 'idle' | 'loading' | 'failed';
     loadMoreStatus: 'idle' | 'loading' | 'failed';
     projectsStatus: 'idle' | 'loading' | 'failed';
@@ -130,6 +139,8 @@ const initialState: HabitState = {
     list: [],
     projects: [],
     labels: [],
+    favorites: [],
+    favoritesStatus: 'idle',
     status: 'idle',
     loadMoreStatus: 'idle',
     projectsStatus: 'idle',
@@ -233,18 +244,49 @@ async function loadTasksForView(params: {
     }
 }
 
+type FetchHabitsParams = { view: ApiView; projectId?: number | null; labelId?: number | null };
+
+type FetchHabitsResult = {
+    habits: Habit[];
+    view: ApiView;
+    projectId: number | null;
+    labelId: number | null;
+    hasNext: boolean;
+    nextCursor: number | null;
+};
+
+function fetchHabitsKey(params: FetchHabitsParams): string {
+    return `${params.view}:${params.projectId ?? ''}:${params.labelId ?? ''}`;
+}
+
+const inFlightHabitsFetches = new Map<string, Promise<FetchHabitsResult>>();
+
+async function loadHabitsForView(params: FetchHabitsParams): Promise<FetchHabitsResult> {
+    const page = await loadTasksForView(params);
+    return {
+        habits: page.tasks.map(t => mapTaskToHabit(t, readInstanceId(t))),
+        view: params.view,
+        projectId: params.projectId ?? null,
+        labelId: params.labelId ?? null,
+        hasNext: page.hasNext,
+        nextCursor: page.nextCursor,
+    };
+}
+
 export const fetchHabits = createAsyncThunk(
     'habits/fetch',
-    async (params: { view: ApiView; projectId?: number | null; labelId?: number | null }) => {
-        const page = await loadTasksForView(params);
-        return {
-            habits: page.tasks.map(t => mapTaskToHabit(t, readInstanceId(t))),
-            view: params.view,
-            projectId: params.projectId ?? null,
-            labelId: params.labelId ?? null,
-            hasNext: page.hasNext,
-            nextCursor: page.nextCursor,
-        };
+    async (params: FetchHabitsParams) => {
+        const key = fetchHabitsKey(params);
+        const existing = inFlightHabitsFetches.get(key);
+        if (existing) return existing;
+
+        const promise = loadHabitsForView(params).finally(() => {
+            if (inFlightHabitsFetches.get(key) === promise) {
+                inFlightHabitsFetches.delete(key);
+            }
+        });
+        inFlightHabitsFetches.set(key, promise);
+        return promise;
     },
 );
 
@@ -285,33 +327,19 @@ export const fetchNavTaskCounts = createAsyncThunk('habits/fetchNavTaskCounts', 
     return { inbox, today };
 });
 
-export const fetchProjects = createAsyncThunk('habits/fetchProjects', async () => {
-    const list = await projectApi.fetchProjects();
-    const details = await Promise.all(
-        list.map(p =>
-            projectApi.fetchProjectById(p.id).catch(() => ({ ...p, favorite: false })),
-        ),
-    );
-    return list.map((p, i) => mapProject(
-        { ...details[i], id: p.id, name: p.name, color: p.color },
-        p.taskCount ?? 0,
-    ));
+export const fetchFavorites = createAsyncThunk('habits/fetchFavorites', async () => {
+    return favoriteApi.fetchFavorites();
 });
 
-async function enrichLabels(labels: { id: number; name: string; color: string }[]) {
-    const details = await Promise.all(
-        labels.map(l =>
-            labelApi.fetchLabelById(l.id).catch(() => ({ ...l, favorite: false })),
-        ),
-    );
-    return details.map(l => mapLabel(l));
-}
+export const fetchProjects = createAsyncThunk('habits/fetchProjects', async () => {
+    const list = await projectApi.fetchProjects();
+    return list.map(p => mapProject(p, p.taskCount ?? 0));
+});
 
 export const fetchLabels = createAsyncThunk('habits/fetchLabels', async () => {
     const page = await labelApi.fetchLabels();
-    const labels = await enrichLabels(page.content);
     return {
-        labels,
+        labels: page.content.map(l => mapLabel(l)),
         hasNext: page.hasNext,
         nextCursor: page.nextCursor,
     };
@@ -325,9 +353,8 @@ export const fetchMoreLabels = createAsyncThunk('habits/fetchMoreLabels', async 
     }
 
     const page = await labelApi.fetchLabels(labelsNextCursor);
-    const labels = await enrichLabels(page.content);
     return {
-        labels,
+        labels: page.content.map(l => mapLabel(l)),
         hasNext: page.hasNext,
         nextCursor: page.nextCursor,
     };
@@ -698,6 +725,20 @@ const habitSlice = createSlice({
                 state.loadMoreStatus = 'failed';
                 state.error = action.error.message ?? '작업을 더 불러오지 못했습니다.';
             })
+            .addCase(fetchFavorites.pending, state => {
+                state.favoritesStatus = 'loading';
+            })
+            .addCase(fetchFavorites.fulfilled, (state, action) => {
+                state.favoritesStatus = 'idle';
+                state.favorites = action.payload
+                    .map(normalizeFavoriteDto)
+                    .filter((f): f is FavoriteDto => f != null);
+                state.projects = applyFavoriteFlags(state.projects, state.favorites, 'PROJECT');
+                state.labels = applyFavoriteFlags(state.labels, state.favorites, 'LABEL');
+            })
+            .addCase(fetchFavorites.rejected, state => {
+                state.favoritesStatus = 'failed';
+            })
             .addCase(fetchProjects.pending, state => {
                 state.projectsStatus = 'loading';
             })
@@ -707,7 +748,7 @@ const habitSlice = createSlice({
             })
             .addCase(fetchProjects.fulfilled, (state, action) => {
                 state.projectsStatus = 'idle';
-                state.projects = action.payload;
+                state.projects = applyFavoriteFlags(action.payload, state.favorites, 'PROJECT');
             })
             .addCase(fetchProjects.rejected, state => {
                 state.projectsStatus = 'failed';
@@ -718,10 +759,11 @@ const habitSlice = createSlice({
             })
             .addCase(fetchLabels.fulfilled, (state, action) => {
                 state.labelsStatus = 'idle';
-                state.labels = action.payload.labels.map(l => ({
+                const withCounts = action.payload.labels.map(l => ({
                     ...l,
                     taskCount: countTasksForLabel(state.list, l.id),
                 }));
+                state.labels = applyFavoriteFlags(withCounts, state.favorites, 'LABEL');
                 state.labelsHasNext = action.payload.hasNext;
                 state.labelsNextCursor = action.payload.nextCursor;
             })
@@ -734,7 +776,8 @@ const habitSlice = createSlice({
             .addCase(fetchMoreLabels.fulfilled, (state, action) => {
                 state.labelsLoadMoreStatus = 'idle';
                 const existingIds = new Set(state.labels.map(l => l.id));
-                for (const label of action.payload.labels) {
+                const merged = applyFavoriteFlags(action.payload.labels, state.favorites, 'LABEL');
+                for (const label of merged) {
                     if (!existingIds.has(label.id)) {
                         state.labels.push({
                             ...label,
@@ -757,40 +800,56 @@ const habitSlice = createSlice({
                 if (!state.projects.some(p => p.id === action.payload.id)) {
                     state.projects.push(action.payload);
                 }
+                state.favorites = upsertFavoriteFromProject(state.favorites, action.payload);
             })
             .addCase(updateProject.fulfilled, (state, action) => {
                 const index = state.projects.findIndex(p => p.id === action.payload.id);
-                if (index !== -1) {
-                    state.projects[index] = {
+                const nextProject = index !== -1
+                    ? {
                         ...state.projects[index],
                         name: action.payload.name,
                         color: action.payload.color,
                         favorite: action.payload.favorite,
-                    };
+                    }
+                    : action.payload;
+                if (index !== -1) {
+                    state.projects[index] = nextProject;
                 }
+                state.favorites = upsertFavoriteFromProject(state.favorites, nextProject);
             })
             .addCase(deleteProject.fulfilled, (state, action) => {
                 state.projects = state.projects.filter(p => p.id !== action.payload);
+                state.favorites = state.favorites.filter(
+                    f => !(f.targetType === 'PROJECT' && f.targetId === action.payload),
+                );
                 if (state.selectedProjectId === action.payload) {
                     state.selectedProjectId = null;
                 }
             })
             .addCase(addLabel.fulfilled, (state, action) => {
                 state.labels.push(action.payload);
+                state.favorites = upsertFavoriteFromLabel(state.favorites, action.payload);
             })
             .addCase(updateLabel.fulfilled, (state, action) => {
                 const index = state.labels.findIndex(l => l.id === action.payload.id);
-                if (index !== -1) {
-                    state.labels[index] = {
+                const nextLabel = index !== -1
+                    ? {
                         ...state.labels[index],
                         name: action.payload.name,
                         color: action.payload.color,
                         favorite: action.payload.favorite,
-                    };
+                    }
+                    : action.payload;
+                if (index !== -1) {
+                    state.labels[index] = nextLabel;
                 }
+                state.favorites = upsertFavoriteFromLabel(state.favorites, nextLabel);
             })
             .addCase(deleteLabel.fulfilled, (state, action) => {
                 state.labels = state.labels.filter(l => l.id !== action.payload);
+                state.favorites = state.favorites.filter(
+                    f => !(f.targetType === 'LABEL' && f.targetId === action.payload),
+                );
                 if (state.selectedLabelId === action.payload) {
                     state.selectedLabelId = null;
                 }

@@ -11,6 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
+@Table(name="favorites")
 public class Favorite extends BaseCreatedTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,15 +1,23 @@
 import type { NavItem } from '../components/Sidebar';
 import { OAUTH_CALLBACK_PATH } from '../api/authBootstrap';
 
+/** 브라우저 주소창 경로 — 백엔드 TaskInstance 목록 API와 동일한 prefix 사용 */
 export const APP_ROUTES = {
-    inbox: '/api/tasks/inbox',
-    today: '/api/tasks/today',
-    upcoming: '/api/tasks/upcoming',
+    inbox: '/api/task-instances/inbox',
+    today: '/api/task-instances/today',
+    upcoming: '/api/task-instances/upcoming',
     labels: '/api/labels',
     projects: '/api/projects',
     activityLogs: '/api/activity-logs',
     notifications: '/api/notifications',
 } as const;
+
+/** 예전 SPA 경로 (북마크 호환용, URL은 새 경로로 치환됨) */
+const LEGACY_TASK_LIST_ROUTES: Record<string, NavItem> = {
+    '/api/tasks/inbox': 'inbox',
+    '/api/tasks/today': 'today',
+    '/api/tasks/upcoming': 'upcoming',
+};
 
 export type AppLocation =
     | { kind: 'oauth' }
@@ -33,6 +41,9 @@ export function parseAppPath(pathname: string): AppLocation {
     if (pathname === APP_ROUTES.inbox) return { kind: 'nav', nav: 'inbox' };
     if (pathname === APP_ROUTES.today) return { kind: 'nav', nav: 'today' };
     if (pathname === APP_ROUTES.upcoming) return { kind: 'nav', nav: 'upcoming' };
+
+    const legacyNav = LEGACY_TASK_LIST_ROUTES[pathname];
+    if (legacyNav) return { kind: 'nav', nav: legacyNav };
     if (pathname === APP_ROUTES.activityLogs) return { kind: 'nav', nav: 'report' };
     if (pathname === APP_ROUTES.notifications) return { kind: 'notifications' };
     if (pathname === APP_ROUTES.labels) return { kind: 'labelsBrowse' };

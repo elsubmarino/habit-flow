@@ -43,17 +43,20 @@ public class ProjectController {
     }
 
     @GetMapping("/{projectId}")
+    @Operation(summary = "프로젝트 상세 조회")
     public ResponseEntity<ProjectResponse> getProjectById(@PathVariable Long projectId,
                                                           @AuthenticationPrincipal UserPrincipal userPrincipal) {
         return ResponseEntity.ok(projectService.getProjectById(projectId,userPrincipal.getMemberId()));
     }
 
     @GetMapping
+    @Operation(summary = "프로젝트 다건 조회")
     public ResponseEntity<List<ProjectListResponse>> getProjectsByMember(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         return ResponseEntity.ok(projectService.getProjectsByMember(userPrincipal.getMemberId()));
     }
 
     @PutMapping("/{projectId}")
+    @Operation(summary = "프로젝트 업데이트")
     public ResponseEntity<ProjectResponse> updateProject(@RequestBody ProjectCreateRequest projectCreateRequest,
                                                          @PathVariable Long projectId,
                                                          @AuthenticationPrincipal UserPrincipal userPrincipal) {
@@ -61,6 +64,7 @@ public class ProjectController {
     }
 
     @DeleteMapping("/{projectId}")
+    @Operation(summary = "프로젝트 삭제")
     public ResponseEntity<Void> deleteProject(@PathVariable Long projectId,
                                               @AuthenticationPrincipal UserPrincipal userPrincipal) {
         projectService.deleteProject(projectId,userPrincipal.getMemberId());
@@ -68,11 +72,13 @@ public class ProjectController {
     }
 
     @GetMapping("/{projectId}/tasks")
+    @Operation(summary = "프로젝트에 딸린 테스크 조회")
     public ResponseEntity<List<TaskListResponse>> getTasksByProject(@PathVariable Long projectId) {
         return ResponseEntity.ok(taskService.getTasksByProject(projectId));
     }
 
     @GetMapping("/search")
+    @Operation(summary = "프로젝트 검색")
     public ResponseEntity<List<ProjectListResponse>> searchProjects(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                                     @RequestParam("keyword") String keyword,
                                                                     @PageableDefault(size=20) Pageable pageable){

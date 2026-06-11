@@ -41,6 +41,8 @@ public class TaskMasterController {
     }
 
     @PutMapping("/{taskId}")
+    @Operation(summary = "테스크 업데이트")
+    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 업데이트 성공")})
     public ResponseEntity<TaskResponse> updateTask(@PathVariable Long taskId,
                                                    @RequestBody TaskUpdateRequest taskUpdateRequest,
                                                    @AuthenticationPrincipal UserPrincipal userPrincipal) {
@@ -49,6 +51,8 @@ public class TaskMasterController {
     }
 
     @PatchMapping("/{taskId}/priority")
+    @Operation(summary = "우선순위 업데이트")
+    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "우선순위 업데이트 성공")})
     public ResponseEntity<TaskResponse> updatePriority(@PathVariable Long taskId,
                                                           @RequestBody TaskUpdatePriorityRequest taskUpdatePriorityRequest,
                                                           @AuthenticationPrincipal UserPrincipal userPrincipal) {
@@ -57,6 +61,8 @@ public class TaskMasterController {
     }
 
     @PatchMapping("/{taskId}/labels")
+    @Operation(summary = "라벨 업데이트")
+    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "라벨 업데이트 성공")})
     public ResponseEntity<TaskResponse> updateLabels(@PathVariable Long taskId,
                                                        @RequestBody TaskUpdateLabelRequest taskUpdateLabelRequest,
                                                        @AuthenticationPrincipal UserPrincipal userPrincipal) {
@@ -65,6 +71,8 @@ public class TaskMasterController {
     }
 
     @PatchMapping("/{taskId}/project")
+    @Operation(summary = "테스크가 속한 프로젝트 이동")
+    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크가 속한 프로젝트 이동 성공")})
     public ResponseEntity<TaskResponse> updateProject(@PathVariable Long taskId,
                                                       @RequestBody TaskUpdateProjectRequest taskUpdateProjectRequest,
                                                       @AuthenticationPrincipal UserPrincipal userPrincipal) {
@@ -73,17 +81,23 @@ public class TaskMasterController {
     }
 
     @DeleteMapping("/{taskId}")
+    @Operation(summary = "테스크 삭제")
+    @ApiResponses(value={@ApiResponse(responseCode = "204",description = "테스크 삭제 성공")})
     public ResponseEntity<Void> deleteTask(@PathVariable Long taskId, @AuthenticationPrincipal UserPrincipal userPrincipal) {
         taskService.deleteTask(taskId,userPrincipal.getMemberId());
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{taskId}/comments")
+    @Operation(summary = "테스크에 속한 댓글 조회")
+    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크에 속한 댓글 조회 성공")})
     public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long taskId) {
         return ResponseEntity.ok(commentService.getComments(taskId));
     }
 
     @GetMapping("/count")
+    @Operation(summary = "테스크 건수 조회")
+    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 건수 조회 성공")})
     public ResponseEntity<Long> getTaskCount(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                              @RequestParam(required = false) TaskFilterType taskFilterType) {
         long totalCount = taskService.getTaskCount(taskFilterType,userPrincipal.getMemberId());

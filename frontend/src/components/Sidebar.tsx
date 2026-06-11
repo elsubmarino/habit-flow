@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     BellIcon,
     CheckIcon,
@@ -13,9 +13,18 @@ import {
     SearchIcon,
     UpcomingIcon,
 } from './icons';
-import type { Project } from '../store/habitSlice';
+import {
+    buildSidebarFavorites,
+    normalizeFavoriteTargetType,
+    readFavoriteTargetId,
+    resolveFavoriteLabel,
+    resolveFavoriteProject,
+} from '../api/favoriteMappers';
+import type { FavoriteDto } from '../api/types';
+import type { Label, Project } from '../store/habitSlice';
 import { getUserProfile } from '../utils/userProfile';
 import UserMenuDropdown from './UserMenuDropdown';
+import LabelListRow from './LabelListRow';
 import ProjectListRow from './ProjectListRow';
 
 export type NavItem = 'inbox' | 'today' | 'upcoming' | 'filters' | 'report';
@@ -25,6 +34,8 @@ interface SidebarProps {
     inboxTaskCount: number;
     todayTaskCount: number;
     projects: Project[];
+    labels: Label[];
+    favorites: FavoriteDto[];
     selectedProjectId: number | null;
     selectedLabelId: number | null;
     projectsBrowseActive: boolean;
@@ -32,6 +43,9 @@ interface SidebarProps {
     favoritesListExpanded: boolean;
     onNavChange: (nav: NavItem) => void;
     onProjectSelect: (projectId: number) => void;
+    onLabelSelect: (labelId: number) => void;
+    onEditLabel: (label: Label) => void;
+    onDeleteLabel: (labelId: number) => void;
     onProjectsBrowse: () => void;
     onAddProject: () => void;
     onEditProject: (project: Project) => void;
@@ -54,6 +68,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     inboxTaskCount,
     todayTaskCount,
     projects,
+    labels,
+    favorites,
     selectedProjectId,
     selectedLabelId,
     projectsBrowseActive,
@@ -61,6 +77,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     favoritesListExpanded,
     onNavChange,
     onProjectSelect,
+    onLabelSelect,
+    onEditLabel,
+    onDeleteLabel,
     onProjectsBrowse,
     onAddProject,
     onEditProject,
@@ -82,7 +101,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [favoritesHeaderHover, setFavoritesHeaderHover] = useState(false);
     const userMenuRef = useRef<HTMLDivElement>(null);
     const profile = getUserProfile();
-    const favoriteProjects = projects.filter(p => p.favorite);
+    const projectById = new Map(projects.map(project => [project.id, project]));
+    const labelById = new Map(labels.map(label => [label.id, label]));
+    const sidebarFavorites = useMemo(
+        () => buildSidebarFavorites(favorites, projects, labels),
+        [favorites, projects, labels],
+    );
 
     useEffect(() => {
         if (!userMenuOpen) return;
@@ -203,7 +227,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </ul>
                 </nav>
 
-                {favoriteProjects.length > 0 && (
+                {sidebarFavorites.length > 0 && (
                     <div
                         className="sidebar-section sidebar-favorites-section"
                         onMouseEnter={() => setFavoritesHeaderHover(true)}
@@ -227,18 +251,53 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                         {favoritesListExpanded && (
                             <ul className="project-list">
-                                {favoriteProjects.map(project => (
-                                    <ProjectListRow
-                                        key={`fav-${project.id}`}
-                                        project={project}
-                                        variant="sidebar"
-                                        active={selectedProjectId === project.id}
-                                        onSelect={onProjectSelect}
-                                        onEdit={onEditProject}
-                                        onShare={onShareProject}
-                                        onDelete={onDeleteProject}
-                                    />
-                                ))}
+                                {sidebarFavorites.map(favorite => {
+                                    const targetId = readFavoriteTargetId(favorite);
+                                    const targetType = normalizeFavoriteTargetType(favorite.targetType);
+                                    if (targetType === 'PROJECT') {
+                                        const project = resolveFavoriteProject(
+                                            favorite,
+                                            projectById.get(targetId),
+                                        );
+                                        return (
+                                            <ProjectListRow
+                                                key={`fav-${favorite.id}`}
+                                                project={project}
+                                                variant="sidebar"
+                                                active={selectedProjectId === project.id}
+                                                onSelect={onProjectSelect}
+                                                onEdit={() => {
+                                                    const source = projectById.get(targetId);
+                                                    if (source) onEditProject(source);
+                                                }}
+                                                onShare={
+                                                    projectById.has(targetId)
+                                                        ? () => onShareProject(projectById.get(targetId)!)
+                                                        : undefined
+                                                }
+                                                onDelete={onDeleteProject}
+                                            />
+                                        );
+                                    }
+
+                                    const label = resolveFavoriteLabel(
+                                        favorite,
+                                        labelById.get(targetId),
+                                    );
+                                    return (
+                                        <LabelListRow
+                                            key={`fav-${favorite.id}`}
+                                            label={label}
+                                            active={selectedLabelId === label.id}
+                                            onSelect={onLabelSelect}
+                                            onEdit={() => {
+                                                const source = labelById.get(targetId);
+                                                if (source) onEditLabel(source);
+                                            }}
+                                            onDelete={onDeleteLabel}
+                                        />
+                                    );
+                                })}
                             </ul>
                         )}
                     </div>

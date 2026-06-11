@@ -5,6 +5,7 @@ import io.streak.habitflow.domain.notification.dto.response.NotificationListResp
 import io.streak.habitflow.domain.notification.service.NotificationService;
 import io.streak.habitflow.global.infra.sse.SseEmitters;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,12 +24,14 @@ public class NotificationController {
     private final SseEmitters sseEmitters;
 
     @GetMapping
+    @Operation(summary = "알림 다건 조회")
     public ResponseEntity<List<NotificationListResponse>> getNotifications(@AuthenticationPrincipal UserPrincipal userPrincipal
                                                                        ) {
         return ResponseEntity.ok(notificationService.getNotifications(userPrincipal.getMemberId()));
     }
 
     @PutMapping("/{notificationId}/confirm")
+    @Operation(summary = "알림 확인")
     public ResponseEntity<Void> confirmNotification(@PathVariable Long notificationId,
                                                     @RequestBody NotificationRequest notificationRequest,
                                                     @AuthenticationPrincipal UserPrincipal userPrincipal) {
@@ -37,6 +40,7 @@ public class NotificationController {
     }
 
     @GetMapping(value="/subscribe",produces= MediaType.TEXT_EVENT_STREAM_VALUE)
+    @Operation(summary = "알림 구독(SSE)")
     public ResponseEntity<SseEmitter> subscribe(@AuthenticationPrincipal UserPrincipal userPrincipal){
         SseEmitter emitter = new SseEmitter(50*1000L);
         try{

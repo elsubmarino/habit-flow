@@ -1,5 +1,8 @@
 package io.streak.habitflow.domain.member.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,12 +16,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     @GetMapping("/success")
+    @Operation(summary = "로그인 성공")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "로그인 성공")})
     public ResponseEntity<String> loginSuccess(@AuthenticationPrincipal OAuth2User oauth2User) {
         String email = oauth2User.getAttribute("email");
         return ResponseEntity.ok(email+"님, 소셜 가입/로그인에 성공했습니다.");
     }
 
     @GetMapping("/fail")
+    @Operation(summary = "로그인 실패")
+    @ApiResponses({@ApiResponse(responseCode = "401", description = "로그인 실패")})
     public ResponseEntity<String> loginFail(){
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("소셜 로그인에 실패했습니다.");
     }

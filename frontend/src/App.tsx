@@ -7,6 +7,7 @@ import {
     deleteProject,
     fetchHabits,
     fetchMoreHabits,
+    fetchFavorites,
     fetchLabels,
     fetchMoreLabels,
     fetchNavTaskCounts,
@@ -97,6 +98,7 @@ function App() {
         list: habits,
         projects,
         labels,
+        favorites,
         status,
         loadMoreStatus,
         tasksHasNext,
@@ -254,6 +256,7 @@ function App() {
 
     useEffect(() => {
         dispatch(fetchProjects());
+        dispatch(fetchFavorites());
         dispatch(fetchNavTaskCounts());
         dispatch(fetchLabels());
         dispatch(fetchNotifications());
@@ -274,7 +277,6 @@ function App() {
         if (activeNav === 'report' || showProjectsBrowse || showLabelsBrowse) return;
         const view = selectedLabelId != null ? 'all' : toApiView(activeNav);
         dispatch(fetchHabits({ view, projectId: selectedProjectId, labelId: selectedLabelId }));
-        dispatch(fetchNavTaskCounts());
     }, [dispatch, activeNav, selectedProjectId, selectedLabelId, showProjectsBrowse, showLabelsBrowse]);
 
     const handleNavChange = (nav: NavItem) => {
@@ -284,6 +286,7 @@ function App() {
         dispatch(setActiveView(nav));
         dispatch(setSelectedProject(null));
         dispatch(setSelectedLabel(null));
+        dispatch(fetchNavTaskCounts());
     };
 
     const handleNotificationsClick = () => {
@@ -628,6 +631,8 @@ function App() {
                 inboxTaskCount={inboxTaskCount}
                 todayTaskCount={todayTaskCount}
                 projects={projects}
+                labels={labels}
+                favorites={favorites}
                 selectedProjectId={selectedProjectId}
                 selectedLabelId={selectedLabelId}
                 projectsBrowseActive={showProjectsBrowse}
@@ -635,6 +640,9 @@ function App() {
                 favoritesListExpanded={favoritesListExpanded}
                 onNavChange={handleNavChange}
                 onProjectSelect={handleProjectSelect}
+                onLabelSelect={handleLabelOpen}
+                onEditLabel={handleEditLabel}
+                onDeleteLabel={handleDeleteLabel}
                 onProjectsBrowse={handleProjectsBrowse}
                 onAddProject={() => setShowAddProjectModal(true)}
                 onEditProject={handleEditProject}
@@ -788,6 +796,7 @@ function App() {
                     onAdd={(name, color) => {
                         void dispatch(addProject({ name, color })).then(() => {
                             dispatch(fetchProjects());
+                            dispatch(fetchFavorites());
                         });
                     }}
                 />
@@ -808,6 +817,7 @@ function App() {
                     onSave={payload => {
                         void dispatch(updateProject(payload)).then(() => {
                             dispatch(fetchProjects());
+                            dispatch(fetchFavorites());
                         });
                     }}
                 />
@@ -819,6 +829,7 @@ function App() {
                     onAdd={payload => {
                         void dispatch(addLabel(payload)).then(() => {
                             dispatch(fetchLabels());
+                            dispatch(fetchFavorites());
                         });
                     }}
                 />
@@ -831,6 +842,7 @@ function App() {
                     onSave={(id, payload) => {
                         void dispatch(updateLabel({ id, ...payload })).then(() => {
                             dispatch(fetchLabels());
+                            dispatch(fetchFavorites());
                         });
                     }}
                 />

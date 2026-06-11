@@ -1,5 +1,15 @@
 export type PriorityType = 'P1' | 'P2' | 'P3' | 'P4';
 
+export type FavoriteTargetType = 'PROJECT' | 'LABEL';
+
+export interface FavoriteDto {
+    id: number;
+    targetType: FavoriteTargetType;
+    targetId: number;
+    targetName: string;
+    targetCount: number;
+}
+
 export type ActivityType = 'ADDED' | 'COMPLETED' | 'UPDATED' | 'DELETED' | 'MOVED' | 'INVITED';
 
 export type NotificationType = 'PROJECT' | 'TASK';
