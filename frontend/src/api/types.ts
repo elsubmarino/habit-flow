@@ -34,8 +34,13 @@ export interface ScrollResponse<T> {
     nextCursor: number | null;
 }
 
+/** TaskMaster ID — 이름·우선순위·프로젝트·라벨·댓글 등 정의 필드 */
 export interface TaskDto {
     id: number;
+    /** TaskInstance ID — 완료 토글·일정(마감일) 등 발생 단위 */
+    instanceId?: number | null;
+    taskInstanceId?: number | null;
+    masterId?: number | null;
     name: string;
     description?: string | null;
     isCompleted?: boolean;
@@ -53,6 +58,11 @@ export interface TaskDto {
     countSubTasks?: number;
     countSubTasksCompleted?: number;
     countComments?: number;
+    isRecurring?: boolean;
+    recurrenceRule?: string | null;
+    recurrenceInterval?: number;
+    recurrenceDays?: string | null;
+    recurrenceDayOfMonth?: number | null;
     subTasks?: TaskDto[];
     labels?: LabelDto[];
     comments?: CommentDto[];

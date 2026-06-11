@@ -44,6 +44,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [dueDate, setDueDate] = useState<string | null>(null);
+    const [recurrenceLabel, setRecurrenceLabel] = useState<string | null>(null);
     const [selectedProjectId, setSelectedProjectId] = useState<number | ''>('');
     const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>([]);
     const [priority, setPriority] = useState<1 | 2 | 3 | 4>(4);
@@ -58,6 +59,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
         setName('');
         setDescription('');
         setDueDate(null);
+        setRecurrenceLabel(null);
         setSelectedProjectId(projectId ?? '');
         setSelectedLabelIds(labelId ? [labelId] : []);
         setPriority(4);
@@ -71,6 +73,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
     const initForm = () => {
         const defaultDate = defaultDueDateForView(view);
         setDueDate(defaultDate);
+        setRecurrenceLabel(null);
         setSelectedProjectId(projectId ?? '');
         setSelectedLabelIds(labelId ? [labelId] : []);
         setName('');
@@ -109,6 +112,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 view,
                 projectId: selectedProjectId === '' ? null : selectedProjectId,
                 dueDate,
+                recurrenceLabel,
                 labelIds: selectedLabelIds,
                 file: pendingFiles[0] ?? null,
                 priority,
@@ -230,7 +234,16 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                             )}
                         </button>
                         {showDatePicker && (
-                            <DatePickerDropdown value={dueDate} onChange={change => setDueDate(change.date)} />
+                            <DatePickerDropdown
+                                value={dueDate}
+                                repeatValue={recurrenceLabel}
+                                onChange={change => {
+                                    setDueDate(change.date);
+                                    if (change.repeat !== undefined) {
+                                        setRecurrenceLabel(change.repeat);
+                                    }
+                                }}
+                            />
                         )}
                     </div>
 

@@ -81,8 +81,11 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     useEffect(() => {
         setIsEditingMain(false);
         setEditingSubtaskId(null);
-        setRecurrence(null);
     }, [currentId]);
+
+    useEffect(() => {
+        if (habit) setRecurrence(habit.recurrenceLabel);
+    }, [habit?.recurrenceLabel, currentId]);
 
     useEffect(() => {
         let cancelled = false;
@@ -224,7 +227,11 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     const handleToggleCurrent = async () => {
         if (!habit) return;
         const wasCompleted = habit.completedToday;
-        const result = await dispatch(checkHabit({ habitId: habit.id, wasCompleted }));
+        const result = await dispatch(checkHabit({
+            habitId: habit.id,
+            wasCompleted,
+            instanceId: habit.instanceId,
+        }));
         if (checkHabit.fulfilled.match(result)) {
             setTasks(prev => ({ ...prev, [currentId]: result.payload }));
             if (!wasCompleted && result.payload.completedToday) {
@@ -235,8 +242,13 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
 
     const handleToggleSubtask = async (subtaskId: number) => {
         if (!habit) return;
-        const previousCompleted = habit.subtasks.find(s => s.id === subtaskId)?.completed;
-        const result = await dispatch(toggleSubtask({ habitId: habit.id, subtaskId }));
+        const subtask = habit.subtasks.find(s => s.id === subtaskId);
+        const previousCompleted = subtask?.completed;
+        const result = await dispatch(toggleSubtask({
+            habitId: habit.id,
+            subtaskId,
+            instanceId: subtask?.instanceId,
+        }));
         if (toggleSubtask.fulfilled.match(result)) {
             let { subtaskId: id, completed } = result.payload;
             if (previousCompleted !== undefined && completed === previousCompleted) {

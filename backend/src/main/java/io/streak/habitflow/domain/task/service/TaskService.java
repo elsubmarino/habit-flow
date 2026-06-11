@@ -181,20 +181,22 @@ public class TaskService {
                 })
                 .toList();
 
-        return TaskResponse.from(savedTaskMaster, labelListResponses);
+        return TaskResponse.from(savedTaskMaster, firstInstance, labelListResponses);
     }
 
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse getTaskById(Long taskId, Long memberId){
-        TaskMaster taskMaster = taskMasterRepository.findById(taskId)
+    public TaskResponse getTaskById(Long taskInstanceId, Long memberId){
+        TaskInstance taskInstance = taskInstanceRepository.findById(taskInstanceId)
                 .orElseThrow();
+
+        TaskMaster taskMaster = taskInstance.getTaskMaster();
 
         List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels().stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
 
-        return TaskResponse.from(taskMaster,labelListResponses);
+        return TaskResponse.from(taskMaster, taskInstance, labelListResponses);
     }
 
     public List<TaskListResponse> getTasksByProject(Long ProjectId){
@@ -232,7 +234,6 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    @SuppressWarnings("unused")
     public TaskResponse updateTask(Long taskId, TaskUpdateRequest taskUpdateRequest, Long memberId){
         TaskMaster taskMaster = taskMasterRepository.findById(taskId)
                 .orElseThrow();
@@ -281,11 +282,15 @@ public class TaskService {
             ));
         }
 
+        TaskInstance activeInstance = taskInstanceRepository.findByTaskMasterAndIsCompletedFalse(taskMaster)
+                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByTargetDateDesc(taskMaster)
+                        .orElseThrow(() -> new IllegalStateException("실행 기록이 존재하지 않는 테스크입니다.")));
+
         List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels().stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
 
-        return TaskResponse.from(taskMaster,labelListResponses);
+        return TaskResponse.from(taskMaster,activeInstance, labelListResponses);
     }
 
     @Transactional
@@ -333,7 +338,7 @@ public class TaskService {
         List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels().stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.from(taskMaster,labelListResponses);
+        return TaskResponse.from(taskMaster,taskInstance, labelListResponses);
     }
 
     public long getTaskCount(TaskFilterType taskFilterType, Long memberId){
@@ -377,27 +382,27 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse updateTaskDueDate(Long taskId, LocalDateTime dueDate, Long memberId){
-        TaskMaster taskMaster = taskMasterRepository.findById(taskId)
+    public TaskResponse updateTaskDueDate(Long taskInstanceId, LocalDate targetDate, Long memberId){
+        TaskInstance taskInstance = taskInstanceRepository.findById(taskInstanceId)
                 .orElseThrow();
-        //TODO
-        //taskMaster.updateDueDate(dueDate);
+
+        TaskMaster taskMaster = taskInstance.getTaskMaster();
+
+        taskInstance.updateTargetDate(targetDate);
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 taskMaster.getId(),
                 memberId,
                 TargetType.TASK,
                 ActivityType.UPDATED,
-                //TODO
-                "ASDF"
-                //"당신이 테스크 "+ taskMaster.getName()+"의 날짜를 "+ taskMaster.getDueDate()+"으로 변경했습니다."
+                "당신이 테스크 "+ taskMaster.getName()+"의 날짜를 "+ taskInstance.getTargetDate()+"으로 변경했습니다."
         ));
 
         List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels()
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.from(taskMaster,labelListResponses);
+        return TaskResponse.from(taskMaster,taskInstance, labelListResponses);
     }
 
     @Transactional
@@ -416,11 +421,16 @@ public class TaskService {
                 "당신이 테스크 "+ taskMaster.getName()+"의 우선순위를 "+ taskMaster.getTaskPriorityType().name()+"으로 변경했습니다."
         ));
 
+        TaskInstance activeInstance = taskInstanceRepository.findByTaskMasterAndIsCompletedFalse(taskMaster)
+                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByTargetDateDesc(taskMaster)
+                        .orElseThrow(() -> new IllegalStateException("실행 기록이 존재하지 않는 테스크입니다.")));
+
+
         List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels()
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.from(taskMaster,labelListResponses);
+        return TaskResponse.from(taskMaster,activeInstance, labelListResponses);
     }
 
     @Transactional
@@ -430,9 +440,13 @@ public class TaskService {
         TaskMaster taskMaster = taskMasterRepository.findById(taskId)
                 .orElseThrow();
 
+        TaskInstance activeInstance = taskInstanceRepository.findByTaskMasterAndIsCompletedFalse(taskMaster)
+                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByTargetDateDesc(taskMaster)
+                        .orElseThrow(() -> new IllegalStateException("실행 기록이 존재하지 않는 테스크입니다.")));
+
         if(labelIds == null || labelIds.isEmpty()){
             taskMaster.getSubTaskMasters().clear();
-            return TaskResponse.from(taskMaster,new ArrayList<>());
+            return TaskResponse.from(taskMaster,activeInstance, new ArrayList<>());
         }
 
         List<Label> realLabels  =labelRepository.findAllById(labelIds);
@@ -459,7 +473,7 @@ public class TaskService {
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.from(taskMaster,labelListResponses);
+        return TaskResponse.from(taskMaster,activeInstance, labelListResponses);
     }
 
     @Transactional
@@ -469,6 +483,11 @@ public class TaskService {
     public TaskResponse updateProject(Long taskId, Long projectId, Long memberId){
         TaskMaster taskMaster = taskMasterRepository.findById(taskId)
                 .orElseThrow();
+
+        TaskInstance activeInstance = taskInstanceRepository.findByTaskMasterAndIsCompletedFalse(taskMaster)
+                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByTargetDateDesc(taskMaster)
+                        .orElseThrow(() -> new IllegalStateException("실행 기록이 존재하지 않는 테스크입니다.")));
+
         Project project = projectRepository.findById(projectId)
                         .orElseThrow();
         taskMaster.updateProject(project);
@@ -484,7 +503,7 @@ public class TaskService {
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.from(taskMaster,labelListResponses);
+        return TaskResponse.from(taskMaster,activeInstance, labelListResponses);
     }
 
 }

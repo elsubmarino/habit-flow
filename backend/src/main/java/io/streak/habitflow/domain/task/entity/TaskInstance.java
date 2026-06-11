@@ -30,4 +30,6 @@ public class TaskInstance extends BaseTimeEntity {
     public void updateCompleted(boolean isCompleted){
         this.isCompleted = isCompleted;
     }
+
+    public void updateTargetDate(LocalDate targetDate){this.targetDate=targetDate;}
 }

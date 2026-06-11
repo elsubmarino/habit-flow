@@ -1,9 +1,9 @@
 import { apiClient } from './client';
 import type { PriorityType, ScrollResponse, TaskDto, TaskFilterType } from './types';
-import { dueDateToApi, readCompleted } from './mappers';
+import { dueDateToApi, readCompleted, type RecurrenceApiPayload } from './mappers';
 import { buildScrollParams, TASK_PAGE_SIZE } from './pagination';
 
-export interface CreateTaskPayload {
+export interface CreateTaskPayload extends RecurrenceApiPayload {
     name: string;
     description?: string;
     dueDate?: string | null;
@@ -108,10 +108,15 @@ export async function createTask(payload: CreateTaskPayload): Promise<TaskDto> {
         name: payload.name,
         description: payload.description ?? '',
         dueDate: dueDateToApi(payload.dueDate),
-        priorityType: payload.priorityType ?? 'P4',
+        taskPriorityType: payload.priorityType ?? 'P4',
         projectId: payload.projectId ?? null,
         parentId: payload.parentId ?? null,
         labelIds: payload.labelIds ?? [],
+        isRecurring: payload.isRecurring ?? false,
+        recurrenceRule: payload.recurrenceRule,
+        recurrenceInterval: payload.recurrenceInterval ?? 0,
+        recurrenceDays: payload.recurrenceDays,
+        recurrenceDayOfMonth: payload.recurrenceDayOfMonth,
     };
     const { data } = await apiClient.post<TaskDto>(
         '/api/tasks',
@@ -161,11 +166,12 @@ export async function deleteTask(taskId: number): Promise<void> {
     await apiClient.delete(`/api/tasks/${taskId}`);
 }
 
+/** @param instanceId TaskInstance ID (백엔드 toggle API는 인스턴스 기준) */
 export async function toggleTaskCompletion(
-    taskId: number,
+    instanceId: number,
     previousCompleted?: boolean,
 ): Promise<TaskDto> {
-    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/toggle`);
+    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${instanceId}/toggle`);
     if (
         previousCompleted !== undefined
         && readCompleted(data) === previousCompleted
