@@ -8,7 +8,7 @@ interface SearchModalProps {
     projects: Project[];
     labels: Label[];
     onClose: () => void;
-    onSelectHabit: (habitId: number) => void;
+    onSelectHabit: (habit: Habit) => void;
     onSelectProject: (projectId: number) => void;
     onSelectLabel: (labelId: number) => void;
 }
@@ -41,7 +41,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
             setSearching(true);
             void searchIntegrated(q)
                 .then(result => {
-                    setRemoteHabits(result.tasks.map(mapTaskToHabit));
+                    setRemoteHabits(result.tasks.map(t => mapTaskToHabit(t)));
                     setRemoteProjects(result.projects.map(p => mapProject(p)));
                     setRemoteLabels(result.labels.map(l => mapLabel(l)));
                 })
@@ -103,7 +103,7 @@ const SearchModal: React.FC<SearchModalProps> = ({
                             type="button"
                             className="search-result"
                             onClick={() => {
-                                onSelectHabit(habit.id);
+                                onSelectHabit(habit);
                                 onClose();
                             }}
                         >

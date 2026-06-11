@@ -24,12 +24,12 @@ public class TaskInstance extends BaseTimeEntity {
     @JoinColumn(name = "task_master_id",nullable = false)
     private TaskMaster taskMaster;
 
-    private LocalDate targetDate;
+    private LocalDate dueDate;
     private boolean isCompleted;
 
     public void updateCompleted(boolean isCompleted){
         this.isCompleted = isCompleted;
     }
 
-    public void updateTargetDate(LocalDate targetDate){this.targetDate=targetDate;}
+    public void updateDueDate(LocalDate targetDate){this.dueDate =targetDate;}
 }

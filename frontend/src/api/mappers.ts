@@ -247,15 +247,21 @@ export function mapCommentDtos(comments: CommentDtoLike[]): CommentItem[] {
         .filter((c): c is CommentItem => c != null);
 }
 
-function mapSubtasks(subTasks?: TaskDto[], parentInstanceId?: number | null): Subtask[] {
-    return (subTasks ?? []).map(st => ({
-        id: readMasterId(st),
-        instanceId: readInstanceId(st) ?? parentInstanceId ?? null,
-        name: st.name,
-        description: st.description ?? '',
-        completed: readCompleted(st),
-        childCount: st.subTasks?.length ?? 0,
-    }));
+function mapSubtasks(
+    subTasks?: TaskDto[],
+    instanceIdByMasterId?: Record<number, number>,
+): Subtask[] {
+    return (subTasks ?? []).map(st => {
+        const masterId = readMasterId(st);
+        return {
+            id: masterId,
+            instanceId: readInstanceId(st) ?? instanceIdByMasterId?.[masterId] ?? null,
+            name: st.name,
+            description: st.description ?? '',
+            completed: readCompleted(st),
+            childCount: st.subTasks?.length ?? 0,
+        };
+    });
 }
 
 function parseDueDateTime(value?: string | null): { date: string | null; time: string | null } {
@@ -299,7 +305,11 @@ function readTaskPriority(task: TaskDto): PriorityType | null | undefined {
     return task.priorityType ?? task.taskPriorityType;
 }
 
-export function mapTaskToHabit(task: TaskDto, knownInstanceId?: number | null): Habit {
+export function mapTaskToHabit(
+    task: TaskDto,
+    knownInstanceId?: number | null,
+    subtaskInstanceIds?: Record<number, number>,
+): Habit {
     const completed = readCompleted(task);
     const { date: dueDate, time: dueTime } = parseDueDateTime(task.dueDate);
     const counts = resolveTaskCounts(task);
@@ -323,7 +333,7 @@ export function mapTaskToHabit(task: TaskDto, knownInstanceId?: number | null): 
         labels: (task.labels ?? []).map(l => mapLabel(l)),
         attachments: mapAttachments(task.comments),
         reminders: [],
-        subtasks: mapSubtasks(task.subTasks, instanceId),
+        subtasks: mapSubtasks(task.subTasks, subtaskInstanceIds),
         comments: mapComments(task.comments),
         subtaskCount: counts.subtaskCount,
         subtaskCompletedCount: counts.subtaskCompletedCount,

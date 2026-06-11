@@ -1,8 +1,5 @@
 package io.streak.habitflow.domain.task.repository;
 
-import static io.streak.habitflow.domain.project.entity.QProject.project;
-import static io.streak.habitflow.domain.task.entity.QTaskMaster.taskMaster;
-
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -15,8 +12,8 @@ import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.QTaskInstance;
-import io.streak.habitflow.domain.task.entity.QTaskMaster;
 import io.streak.habitflow.domain.task.entity.QTaskLabel;
+import io.streak.habitflow.domain.task.entity.QTaskMaster;
 import io.streak.habitflow.domain.task.entity.TaskMaster;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +21,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import static io.streak.habitflow.domain.project.entity.QProject.project;
+import static io.streak.habitflow.domain.task.entity.QTaskMaster.taskMaster;
 
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
@@ -96,9 +95,10 @@ public class TaskMasterRepositoryCustomImpl implements TaskMasterRepositoryCusto
                                 taskMaster.name,
                                 taskMaster.description,
                                 taskMaster.taskPriorityType,
-                                taskInstance.targetDate.as("dueDate"),
+                                taskInstance.dueDate,
                                 taskMaster.sortOrder,
                                 taskMaster.project.name.as("projectName"),
+                                taskInstance.id.as("taskInstanceId"),
                                 ExpressionUtils.as(
                                         JPAExpressions.select(subTask.count())
                                                 .from(subTask)
@@ -117,6 +117,7 @@ public class TaskMasterRepositoryCustomImpl implements TaskMasterRepositoryCusto
                 )
                 .from(taskMaster)
                 .leftJoin(taskMaster.project, project)
+                .join(taskMaster.taskInstances, taskInstance).on(taskInstance.isCompleted.eq(false))
                 .leftJoin(taskMaster.taskLabels, QTaskLabel.taskLabel)
                 .leftJoin(QTaskLabel.taskLabel.label, QLabel.label)
                 .where(taskMaster.member.id.eq(memberId),
@@ -130,9 +131,9 @@ public class TaskMasterRepositoryCustomImpl implements TaskMasterRepositoryCusto
 
     private BooleanExpression filterTypeEq(TaskFilterType taskFilterType, QTaskInstance taskInstance) {
         if(taskFilterType == null) return null;
-        LocalDate localDateTime = LocalDate.now();
+        LocalDate localDate = LocalDate.now();
         if(TaskFilterType.TODAY == taskFilterType){
-            return taskInstance.targetDate.loe(localDateTime);
+            return taskInstance.dueDate.loe(localDate);
         }else if(TaskFilterType.INBOX == taskFilterType){
             return taskMaster.project.isNull();
         }

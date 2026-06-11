@@ -21,6 +21,8 @@ import {
     type Habit,
     type Label,
     type Project,
+    type TaskSelection,
+    selectionFromHabit,
 } from './store/habitSlice';
 import HabitItem from './components/HabitItem';
 import AddHabitForm, { type AddHabitFormHandle } from './components/AddHabitForm';
@@ -134,7 +136,7 @@ function App() {
         () => localStorage.getItem('habitflow.favoritesListExpanded') !== 'false',
     );
     const [showSearchModal, setShowSearchModal] = useState(false);
-    const [selectedHabitId, setSelectedHabitId] = useState<number | null>(null);
+    const [selectedTask, setSelectedTask] = useState<TaskSelection | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => bootstrapAuthFromCallback());
     const addFormRef = useRef<AddHabitFormHandle>(null);
     const mainPanelRef = useRef<HTMLElement>(null);
@@ -159,10 +161,28 @@ function App() {
         refreshSidebarCounts();
     }, [showCompleteToast, refreshSidebarCounts]);
 
+    const handleOpenHabit = useCallback((habit: Habit) => {
+        const selection = selectionFromHabit(habit);
+        if (!selection) {
+            window.alert('작업 일정 정보를 불러올 수 없습니다. 목록을 새로고침해 주세요.');
+            return;
+        }
+        setSelectedTask(selection);
+    }, []);
+
+    const handleOpenMasterId = useCallback((masterId: number) => {
+        const habit = habits.find(h => h.id === masterId);
+        if (habit) {
+            handleOpenHabit(habit);
+            return;
+        }
+        window.alert('작업을 찾을 수 없습니다. 목록을 새로고침한 뒤 다시 시도해 주세요.');
+    }, [habits, handleOpenHabit]);
+
     const handleTaskDeleted = useCallback((habitId: number) => {
-        if (selectedHabitId === habitId) setSelectedHabitId(null);
+        if (selectedTask?.masterId === habitId) setSelectedTask(null);
         refreshSidebarCounts();
-    }, [selectedHabitId, refreshSidebarCounts]);
+    }, [selectedTask?.masterId, refreshSidebarCounts]);
 
     const handleUndoComplete = useCallback(async () => {
         if (completedTaskId == null) return;
@@ -455,7 +475,7 @@ function App() {
                     key={habit.id}
                     habit={habit}
                     layout={taskRowLayout}
-                    onOpenDetails={setSelectedHabitId}
+                    onOpenDetails={handleOpenHabit}
                     onOpenProject={handleProjectSelect}
                     onTaskCompleted={handleTaskCompleted}
                     onTaskDeleted={handleTaskDeleted}
@@ -503,7 +523,7 @@ function App() {
                         <OverdueTasksSection
                             habits={overduePending}
                             layout="list"
-                            onOpenDetails={setSelectedHabitId}
+                            onOpenDetails={handleOpenHabit}
                             onOpenProject={handleProjectSelect}
                             onTaskCompleted={handleTaskCompleted}
                             onTaskDeleted={handleTaskDeleted}
@@ -530,7 +550,7 @@ function App() {
                                         key={habit.id}
                                         habit={habit}
                                         layout="list"
-                                        onOpenDetails={setSelectedHabitId}
+                                        onOpenDetails={handleOpenHabit}
                                         onOpenProject={handleProjectSelect}
                                         onTaskCompleted={handleTaskCompleted}
                                         onTaskDeleted={handleTaskDeleted}
@@ -550,7 +570,7 @@ function App() {
             return (
                 <UpcomingTaskList
                     habits={displayHabits}
-                    onOpenDetails={setSelectedHabitId}
+                    onOpenDetails={handleOpenHabit}
                     onOpenProject={handleProjectSelect}
                     onAddTask={() => addFormRef.current?.open()}
                     onTaskCompleted={handleTaskCompleted}
@@ -640,7 +660,7 @@ function App() {
                 {showNotifications ? (
                     <NotificationsView
                         onOpenTask={id => {
-                            setSelectedHabitId(id);
+                            handleOpenMasterId(id);
                             setShowNotifications(false);
                         }}
                         onOpenProject={id => {
@@ -652,7 +672,7 @@ function App() {
                     <ActivityLogView
                         projects={projects}
                         scrollRootRef={mainPanelRef}
-                        onOpenTask={id => setSelectedHabitId(id)}
+                        onOpenTask={handleOpenMasterId}
                     />
                 ) : showProjectsPanel ? (
                     <ProjectsBrowseView
@@ -816,10 +836,10 @@ function App() {
                 />
             )}
 
-            {selectedHabitId != null && (
+            {selectedTask != null && (
                 <TaskDetailModal
-                    taskId={selectedHabitId}
-                    onClose={() => setSelectedHabitId(null)}
+                    selection={selectedTask}
+                    onClose={() => setSelectedTask(null)}
                     onTaskCompleted={handleTaskCompleted}
                 />
             )}
@@ -837,7 +857,7 @@ function App() {
                     projects={projects}
                     labels={labels}
                     onClose={() => setShowSearchModal(false)}
-                    onSelectHabit={id => setSelectedHabitId(id)}
+                    onSelectHabit={handleOpenHabit}
                     onSelectProject={id => handleProjectSelect(id)}
                     onSelectLabel={id => handleLabelSelect(id)}
                 />

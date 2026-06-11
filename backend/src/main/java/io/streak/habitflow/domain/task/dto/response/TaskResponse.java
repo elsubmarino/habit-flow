@@ -11,9 +11,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Getter
 @Builder
@@ -27,6 +27,7 @@ public class TaskResponse {
     private TaskPriorityType taskPriorityType;
     private LocalDate dueDate;
     private long sortOrder;
+    private Long taskInstanceId;
 
     private Long userId;
     private String userName;
@@ -53,7 +54,7 @@ public class TaskResponse {
                 .description(taskMaster.getDescription())
                 .completed(taskInstance.isCompleted())
                 .taskPriorityType(taskMaster.getTaskPriorityType())
-                .dueDate(taskInstance.getTargetDate())
+                .dueDate(taskInstance.getDueDate())
                 .sortOrder(taskMaster.getSortOrder())
                 .labels(labelListResponses)
                 .comments(taskMaster.getComments().stream()
@@ -61,8 +62,10 @@ public class TaskResponse {
                         .toList())
                 .subTasks(taskMaster.getSubTaskMasters().stream()
                         .map(subTaskMaster -> {
+                            LocalDate parentDueDate = (taskInstance != null) ? taskInstance.getDueDate() :  null;
                             TaskInstance subTaskInstance = subTaskMaster.getTaskInstances().stream()
-                                    .filter(inst -> inst.getTargetDate().equals(taskInstance.getTargetDate()))
+                                    .filter(inst ->
+                                            Objects.equals(inst.getDueDate(),parentDueDate))
                                     .findFirst()
                                     .orElse(null);
                             return TaskResponse.fromSimpleSubTask(subTaskMaster, subTaskInstance);
@@ -96,7 +99,8 @@ public class TaskResponse {
         return TaskResponse.builder()
                 .id(subTaskMaster.getId())
                 .name(subTaskMaster.getName())
-                .completed(taskInstance.isCompleted())
+                .taskInstanceId(taskInstance != null ? taskInstance.getId() : null)
+                .completed(taskInstance != null && taskInstance.isCompleted())
                 .build();
     }
 }

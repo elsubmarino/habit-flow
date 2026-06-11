@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 import type { PriorityType, ScrollResponse, TaskDto, TaskFilterType } from './types';
-import { dueDateToApi, readCompleted, type RecurrenceApiPayload } from './mappers';
+import { readCompleted, readInstanceId, type RecurrenceApiPayload } from './mappers';
 import { buildScrollParams, TASK_PAGE_SIZE } from './pagination';
 
 export interface CreateTaskPayload extends RecurrenceApiPayload {
@@ -113,7 +113,7 @@ export async function createTask(payload: CreateTaskPayload): Promise<TaskDto> {
     const body = {
         name: payload.name,
         description: payload.description ?? '',
-        dueDate: dueDateToApi(payload.dueDate),
+        dueDate: payload.dueDate ? payload.dueDate.slice(0, 10) : undefined,
         taskPriorityType: payload.priorityType ?? 'P4',
         projectId: payload.projectId ?? null,
         parentId: payload.parentId ?? null,
@@ -170,6 +170,18 @@ export async function patchTaskProject(taskId: number, projectId: number | null)
 
 export async function deleteTask(taskId: number): Promise<void> {
     await apiClient.delete(`/api/tasks/${taskId}`);
+}
+
+/** 목록 API에서 masterId로 TaskInstance ID 조회 (하위 작업 탐색용) */
+export async function findInstanceIdByMasterId(masterId: number): Promise<number | null> {
+    const loaders = [fetchTodayTasks, fetchUpcomingTasks, fetchInboxTasks];
+    for (const loadPage of loaders) {
+        const tasks = await fetchAllTaskPages(loadPage);
+        const match = tasks.find(t => t.id === masterId);
+        const instanceId = match ? readInstanceId(match) : null;
+        if (instanceId != null) return instanceId;
+    }
+    return null;
 }
 
 /** @param instanceId TaskInstance ID (백엔드 toggle API는 인스턴스 기준) */

@@ -8,5 +8,5 @@ import java.util.Optional;
 
 public interface TaskInstanceRepository extends JpaRepository<TaskInstance, Long> {
     Optional<TaskInstance> findByTaskMasterAndIsCompletedFalse(TaskMaster taskMaster);
-    Optional<TaskInstance> findTopByTaskMasterOrderByTargetDateDesc(TaskMaster taskMaster);
+    Optional<TaskInstance> findTopByTaskMasterOrderByDueDateDesc(TaskMaster taskMaster);
 }

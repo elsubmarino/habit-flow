@@ -9,7 +9,7 @@ import { ChevronDownIcon } from './icons';
 interface OverdueTasksSectionProps {
     habits: Habit[];
     layout?: TaskRowLayout;
-    onOpenDetails?: (habitId: number) => void;
+    onOpenDetails?: (habit: Habit) => void;
     onOpenProject?: (projectId: number) => void;
     onTaskCompleted?: (habit: Habit) => void;
     onTaskDeleted?: (habitId: number) => void;
@@ -32,10 +32,16 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
     const handleReschedule = async () => {
         setRescheduling(true);
         try {
+            const schedulable = habits.filter(h => h.instanceId != null);
+            if (schedulable.length === 0) {
+                window.alert('일정을 변경할 작업을 찾을 수 없습니다.');
+                return;
+            }
             await Promise.all(
-                habits.map(habit =>
+                schedulable.map(habit =>
                     dispatch(patchTaskDueDate({
                         habitId: habit.id,
+                        instanceId: habit.instanceId!,
                         dueDate: rescheduleHabitToToday(habit),
                     })).unwrap(),
                 ),

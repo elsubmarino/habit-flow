@@ -238,7 +238,7 @@ export const fetchHabits = createAsyncThunk(
     async (params: { view: ApiView; projectId?: number | null; labelId?: number | null }) => {
         const page = await loadTasksForView(params);
         return {
-            habits: page.tasks.map(mapTaskToHabit),
+            habits: page.tasks.map(t => mapTaskToHabit(t, readInstanceId(t))),
             view: params.view,
             projectId: params.projectId ?? null,
             labelId: params.labelId ?? null,
@@ -270,7 +270,7 @@ export const fetchMoreHabits = createAsyncThunk(
                 : await taskApi.fetchInboxTasks(tasksNextCursor);
 
         return {
-            habits: page.content.map(mapTaskToHabit),
+            habits: page.content.map(t => mapTaskToHabit(t, readInstanceId(t))),
             hasNext: page.hasNext,
             nextCursor: page.nextCursor,
         };
@@ -529,23 +529,28 @@ export const addSubtask = createAsyncThunk(
         name,
         description,
         projectId,
+        dueDate,
     }: {
         habitId: number;
         name: string;
         description: string;
         projectId?: number | null;
+        dueDate?: string | null;
     }) => {
         const task = await taskApi.createTask({
             name,
             description,
             parentId: habitId,
             projectId: projectId ?? null,
+            dueDate: dueDate ?? null,
         });
+        const instanceId = readInstanceId(task)
+            ?? await taskApi.findInstanceIdByMasterId(task.id);
         return {
             habitId,
             subtask: {
                 id: task.id,
-                instanceId: readInstanceId(task),
+                instanceId,
                 name: task.name,
                 description: description,
                 completed: false,
@@ -863,7 +868,13 @@ const habitSlice = createSlice({
             .addCase(addSubtask.fulfilled, (state, action) => {
                 const habit = state.list.find(h => h.id === action.payload.habitId);
                 if (habit) {
-                    habit.subtasks = [...(habit.subtasks ?? []), action.payload.subtask];
+                    const { subtask } = action.payload;
+                    const existing = habit.subtasks.find(s => s.id === subtask.id);
+                    if (existing) {
+                        if (subtask.instanceId != null) existing.instanceId = subtask.instanceId;
+                    } else {
+                        habit.subtasks = [...(habit.subtasks ?? []), subtask];
+                    }
                     habit.subtaskCount = habit.subtasks.length;
                 }
             })

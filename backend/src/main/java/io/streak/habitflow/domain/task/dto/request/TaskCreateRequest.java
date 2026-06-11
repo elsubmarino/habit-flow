@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +27,7 @@ public class TaskCreateRequest {
     private String description;
 
     @Schema(description = "마감 기한 일시")
-    private LocalDateTime dueDate;
+    private LocalDate dueDate;
 
     @Schema(description = "테스크 우선 순위 (P1~P4)")
     private TaskPriorityType taskPriorityType;

@@ -64,7 +64,7 @@ public class TaskInstanceController {
     public ResponseEntity<TaskResponse> updateTaskDueDate(@PathVariable Long taskInstanceId,
                                                           @RequestBody TaskUpdateDueDateRequest taskUpdateDueDateRequest,
                                                           @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        TaskResponse taskResponse = taskService.updateTaskDueDate(taskInstanceId, taskUpdateDueDateRequest.getTargetDate(), userPrincipal.getMemberId());
+        TaskResponse taskResponse = taskService.updateTaskDueDate(taskInstanceId, taskUpdateDueDateRequest, userPrincipal.getMemberId());
         return ResponseEntity.ok(taskResponse);
     }
 

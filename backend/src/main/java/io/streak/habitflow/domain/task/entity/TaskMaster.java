@@ -8,7 +8,6 @@ import io.streak.habitflow.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -105,5 +104,14 @@ public class TaskMaster extends BaseTimeEntity {
         this.project = project;
     }
 
+    public void updateRecurrenceInterval(int recurrenceInterval){
+        this.recurrenceInterval = recurrenceInterval;
+    }
+    public void updateRecurrenceDays(String recurrenceDays){
+        this.recurrenceDays = recurrenceDays;
+    }
+    public void updateRecurrenceDayOfMonth(Integer recurrenceDayOfMonth){
+        this.recurrenceDayOfMonth = recurrenceDayOfMonth;
+    }
 
 }

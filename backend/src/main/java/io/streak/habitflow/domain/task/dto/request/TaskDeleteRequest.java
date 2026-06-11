@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +22,7 @@ public class TaskDeleteRequest {
     private String name;
     private String description;
     private String priorityType;
-    private LocalDateTime dueDate;
+    private LocalDate dueDate;
     private Long projectId;
     private Long parentId;
 

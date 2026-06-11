@@ -15,11 +15,12 @@ import {
     updateHabit,
     type CommentItem,
     type Habit,
+    type Subtask,
     type TaskSelection,
 } from '../store/habitSlice';
 import { getApiErrorMessage } from '../api/apiError';
 import { displayLabelName } from '../api/labelMappers';
-import { formatDueLabel } from '../utils/date';
+import { formatDueLabel, toISODate } from '../utils/date';
 import CommentListItem from './CommentListItem';
 import DatePickerDropdown, { type DatePickerChange } from './DatePickerDropdown';
 import TaskEditBox from './TaskEditBox';
@@ -71,6 +72,18 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
     const [draftLabelIds, setDraftLabelIds] = useState<number[]>([]);
     const [savingLabels, setSavingLabels] = useState(false);
     const labelMenuRef = useRef<HTMLDivElement>(null);
+    /** API가 하위 작업 instanceId를 내려주지 않을 때 탐색용 캐시 (masterId → instanceId) */
+    const subtaskInstanceIdsRef = useRef<Record<number, number>>({});
+
+    const mapWithSubtaskInstances = useCallback(
+        (task: Parameters<typeof mapTaskToHabit>[0], instanceId: number) =>
+            mapTaskToHabit(task, instanceId, subtaskInstanceIdsRef.current),
+        [],
+    );
+
+    const cacheSubtaskInstance = useCallback((masterId: number, instanceId: number) => {
+        subtaskInstanceIdsRef.current[masterId] = instanceId;
+    }, []);
 
     const current = stack[stack.length - 1];
     const habit = tasks[current.instanceId];
@@ -94,7 +107,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
         void taskApi.fetchTaskInstanceById(current.instanceId)
             .then(async task => {
                 if (cancelled) return;
-                const mapped = mapTaskToHabit(task, current.instanceId);
+                const mapped = mapWithSubtaskInstances(task, current.instanceId);
                 setTasks(prev => ({ ...prev, [current.instanceId]: mapped }));
                 try {
                     const commentDtos = await commentApi.fetchTaskComments(current.masterId);
@@ -144,7 +157,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
 
     const refreshCurrent = async () => {
         const task = await taskApi.fetchTaskInstanceById(current.instanceId);
-        const mapped = mapTaskToHabit(task, current.instanceId);
+        const mapped = mapWithSubtaskInstances(task, current.instanceId);
         setTasks(prev => ({ ...prev, [current.instanceId]: mapped }));
         try {
             const commentDtos = await commentApi.fetchTaskComments(current.masterId);
@@ -154,13 +167,19 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
         }
     };
 
-    const navigateToSubtask = (sub: { id: number; instanceId: number | null }) => {
-        if (sub.instanceId == null) {
+    const navigateToSubtask = async (sub: Subtask) => {
+        let resolvedInstanceId: number | null =
+            sub.instanceId ?? subtaskInstanceIdsRef.current[sub.id] ?? null;
+        if (resolvedInstanceId == null) {
+            resolvedInstanceId = await taskApi.findInstanceIdByMasterId(sub.id);
+        }
+        if (resolvedInstanceId == null) {
             window.alert('하위 작업 일정 정보를 불러올 수 없습니다.');
             return;
         }
+        cacheSubtaskInstance(sub.id, resolvedInstanceId);
         setEditingSubtaskId(null);
-        setStack(prev => [...prev, { masterId: sub.id, instanceId: sub.instanceId! }]);
+        setStack(prev => [...prev, { masterId: sub.id, instanceId: resolvedInstanceId }]);
         setActiveMenu(null);
     };
 
@@ -308,11 +327,19 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
             name: subName.trim(),
             description: subDesc.trim(),
             projectId: resolveProjectIdForSubtask(),
+            dueDate: habit.dueDate ?? toISODate(new Date()),
         }));
 
         if (addSubtask.rejected.match(result)) {
             window.alert(getApiErrorMessage(result.error, '하위 작업을 추가하지 못했습니다.'));
             return;
+        }
+
+        if (addSubtask.fulfilled.match(result) && result.payload.subtask.instanceId != null) {
+            cacheSubtaskInstance(
+                result.payload.subtask.id,
+                result.payload.subtask.instanceId,
+            );
         }
 
         await refreshCurrent();
@@ -580,7 +607,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
                                                                 type="button"
                                                                 className="subtask-nav-btn"
                                                                 aria-label="하위 작업 열기"
-                                                                onClick={() => navigateToSubtask(sub)}
+                                                                onClick={() => void navigateToSubtask(sub)}
                                                             >
                                                                 ›
                                                             </button>

@@ -14,7 +14,7 @@ import OverdueTasksSection from './OverdueTasksSection';
 
 interface UpcomingTaskListProps {
     habits: Habit[];
-    onOpenDetails?: (habitId: number) => void;
+    onOpenDetails?: (habit: Habit) => void;
     onOpenProject?: (projectId: number) => void;
     onAddTask?: () => void;
     onTaskCompleted?: (habit: Habit) => void;

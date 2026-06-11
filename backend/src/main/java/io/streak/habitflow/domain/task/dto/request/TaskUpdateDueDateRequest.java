@@ -7,5 +7,10 @@ import java.time.LocalDateTime;
 
 @Getter
 public class TaskUpdateDueDateRequest {
-    private LocalDate targetDate;
+    private LocalDate dueDate;
+    private boolean isRecurring;
+    private String recurrenceRule;
+    private int recurrenceInterval;
+    private String recurrenceDays;
+    private Integer recurrenceDayOfMonth;
 }

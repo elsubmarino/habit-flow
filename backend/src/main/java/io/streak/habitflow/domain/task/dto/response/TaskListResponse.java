@@ -8,7 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,12 +21,13 @@ public class TaskListResponse {
     private String name;
     private String description;
     private TaskPriorityType taskPriorityType;
-    private LocalDateTime dueDate;
+    private LocalDate dueDate;
     private long sortOrder;
     private String projectName;
     private long countSubTasks;
     private long countSubTasksCompleted;
     private long countComments;
+    private Long taskInstanceId;
 
     @Builder.Default
     private List<LabelListResponse> labels = new ArrayList<>();

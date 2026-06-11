@@ -12,12 +12,13 @@ import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
 import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
+import io.streak.habitflow.domain.task.dto.request.TaskUpdateDueDateRequest;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.TaskInstance;
-import io.streak.habitflow.domain.task.entity.TaskMaster;
 import io.streak.habitflow.domain.task.entity.TaskLabel;
+import io.streak.habitflow.domain.task.entity.TaskMaster;
 import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import io.streak.habitflow.domain.task.repository.TaskInstanceRepository;
 import io.streak.habitflow.domain.task.repository.TaskMasterMasterRepository;
@@ -37,7 +38,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -117,11 +117,11 @@ public class TaskService {
                 .build();
 
         LocalDate initialDate = taskCreateRequest.getDueDate() != null ?
-                taskCreateRequest.getDueDate().toLocalDate() : null;
+                taskCreateRequest.getDueDate() : null;
 
         TaskInstance firstInstance = TaskInstance.builder()
                 .taskMaster(taskMaster)
-                .targetDate(initialDate)
+                .dueDate(initialDate)
                 .isCompleted(false)
                 .build();
 
@@ -283,7 +283,7 @@ public class TaskService {
         }
 
         TaskInstance activeInstance = taskInstanceRepository.findByTaskMasterAndIsCompletedFalse(taskMaster)
-                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByTargetDateDesc(taskMaster)
+                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByDueDateDesc(taskMaster)
                         .orElseThrow(() -> new IllegalStateException("실행 기록이 존재하지 않는 테스크입니다.")));
 
         List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels().stream()
@@ -305,11 +305,11 @@ public class TaskService {
         taskInstance.updateCompleted(nextCompletion);
 
         if(taskMaster.isRecurring() && nextCompletion){
-            LocalDate nextTargetDate = calculateNextInstanceDate(taskInstance.getTargetDate(),taskMaster);
+            LocalDate nextDueDate = calculateNextInstanceDate(taskInstance.getDueDate(),taskMaster);
 
             TaskInstance nextParentInstance = TaskInstance.builder()
                     .taskMaster(taskMaster)
-                    .targetDate(nextTargetDate)
+                    .dueDate(nextDueDate)
                     .isCompleted(false)
                     .build();
             taskInstanceRepository.save(nextParentInstance);
@@ -345,17 +345,17 @@ public class TaskService {
         return taskMasterRepository.countTasksByCondition(taskFilterType, memberId);
     }
 
-    private LocalDate calculateNextInstanceDate(LocalDate currentTargetDate, TaskMaster taskMaster){
+    private LocalDate calculateNextInstanceDate(LocalDate currentDueDate, TaskMaster taskMaster){
         int interval = taskMaster.getRecurrenceInterval() > 0 ? taskMaster.getRecurrenceInterval() : 1;
 
         switch(taskMaster.getRecurrenceRule()){
             case "DAILY":
                 //매일 또는 interval일 마다
-                return currentTargetDate.plusDays(interval);
+                return currentDueDate.plusDays(interval);
             case "WEEKLY":
                 // 매주 특정 요일 (예: MON, WED, FRI)
                if(taskMaster.getRecurrenceDays() != null && !taskMaster.getRecurrenceDays().isEmpty()){
-                   LocalDate nextDay = currentTargetDate.plusDays(1);
+                   LocalDate nextDay = currentDueDate.plusDays(1);
                    for(int i=0;i<7;i++){
                        String dayName = nextDay.getDayOfWeek().name().substring(0,3);
                        if(taskMaster.getRecurrenceDays().contains(dayName)){
@@ -364,10 +364,10 @@ public class TaskService {
                        nextDay = nextDay.plusDays(1);
                    }
                }
-               return currentTargetDate.plusWeeks(interval);
+               return currentDueDate.plusWeeks(interval);
             case "MONTHLY":
                 //매월 특정 일(예: 매월 11일)
-                LocalDate nextMonth = currentTargetDate.plusMonths(interval);
+                LocalDate nextMonth = currentDueDate.plusMonths(interval);
                 if(taskMaster.getRecurrenceDayOfMonth() != null){
                     int targetDay = taskMaster.getRecurrenceDayOfMonth();
                     int maxDayInMonth = nextMonth.lengthOfMonth();
@@ -375,27 +375,30 @@ public class TaskService {
                 }
                 return nextMonth;
             default:
-                return currentTargetDate.plusDays(1);
+                return currentDueDate.plusDays(1);
         }
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse updateTaskDueDate(Long taskInstanceId, LocalDate targetDate, Long memberId){
+    public TaskResponse updateTaskDueDate(Long taskInstanceId, TaskUpdateDueDateRequest taskUpdateDueDateRequest, Long memberId){
         TaskInstance taskInstance = taskInstanceRepository.findById(taskInstanceId)
                 .orElseThrow();
 
         TaskMaster taskMaster = taskInstance.getTaskMaster();
 
-        taskInstance.updateTargetDate(targetDate);
+        taskInstance.updateDueDate(taskUpdateDueDateRequest.getDueDate());
+        taskMaster.updateRecurrenceInterval(taskUpdateDueDateRequest.getRecurrenceInterval());
+        taskMaster.updateRecurrenceDays(taskUpdateDueDateRequest.getRecurrenceDays());
+        taskMaster.updateRecurrenceDayOfMonth(taskUpdateDueDateRequest.getRecurrenceDayOfMonth());
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 taskMaster.getId(),
                 memberId,
                 TargetType.TASK,
                 ActivityType.UPDATED,
-                "당신이 테스크 "+ taskMaster.getName()+"의 날짜를 "+ taskInstance.getTargetDate()+"으로 변경했습니다."
+                "당신이 테스크 "+ taskMaster.getName()+"의 날짜를 "+ taskInstance.getDueDate()+"으로 변경했습니다."
         ));
 
         List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels()
@@ -422,7 +425,7 @@ public class TaskService {
         ));
 
         TaskInstance activeInstance = taskInstanceRepository.findByTaskMasterAndIsCompletedFalse(taskMaster)
-                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByTargetDateDesc(taskMaster)
+                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByDueDateDesc(taskMaster)
                         .orElseThrow(() -> new IllegalStateException("실행 기록이 존재하지 않는 테스크입니다.")));
 
 
@@ -441,7 +444,7 @@ public class TaskService {
                 .orElseThrow();
 
         TaskInstance activeInstance = taskInstanceRepository.findByTaskMasterAndIsCompletedFalse(taskMaster)
-                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByTargetDateDesc(taskMaster)
+                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByDueDateDesc(taskMaster)
                         .orElseThrow(() -> new IllegalStateException("실행 기록이 존재하지 않는 테스크입니다.")));
 
         if(labelIds == null || labelIds.isEmpty()){
@@ -485,7 +488,7 @@ public class TaskService {
                 .orElseThrow();
 
         TaskInstance activeInstance = taskInstanceRepository.findByTaskMasterAndIsCompletedFalse(taskMaster)
-                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByTargetDateDesc(taskMaster)
+                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByDueDateDesc(taskMaster)
                         .orElseThrow(() -> new IllegalStateException("실행 기록이 존재하지 않는 테스크입니다.")));
 
         Project project = projectRepository.findById(projectId)
