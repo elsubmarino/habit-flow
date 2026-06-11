@@ -37,6 +37,8 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
     public List<ActivityLog> searchActivityLogsByCondition(Long activityLogId, Long memberId, Pageable pageable) {
         return queryFactory
                 .selectFrom(activityLog)
+                .leftJoin(activityLog.project, project).fetchJoin()
+                .leftJoin(activityLog.member, member).fetchJoin()
                 .where(
                         activityLog.member.id.eq(memberId),
                         ltActivityLogId(activityLogId)

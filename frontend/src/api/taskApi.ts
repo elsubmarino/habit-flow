@@ -1,6 +1,7 @@
 import { apiClient } from './client';
 import type { PriorityType, ScrollResponse, TaskDto, TaskFilterType } from './types';
 import { dueDateToApi, readCompleted } from './mappers';
+import { buildScrollParams, TASK_PAGE_SIZE } from './pagination';
 
 export interface CreateTaskPayload {
     name: string;
@@ -41,27 +42,30 @@ export async function fetchTaskCount(taskFilterType: TaskFilterType): Promise<nu
 
 export async function fetchInboxTasks(
     lastTaskId?: number,
+    size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
     const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/inbox', {
-        params: lastTaskId != null ? { lastTaskId } : undefined,
+        params: buildScrollParams(lastTaskId, 'lastTaskId', size),
     });
     return data;
 }
 
 export async function fetchTodayTasks(
     lastTaskId?: number,
+    size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
     const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/today', {
-        params: lastTaskId != null ? { lastTaskId } : undefined,
+        params: buildScrollParams(lastTaskId, 'lastTaskId', size),
     });
     return data;
 }
 
 export async function fetchUpcomingTasks(
     lastTaskId?: number,
+    size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
     const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/upcoming', {
-        params: lastTaskId != null ? { lastTaskId } : undefined,
+        params: buildScrollParams(lastTaskId, 'lastTaskId', size),
     });
     return data;
 }
