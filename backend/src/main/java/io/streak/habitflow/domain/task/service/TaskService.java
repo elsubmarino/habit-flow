@@ -28,6 +28,7 @@ import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -173,18 +174,16 @@ public class TaskService {
                 .toList();
     }
 
-    public ScrollResponse<TaskListResponse> getTasks(TaskSearchCondition taskSearchCondition, Long memberId){
+    public ScrollResponse<TaskListResponse> getTasks(TaskSearchCondition taskSearchCondition, Long memberId, Pageable pageable){
 
-        int pageSize = 20;
-
-        List<TaskListResponse> taskListResponses = taskRepository.searchTasksByCondition(taskSearchCondition, memberId);
+        List<TaskListResponse> taskListResponses = taskRepository.searchTasksByCondition(taskSearchCondition, memberId, pageable);
 
         boolean hasNext = false;
         Long nextCursor = null;
 
-        if(taskListResponses.size() > pageSize){
+        if(taskListResponses.size() > pageable.getPageSize()){
             hasNext = true;
-            taskListResponses = taskListResponses.subList(0, pageSize);
+            taskListResponses = taskListResponses.subList(0, pageable.getPageSize());
         }
 
         if(!taskListResponses.isEmpty()){

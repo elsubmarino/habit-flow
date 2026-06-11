@@ -11,6 +11,8 @@ import io.streak.habitflow.global.common.dto.ScrollResponse;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -42,29 +44,32 @@ public class TaskController {
 
     @GetMapping("/inbox")
     public ResponseEntity<ScrollResponse<TaskListResponse>> getInboxTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
-                                                                          @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
+                                                                          @RequestParam(value="lastTaskId",required = false) Long lastTaskId,
+                                                                          @PageableDefault(size=20)  Pageable pageable) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
         taskSearchCondition.setTaskFilterType(TaskFilterType.INBOX);
         taskSearchCondition.setLastTaskId(lastTaskId);
-        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition, userPrincipal.getMemberId()));
+        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition, userPrincipal.getMemberId(),pageable));
     }
 
     @GetMapping("/today")
     public ResponseEntity<ScrollResponse<TaskListResponse>> getTodayTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
-                                                                          @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
+                                                                          @RequestParam(value="lastTaskId",required = false) Long lastTaskId,
+                                                                          @PageableDefault(size=20) Pageable pageable) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
         taskSearchCondition.setTaskFilterType(TaskFilterType.TODAY);
         taskSearchCondition.setLastTaskId(lastTaskId);
-        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userPrincipal.getMemberId()));
+        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userPrincipal.getMemberId(), pageable));
     }
 
     @GetMapping("/upcoming")
     public ResponseEntity<ScrollResponse<TaskListResponse>> getUpcomingTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
-                                                                             @RequestParam(value="lastTaskId",required = false) Long lastTaskId) {
+                                                                             @RequestParam(value="lastTaskId",required = false) Long lastTaskId,
+                                                                             @PageableDefault(size = 20) Pageable pageable) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
         taskSearchCondition.setLastTaskId(lastTaskId);
 
-        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userPrincipal.getMemberId()));
+        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userPrincipal.getMemberId(), pageable));
     }
 
     @PutMapping("/{taskId}")

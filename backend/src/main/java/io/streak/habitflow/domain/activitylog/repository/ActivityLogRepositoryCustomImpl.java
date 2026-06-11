@@ -9,6 +9,8 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogSearchCondition;
 import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -32,8 +34,7 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
     }
 
     @Override
-    public List<ActivityLog> searchActivityLogsByCondition(Long activityLogId, Long memberId) {
-        int pageSize = 20;
+    public List<ActivityLog> searchActivityLogsByCondition(Long activityLogId, Long memberId, Pageable pageable) {
         return queryFactory
                 .selectFrom(activityLog)
                 .where(
@@ -41,7 +42,7 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
                         ltActivityLogId(activityLogId)
                 )
                 .orderBy(activityLog.id.desc())
-                .limit(pageSize+1)
+                .limit(pageable.getPageSize()+1)
                 .fetch();
     }
 

@@ -20,6 +20,7 @@ import io.streak.habitflow.domain.task.entity.QTaskLabel;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
@@ -62,7 +63,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskResponse> searchKeyword(String keyword, Long memberId) {
+    public List<TaskResponse> searchKeyword(String keyword, Long memberId, Pageable pageable) {
         return
                 queryFactory
                         .select(Projections.fields(
@@ -75,15 +76,14 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                                 task.name.contains(keyword),
                                 task.member.id.eq(memberId)
                         )
-                        .limit(5)
+                        .limit(pageable.getPageSize())
                         .fetch();
     }
 
     @Override
-    public List<TaskListResponse> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId) {
+    public List<TaskListResponse> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId, Pageable pageable) {
         QTask subTask = new QTask("subTask");
         QComment comment = QComment.comment;
-        int pageSize = 20;
 
         return queryFactory
                 .select(
@@ -120,7 +120,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         ltTaskId(taskSearchCondition.getLastTaskId())
                 )
                 .orderBy(task.id.desc())
-                .limit(pageSize+1)
+                .limit(pageable.getPageSize()+1)
                 .fetch();
     }
 

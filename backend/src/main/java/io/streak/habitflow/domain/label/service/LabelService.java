@@ -13,6 +13,7 @@ import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,17 +97,15 @@ public class LabelService {
         return LabelResponse.from(label, labelUpdateRequest.isFavorite());
     }
 
-    public ScrollResponse<LabelListResponse> getLabels(Long labelId, Long memberId) {
-        int pageSize = 20;
-
-        List<Label> labels = labelRepository.searchLabelsByCondition(labelId,memberId);
+    public ScrollResponse<LabelListResponse> getLabels(Long labelId, Long memberId, Pageable pageable) {
+        List<Label> labels = labelRepository.searchLabelsByCondition(labelId,memberId,pageable);
 
         boolean hasNext = false;
         Long nextCursor = null;
 
-        if(labels.size() > pageSize){
+        if(labels.size() > pageable.getPageSize()){
             hasNext = true;
-            labels = labels.subList(0, pageSize);
+            labels = labels.subList(0, pageable.getPageSize());
         }
 
         if(!labels.isEmpty()){

@@ -10,6 +10,8 @@ import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 @SuppressWarnings("unused")
@@ -18,7 +20,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
     @Override
-    public List<LabelListResponse> searchKeyword(String name, Long memberId) {
+    public List<LabelListResponse> searchKeyword(String name, Long memberId, Pageable pageable) {
         return queryFactory
                 .select(Projections.fields(
                         LabelListResponse.class,
@@ -32,13 +34,12 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
                         label.member.id.eq(memberId),
                         label.name.contains(name)
                 )
-                .limit(5)
+                .limit(pageable.getPageSize())
                 .fetch();
     }
 
     @Override
-    public List<Label> searchLabelsByCondition(Long labelId, Long memberId) {
-        int pageSize = 20;
+    public List<Label> searchLabelsByCondition(Long labelId, Long memberId, Pageable pageable) {
         return queryFactory
                 .selectFrom(label)
                 .where(
@@ -46,7 +47,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
                         ltLabelId(labelId)
                 )
                 .orderBy(label.id.desc())
-                .limit(pageSize+1)
+                .limit(pageable.getPageSize()+1)
                 .fetch();
     }
 

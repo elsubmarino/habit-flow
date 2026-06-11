@@ -8,6 +8,8 @@ import io.streak.habitflow.domain.label.service.LabelService;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -30,8 +32,9 @@ public class LabelController {
     @GetMapping
     public ResponseEntity<ScrollResponse<LabelListResponse>> getLabels(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
-            @RequestParam(value = "lastLabelId",required = false) Long lastLabelId) {
-        return ResponseEntity.ok(labelService.getLabels(lastLabelId,userPrincipal.getMemberId()));
+            @RequestParam(value = "lastLabelId",required = false) Long lastLabelId,
+            @PageableDefault(size=20) Pageable pageable) {
+        return ResponseEntity.ok(labelService.getLabels(lastLabelId,userPrincipal.getMemberId(),pageable));
     }
 
     @GetMapping("/{labelId}")

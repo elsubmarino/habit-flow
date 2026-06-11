@@ -17,6 +17,7 @@ import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -143,8 +144,8 @@ public class ProjectService {
 
     }
 
-    public List<ProjectListResponse> searchProjects(String keyword, Long memberId) {
-        return projectRepository.searchKeyword(keyword,memberId);
+    public List<ProjectListResponse> searchProjects(String keyword, Long memberId, Pageable pageable) {
+        return projectRepository.searchKeyword(keyword,memberId, pageable);
     }
 
     @Transactional

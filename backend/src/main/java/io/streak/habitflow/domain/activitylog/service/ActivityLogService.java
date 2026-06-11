@@ -11,6 +11,7 @@ import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,16 +42,15 @@ public class ActivityLogService {
         activityLogRepository.save(activityLog);
     }
 
-    public ScrollResponse<ActivityLogListResponse> getActivityLogs(Long lastActivityLogId, Long memberId) {
-        int pageSize = 20;
+    public ScrollResponse<ActivityLogListResponse> getActivityLogs(Long lastActivityLogId, Long memberId, Pageable pageable) {
         boolean hasNext = false;
         Long nextCursor = null;
 
-        List<ActivityLog> activityLogs = activityLogRepository.searchActivityLogsByCondition(lastActivityLogId, memberId);
+        List<ActivityLog> activityLogs = activityLogRepository.searchActivityLogsByCondition(lastActivityLogId, memberId, pageable);
 
-        if(activityLogs.size() > pageSize){
+        if(activityLogs.size() > pageable.getPageSize()){
             hasNext = true;
-            activityLogs = activityLogs.subList(0, pageSize);
+            activityLogs = activityLogs.subList(0, pageable.getPageSize());
         }
 
         if(!activityLogs.isEmpty()){

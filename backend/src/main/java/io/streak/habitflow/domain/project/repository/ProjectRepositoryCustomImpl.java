@@ -9,6 +9,9 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 @SuppressWarnings("unused")
@@ -17,7 +20,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<ProjectListResponse> searchKeyword(String keyword, Long memberId) {
+    public List<ProjectListResponse> searchKeyword(String keyword, Long memberId, Pageable pageable) {
         return queryFactory
                 .select(
                         Projections.fields(
@@ -32,7 +35,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                         projectMember.member.id.eq(memberId),
                         project.name.contains(keyword)
                 )
-                .limit(5)
+                .limit(pageable.getPageSize())
                 .fetch();
     }
 

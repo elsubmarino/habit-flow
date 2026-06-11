@@ -4,6 +4,8 @@ import io.streak.habitflow.domain.search.dto.response.IntegratedSearchResponse;
 import io.streak.habitflow.domain.search.service.IntegratedSearchService;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,7 +21,8 @@ public class IntegratedSearchController {
 
     @GetMapping
     public ResponseEntity<IntegratedSearchResponse> searchIntegratedItems(@RequestParam("keyword") String keyword,
-                                                                          @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        return ResponseEntity.ok(integratedSearchService.searchAll(keyword,userPrincipal.getMemberId()));
+                                                                          @AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                                          @PageableDefault(size=5) Pageable pageable) {
+        return ResponseEntity.ok(integratedSearchService.searchAll(keyword,userPrincipal.getMemberId(),pageable));
     }
 }

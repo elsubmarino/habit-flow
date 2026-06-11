@@ -13,6 +13,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -71,8 +74,9 @@ public class ProjectController {
 
     @GetMapping("/search")
     public ResponseEntity<List<ProjectListResponse>> searchProjects(@AuthenticationPrincipal UserPrincipal userPrincipal,
-                                                            @RequestParam("keyword") String keyword){
-        return ResponseEntity.ok(projectService.searchProjects(keyword,userPrincipal.getMemberId()));
+                                                                    @RequestParam("keyword") String keyword,
+                                                                    @PageableDefault(size=20) Pageable pageable){
+        return ResponseEntity.ok(projectService.searchProjects(keyword,userPrincipal.getMemberId(),pageable));
     }
 
     @PostMapping("/invitation")

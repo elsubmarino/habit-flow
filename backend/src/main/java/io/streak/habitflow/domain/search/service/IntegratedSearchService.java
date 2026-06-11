@@ -8,6 +8,7 @@ import io.streak.habitflow.domain.search.dto.response.IntegratedSearchResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,11 +20,11 @@ public class IntegratedSearchService {
     private final LabelRepository labelRepository;
     private final TaskRepository taskRepository;
 
-    public IntegratedSearchResponse searchAll(String keyword, Long memberId) {
+    public IntegratedSearchResponse searchAll(String keyword, Long memberId, Pageable pageable) {
 
-        List<ProjectListResponse> projectListResponses = projectRepository.searchKeyword(keyword, memberId);
-        List<TaskResponse> taskResponses = taskRepository.searchKeyword(keyword, memberId);
-        List<LabelListResponse> labelListResponses = labelRepository.searchKeyword(keyword,memberId);
+        List<ProjectListResponse> projectListResponses = projectRepository.searchKeyword(keyword, memberId, pageable);
+        List<TaskResponse> taskResponses = taskRepository.searchKeyword(keyword, memberId, pageable);
+        List<LabelListResponse> labelListResponses = labelRepository.searchKeyword(keyword,memberId, pageable);
 
         return IntegratedSearchResponse.builder()
                 .projects(projectListResponses)
