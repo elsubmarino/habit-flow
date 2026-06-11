@@ -10,15 +10,16 @@ import lombok.NoArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 
-@Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class CommentResponse {
-    private String content;
-
-    @Builder.Default
-    private List<AttachmentResponse> attachments = new ArrayList<>();
+public record CommentResponse(
+        String content,
+        List<AttachmentResponse> attachments
+) {
+    public CommentResponse{
+        if(attachments == null){
+            attachments = new ArrayList<>();
+        }
+    }
 
     public static CommentResponse from(Comment comment) {
         return CommentResponse.builder()

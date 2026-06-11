@@ -7,22 +7,19 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class NotificationListResponse {
-    private Long id;
-    private Long receiverId;
-    private Long actorId;
-    private String actorName;
-    private Long targetId;
-    private NotificationType notificationType;
-    private ActivityType activityType;
-    private String customMessage;
-    private boolean isConfirmed;
-    private LocalDateTime createdAt;
-
+public record NotificationListResponse(
+        Long id,
+        Long receiverId,
+        Long actorId,
+        String actorName,
+        Long targetId,
+        NotificationType notificationType,
+        ActivityType activityType,
+        String customMessage,
+        boolean isConfirmed,
+        LocalDateTime createdAt
+){
     public static NotificationListResponse from(Notification notification) {
         return NotificationListResponse
                 .builder()

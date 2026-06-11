@@ -9,14 +9,24 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Builder
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-public class IntegratedSearchResponse {
-    private List<ProjectListResponse> projects;
-    private List<TaskResponse> tasks;
-    private List<LabelListResponse> labels;
+public record IntegratedSearchResponse(
+        List<ProjectListResponse> projects,
+        List<TaskResponse> tasks,
+        List<LabelListResponse> labels
+) {
+    public IntegratedSearchResponse{
+        if(projects == null){
+            projects = new ArrayList<>();
+        }
+        if(tasks == null){
+            tasks = new ArrayList<>();
+        }
+        if(labels == null){
+            labels = new ArrayList<>();
+        }
+    }
 }

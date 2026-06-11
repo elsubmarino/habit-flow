@@ -6,10 +6,10 @@ import lombok.Builder;
 import lombok.Getter;
 
 @Builder
-@Getter
-public class ProjectMemberListResponse{
-    private String memberName;
-    private String email;
+public record ProjectMemberListResponse(
+        String memberName,
+        String email
+){
     public static ProjectMemberListResponse from(ProjectMember projectMember){
         return ProjectMemberListResponse.builder()
                 .memberName(projectMember.getMember().getName())

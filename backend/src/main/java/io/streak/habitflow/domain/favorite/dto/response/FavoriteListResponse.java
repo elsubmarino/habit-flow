@@ -6,13 +6,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Getter
-@AllArgsConstructor
-@NoArgsConstructor
-public class FavoriteListResponse {
-    private String targetName;
-    private Long targetId;
-    private TargetType targetType;
-    private Long id;
-    private long targetCount;
-}
+public record FavoriteListResponse(
+        String targetName,
+        Long targetId,
+        TargetType targetType,
+        Long id,
+        long targetCount
+) {}

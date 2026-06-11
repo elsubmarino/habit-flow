@@ -6,16 +6,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ProjectListResponse {
-    private Long id;
-    private String name;
-    private String color;
-    private long taskCount;
-
+public record ProjectListResponse(
+        Long id,
+        String name,
+        String color,
+        long taskCount
+) {
     public static ProjectListResponse from(Project project) {
         return ProjectListResponse.builder()
                 .id(project.getId())

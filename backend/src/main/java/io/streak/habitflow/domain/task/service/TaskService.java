@@ -221,7 +221,7 @@ public class TaskService {
         }
 
         if(!taskListResponses.isEmpty()){
-            nextCursor = taskListResponses.get(taskListResponses.size() - 1).getId();
+            nextCursor = taskListResponses.get(taskListResponses.size() - 1).id();
         }
 
         return ScrollResponse.<TaskListResponse>builder()

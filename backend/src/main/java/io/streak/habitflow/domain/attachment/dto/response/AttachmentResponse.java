@@ -3,14 +3,11 @@ package io.streak.habitflow.domain.attachment.dto.response;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import lombok.*;
 
-@Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class AttachmentResponse {
-    private String fileUrl;
-    private String originalFileName;
-
+public record AttachmentResponse(
+        String fileUrl,
+        String originalFileName
+) {
     public static AttachmentResponse from(Attachment attachment) {
         return  AttachmentResponse.builder()
                 .fileUrl(attachment.getFileUrl())

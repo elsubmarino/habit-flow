@@ -6,16 +6,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class LabelListResponse {
-    private Long id;
-    private String name;
-    private String color;
-    private long sortOrder;
-
+public record LabelListResponse(
+        Long id,
+        String name,
+        String color,
+         long sortOrder
+) {
     public static LabelListResponse from(Label label){
         return LabelListResponse.builder()
                 .id(label.getId())

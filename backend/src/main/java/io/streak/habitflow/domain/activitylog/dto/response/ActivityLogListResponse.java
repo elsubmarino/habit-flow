@@ -9,18 +9,15 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ActivityLogListResponse {
-    private Long id;
-    private ActivityType activityType;
-    private String userName;
-    private String projectName;
-    private LocalDateTime createdAt;
-    private String customMessage;
-
+public record ActivityLogListResponse(
+        Long id,
+        ActivityType activityType,
+        String userName,
+        String projectName,
+        LocalDateTime createdAt,
+        String customMessage
+) {
     public static ActivityLogListResponse from(ActivityLog activityLog){
         return ActivityLogListResponse.builder()
                 .id(activityLog.getId())
@@ -30,5 +27,4 @@ public class ActivityLogListResponse {
                 .customMessage(activityLog.getCustomMessage())
                 .build();
     }
-
 }

@@ -15,39 +15,38 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-@Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class TaskResponse {
-    private Long id;
-    private String name;
-    private String description;
-    private boolean completed;
-    private TaskPriorityType taskPriorityType;
-    private LocalDate dueDate;
-    private long sortOrder;
-    private Long taskInstanceId;
-
-    private Long userId;
-    private String userName;
-
-    private Long projectId;
-    private String projectName;
-    private String projectColor;
-
-    private Long parentId;
-    private boolean recurring;
-
-    @Builder.Default
-    private List<TaskResponse> subTasks = new ArrayList<>();
-
-    @Builder.Default
-    private List<LabelListResponse> labels = new ArrayList<>();
-
-    @Builder.Default
-    private List<CommentResponse> comments = new ArrayList<>();
-
+public record TaskResponse(
+        Long id,
+        String name,
+        String description,
+        boolean completed,
+        TaskPriorityType taskPriorityType,
+        LocalDate dueDate,
+        long sortOrder,
+        Long taskInstanceId,
+        Long userId,
+        String userName,
+        Long projectId,
+        String projectName,
+        String projectColor,
+        Long parentId,
+        boolean recurring,
+        List<TaskResponse> subTasks,
+        List<LabelListResponse> labels,
+        List<CommentResponse> comments
+) {
+    public TaskResponse{
+        if(subTasks == null){
+            subTasks = new ArrayList<>();
+        }
+        if(labels == null){
+            labels = new ArrayList<>();
+        }
+        if(comments == null){
+            comments = new ArrayList<>();
+        }
+    }
     public static TaskResponse from(TaskMaster taskMaster, TaskInstance taskInstance, List<LabelListResponse> labelListResponses) {
         TaskResponseBuilder builder = TaskResponse.builder()
                 .id(taskMaster.getId())
