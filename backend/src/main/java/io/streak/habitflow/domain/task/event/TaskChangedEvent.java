@@ -2,7 +2,7 @@ package io.streak.habitflow.domain.task.event;
 
 import io.streak.habitflow.domain.task.type.ActivityType;
 
-public record TaskCompletedEvent(
+public record TaskChangedEvent(
         Long taskId,
         Long memberId,
         ActivityType activityType

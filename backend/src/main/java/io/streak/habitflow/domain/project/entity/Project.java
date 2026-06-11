@@ -9,8 +9,8 @@ import lombok.*;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
 @Getter
+@Builder
 @Table(name="projects")
 public class Project  extends BaseTimeEntity {
     @Id

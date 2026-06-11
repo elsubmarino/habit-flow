@@ -1,7 +1,5 @@
 package io.streak.habitflow.domain.task.service;
 
-import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogRequest;
-import io.streak.habitflow.domain.activitylog.service.ActivityLogService;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
@@ -19,7 +17,7 @@ import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.entity.TaskLabel;
-import io.streak.habitflow.domain.task.event.TaskCompletedEvent;
+import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
@@ -45,7 +43,6 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final MemberRepository memberRepository;
     private final ProjectRepository projectRepository;
-    private final ActivityLogService activityLogService;
     private final FileStorageService fileStorageService;
     private final LabelRepository labelRepository;
     private final ProjectMemberRepository projectMemberRepository;
@@ -56,6 +53,12 @@ public class TaskService {
     @SuppressWarnings("unused")
     public void deleteTask(Long taskId, Long memberId){
         taskRepository.deleteById(taskId);
+        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                taskId,
+                memberId,
+                ActivityType.DELETED
+        ));
+
     }
 
     @Transactional
@@ -252,12 +255,7 @@ public class TaskService {
 
 
         if(nextCompletion){
-            ActivityLogRequest activityLogRequest = ActivityLogRequest.builder()
-                    .activityType(ActivityType.COMPLETED)
-                    .taskId(taskId)
-                    .build();
-            activityLogService.create(activityLogRequest,memberId);
-            applicationEventPublisher.publishEvent(new TaskCompletedEvent(
+            applicationEventPublisher.publishEvent(new TaskChangedEvent(
                     taskId,memberId,ActivityType.COMPLETED
             ));
         }

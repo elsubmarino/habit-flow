@@ -16,6 +16,7 @@ import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ public class ProjectService {
     private final FavoriteRepository favoriteRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final MemberRepository memberRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public ProjectResponse createProject(ProjectCreateRequest projectCreateRequest,
