@@ -65,6 +65,7 @@ import {
     saveViewPreferences,
     type ViewPreferences,
 } from './utils/viewPreferences';
+import { useNotificationSse } from './hooks/useNotificationSse';
 import { useQuickAddShortcut } from './hooks/useQuickAddShortcut';
 import './App.css';
 
@@ -139,6 +140,7 @@ function App() {
     const mainPanelRef = useRef<HTMLElement>(null);
 
     useQuickAddShortcut(() => addFormRef.current?.open());
+    useNotificationSse(isAuthenticated);
 
     const {
         completedTaskId,

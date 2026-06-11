@@ -1,15 +1,20 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import * as notificationApi from '../api/notificationApi';
-import type { ActivityType } from '../api/types';
+import type { ActivityType, NotificationDto, NotificationType } from '../api/types';
 
 export interface AppNotification {
     id: number;
+    dedupeKey: string;
+    receiverId: number;
+    actorId: number;
     actor: string;
-    action: 'completed' | 'assigned' | 'comment' | 'added' | 'moved' | 'deleted';
+    action: 'completed' | 'assigned' | 'comment' | 'added' | 'moved' | 'deleted' | 'invited';
+    notificationType: NotificationType;
+    targetId: number;
     projectId: number | null;
-    projectName: string | null;
-    taskId: number;
+    taskId: number | null;
     taskName: string;
+    customMessage: string | null;
     createdAt: string;
     read: boolean;
 }
@@ -19,7 +24,10 @@ interface NotificationsState {
     status: 'idle' | 'loading' | 'failed';
 }
 
-const initialState: NotificationsState = { items: [], status: 'idle' };
+const initialState: NotificationsState = {
+    items: [],
+    status: 'idle',
+};
 
 function mapActivityType(type: ActivityType): AppNotification['action'] {
     switch (type) {
@@ -31,42 +39,64 @@ function mapActivityType(type: ActivityType): AppNotification['action'] {
             return 'moved';
         case 'DELETED':
             return 'deleted';
+        case 'INVITED':
+            return 'invited';
         case 'UPDATED':
         default:
             return 'comment';
     }
 }
 
-function mapNotification(dto: {
-    taskId: number;
-    activityType: ActivityType;
-    isConfirmed?: boolean;
-    confirmed?: boolean;
-}, index: number): AppNotification {
-    const read = dto.confirmed ?? dto.isConfirmed ?? false;
+export function notificationDedupeKey(dto: NotificationDto): string {
+    if (dto.id != null) return `id:${dto.id}`;
+    return [
+        dto.receiverId,
+        dto.actorId,
+        dto.targetId,
+        dto.notificationType,
+        dto.activityType,
+    ].join(':');
+}
+
+function mapNotification(dto: NotificationDto): AppNotification {
+    const isProject = dto.notificationType === 'PROJECT';
+    const isTask = dto.notificationType === 'TASK';
+
     return {
-        id: index + 1,
-        actor: '사용자',
+        id: dto.id,
+        dedupeKey: notificationDedupeKey(dto),
+        receiverId: dto.receiverId,
+        actorId: dto.actorId,
+        actor: dto.actorName,
         action: mapActivityType(dto.activityType),
-        projectId: null,
-        projectName: null,
-        taskId: dto.taskId,
-        taskName: `작업 #${dto.taskId}`,
-        createdAt: new Date().toISOString(),
-        read,
+        notificationType: dto.notificationType,
+        targetId: dto.targetId,
+        projectId: isProject ? dto.targetId : null,
+        taskId: isTask ? dto.targetId : null,
+        taskName: isProject
+            ? `프로젝트 #${dto.targetId}`
+            : isTask
+                ? `작업 #${dto.targetId}`
+                : '알림',
+        customMessage: dto.customMessage?.trim() || null,
+        createdAt: dto.createdAt ?? new Date().toISOString(),
+        read: dto.isConfirmed,
     };
 }
 
 export const fetchNotifications = createAsyncThunk('notifications/fetch', async () => {
     const items = await notificationApi.fetchNotifications();
-    return items.map((item, index) => mapNotification(item, index));
+    return items.map(mapNotification);
 });
 
-/** 백엔드 NotificationListResponse에 id가 없어 confirm API를 안전하게 호출할 수 없음 → 로컬 읽음 처리 */
 export const markAllNotificationsRead = createAsyncThunk(
     'notifications/markAllRead',
     async (_, { getState }) => {
         const state = getState() as { notifications: NotificationsState };
+        const unread = state.notifications.items.filter(item => !item.read);
+        await Promise.all(
+            unread.map(item => notificationApi.confirmNotification(item.id).catch(() => undefined)),
+        );
         return state.notifications.items.map(item => ({ ...item, read: true }));
     },
 );
@@ -74,6 +104,7 @@ export const markAllNotificationsRead = createAsyncThunk(
 export const markNotificationRead = createAsyncThunk(
     'notifications/markOneRead',
     async (id: number, { getState }) => {
+        await notificationApi.confirmNotification(id);
         const state = getState() as { notifications: NotificationsState };
         return state.notifications.items.map(item =>
             item.id === id ? { ...item, read: true } : item,
@@ -100,7 +131,13 @@ export function formatRelativeTime(iso: string): string {
 const notificationsSlice = createSlice({
     name: 'notifications',
     initialState,
-    reducers: {},
+    reducers: {
+        pushNotification(state, action: PayloadAction<NotificationDto>) {
+            const key = notificationDedupeKey(action.payload);
+            if (state.items.some(item => item.dedupeKey === key)) return;
+            state.items.unshift(mapNotification(action.payload));
+        },
+    },
     extraReducers: builder => {
         builder
             .addCase(fetchNotifications.pending, state => {
@@ -123,4 +160,5 @@ const notificationsSlice = createSlice({
     },
 });
 
+export const { pushNotification } = notificationsSlice.actions;
 export default notificationsSlice.reducer;

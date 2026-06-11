@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
     formatRelativeTime,
@@ -18,9 +18,15 @@ interface NotificationsViewProps {
 const NotificationsView: React.FC<NotificationsViewProps> = ({ onOpenTask, onOpenProject }) => {
     const dispatch = useAppDispatch();
     const items = useAppSelector(state => state.notifications.items);
+    const projects = useAppSelector(state => state.habits.projects);
     const [tab, setTab] = useState<Tab>('all');
 
     const unreadCount = useMemo(() => selectUnreadCount(items), [items]);
+
+    const resolveProjectName = useCallback((projectId: number | null) => {
+        if (projectId == null) return '프로젝트';
+        return projects.find(p => p.id === projectId)?.name ?? `프로젝트 #${projectId}`;
+    }, [projects]);
 
     const visible = useMemo(() => {
         const list = tab === 'unread' ? items.filter(n => !n.read) : items;
@@ -28,20 +34,39 @@ const NotificationsView: React.FC<NotificationsViewProps> = ({ onOpenTask, onOpe
     }, [items, tab]);
 
     const renderMessage = (n: AppNotification) => {
-        const project =
-            n.projectName && n.projectId != null ? (
-                <button type="button" className="notif-link" onClick={() => onOpenProject(n.projectId!)}>
-                    {n.projectName}
-                </button>
-            ) : null;
+        if (n.customMessage) {
+            return <span>{n.customMessage}</span>;
+        }
+
+        const projectName = resolveProjectName(n.projectId);
+        const projectLink = n.projectId != null ? (
+            <button type="button" className="notif-link" onClick={() => onOpenProject(n.projectId!)}>
+                {projectName}
+            </button>
+        ) : null;
+
+        if (n.action === 'invited') {
+            return (
+                <>
+                    <strong>{n.actor}</strong>님이 {projectLink ?? projectName}에 초대했습니다
+                </>
+            );
+        }
         if (n.action === 'completed') {
             return (
                 <>
-                    <strong>{n.actor}</strong>님이 {project}에서 1작업을 완료했습니다
+                    <strong>{n.actor}</strong>님이 {projectLink}에서 1작업을 완료했습니다
                 </>
             );
         }
         return <span>{n.actor}</span>;
+    };
+
+    const renderTargetLabel = (n: AppNotification) => {
+        if (n.notificationType === 'PROJECT') {
+            return resolveProjectName(n.projectId);
+        }
+        return n.taskName;
     };
 
     return (
@@ -79,7 +104,7 @@ const NotificationsView: React.FC<NotificationsViewProps> = ({ onOpenTask, onOpe
                     <li className="notifications-empty">알림이 없습니다.</li>
                 ) : (
                     visible.map(n => (
-                        <li key={n.id} className={`notification-card ${n.read ? 'read' : 'unread'}`}>
+                        <li key={n.dedupeKey} className={`notification-card ${n.read ? 'read' : 'unread'}`}>
                             {!n.read && <span className="notif-unread-bar" aria-hidden />}
                             <span className="notif-avatar-wrap">
                                 <span className="notif-avatar" aria-hidden>
@@ -90,16 +115,33 @@ const NotificationsView: React.FC<NotificationsViewProps> = ({ onOpenTask, onOpe
                                         ✓
                                     </span>
                                 )}
+                                {n.action === 'invited' && (
+                                    <span className="notif-avatar-badge invited" aria-hidden>
+                                        +
+                                    </span>
+                                )}
                             </span>
                             <div className="notif-body">
                                 <p className="notif-message">{renderMessage(n)}</p>
-                                <button
-                                    type="button"
-                                    className="notif-task"
-                                    onClick={() => onOpenTask(n.taskId)}
-                                >
-                                    {n.taskName}
-                                </button>
+                                {n.customMessage ? null : n.notificationType === 'PROJECT' && n.projectId != null ? (
+                                    <button
+                                        type="button"
+                                        className="notif-task"
+                                        onClick={() => onOpenProject(n.projectId!)}
+                                    >
+                                        {renderTargetLabel(n)}
+                                    </button>
+                                ) : n.taskId != null ? (
+                                    <button
+                                        type="button"
+                                        className="notif-task"
+                                        onClick={() => onOpenTask(n.taskId!)}
+                                    >
+                                        {renderTargetLabel(n)}
+                                    </button>
+                                ) : (
+                                    <span className="notif-task">{renderTargetLabel(n)}</span>
+                                )}
                                 <span className="notif-time">{formatRelativeTime(n.createdAt)}</span>
                             </div>
                             <button

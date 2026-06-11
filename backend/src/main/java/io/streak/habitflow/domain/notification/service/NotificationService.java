@@ -35,10 +35,12 @@ public class NotificationService {
                 .targetId(notificationRequest.getTargetId())
                 .notificationType(notificationRequest.getNotificationType())
                 .activityType(notificationRequest.getActivityType())
+                .customMessage(notificationRequest.getCustomMessage())
                 .isConfirmed(false)
                 .build();
 
         Notification savedNotification = notificationRepository.save(notification);
+
         NotificationListResponse notificationListResponse = NotificationListResponse.from(savedNotification);
         sseEmitters.sendToMember(receiverId,notificationListResponse);
     }

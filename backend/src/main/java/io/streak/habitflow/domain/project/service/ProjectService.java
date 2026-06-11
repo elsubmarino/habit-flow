@@ -156,10 +156,12 @@ public class ProjectService {
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    @SuppressWarnings("unused")
     public void invite(ProjectInviteRequest projectInviteRequest, Long memberId){
         Project project = projectRepository.findById(projectInviteRequest.getId())
                 .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
+
+        Member inviter = memberRepository.findById(memberId)
+                .orElseThrow(()->new IllegalArgumentException("초대자 정보가 올바르지 않습니다."));
 
         List<String> inviteEmails  = projectInviteRequest.getEmails();
         if(inviteEmails == null || inviteEmails.isEmpty()) return;
@@ -184,6 +186,7 @@ public class ProjectService {
                     .targetId(project.getId())
                     .notificationType(NotificationType.PROJECT)
                     .activityType(ActivityType.INVITED)
+                    .customMessage(inviter.getName()+" 님이 ["+project.getName()+"] 프롲덱트에 당신을 초대했습니다.")
                     .build();
             notificationService.createNotification(notificationRequest, targetMember.getId(),memberId );
         }

@@ -13,4 +13,5 @@ public class NotificationRequest {
     private NotificationType notificationType;
     private ActivityType activityType;
     private boolean isConfirmed;
+    private String customMessage;
 }

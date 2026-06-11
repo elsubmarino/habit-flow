@@ -1,6 +1,8 @@
 export type PriorityType = 'P1' | 'P2' | 'P3' | 'P4';
 
-export type ActivityType = 'ADDED' | 'COMPLETED' | 'UPDATED' | 'DELETED' | 'MOVED';
+export type ActivityType = 'ADDED' | 'COMPLETED' | 'UPDATED' | 'DELETED' | 'MOVED' | 'INVITED';
+
+export type NotificationType = 'PROJECT' | 'TASK';
 
 export interface LabelDto {
     id: number;
@@ -98,10 +100,16 @@ export interface MemberDto {
 }
 
 export interface NotificationDto {
-    taskId: number;
+    id: number;
+    receiverId: number;
+    actorId: number;
+    actorName: string;
+    targetId: number;
+    notificationType: NotificationType;
     activityType: ActivityType;
     isConfirmed: boolean;
-    confirmed?: boolean;
+    createdAt: string;
+    customMessage?: string | null;
 }
 
 export interface ActivityLogDto {
