@@ -5,6 +5,7 @@ import io.streak.habitflow.domain.task.type.ActivityType;
 public record TaskChangedEvent(
         Long taskId,
         Long memberId,
-        ActivityType activityType
+        ActivityType activityType,
+        String customMessage
 ) {
 }

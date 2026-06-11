@@ -45,7 +45,7 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = ErrorResponse.from(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.name(),
-                "서버 내부 유로가 발생했습니다. 시스템 관리자에게 문의하세요.",
+                "서버 내부 에러가 발생했습니다. 시스템 관리자에게 문의하세요.",
                 request.getRequestURI()
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);

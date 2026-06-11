@@ -46,7 +46,8 @@ public class NotificationService {
     }
 
     public List<NotificationListResponse> getNotifications(Long memberId) {
-        List<Notification> notifications = notificationRepository.findByMemberId(memberId);
+        Member receiver = memberRepository.getReferenceById(memberId);
+        List<Notification> notifications = notificationRepository.findByReceiver(receiver);
         return notifications.stream()
                 .map(NotificationListResponse::from)
                 .toList();

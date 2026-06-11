@@ -10,4 +10,5 @@ import lombok.*;
 public class ActivityLogRequest {
     private Long taskId;
     private ActivityType activityType;
+    private String customMessage;
 }

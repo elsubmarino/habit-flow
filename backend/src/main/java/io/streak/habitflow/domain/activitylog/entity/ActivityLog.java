@@ -33,4 +33,6 @@ public class ActivityLog extends BaseCreatedTimeEntity {
     @Enumerated(EnumType.STRING)
     private ActivityType activityType;
 
+    private String customMessage;
+
 }

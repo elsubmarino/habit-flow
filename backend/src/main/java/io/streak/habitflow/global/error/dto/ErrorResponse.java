@@ -14,6 +14,7 @@ public record ErrorResponse (
 ){
     public static ErrorResponse from(int status, String error, String message, String path){
         return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
                 .status(status)
                 .error(error)
                 .message(message)

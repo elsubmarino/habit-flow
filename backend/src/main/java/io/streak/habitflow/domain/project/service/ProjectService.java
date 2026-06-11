@@ -186,7 +186,7 @@ public class ProjectService {
                     .targetId(project.getId())
                     .notificationType(NotificationType.PROJECT)
                     .activityType(ActivityType.INVITED)
-                    .customMessage(inviter.getName()+" 님이 ["+project.getName()+"] 프롲덱트에 당신을 초대했습니다.")
+                    .customMessage(inviter.getName()+" 님이 ["+project.getName()+"] 프로젝트 당신을 초대했습니다.")
                     .build();
             notificationService.createNotification(notificationRequest, targetMember.getId(),memberId );
         }

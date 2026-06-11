@@ -9,6 +9,9 @@ import io.streak.habitflow.domain.task.service.TaskService;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +33,11 @@ public class TaskController {
     private final CommentService commentService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "테스크 생성")
+    @ApiResponses(value={
+            @ApiResponse(responseCode = "201",description = "테스크 생성 성공")
+    })
     public ResponseEntity<TaskResponse> createTask(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                            @RequestPart(value = "file", required = false) MultipartFile file,
                                            @RequestPart("taskRequest") @Valid TaskCreateRequest taskCreateRequest){

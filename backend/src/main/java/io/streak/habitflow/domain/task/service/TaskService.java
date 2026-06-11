@@ -53,13 +53,14 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
     public void deleteTask(Long taskId, Long memberId){
+        Task task = taskRepository.findById(taskId).orElseThrow();
         taskRepository.deleteById(taskId);
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 taskId,
                 memberId,
-                ActivityType.DELETED
+                ActivityType.DELETED,
+                "당신이 테스크 "+task.getName()+"을(를) 삭제했습니다"
         ));
-
     }
 
     @Transactional
@@ -140,6 +141,13 @@ public class TaskService {
         }
 
         Task savedTask = taskRepository.save(task);
+
+        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                savedTask.getId(),
+                memberId,
+                ActivityType.ADDED,
+                "당신이 테스크 "+savedTask.getName()+"을(를) 추가했습니다"
+        ));
 
         List<LabelListResponse> labelListResponses = savedTask.getTaskLabels()
                 .stream()
@@ -255,7 +263,10 @@ public class TaskService {
 
         if(nextCompletion){
             applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                    taskId,memberId,ActivityType.COMPLETED
+                    taskId,
+                    memberId,
+                    ActivityType.COMPLETED,
+                    "당신이 테스크 "+task.getName()+"을(를) 완료했습니다"
             ));
         }
 
