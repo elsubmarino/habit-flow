@@ -111,7 +111,7 @@ public class CheckOwnershipAspect {
     public void checkNotificationOwner(Long notificationId, Long memberId){
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 알림입니다."));
-        if(!notification.getMember().getId().equals(memberId)){
+        if(!notification.getActor().getId().equals(memberId)){
             throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
         }
     }

@@ -18,7 +18,6 @@ public class NotificationListResponse {
                         .builder()
                         .activityType(notification.getActivityType())
                         .isConfirmed(notification.isConfirmed())
-                        .taskId(notification.getTask().getId())
                         .build();
     }
 }

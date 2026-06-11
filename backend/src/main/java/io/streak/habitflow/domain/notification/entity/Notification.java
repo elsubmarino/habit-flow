@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.notification.entity;
 
+import io.streak.habitflow.domain.notification.type.NotificationType;
 import io.streak.habitflow.global.common.BaseCreatedTimeEntity;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.domain.task.entity.Task;
@@ -20,14 +21,22 @@ public class Notification extends BaseCreatedTimeEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="task_id")
-    private Task task;
+    @JoinColumn(name="receiver_member_id", nullable = false)
+    private Member receiver;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="member_id")
-    private Member member;
+    @JoinColumn(name="actor_member_id",nullable = false)
+    private Member actor;
+
+    @Column(name="target_id",nullable = false)
+    private Long targetId;
 
     @Enumerated(EnumType.STRING)
+    @Column(name="notification_type",nullable = false)
+    private NotificationType notificationType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ActivityType activityType;
 
     private boolean isConfirmed;

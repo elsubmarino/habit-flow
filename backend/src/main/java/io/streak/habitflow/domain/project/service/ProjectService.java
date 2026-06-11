@@ -5,6 +5,10 @@ import io.streak.habitflow.domain.favorite.repository.FavoriteRepository;
 import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
+import io.streak.habitflow.domain.notification.dto.request.NotificationRequest;
+import io.streak.habitflow.domain.notification.dto.response.ProjectNotificationResponse;
+import io.streak.habitflow.domain.notification.service.NotificationService;
+import io.streak.habitflow.domain.notification.type.NotificationType;
 import io.streak.habitflow.domain.project.dto.request.ProjectCreateRequest;
 import io.streak.habitflow.domain.project.dto.request.ProjectInviteRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
@@ -14,6 +18,7 @@ import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
+import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -33,6 +38,7 @@ public class ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final MemberRepository memberRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final NotificationService notificationService;
 
     @Transactional
     public ProjectResponse createProject(ProjectCreateRequest projectCreateRequest,
@@ -172,6 +178,17 @@ public class ProjectService {
                 .toList();
 
         projectMemberRepository.saveAll(projectMembers);
+
+        for(Member targetMember: inviteMembers){
+            NotificationRequest notificationRequest = NotificationRequest.builder()
+                    .targetId(project.getId())
+                    .notificationType(NotificationType.PROJECT)
+                    .activityType(ActivityType.INVITED)
+                    .build();
+            notificationService.createNotification(notificationRequest, targetMember.getId(),memberId );
+        }
+
+
     }
 
     @CheckOwnership(type="PROJECT")
