@@ -1,10 +1,14 @@
 import { apiClient } from './client';
 import { toLabelUpdateBody, toLabelWriteBody } from './labelMappers';
+import { buildScrollParams, LABEL_PAGE_SIZE } from './pagination';
 import type { LabelDetailDto, LabelDto, LabelUpdatePayload, ScrollResponse } from './types';
 
-export async function fetchLabels(lastLabelId?: number): Promise<ScrollResponse<LabelDto>> {
+export async function fetchLabels(
+    lastLabelId?: number,
+    size = LABEL_PAGE_SIZE,
+): Promise<ScrollResponse<LabelDto>> {
     const { data } = await apiClient.get<ScrollResponse<LabelDto>>('/api/labels', {
-        params: lastLabelId != null ? { lastLabelId } : undefined,
+        params: buildScrollParams(lastLabelId, 'lastLabelId', size),
     });
     return data;
 }
