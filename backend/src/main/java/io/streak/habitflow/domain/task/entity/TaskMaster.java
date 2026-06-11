@@ -58,7 +58,7 @@ public class TaskMaster extends BaseTimeEntity {
     @Builder.Default
     private List<TaskLabel> taskLabels = new ArrayList<>();
 
-    private boolean isRecurring;
+    private boolean recurring;
 
     private String recurrenceRule; //DAILY, WEEKLY, MONTHLY
     private int recurrenceInterval;  //1(매일,매주) 2(이틀마다, 격주 등)
@@ -104,8 +104,8 @@ public class TaskMaster extends BaseTimeEntity {
         this.project = project;
     }
 
-    public void updateIsRecurring(boolean isRecurring){
-        this.isRecurring = isRecurring;
+    public void updateIsRecurring(boolean recurring){
+        this.recurring = recurring;
     }
 
     public void updateRecurrenceRule(String recurrenceRule){

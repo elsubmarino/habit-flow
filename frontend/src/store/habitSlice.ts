@@ -493,15 +493,21 @@ export const patchTaskDueDate = createAsyncThunk(
         dueDate: string | null;
         recurrenceLabel?: string | null;
     }) => {
-        const recurrence = repeatLabelToRecurrence(recurrenceLabel, dueDate);
+        const recurrence = recurrenceLabel !== undefined
+            ? repeatLabelToRecurrence(recurrenceLabel, dueDate)
+            : undefined;
         const task = await taskApi.patchTaskDueDate(instanceId, { dueDate, recurrence });
         const habit = mapTaskToHabit(task, instanceId);
         return {
             ...habit,
             id: habitId,
             instanceId,
-            isRecurring: recurrence.isRecurring ?? false,
-            recurrenceLabel: recurrenceLabel ?? null,
+            ...(recurrence !== undefined
+                ? {
+                    isRecurring: recurrence.isRecurring ?? false,
+                    recurrenceLabel: recurrenceLabel ?? null,
+                }
+                : {}),
         };
     },
 );

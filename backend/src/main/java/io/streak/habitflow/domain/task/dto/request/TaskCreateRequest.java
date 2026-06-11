@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,7 +41,7 @@ public class TaskCreateRequest {
     @Schema(description = "매핑할 라벨 ID 리스트")
     private List<Long> labelIds = new ArrayList<>();
 
-    private boolean isRecurring;
+    private boolean recurring;
     private String recurrenceRule;
     private int recurrenceInterval;
     private String recurrenceDays;

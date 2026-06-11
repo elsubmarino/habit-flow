@@ -37,6 +37,7 @@ public class TaskResponse {
     private String projectColor;
 
     private Long parentId;
+    private boolean recurring;
 
     @Builder.Default
     private List<TaskResponse> subTasks = new ArrayList<>();
@@ -57,6 +58,7 @@ public class TaskResponse {
                 .dueDate(taskInstance.getDueDate())
                 .sortOrder(taskMaster.getSortOrder())
                 .labels(labelListResponses)
+                .recurring(taskMaster.isRecurring())
                 .comments(taskMaster.getComments().stream()
                         .map(CommentResponse::from)
                         .toList())

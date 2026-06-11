@@ -389,7 +389,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
         })).then(result => {
             if (patchTaskDueDate.fulfilled.match(result)) {
                 applyLocalHabit(result.payload);
-                if (result.payload.recurrenceLabel != null) {
+                if (change.repeat !== undefined) {
                     setRecurrence(result.payload.recurrenceLabel);
                 }
             }

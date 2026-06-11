@@ -85,8 +85,12 @@ const WEEKDAY_LABELS: Record<string, string> = {
     SAT: '토요일',
 };
 
+function readRecurring(task: TaskDto): boolean {
+    return Boolean(task.recurring ?? task.isRecurring);
+}
+
 export function recurrenceToLabel(task: TaskDto): string | null {
-    if (!task.isRecurring) return null;
+    if (!readRecurring(task)) return null;
 
     const interval = task.recurrenceInterval && task.recurrenceInterval > 0
         ? task.recurrenceInterval
@@ -338,7 +342,7 @@ export function mapTaskToHabit(
         subtaskCount: counts.subtaskCount,
         subtaskCompletedCount: counts.subtaskCompletedCount,
         commentCount: counts.commentCount,
-        isRecurring: Boolean(task.isRecurring),
+        isRecurring: readRecurring(task),
         recurrenceLabel: recurrenceToLabel(task),
     };
 }

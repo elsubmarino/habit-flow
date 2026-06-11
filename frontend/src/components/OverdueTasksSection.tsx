@@ -43,7 +43,6 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
                         habitId: habit.id,
                         instanceId: habit.instanceId!,
                         dueDate: rescheduleHabitToToday(habit),
-                        recurrenceLabel: habit.recurrenceLabel,
                     })).unwrap(),
                 ),
             );

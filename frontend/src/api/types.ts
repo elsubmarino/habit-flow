@@ -58,6 +58,8 @@ export interface TaskDto {
     countSubTasks?: number;
     countSubTasksCompleted?: number;
     countComments?: number;
+    recurring?: boolean;
+    /** @deprecated API는 recurring 사용 */
     isRecurring?: boolean;
     recurrenceRule?: string | null;
     recurrenceInterval?: number;

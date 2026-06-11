@@ -105,7 +105,7 @@ public class TaskService {
                 .member(member)
                 .project(project)
                 .parent(parentTaskMaster)
-                .isRecurring(taskCreateRequest.isRecurring())
+                .recurring(taskCreateRequest.isRecurring())
                 .recurrenceRule(taskCreateRequest.getRecurrenceRule())
                 .recurrenceInterval(taskCreateRequest.getRecurrenceInterval())
                 .recurrenceDays(taskCreateRequest.getRecurrenceDays())

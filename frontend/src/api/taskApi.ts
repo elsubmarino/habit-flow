@@ -118,7 +118,7 @@ export async function createTask(payload: CreateTaskPayload): Promise<TaskDto> {
         projectId: payload.projectId ?? null,
         parentId: payload.parentId ?? null,
         labelIds: payload.labelIds ?? [],
-        isRecurring: payload.isRecurring ?? false,
+        recurring: payload.isRecurring ?? false,
         recurrenceRule: payload.recurrenceRule,
         recurrenceInterval: payload.recurrenceInterval ?? 0,
         recurrenceDays: payload.recurrenceDays,
@@ -151,19 +151,15 @@ export async function patchTaskDueDate(
 ): Promise<TaskDto> {
     const date = payload.dueDate == null ? null : payload.dueDate.slice(0, 10);
     const recurrence = payload.recurrence;
-    const body: Record<string, unknown> = {
-        dueDate: date,
-        isRecurring: recurrence?.isRecurring ?? false,
-        recurrenceInterval: recurrence?.recurrenceInterval ?? 0,
-    };
-    if (recurrence?.recurrenceRule) {
-        body.recurrenceRule = recurrence.recurrenceRule;
-    }
-    if (recurrence?.recurrenceDays) {
-        body.recurrenceDays = recurrence.recurrenceDays;
-    }
-    if (recurrence?.recurrenceDayOfMonth != null) {
-        body.recurrenceDayOfMonth = recurrence.recurrenceDayOfMonth;
+    const body: Record<string, unknown> = { dueDate: date };
+    if (recurrence != null) {
+        body.recurring = recurrence.isRecurring ?? false;
+        body.recurrenceInterval = recurrence.recurrenceInterval ?? 0;
+        body.recurrenceRule = recurrence.recurrenceRule ?? null;
+        body.recurrenceDays = recurrence.recurrenceDays ?? null;
+        if (recurrence.recurrenceDayOfMonth != null) {
+            body.recurrenceDayOfMonth = recurrence.recurrenceDayOfMonth;
+        }
     }
     const { data } = await apiClient.patch<TaskDto>(`/api/task-instances/${instanceId}/due-date`, body);
     return data;
