@@ -59,7 +59,7 @@ public class CommentService {
     public List<CommentResponse> getComments(Long taskId) {
         TaskMaster taskMaster = taskMasterRepository.findById(taskId)
                 .orElseThrow(()->new IllegalArgumentException("테스크가 없습니다."));
-        List<Comment> comments = commentRepository.findByTaskId(taskMaster.getId());
+        List<Comment> comments = commentRepository.findByTaskMasterId(taskMaster.getId());
         return comments.stream()
                 .map(CommentResponse::from)
                 .toList();

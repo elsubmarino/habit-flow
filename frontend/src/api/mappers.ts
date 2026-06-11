@@ -247,10 +247,10 @@ export function mapCommentDtos(comments: CommentDtoLike[]): CommentItem[] {
         .filter((c): c is CommentItem => c != null);
 }
 
-function mapSubtasks(subTasks?: TaskDto[]): Subtask[] {
+function mapSubtasks(subTasks?: TaskDto[], parentInstanceId?: number | null): Subtask[] {
     return (subTasks ?? []).map(st => ({
         id: readMasterId(st),
-        instanceId: readInstanceId(st),
+        instanceId: readInstanceId(st) ?? parentInstanceId ?? null,
         name: st.name,
         description: st.description ?? '',
         completed: readCompleted(st),
@@ -299,13 +299,14 @@ function readTaskPriority(task: TaskDto): PriorityType | null | undefined {
     return task.priorityType ?? task.taskPriorityType;
 }
 
-export function mapTaskToHabit(task: TaskDto): Habit {
+export function mapTaskToHabit(task: TaskDto, knownInstanceId?: number | null): Habit {
     const completed = readCompleted(task);
     const { date: dueDate, time: dueTime } = parseDueDateTime(task.dueDate);
     const counts = resolveTaskCounts(task);
+    const instanceId = readInstanceId(task) ?? knownInstanceId ?? null;
     return {
         id: readMasterId(task),
-        instanceId: readInstanceId(task),
+        instanceId,
         name: task.name,
         description: task.description ?? '',
         streak: 0,
@@ -322,7 +323,7 @@ export function mapTaskToHabit(task: TaskDto): Habit {
         labels: (task.labels ?? []).map(l => mapLabel(l)),
         attachments: mapAttachments(task.comments),
         reminders: [],
-        subtasks: mapSubtasks(task.subTasks),
+        subtasks: mapSubtasks(task.subTasks, instanceId),
         comments: mapComments(task.comments),
         subtaskCount: counts.subtaskCount,
         subtaskCompletedCount: counts.subtaskCompletedCount,

@@ -13,7 +13,7 @@ interface HabitItemProps {
     habit: Habit;
     layout?: TaskRowLayout;
     variant?: 'default' | 'overdue';
-    onOpenDetails?: (habitId: number) => void;
+    onOpenDetails?: (habit: Habit) => void;
     onOpenProject?: (projectId: number) => void;
     onTaskCompleted?: (habit: Habit) => void;
     onTaskDeleted?: (habitId: number) => void;
@@ -67,7 +67,7 @@ const HabitItem: React.FC<HabitItemProps> = ({
     const handleEdit = (e: React.MouseEvent) => {
         e.stopPropagation();
         setMenuOpen(false);
-        onOpenDetails?.(habit.id);
+        onOpenDetails?.(habit);
     };
 
     const handleDelete = async (e: React.MouseEvent) => {
@@ -126,11 +126,11 @@ const HabitItem: React.FC<HabitItemProps> = ({
                 className="task-body"
                 role="button"
                 tabIndex={0}
-                onClick={() => onOpenDetails?.(habit.id)}
+                onClick={() => onOpenDetails?.(habit)}
                 onKeyDown={e => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        onOpenDetails?.(habit.id);
+                        onOpenDetails?.(habit);
                     }
                 }}
             >

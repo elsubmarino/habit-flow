@@ -44,7 +44,7 @@ export async function fetchInboxTasks(
     lastTaskId?: number,
     size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
-    const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/inbox', {
+    const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/inbox', {
         params: buildScrollParams(lastTaskId, 'lastTaskId', size),
     });
     return data;
@@ -54,7 +54,7 @@ export async function fetchTodayTasks(
     lastTaskId?: number,
     size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
-    const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/today', {
+    const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/today', {
         params: buildScrollParams(lastTaskId, 'lastTaskId', size),
     });
     return data;
@@ -64,7 +64,7 @@ export async function fetchUpcomingTasks(
     lastTaskId?: number,
     size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
-    const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/upcoming', {
+    const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/upcoming', {
         params: buildScrollParams(lastTaskId, 'lastTaskId', size),
     });
     return data;
@@ -98,9 +98,15 @@ export async function fetchProjectTasks(projectId: number): Promise<TaskDto[]> {
     return data;
 }
 
-export async function fetchTaskById(taskId: number): Promise<TaskDto> {
-    const { data } = await apiClient.get<TaskDto>(`/api/tasks/${taskId}`);
+/** TaskInstance 상세 조회 */
+export async function fetchTaskInstanceById(instanceId: number): Promise<TaskDto> {
+    const { data } = await apiClient.get<TaskDto>(`/api/task-instances/${instanceId}`);
     return data;
+}
+
+/** @deprecated TaskMaster ID로 조회 불가 — fetchTaskInstanceById 사용 */
+export async function fetchTaskById(instanceId: number): Promise<TaskDto> {
+    return fetchTaskInstanceById(instanceId);
 }
 
 export async function createTask(payload: CreateTaskPayload): Promise<TaskDto> {
@@ -134,9 +140,9 @@ export async function updateTask(taskId: number, payload: UpdateTaskPayload): Pr
     return data;
 }
 
-export async function patchTaskDueDate(taskId: number, dueDate: string | null): Promise<TaskDto> {
-    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/due-date`, {
-        dueDate: dueDate == null ? null : dueDateToApi(dueDate),
+export async function patchTaskDueDate(instanceId: number, dueDate: string | null): Promise<TaskDto> {
+    const { data } = await apiClient.patch<TaskDto>(`/api/task-instances/${instanceId}/due-date`, {
+        targetDate: dueDate == null ? null : dueDate.slice(0, 10),
     });
     return data;
 }
@@ -171,7 +177,7 @@ export async function toggleTaskCompletion(
     instanceId: number,
     previousCompleted?: boolean,
 ): Promise<TaskDto> {
-    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${instanceId}/toggle`);
+    const { data } = await apiClient.patch<TaskDto>(`/api/task-instances/${instanceId}/toggle`);
     if (
         previousCompleted !== undefined
         && readCompleted(data) === previousCompleted
