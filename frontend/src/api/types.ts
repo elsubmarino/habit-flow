@@ -118,6 +118,7 @@ export interface ActivityLogDto {
     userName: string;
     projectName: string;
     createdAt: string;
+    customMessage?: string | null;
 }
 
 export interface IntegratedSearchDto {

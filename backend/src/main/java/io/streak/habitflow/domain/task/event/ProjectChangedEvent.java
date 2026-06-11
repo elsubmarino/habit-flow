@@ -1,12 +1,10 @@
 package io.streak.habitflow.domain.task.event;
 
 import io.streak.habitflow.domain.task.type.ActivityType;
-import io.streak.habitflow.domain.task.type.TargetType;
 
-public record TaskChangedEvent(
-        Long targetId,
+public record ProjectChangedEvent(
+        Long projectId,
         Long memberId,
-        TargetType targetType,
         ActivityType activityType,
         String customMessage
 ) {

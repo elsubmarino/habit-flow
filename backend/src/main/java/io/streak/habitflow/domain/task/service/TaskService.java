@@ -20,6 +20,7 @@ import io.streak.habitflow.domain.task.entity.TaskLabel;
 import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.domain.task.type.TargetType;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
@@ -36,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -58,6 +60,7 @@ public class TaskService {
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 taskId,
                 memberId,
+                TargetType.TASK,
                 ActivityType.DELETED,
                 "당신이 테스크 "+task.getName()+"을(를) 삭제했습니다"
         ));
@@ -145,6 +148,7 @@ public class TaskService {
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 savedTask.getId(),
                 memberId,
+                TargetType.TASK,
                 ActivityType.ADDED,
                 "당신이 테스크 "+savedTask.getName()+"을(를) 추가했습니다"
         ));
@@ -213,26 +217,21 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
+        boolean isNameChanged = false;
+        boolean isDescriptionChanged = false;
+
         if(taskUpdateRequest.getName()!=null){
-            task.updateName(taskUpdateRequest.getName());
+            if(!task.getName().equals(taskUpdateRequest.getName())){
+                task.updateName(taskUpdateRequest.getName());
+                isNameChanged = true;
+            }
         }
 
         if(taskUpdateRequest.getDescription()!=null){
-            task.updateDescription(taskUpdateRequest.getDescription());
-        }
-
-        if(taskUpdateRequest.getDueDate()!=null){
-            task.updateDueDate(taskUpdateRequest.getDueDate());
-        }
-
-        if(taskUpdateRequest.getTaskPriorityType()!=null){
-            task.updatePriorityType(taskUpdateRequest.getTaskPriorityType());
-        }
-
-        if(taskUpdateRequest.getProjectId()!=null){
-            Project project= projectRepository.findById(taskUpdateRequest.getProjectId())
-                    .orElseThrow(()->new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
-            task.changeProject(project);
+            if(!task.getDescription().equals(taskUpdateRequest.getDescription())){
+                task.updateDescription(taskUpdateRequest.getDescription());
+                isDescriptionChanged = true;
+            }
         }
 
         if(taskUpdateRequest.getLabelIds() != null){
@@ -242,6 +241,24 @@ public class TaskService {
                         .orElseThrow(()->new IllegalArgumentException("라벨이 존재하지 않습니다."));
                 task.addTaskLabel(TaskLabel.builder().label(label).build());
             }
+        }
+
+        if(isNameChanged || isDescriptionChanged){
+            StringBuilder sb = new StringBuilder();
+            sb.append("당신이").append(" 테스크 ").append(task.getName()).append("의");
+            if(isNameChanged && isDescriptionChanged) sb.append("이름과 설명을");
+            else if(isNameChanged) sb.append("이름을");
+            else sb.append("설명을");
+
+            sb.append(" 변경했습니다.");
+
+            applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                    task.getId(),
+                    memberId,
+                    TargetType.TASK,
+                    ActivityType.UPDATED,
+                    sb.toString()
+            ));
         }
 
         List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
@@ -255,9 +272,9 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     public TaskResponse toggleCompletion(Long taskId, Long memberId){
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(()->new IllegalArgumentException("TASK가 존재하지 않습니다."));
+                 .orElseThrow(()->new IllegalArgumentException("TASK가 존재하지 않습니다."));
 
-        boolean nextCompletion = !task.isCompleted();
+         boolean nextCompletion = !task.isCompleted();
         task.updateCompleted(nextCompletion);
 
 
@@ -265,8 +282,17 @@ public class TaskService {
             applicationEventPublisher.publishEvent(new TaskChangedEvent(
                     taskId,
                     memberId,
+                    TargetType.TASK,
                     ActivityType.COMPLETED,
                     "당신이 테스크 "+task.getName()+"을(를) 완료했습니다"
+            ));
+        }else{
+            applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                    taskId,
+                    memberId,
+                    TargetType.TASK,
+                    ActivityType.UNCOMPLETED,
+                    "당신이 테스크 "+task.getName()+"을(를) 미완료했습니다"
             ));
         }
 
@@ -287,6 +313,15 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
         task.updateDueDate(dueDate);
+
+        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                task.getId(),
+                memberId,
+                TargetType.TASK,
+                ActivityType.UPDATED,
+                "당신이 테스크 "+task.getName()+"의 날짜를 "+task.getDueDate()+"으로 변경했습니다."
+        ));
+
         List<LabelListResponse> labelListResponses = task.getTaskLabels()
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
@@ -301,6 +336,15 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
         task.updatePriorityType(taskPriorityType);
+
+        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                task.getId(),
+                memberId,
+                TargetType.TASK,
+                ActivityType.UPDATED,
+                "당신이 테스크 "+task.getName()+"의 우선순위를 "+task.getTaskPriorityType().name()+"으로 변경했습니다."
+        ));
+
         List<LabelListResponse> labelListResponses = task.getTaskLabels()
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
@@ -330,6 +374,16 @@ public class TaskService {
 
         realLabels.forEach(label->task.addTaskLabel(TaskLabel.builder().label(label).build()));
 
+        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                task.getId(),
+                memberId,
+                TargetType.TASK,
+                ActivityType.UPDATED,
+                "당신이 테스크 "+task.getName()+"의 라벨을 "+realLabels.stream().map(Label::getName)
+                        .collect(Collectors.joining(", "))+"으로 변경했습니다."
+        ));
+
+
         List<LabelListResponse> labelListResponses = task.getTaskLabels()
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
@@ -347,6 +401,14 @@ public class TaskService {
         Project project = projectRepository.findById(projectId)
                         .orElseThrow();
         task.updateProject(project);
+
+        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                task.getId(),
+                memberId,
+                TargetType.TASK,
+                ActivityType.MOVED,
+                "당신이 테스크 "+task.getName()+"를 "+task.getProject().getName()+"으로 이동시켰습니다."
+        ));
         List<LabelListResponse> labelListResponses = task.getTaskLabels()
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))

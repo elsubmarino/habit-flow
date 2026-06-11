@@ -13,11 +13,14 @@ public class ActivityLogEventListener {
     private final ActivityLogService activityLogService;
 
     @EventListener
-    public void handleTaskChanged(TaskChangedEvent taskChangedEvent) {
+    public void handleChanged(TaskChangedEvent taskChangedEvent) {
         ActivityLogRequest activityLogRequest = ActivityLogRequest.builder()
-                .taskId(taskChangedEvent.taskId())
+                .targetId(taskChangedEvent.targetId())
+                .targetType(taskChangedEvent.targetType())
                 .activityType(taskChangedEvent.activityType())
+                .customMessage(taskChangedEvent.customMessage())
                 .build();
         activityLogService.create(activityLogRequest, taskChangedEvent.memberId());
     }
+
 }

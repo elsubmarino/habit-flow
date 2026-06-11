@@ -19,6 +19,7 @@ const ACTIVITY_FILTER_OPTIONS: { value: ActivityFilter; label: string }[] = [
     { value: 'all', label: '모든 활동' },
     { value: 'ADDED', label: '추가' },
     { value: 'COMPLETED', label: '완료' },
+    { value: 'INVITED', label: '초대' },
     { value: 'MOVED', label: '이동' },
     { value: 'UPDATED', label: '수정' },
     { value: 'DELETED', label: '삭제' },
@@ -30,6 +31,8 @@ function activityLabel(type: ActivityType): string {
             return '추가했습니다';
         case 'COMPLETED':
             return '완료했습니다';
+        case 'INVITED':
+            return '초대했습니다';
         case 'MOVED':
             return '이동시켰습니다';
         case 'DELETED':
@@ -46,6 +49,8 @@ function activityBadge(type: ActivityType): string {
             return '+';
         case 'COMPLETED':
             return '✓';
+        case 'INVITED':
+            return '@';
         case 'DELETED':
             return '−';
         case 'MOVED':
@@ -53,6 +58,24 @@ function activityBadge(type: ActivityType): string {
         default:
             return '↻';
     }
+}
+
+function renderActivityText(entry: ActivityLogDto): React.ReactNode {
+    if (entry.customMessage?.trim()) {
+        return entry.customMessage;
+    }
+
+    return (
+        <>
+            <strong>{entry.userName}</strong>님이 활동을 {activityLabel(entry.activityType)}
+            {entry.projectName && (
+                <span className="activity-project">
+                    {' '}
+                    · {entry.projectName} #
+                </span>
+            )}
+        </>
+    );
 }
 
 const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, scrollRootRef }) => {
@@ -143,9 +166,15 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, scrollRootR
     }, [filtered]);
 
     const exportCsv = () => {
-        const header = '날짜,사용자,활동,프로젝트\n';
+        const header = '날짜,사용자,활동,프로젝트,메시지\n';
         const rows = filtered
-            .map(e => [e.createdAt, e.userName, e.activityType, e.projectName].join(','))
+            .map(e => [
+                e.createdAt,
+                e.userName,
+                e.activityType,
+                e.projectName,
+                e.customMessage ?? '',
+            ].join(','))
             .join('\n');
         const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -244,14 +273,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, scrollRootR
                                         </span>
                                         <div className="activity-content">
                                             <p className="activity-text">
-                                                <strong>{entry.userName}</strong>님이 활동을{' '}
-                                                {activityLabel(entry.activityType)}
-                                                {entry.projectName && (
-                                                    <span className="activity-project">
-                                                        {' '}
-                                                        · {entry.projectName} #
-                                                    </span>
-                                                )}
+                                                {renderActivityText(entry)}
                                             </p>
                                         </div>
                                         <time className="activity-time" dateTime={entry.createdAt}>

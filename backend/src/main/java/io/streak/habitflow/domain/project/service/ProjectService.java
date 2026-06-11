@@ -18,6 +18,8 @@ import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
+import io.streak.habitflow.domain.task.event.ProjectChangedEvent;
+import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.annotation.Target;
 import java.util.List;
 import java.util.Optional;
 
@@ -80,6 +83,16 @@ public class ProjectService {
                     savedProject.getId()
             ).orElseGet(()->favoriteRepository.save(favorite));
         }
+
+
+        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                project.getId(),
+                memberId,
+                io.streak.habitflow.domain.task.type.TargetType.PROJECT,
+                ActivityType.ADDED,
+                "당신이 프로젝트 "+project.getName()+"을(를) 추가했습니다"
+        ));
+
         return ProjectResponse.from(savedProject, projectCreateRequest.isFavorite());
     }
 
@@ -119,6 +132,14 @@ public class ProjectService {
             favoriteRepository.deleteByMemberIdAndTargetTypeAndTargetId(member.getId(),TargetType.PROJECT,project.getId());
         }
 
+        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                project.getId(),
+                memberId,
+                io.streak.habitflow.domain.task.type.TargetType.PROJECT,
+                ActivityType.UPDATED,
+                "당신이 프로젝트 "+project.getName()+"을(를) 변경했습니다"
+        ));
+
         return ProjectResponse.from(project, projectCreateRequest.isFavorite());
     }
 
@@ -144,9 +165,18 @@ public class ProjectService {
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
     public void deleteProject(Long projectId, Long memberId) {
+        Project project = projectRepository.getReferenceById(projectId);
         projectMemberRepository.deleteByProjectId(projectId);
         favoriteRepository.deleteByTargetTypeAndTargetId(TargetType.PROJECT, projectId);
         projectRepository.deleteById(projectId);
+
+        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                project.getId(),
+                memberId,
+                io.streak.habitflow.domain.task.type.TargetType.PROJECT,
+                ActivityType.DELETED,
+                "당신이 프로젝트 "+project.getName()+"을(를)삭제했습니다"
+        ));
 
     }
 
@@ -186,9 +216,18 @@ public class ProjectService {
                     .targetId(project.getId())
                     .notificationType(NotificationType.PROJECT)
                     .activityType(ActivityType.INVITED)
-                    .customMessage(inviter.getName()+" 님이 ["+project.getName()+"] 프로젝트 당신을 초대했습니다.")
+                    .customMessage(inviter.getName()+" 님이 ["+project.getName()+"] 프로젝트에 당신을 초대했습니다.")
                     .build();
             notificationService.createNotification(notificationRequest, targetMember.getId(),memberId );
+
+
+            NotificationRequest joinedRequest = NotificationRequest.builder()
+                    .targetId(project.getId())
+                    .notificationType(NotificationType.PROJECT)
+                    .activityType(ActivityType.JOINED)
+                    .customMessage(targetMember.getName()+" 님이 ["+project.getName()+"] 프로젝트에 합류했습니다")
+                    .build();
+            notificationService.createNotification(joinedRequest, memberId, targetMember.getId());
         }
 
 

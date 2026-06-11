@@ -22,10 +22,8 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
     public List<ActivityLog> searchActivityLogs(ActivityLogSearchCondition activityLogSearchCondition) {
         return queryFactory
                 .selectFrom(activityLog)
-                .leftJoin(activityLog.project, project).fetchJoin()
                 .leftJoin(activityLog.member, member).fetchJoin()
                 .where(
-                        projectIdsIn(activityLogSearchCondition.getProjectIds()),
                         memberIdsIn(activityLogSearchCondition.getMemberIds()),
                         targetDateEq(activityLogSearchCondition.getTargetDate())
                 )
@@ -37,7 +35,6 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
     public List<ActivityLog> searchActivityLogsByCondition(Long activityLogId, Long memberId, Pageable pageable) {
         return queryFactory
                 .selectFrom(activityLog)
-                .leftJoin(activityLog.project, project).fetchJoin()
                 .leftJoin(activityLog.member, member).fetchJoin()
                 .where(
                         activityLog.member.id.eq(memberId),
@@ -46,10 +43,6 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
                 .orderBy(activityLog.id.desc())
                 .limit(pageable.getPageSize()+1)
                 .fetch();
-    }
-
-    private BooleanExpression projectIdsIn(List<Long> projectIds){
-        return (projectIds == null || projectIds.isEmpty() ? null : activityLog.project.id.in(projectIds));
     }
 
     private BooleanExpression memberIdsIn(List<Long> memberIds){

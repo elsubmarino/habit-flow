@@ -19,14 +19,15 @@ public class ActivityLogListResponse {
     private String userName;
     private String projectName;
     private LocalDateTime createdAt;
+    private String customMessage;
 
     public static ActivityLogListResponse from(ActivityLog activityLog){
         return ActivityLogListResponse.builder()
                 .id(activityLog.getId())
                 .activityType(activityLog.getActivityType())
                 .userName(activityLog.getMember() != null ? activityLog.getMember().getName() : "사용자")
-                .projectName(activityLog.getProject() != null ? activityLog.getProject().getName() : "사용자")
                 .createdAt(activityLog.getCreatedAt())
+                .customMessage(activityLog.getCustomMessage())
                 .build();
     }
 

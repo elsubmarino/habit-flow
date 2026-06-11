@@ -1,7 +1,6 @@
 package io.streak.habitflow.domain.activitylog.service;
 
 import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogRequest;
-import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogSearchCondition;
 import io.streak.habitflow.domain.activitylog.dto.response.ActivityLogListResponse;
 import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
 import io.streak.habitflow.domain.activitylog.repository.ActivityLogRepository;
@@ -30,14 +29,13 @@ public class ActivityLogService {
         Member member = memberRepository.getReferenceById(memberId);
 
 
-        Long taskId = activityLogRequest.getTaskId();
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(()-> new IllegalArgumentException("테스크가 존재하지 않습니다."));
+        Long targetId = activityLogRequest.getTargetId();
 
         ActivityLog activityLog = ActivityLog.builder()
                 .member(member)
                 .activityType(activityLogRequest.getActivityType())
-                .project(task.getProject())
+                .targetId(activityLogRequest.getTargetId())
+                .customMessage(activityLogRequest.getCustomMessage())
                 .build();
         activityLogRepository.save(activityLog);
     }

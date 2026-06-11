@@ -17,10 +17,6 @@ import java.util.List;
 public class TaskUpdateRequest {
     private String name;
     private String description;
-    private TaskPriorityType taskPriorityType;
-    private LocalDateTime dueDate;
-    private Long projectId;
-    private Long parentId;
 
     @Builder.Default
     private List<Long> labelIds = new ArrayList<>();

@@ -3,6 +3,7 @@ package io.streak.habitflow.domain.activitylog.entity;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.domain.task.type.TargetType;
 import io.streak.habitflow.global.common.BaseCreatedTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,11 +27,13 @@ public class ActivityLog extends BaseCreatedTimeEntity {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id")
-    private Project project;
+    private Long targetId;
+
+    private TargetType targetType;
+
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false,length = 50)
     private ActivityType activityType;
 
     private String customMessage;
