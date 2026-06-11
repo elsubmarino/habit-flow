@@ -486,14 +486,23 @@ export const patchTaskDueDate = createAsyncThunk(
         habitId,
         instanceId,
         dueDate,
+        recurrenceLabel,
     }: {
         habitId: number;
         instanceId: number;
         dueDate: string | null;
+        recurrenceLabel?: string | null;
     }) => {
-        const task = await taskApi.patchTaskDueDate(instanceId, dueDate);
+        const recurrence = repeatLabelToRecurrence(recurrenceLabel, dueDate);
+        const task = await taskApi.patchTaskDueDate(instanceId, { dueDate, recurrence });
         const habit = mapTaskToHabit(task, instanceId);
-        return { ...habit, id: habitId, instanceId };
+        return {
+            ...habit,
+            id: habitId,
+            instanceId,
+            isRecurring: recurrence.isRecurring ?? false,
+            recurrenceLabel: recurrenceLabel ?? null,
+        };
     },
 );
 
@@ -822,6 +831,8 @@ const habitSlice = createSlice({
                     state.list[index] = {
                         ...action.payload,
                         instanceId: action.payload.instanceId ?? prev.instanceId,
+                        recurrenceLabel: action.payload.recurrenceLabel ?? prev.recurrenceLabel,
+                        isRecurring: action.payload.isRecurring || prev.isRecurring,
                     };
                 }
             })

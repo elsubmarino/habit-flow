@@ -140,10 +140,32 @@ export async function updateTask(taskId: number, payload: UpdateTaskPayload): Pr
     return data;
 }
 
-export async function patchTaskDueDate(instanceId: number, dueDate: string | null): Promise<TaskDto> {
-    const { data } = await apiClient.patch<TaskDto>(`/api/task-instances/${instanceId}/due-date`, {
-        targetDate: dueDate == null ? null : dueDate.slice(0, 10),
-    });
+export interface PatchTaskDueDatePayload {
+    dueDate: string | null;
+    recurrence?: RecurrenceApiPayload;
+}
+
+export async function patchTaskDueDate(
+    instanceId: number,
+    payload: PatchTaskDueDatePayload,
+): Promise<TaskDto> {
+    const date = payload.dueDate == null ? null : payload.dueDate.slice(0, 10);
+    const recurrence = payload.recurrence;
+    const body: Record<string, unknown> = {
+        dueDate: date,
+        isRecurring: recurrence?.isRecurring ?? false,
+        recurrenceInterval: recurrence?.recurrenceInterval ?? 0,
+    };
+    if (recurrence?.recurrenceRule) {
+        body.recurrenceRule = recurrence.recurrenceRule;
+    }
+    if (recurrence?.recurrenceDays) {
+        body.recurrenceDays = recurrence.recurrenceDays;
+    }
+    if (recurrence?.recurrenceDayOfMonth != null) {
+        body.recurrenceDayOfMonth = recurrence.recurrenceDayOfMonth;
+    }
+    const { data } = await apiClient.patch<TaskDto>(`/api/task-instances/${instanceId}/due-date`, body);
     return data;
 }
 

@@ -375,16 +375,23 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
     };
 
     const handleDatePickerChange = (change: DatePickerChange) => {
-        if (!habit) return;
-        setRecurrence(change.repeat ?? null);
-        if (habit.instanceId == null) return;
+        if (!habit || habit.instanceId == null) return;
+
+        const nextDate = change.date !== undefined ? change.date : habit.dueDate;
+        const nextRecurrence = change.repeat !== undefined ? change.repeat : recurrence;
+        setRecurrence(nextRecurrence);
+
         void dispatch(patchTaskDueDate({
             habitId: habit.id,
             instanceId: habit.instanceId,
-            dueDate: change.date,
+            dueDate: nextDate,
+            recurrenceLabel: nextRecurrence,
         })).then(result => {
             if (patchTaskDueDate.fulfilled.match(result)) {
                 applyLocalHabit(result.payload);
+                if (result.payload.recurrenceLabel != null) {
+                    setRecurrence(result.payload.recurrenceLabel);
+                }
             }
         });
     };

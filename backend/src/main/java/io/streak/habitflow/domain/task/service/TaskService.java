@@ -389,9 +389,11 @@ public class TaskService {
         TaskMaster taskMaster = taskInstance.getTaskMaster();
 
         taskInstance.updateDueDate(taskUpdateDueDateRequest.getDueDate());
+        taskMaster.updateIsRecurring(taskUpdateDueDateRequest.isRecurring());
         taskMaster.updateRecurrenceInterval(taskUpdateDueDateRequest.getRecurrenceInterval());
         taskMaster.updateRecurrenceDays(taskUpdateDueDateRequest.getRecurrenceDays());
         taskMaster.updateRecurrenceDayOfMonth(taskUpdateDueDateRequest.getRecurrenceDayOfMonth());
+        taskMaster.updateRecurrenceRule(taskUpdateDueDateRequest.getRecurrenceRule());
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 taskMaster.getId(),

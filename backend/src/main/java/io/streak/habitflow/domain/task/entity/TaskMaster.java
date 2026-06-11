@@ -104,6 +104,14 @@ public class TaskMaster extends BaseTimeEntity {
         this.project = project;
     }
 
+    public void updateIsRecurring(boolean isRecurring){
+        this.isRecurring = isRecurring;
+    }
+
+    public void updateRecurrenceRule(String recurrenceRule){
+        this.recurrenceRule = recurrenceRule;
+    }
+
     public void updateRecurrenceInterval(int recurrenceInterval){
         this.recurrenceInterval = recurrenceInterval;
     }
