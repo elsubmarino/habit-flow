@@ -9,7 +9,7 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor
 public class TaskListQuery {
-    private Long Id;
+    private Long id;
     private String name;
     private String description;
     private TaskPriorityType taskPriorityType;
