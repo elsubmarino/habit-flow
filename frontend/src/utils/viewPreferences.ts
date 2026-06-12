@@ -72,13 +72,20 @@ function compareHabits(a: Habit, b: Habit, sorting: ViewSorting): number {
     }
 }
 
-export function filterHabits(habits: Habit[], prefs: ViewPreferences): Habit[] {
+export function filterHabits(
+    habits: Habit[],
+    prefs: ViewPreferences,
+    options?: { preserveOrder?: boolean },
+): Habit[] {
     let result = [...habits];
     if (prefs.filterPriority !== 'all') {
         result = result.filter(h => h.priority === prefs.filterPriority);
     }
     if (prefs.filterLabel !== 'all') {
         result = result.filter(h => h.labels.some(l => l.id === prefs.filterLabel));
+    }
+    if (options?.preserveOrder) {
+        return result;
     }
     return result.sort((a, b) => compareHabits(a, b, prefs.sorting));
 }
