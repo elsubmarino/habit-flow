@@ -22,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -83,8 +84,29 @@ public class TaskMasterRepositoryCustomImpl implements TaskMasterRepositoryCusto
 
     @Override
     public List<TaskListQuery> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId, Pageable pageable) {
-        QTaskMaster subTask = new QTaskMaster("subTask");
         QTaskInstance taskInstance = QTaskInstance.taskInstance;
+
+        List<Long> ids = queryFactory
+                .select(taskMaster.id)
+                .from(taskMaster)
+                .join(taskMaster.taskInstances, taskInstance).on(taskInstance.isCompleted.eq(false))
+                .where(taskMaster.member.id.eq(memberId),
+                        filterTypeEq(taskSearchCondition.getTaskFilterType(), taskInstance)
+                )
+                .orderBy(
+                        taskInstance.dueDate.asc(),
+                        taskMaster.taskPriorityType.asc(),
+                        taskMaster.sortOrder.asc(),
+                        taskMaster.id.desc()
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize()+1)
+                .fetch();
+        if(ids.isEmpty()){
+            return new ArrayList<>();
+        }
+
+        QTaskMaster subTask = new QTaskMaster("subTask");
         QTaskInstance subTaskInstance = new QTaskInstance("subTaskInstance");
         QComment comment = QComment.comment;
 
@@ -121,12 +143,13 @@ public class TaskMasterRepositoryCustomImpl implements TaskMasterRepositoryCusto
                 .join(taskMaster.taskInstances, taskInstance).on(taskInstance.isCompleted.eq(false))
                 .leftJoin(taskMaster.taskLabels, QTaskLabel.taskLabel)
                 .leftJoin(QTaskLabel.taskLabel.label, QLabel.label)
-                .where(taskMaster.member.id.eq(memberId),
-                        filterTypeEq(taskSearchCondition.getTaskFilterType(), taskInstance)
+                .where(
+                        taskMaster.id.in(ids)
                 )
                 .orderBy(
                         taskInstance.dueDate.asc(),
                         taskMaster.taskPriorityType.asc(),
+                        taskMaster.sortOrder.asc(),
                         taskMaster.id.desc()
                 )
                 .offset(pageable.getOffset())

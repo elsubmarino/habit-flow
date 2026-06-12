@@ -12,7 +12,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 @Table(name="task_instances",indexes={
-        @Index(name="idx_instance_target_date",columnList="target_date")
+        @Index(name="idx_instance_due_date",columnList="due_date")
 })
 public class TaskInstance extends BaseTimeEntity {
     @Id

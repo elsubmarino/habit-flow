@@ -1,7 +1,7 @@
 import { apiClient } from './client';
 import type { PriorityType, ScrollResponse, TaskDto, TaskFilterType } from './types';
 import { readCompleted, readInstanceId, type RecurrenceApiPayload } from './mappers';
-import { buildScrollParams, TASK_PAGE_SIZE } from './pagination';
+import { buildPageParams, TASK_PAGE_SIZE } from './pagination';
 
 export interface CreateTaskPayload extends RecurrenceApiPayload {
     name: string;
@@ -41,53 +41,51 @@ export async function fetchTaskCount(taskFilterType: TaskFilterType): Promise<nu
 }
 
 export async function fetchInboxTasks(
-    lastTaskId?: number,
+    page = 0,
     size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
     const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/inbox', {
-        params: buildScrollParams(lastTaskId, 'lastTaskId', size),
+        params: buildPageParams(size, page),
     });
     return data;
 }
 
 export async function fetchTodayTasks(
-    lastTaskId?: number,
+    page = 0,
     size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
     const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/today', {
-        params: buildScrollParams(lastTaskId, 'lastTaskId', size),
+        params: buildPageParams(size, page),
     });
     return data;
 }
 
 export async function fetchUpcomingTasks(
-    lastTaskId?: number,
+    page = 0,
     size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
     const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/upcoming', {
-        params: buildScrollParams(lastTaskId, 'lastTaskId', size),
+        params: buildPageParams(size, page),
     });
     return data;
 }
 
 export async function fetchAllTaskPages(
-    fetchPage: (lastTaskId?: number) => Promise<ScrollResponse<TaskDto>>,
+    fetchPage: (page?: number) => Promise<ScrollResponse<TaskDto>>,
 ): Promise<TaskDto[]> {
     const all: TaskDto[] = [];
-    let lastTaskId: number | undefined;
+    let page = 0;
     let hasNext = true;
 
     while (hasNext) {
-        const page = await fetchPage(lastTaskId);
-        if (page.content.length === 0) break;
+        const result = await fetchPage(page);
+        if (result.content.length === 0) break;
 
-        all.push(...page.content);
+        all.push(...result.content);
 
-        if (!page.hasNext || page.nextCursor == null) break;
-        if (page.nextCursor === lastTaskId) break;
-
-        lastTaskId = page.nextCursor;
-        hasNext = page.hasNext;
+        if (!result.hasNext) break;
+        page += 1;
+        hasNext = result.hasNext;
     }
 
     return all;

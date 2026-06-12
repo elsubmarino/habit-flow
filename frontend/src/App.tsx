@@ -101,7 +101,6 @@ function App() {
         status,
         loadMoreStatus,
         tasksHasNext,
-        tasksNextCursor,
         labelsLoadMoreStatus,
         labelsHasNext,
         labelsStatus,
@@ -443,7 +442,7 @@ function App() {
             : null;
 
     const handleLoadMoreTasks = useCallback(() => {
-        if (tasksNextCursor == null || loadMoreStatus === 'loading') return;
+        if (!tasksHasNext || loadMoreStatus === 'loading') return;
 
         const view = selectedLabelId != null
             ? 'all'
@@ -452,7 +451,7 @@ function App() {
                 : toApiView(activeNav);
         if (view !== 'today' && view !== 'upcoming' && view !== 'inbox') return;
         dispatch(fetchMoreHabits(view));
-    }, [dispatch, activeNav, selectedProjectId, selectedLabelId, tasksNextCursor, loadMoreStatus]);
+    }, [dispatch, activeNav, selectedProjectId, selectedLabelId, tasksHasNext, loadMoreStatus]);
 
     const handleLoadMoreLabels = useCallback(() => {
         if (labelsLoadMoreStatus === 'loading') return;

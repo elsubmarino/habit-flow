@@ -6,7 +6,7 @@ export const PROJECT_SEARCH_PAGE_SIZE = 20;
 
 export function buildScrollParams(
     cursor: number | undefined,
-    cursorKey: 'lastTaskId' | 'lastLabelId' | 'lastActivityLogId',
+    cursorKey: 'lastLabelId' | 'lastActivityLogId',
     size: number,
 ): Record<string, number> {
     const params: Record<string, number> = { size };

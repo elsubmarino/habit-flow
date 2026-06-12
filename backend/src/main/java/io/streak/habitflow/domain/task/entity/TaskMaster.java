@@ -16,7 +16,9 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Getter
-@Table(name="tasks")
+@Table(name="tasks",indexes = {
+        @Index(name = "idx_master_member_id",columnList = "member_id")
+})
 public class TaskMaster extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
