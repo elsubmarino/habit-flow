@@ -14,6 +14,7 @@ import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
 import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateDueDateRequest;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
+import io.streak.habitflow.domain.task.dto.response.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.TaskInstance;
@@ -210,19 +211,24 @@ public class TaskService {
 
     public ScrollResponse<TaskListResponse> getTasks(TaskSearchCondition taskSearchCondition, Long memberId, Pageable pageable){
 
-        List<TaskListResponse> taskListResponses = taskMasterRepository.searchTasksByCondition(taskSearchCondition, memberId, pageable);
+        List<TaskListQuery> tasks = taskMasterRepository.searchTasksByCondition(taskSearchCondition, memberId, pageable);
 
         boolean hasNext = false;
         Long nextCursor = null;
 
-        if(taskListResponses.size() > pageable.getPageSize()){
+        if(tasks.size() > pageable.getPageSize()){
             hasNext = true;
-            taskListResponses = taskListResponses.subList(0, pageable.getPageSize());
+            tasks = tasks.subList(0, pageable.getPageSize());
         }
 
-        if(!taskListResponses.isEmpty()){
-            nextCursor = taskListResponses.get(taskListResponses.size() - 1).id();
+        if(!tasks.isEmpty()){
+            nextCursor = tasks.get(tasks.size() - 1).getId();
         }
+
+
+        List<TaskListResponse> taskListResponses = tasks.stream()
+                .map(task->TaskListResponse.of(task,new ArrayList<>()))
+                .toList();
 
         return ScrollResponse.<TaskListResponse>builder()
                 .content(taskListResponses)

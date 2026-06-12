@@ -29,13 +29,28 @@ public record TaskListResponse(
             labels = new ArrayList<>();
         }
     }
+
+    public static TaskListResponse of(TaskListQuery taskListQuery, List<LabelListResponse> labelListResponses) {
+        return TaskListResponse.builder()
+                .id(taskListQuery.getId())
+                .name(taskListQuery.getName())
+                .description(taskListQuery.getDescription())
+                .taskPriorityType(taskListQuery.getTaskPriorityType())
+                .dueDate(taskListQuery.getDueDate())
+                .projectName(taskListQuery.getProjectName())
+                .taskInstanceId(taskListQuery.getTaskInstanceId())
+                .countSubTasks(taskListQuery.getCountSubTasks())
+                .countSubTasksCompleted(taskListQuery.getCountSubTasksCompleted())
+                .countComments(taskListQuery.getCountComments())
+                .labels(labelListResponses)
+                .build();
+    }
+
     public static TaskListResponse of(TaskMaster taskMaster, List<LabelListResponse> labelListResponses) {
         TaskListResponse.TaskListResponseBuilder builder = TaskListResponse.builder()
                 .id(taskMaster.getId())
                 .name(taskMaster.getName())
                 .taskPriorityType(taskMaster.getTaskPriorityType())
-                //TODO
-//                .dueDate(taskMaster.getDueDate())
                 .sortOrder(taskMaster.getSortOrder())
                 .labels(labelListResponses);
         if(taskMaster.getProject() != null){

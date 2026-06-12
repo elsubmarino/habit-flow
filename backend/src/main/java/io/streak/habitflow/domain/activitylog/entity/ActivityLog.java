@@ -29,6 +29,8 @@ public class ActivityLog extends BaseCreatedTimeEntity {
 
     private Long targetId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 50)
     private TargetType targetType;
 
 

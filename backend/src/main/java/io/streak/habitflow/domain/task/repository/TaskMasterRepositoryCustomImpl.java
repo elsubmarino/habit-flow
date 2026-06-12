@@ -9,6 +9,7 @@ import io.streak.habitflow.domain.comment.entity.QComment;
 import io.streak.habitflow.domain.label.entity.QLabel;
 import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
 import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
+import io.streak.habitflow.domain.task.dto.response.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.QTaskInstance;
@@ -81,7 +82,7 @@ public class TaskMasterRepositoryCustomImpl implements TaskMasterRepositoryCusto
     }
 
     @Override
-    public List<TaskListResponse> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId, Pageable pageable) {
+    public List<TaskListQuery> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId, Pageable pageable) {
         QTaskMaster subTask = new QTaskMaster("subTask");
         QTaskInstance taskInstance = QTaskInstance.taskInstance;
         QTaskInstance subTaskInstance = new QTaskInstance("subTaskInstance");
@@ -90,7 +91,7 @@ public class TaskMasterRepositoryCustomImpl implements TaskMasterRepositoryCusto
         return queryFactory
                 .select(
                         Projections.fields(
-                                TaskListResponse.class,
+                                TaskListQuery.class,
                                 taskMaster.id,
                                 taskMaster.name,
                                 taskMaster.description,
