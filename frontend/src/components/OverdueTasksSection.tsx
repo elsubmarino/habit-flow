@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAppDispatch } from '../store/hooks';
 import { patchTaskDueDate } from '../store/habitSlice';
-import type { Habit } from '../store/habitSlice';
+import { habitRowKey, type Habit } from '../store/habitSlice';
 import { rescheduleHabitToToday } from '../utils/overdueTasks';
 import HabitItem, { type TaskRowLayout } from './HabitItem';
 import { ChevronDownIcon } from './icons';
@@ -80,7 +80,7 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
                 <ul className="task-list">
                     {habits.map(habit => (
                         <HabitItem
-                            key={habit.id}
+                            key={habitRowKey(habit)}
                             habit={habit}
                             layout={layout}
                             variant="overdue"

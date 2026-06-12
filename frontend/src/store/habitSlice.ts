@@ -11,6 +11,7 @@ import * as labelApi from '../api/labelApi';
 import * as projectApi from '../api/projectApi';
 import * as taskApi from '../api/taskApi';
 import * as commentApi from '../api/commentApi';
+import { resolveTaskScrollCursor } from '../api/scrollCursor';
 import {
     mapLabel,
     mapProject,
@@ -66,6 +67,10 @@ export interface TaskSelection {
 export function selectionFromHabit(habit: Habit): TaskSelection | null {
     if (habit.instanceId == null) return null;
     return { masterId: habit.id, instanceId: habit.instanceId };
+}
+
+export function habitRowKey(habit: Habit): string {
+    return habit.instanceId != null ? `i:${habit.instanceId}` : `m:${habit.id}`;
 }
 
 export interface Habit {
@@ -205,27 +210,18 @@ async function loadTasksForView(params: {
     switch (params.view) {
         case 'today': {
             const page = await taskApi.fetchTodayTasks();
-            return {
-                tasks: page.content,
-                hasNext: page.hasNext,
-                nextCursor: page.nextCursor,
-            };
+            const cursor = resolveTaskScrollCursor(page);
+            return { tasks: page.content, ...cursor };
         }
         case 'upcoming': {
             const page = await taskApi.fetchUpcomingTasks();
-            return {
-                tasks: page.content,
-                hasNext: page.hasNext,
-                nextCursor: page.nextCursor,
-            };
+            const cursor = resolveTaskScrollCursor(page);
+            return { tasks: page.content, ...cursor };
         }
         case 'inbox': {
             const page = await taskApi.fetchInboxTasks();
-            return {
-                tasks: page.content,
-                hasNext: page.hasNext,
-                nextCursor: page.nextCursor,
-            };
+            const cursor = resolveTaskScrollCursor(page);
+            return { tasks: page.content, ...cursor };
         }
         case 'filters':
         case 'report':
@@ -292,30 +288,41 @@ export const fetchHabits = createAsyncThunk(
 
 export const fetchMoreHabits = createAsyncThunk(
     'habits/fetchMore',
-    async (_, { getState }) => {
+    async (viewOverride: ApiView | undefined, { getState }) => {
         const state = getState() as { habits: HabitState };
         const { activeView, selectedProjectId, selectedLabelId, tasksNextCursor } = state.habits;
+        const view = viewOverride ?? activeView;
 
         if (
-            tasksNextCursor == null
-            || selectedProjectId != null
+            selectedProjectId != null
             || selectedLabelId != null
-            || (activeView !== 'today' && activeView !== 'upcoming' && activeView !== 'inbox')
+            || (view !== 'today' && view !== 'upcoming' && view !== 'inbox')
         ) {
             return { habits: [], hasNext: false, nextCursor: null };
         }
 
-        const page = activeView === 'today'
+        if (tasksNextCursor == null || tasksNextCursor <= 0) {
+            return { habits: [], hasNext: false, nextCursor: null };
+        }
+
+        const page = view === 'today'
             ? await taskApi.fetchTodayTasks(tasksNextCursor)
-            : activeView === 'upcoming'
+            : view === 'upcoming'
                 ? await taskApi.fetchUpcomingTasks(tasksNextCursor)
                 : await taskApi.fetchInboxTasks(tasksNextCursor);
 
+        const resolved = resolveTaskScrollCursor(page);
         return {
             habits: page.content.map(t => mapTaskToHabit(t, readInstanceId(t))),
-            hasNext: page.hasNext,
-            nextCursor: page.nextCursor,
+            hasNext: resolved.hasNext,
+            nextCursor: resolved.nextCursor,
         };
+    },
+    {
+        condition: (_, { getState }) => {
+            const { loadMoreStatus, tasksHasNext, tasksNextCursor } = (getState() as { habits: HabitState }).habits;
+            return loadMoreStatus === 'idle' && tasksHasNext && tasksNextCursor != null;
+        },
     },
 );
 
@@ -708,6 +715,8 @@ const habitSlice = createSlice({
             })
             .addCase(fetchMoreHabits.fulfilled, (state, action) => {
                 state.loadMoreStatus = 'idle';
+                const previousCursor = state.tasksNextCursor;
+                const previousLength = state.list.length;
                 const existingKeys = new Set(
                     state.list.map(h => (h.instanceId != null ? `i:${h.instanceId}` : `m:${h.id}`)),
                 );
@@ -718,8 +727,17 @@ const habitSlice = createSlice({
                         existingKeys.add(key);
                     }
                 }
-                state.tasksHasNext = action.payload.hasNext;
-                state.tasksNextCursor = action.payload.nextCursor;
+                const addedCount = state.list.length - previousLength;
+                let hasNext = action.payload.hasNext;
+                let nextCursor = action.payload.nextCursor;
+
+                if (nextCursor != null && nextCursor === previousCursor && addedCount === 0) {
+                    hasNext = false;
+                    nextCursor = null;
+                }
+
+                state.tasksHasNext = hasNext;
+                state.tasksNextCursor = nextCursor;
             })
             .addCase(fetchMoreHabits.rejected, (state, action) => {
                 state.loadMoreStatus = 'failed';

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Habit } from '../store/habitSlice';
+import { habitRowKey, type Habit } from '../store/habitSlice';
 import {
     formatMonthYear,
     formatUpcomingSectionTitle,
@@ -71,12 +71,7 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
 
     const grouped = useMemo(() => {
         const map = new Map<string, Habit[]>();
-        const sorted = [...upcomingHabits].sort((a, b) => {
-            const ad = a.dueDate ?? '9999-12-31';
-            const bd = b.dueDate ?? '9999-12-31';
-            return ad.localeCompare(bd);
-        });
-        for (const habit of sorted) {
+        for (const habit of upcomingHabits) {
             const key = habit.dueDate?.slice(0, 10) ?? 'none';
             if (!map.has(key)) map.set(key, []);
             map.get(key)!.push(habit);
@@ -84,10 +79,16 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
         return map;
     }, [upcomingHabits]);
 
-    const groupedKeys = useMemo(
-        () => Array.from(grouped.keys()).filter(k => k !== 'none').sort(),
-        [grouped],
-    );
+    const groupedKeys = useMemo(() => {
+        const keys: string[] = [];
+        for (const habit of upcomingHabits) {
+            const key = habit.dueDate?.slice(0, 10) ?? 'none';
+            if (!keys.includes(key)) {
+                keys.push(key);
+            }
+        }
+        return keys;
+    }, [upcomingHabits]);
 
     const scrollToDate = useCallback((iso: string) => {
         let el = sectionRefs.current[iso];
@@ -250,7 +251,10 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                 />
             )}
 
-            {Array.from(grouped.entries()).map(([dateKey, list]) => (
+            {groupedKeys.map(dateKey => {
+                const list = grouped.get(dateKey) ?? [];
+                if (list.length === 0) return null;
+                return (
                 <section
                     key={dateKey}
                     ref={el => { sectionRefs.current[dateKey] = el; }}
@@ -263,7 +267,7 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                     <ul className="task-list">
                         {list.map(habit => (
                             <HabitItem
-                                key={habit.id}
+                                key={habitRowKey(habit)}
                                 habit={habit}
                                 layout="upcoming"
                                 onOpenDetails={onOpenDetails}
@@ -275,7 +279,8 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                     </ul>
                     {onAddTask && <InlineAddTaskButton onClick={onAddTask} />}
                 </section>
-            ))}
+                );
+            })}
 
             {grouped.size === 0 && overdueHabits.length === 0 && onAddTask && (
                 <InlineAddTaskButton onClick={onAddTask} />

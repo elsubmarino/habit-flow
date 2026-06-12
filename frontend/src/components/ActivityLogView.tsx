@@ -90,22 +90,32 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, scrollRootR
     const [dateFilter, setDateFilter] = useState<DateFilter>('all');
 
     useEffect(() => {
+        let active = true;
         setLoading(true);
         setLoadMoreStatus('idle');
+
         void fetchActivityLogs()
             .then(page => {
+                if (!active) return;
                 setItems(page.content);
                 setHasNext(page.hasNext);
                 setNextCursor(page.nextCursor);
                 setError(null);
             })
             .catch(err => {
+                if (!active) return;
                 setError(err instanceof Error ? err.message : '활동 내역을 불러오지 못했습니다.');
                 setItems([]);
                 setHasNext(false);
                 setNextCursor(null);
             })
-            .finally(() => setLoading(false));
+            .finally(() => {
+                if (active) setLoading(false);
+            });
+
+        return () => {
+            active = false;
+        };
     }, []);
 
     const handleLoadMore = useCallback(() => {

@@ -23,6 +23,7 @@ import {
     type Label,
     type Project,
     type TaskSelection,
+    habitRowKey,
     selectionFromHabit,
 } from './store/habitSlice';
 import HabitItem from './components/HabitItem';
@@ -37,7 +38,6 @@ import EditProjectModal from './components/EditProjectModal';
 import ProjectShareModal from './components/ProjectShareModal';
 import ProjectsBrowseView from './components/ProjectsBrowseView';
 import UpcomingTaskList from './components/UpcomingTaskList';
-import OverdueTasksSection from './components/OverdueTasksSection';
 import TaskDetailModal from './components/TaskDetailModal';
 import TaskCompleteToast from './components/TaskCompleteToast';
 import { useTaskCompleteToast } from './hooks/useTaskCompleteToast';
@@ -59,8 +59,7 @@ import { clearHabitError } from './store/habitSlice';
 import { useAppUrlSync } from './hooks/useAppUrlSync';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll';
 import { parseAppPath } from './utils/appRoutes';
-import { formatSectionDate, formatTodayHeader, formatUpcomingSectionTitle, toISODate } from './utils/date';
-import { splitOverdueTasks } from './utils/overdueTasks';
+import { formatSectionDate, formatTodayHeader } from './utils/date';
 import {
     filterHabits,
     groupHabits,
@@ -102,6 +101,7 @@ function App() {
         status,
         loadMoreStatus,
         tasksHasNext,
+        tasksNextCursor,
         labelsLoadMoreStatus,
         labelsHasNext,
         labelsStatus,
@@ -400,20 +400,20 @@ function App() {
         saveViewPreferences(prefs);
     };
 
+    const paginatedTaskView =
+        (activeNav === 'today' || activeNav === 'upcoming' || activeNav === 'inbox')
+        && selectedProjectId == null
+        && selectedLabelId == null;
+
     const displayHabits = useMemo(() => {
-        let list = filterHabits(habits, viewPrefs);
+        let list = filterHabits(habits, viewPrefs, {
+            preserveOrder: paginatedTaskView && viewPrefs.grouping === 'none',
+        });
         if (!viewPrefs.showCompleted) {
             list = list.filter(h => !h.completedToday);
         }
         return list;
-    }, [habits, viewPrefs]);
-
-    const pending = useMemo(() => displayHabits.filter(h => !h.completedToday), [displayHabits]);
-    const completedToday = useMemo(() => displayHabits.filter(h => h.completedToday), [displayHabits]);
-    const { overdue: overduePending, rest: todayPending } = useMemo(
-        () => splitOverdueTasks(pending),
-        [pending],
-    );
+    }, [habits, viewPrefs, paginatedTaskView]);
 
     const meta = selectedLabelId
         ? {
@@ -443,15 +443,24 @@ function App() {
             : null;
 
     const handleLoadMoreTasks = useCallback(() => {
-        dispatch(fetchMoreHabits());
-    }, [dispatch]);
+        if (tasksNextCursor == null || loadMoreStatus === 'loading') return;
+
+        const view = selectedLabelId != null
+            ? 'all'
+            : selectedProjectId != null
+                ? 'all'
+                : toApiView(activeNav);
+        if (view !== 'today' && view !== 'upcoming' && view !== 'inbox') return;
+        dispatch(fetchMoreHabits(view));
+    }, [dispatch, activeNav, selectedProjectId, selectedLabelId, tasksNextCursor, loadMoreStatus]);
 
     const handleLoadMoreLabels = useCallback(() => {
+        if (labelsLoadMoreStatus === 'loading') return;
         dispatch(fetchMoreLabels());
-    }, [dispatch]);
+    }, [dispatch, labelsLoadMoreStatus]);
 
     const loadMoreSentinelRef = useInfiniteScroll(
-        showTaskPagination,
+        status !== 'loading' && paginatedTaskView && tasksHasNext,
         tasksHasNext,
         loadMoreStatus === 'loading',
         handleLoadMoreTasks,
@@ -459,7 +468,7 @@ function App() {
     );
 
     const labelsLoadMoreSentinelRef = useInfiniteScroll(
-        showLabelsPagination,
+        labelsStatus !== 'loading' && showLabelsPagination,
         labelsHasNext,
         labelsLoadMoreStatus === 'loading',
         handleLoadMoreLabels,
@@ -475,7 +484,7 @@ function App() {
         <ul className="task-list">
             {list.map(habit => (
                 <HabitItem
-                    key={habit.id}
+                    key={habitRowKey(habit)}
                     habit={habit}
                     layout={taskRowLayout}
                     onOpenDetails={handleOpenHabit}
@@ -522,46 +531,7 @@ function App() {
         if (showTodaySections && viewPrefs.grouping === 'none') {
             return (
                 <>
-                    {overduePending.length > 0 && (
-                        <OverdueTasksSection
-                            habits={overduePending}
-                            layout="list"
-                            onOpenDetails={handleOpenHabit}
-                            onOpenProject={handleProjectSelect}
-                            onTaskCompleted={handleTaskCompleted}
-                            onTaskDeleted={handleTaskDeleted}
-                        />
-                    )}
-                    {todayPending.length > 0 && (
-                        <>
-                            {overduePending.length > 0 && (
-                                <h2 className="section-label today-date-title">
-                                    {formatUpcomingSectionTitle(toISODate(new Date()))}
-                                </h2>
-                            )}
-                            {renderTaskList(todayPending)}
-                        </>
-                    )}
-                    {completedToday.length > 0 && (
-                        <>
-                            <h2 className="section-label completed-label">
-                                완료됨 · {completedToday.length}
-                            </h2>
-                            <ul className="task-list completed-list">
-                                {completedToday.map(habit => (
-                                    <HabitItem
-                                        key={habit.id}
-                                        habit={habit}
-                                        layout="list"
-                                        onOpenDetails={handleOpenHabit}
-                                        onOpenProject={handleProjectSelect}
-                                        onTaskCompleted={handleTaskCompleted}
-                                        onTaskDeleted={handleTaskDeleted}
-                                    />
-                                ))}
-                            </ul>
-                        </>
-                    )}
+                    {renderTaskList(displayHabits)}
                     <InlineAddTaskButton onClick={() => addFormRef.current?.open()} />
                 </>
             );
@@ -766,14 +736,6 @@ function App() {
 
                     {renderTaskContent()}
 
-                    {showTaskPagination && (
-                        <div ref={loadMoreSentinelRef} className="tasks-scroll-sentinel" aria-hidden="true">
-                            {loadMoreStatus === 'loading' && (
-                                <p className="tasks-scroll-loading">불러오는 중…</p>
-                            )}
-                        </div>
-                    )}
-
                     {selectedProjectId && !showTodaySections && !showUpcomingGrouped && (
                         <InlineAddTaskButton onClick={() => addFormRef.current?.open()} />
                     )}
@@ -785,6 +747,14 @@ function App() {
                         labelId={selectedLabelId}
                         hideTrigger={showTodaySections || showUpcomingGrouped || !!selectedProjectId}
                     />
+
+                    {showTaskPagination && (
+                        <div ref={loadMoreSentinelRef} className="tasks-scroll-sentinel" aria-hidden="true">
+                            {loadMoreStatus === 'loading' && (
+                                <p className="tasks-scroll-loading">불러오는 중…</p>
+                            )}
+                        </div>
+                    )}
                 </section>
                 </>
                 )}
