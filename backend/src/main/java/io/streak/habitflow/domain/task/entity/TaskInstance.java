@@ -27,6 +27,11 @@ public class TaskInstance extends BaseTimeEntity {
     private LocalDate dueDate;
     private boolean isCompleted;
 
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    @Builder.Default
+    private Long version = 0L;
+
     public void updateCompleted(boolean isCompleted){
         this.isCompleted = isCompleted;
     }

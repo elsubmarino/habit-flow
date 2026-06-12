@@ -34,6 +34,9 @@ import io.streak.habitflow.global.infra.file.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -292,9 +295,17 @@ public class TaskService {
         return TaskResponse.of(taskMaster,activeInstance, labelListResponses);
     }
 
+    @Retryable(
+            retryFor = { ObjectOptimisticLockingFailureException.class
+            },
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 200)
+    )
     @Transactional
     @CheckOwnership(type="TASK")
     public TaskResponse toggleCompletion(Long taskInstanceId, Long memberId){
+        System.out.println("[Retry Check] " + Thread.currentThread().getName()
+                + " -> toggleCompletion 진입! (taskInstanceId: " + taskInstanceId + ")");
         TaskInstance taskInstance = taskInstanceRepository.findById(taskInstanceId)
                  .orElseThrow();
 
@@ -337,6 +348,8 @@ public class TaskService {
         List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels().stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
+
+        taskInstanceRepository.flush();
         return TaskResponse.of(taskMaster,taskInstance, labelListResponses);
     }
 
