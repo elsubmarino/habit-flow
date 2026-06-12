@@ -122,10 +122,14 @@ public class TaskMasterRepositoryCustomImpl implements TaskMasterRepositoryCusto
                 .leftJoin(taskMaster.taskLabels, QTaskLabel.taskLabel)
                 .leftJoin(QTaskLabel.taskLabel.label, QLabel.label)
                 .where(taskMaster.member.id.eq(memberId),
-                        filterTypeEq(taskSearchCondition.getTaskFilterType(), taskInstance),
-                        ltTaskId(taskSearchCondition.getLastTaskId())
+                        filterTypeEq(taskSearchCondition.getTaskFilterType(), taskInstance)
                 )
-                .orderBy(taskMaster.id.desc())
+                .orderBy(
+                        taskInstance.dueDate.asc(),
+                        taskMaster.taskPriorityType.asc(),
+                        taskMaster.id.desc()
+                )
+                .offset(pageable.getOffset())
                 .limit(pageable.getPageSize()+1)
                 .fetch();
     }
@@ -134,7 +138,9 @@ public class TaskMasterRepositoryCustomImpl implements TaskMasterRepositoryCusto
         if(taskFilterType == null) return null;
         LocalDate localDate = LocalDate.now();
         if(TaskFilterType.TODAY == taskFilterType){
-            return taskInstance.dueDate.loe(localDate);
+            return taskInstance.dueDate.isNotNull().and(taskInstance.dueDate.loe(localDate));
+        }else if(TaskFilterType.UPCOMING == taskFilterType){
+            return taskInstance.dueDate.isNotNull();
         }else if(TaskFilterType.INBOX == taskFilterType){
             return taskMaster.project.isNull();
         }

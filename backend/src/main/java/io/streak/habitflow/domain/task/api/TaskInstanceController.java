@@ -66,6 +66,7 @@ public class TaskInstanceController {
                                                                              @RequestParam(value="lastTaskId",required = false) Long lastTaskId,
                                                                              @PageableDefault(size = 20) Pageable pageable) {
         TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
+        taskSearchCondition.setTaskFilterType(TaskFilterType.UPCOMING);
         taskSearchCondition.setLastTaskId(lastTaskId);
 
         return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userPrincipal.getMemberId(), pageable));

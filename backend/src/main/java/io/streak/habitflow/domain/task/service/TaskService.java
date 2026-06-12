@@ -214,17 +214,11 @@ public class TaskService {
         List<TaskListQuery> tasks = taskMasterRepository.searchTasksByCondition(taskSearchCondition, memberId, pageable);
 
         boolean hasNext = false;
-        Long nextCursor = null;
 
         if(tasks.size() > pageable.getPageSize()){
             hasNext = true;
             tasks = tasks.subList(0, pageable.getPageSize());
         }
-
-        if(!tasks.isEmpty()){
-            nextCursor = tasks.get(tasks.size() - 1).getId();
-        }
-
 
         List<TaskListResponse> taskListResponses = tasks.stream()
                 .map(task->TaskListResponse.of(task,new ArrayList<>()))
@@ -233,7 +227,6 @@ public class TaskService {
         return ScrollResponse.<TaskListResponse>builder()
                 .content(taskListResponses)
                 .hasNext(hasNext)
-                .nextCursor(nextCursor)
                 .build();
 
     }
