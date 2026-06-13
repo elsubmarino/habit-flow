@@ -34,7 +34,7 @@ public class CommentController {
     }
 
     @PutMapping("/{commentId}")
-    @Operation(summary = "댓글 얿데이트")
+    @Operation(summary = "댓글 업데이트")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "댓글 업데이트 성공")})
     public ResponseEntity<CommentResponse> updateComment(@PathVariable Long commentId,
                                                          @AuthenticationPrincipal UserPrincipal userPrincipal,

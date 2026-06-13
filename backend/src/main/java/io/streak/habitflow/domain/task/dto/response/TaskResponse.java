@@ -55,9 +55,6 @@ public record TaskResponse(
                 .sortOrder(taskMaster.getSortOrder())
                 .labels(labelListResponses)
                 .recurring(taskMaster.isRecurring())
-                .comments(taskMaster.getComments().stream()
-                        .map(CommentResponse::from)
-                        .toList())
                 .subTasks(taskMaster.getSubTaskMasters().stream()
                         .map(subTaskMaster -> {
                             LocalDate parentDueDate = (taskInstance != null) ? taskInstance.getDueDate() :  null;
