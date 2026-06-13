@@ -296,9 +296,9 @@ public class TaskService {
         return TaskResponse.of(taskMaster,activeInstance, labelListResponses);
     }
 
-    @DistributedLock(key = "#taskInstanceId")
     @Transactional
     @CheckOwnership(type="TASK")
+    @DistributedLock(key = "#taskInstanceId")
     public TaskResponse toggleCompletion(Long taskInstanceId, Long memberId){
         TaskInstance taskInstance = taskInstanceRepository.findById(taskInstanceId)
                  .orElseThrow();
