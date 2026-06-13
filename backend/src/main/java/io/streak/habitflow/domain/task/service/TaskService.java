@@ -28,6 +28,7 @@ import io.streak.habitflow.domain.task.type.TargetType;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
+import io.streak.habitflow.global.aop.DistributedLock;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
@@ -295,17 +296,10 @@ public class TaskService {
         return TaskResponse.of(taskMaster,activeInstance, labelListResponses);
     }
 
-    @Retryable(
-            retryFor = { ObjectOptimisticLockingFailureException.class
-            },
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 200)
-    )
+    @DistributedLock(key = "#taskInstanceId")
     @Transactional
     @CheckOwnership(type="TASK")
     public TaskResponse toggleCompletion(Long taskInstanceId, Long memberId){
-        System.out.println("[Retry Check] " + Thread.currentThread().getName()
-                + " -> toggleCompletion 진입! (taskInstanceId: " + taskInstanceId + ")");
         TaskInstance taskInstance = taskInstanceRepository.findById(taskInstanceId)
                  .orElseThrow();
 
