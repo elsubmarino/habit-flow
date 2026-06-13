@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { dedupeInFlight } from './inFlight';
 import { toLabelUpdateBody, toLabelWriteBody } from './labelMappers';
 import { buildScrollParams, LABEL_PAGE_SIZE } from './pagination';
 import type { LabelDetailDto, LabelDto, LabelUpdatePayload, ScrollResponse } from './types';
@@ -7,15 +8,20 @@ export async function fetchLabels(
     lastLabelId?: number,
     size = LABEL_PAGE_SIZE,
 ): Promise<ScrollResponse<LabelDto>> {
-    const { data } = await apiClient.get<ScrollResponse<LabelDto>>('/api/labels', {
-        params: buildScrollParams(lastLabelId, 'lastLabelId', size),
+    const cursorKey = lastLabelId ?? 'first';
+    return dedupeInFlight(`labels:${cursorKey}:${size}`, async () => {
+        const { data } = await apiClient.get<ScrollResponse<LabelDto>>('/api/labels', {
+            params: buildScrollParams(lastLabelId, 'lastLabelId', size),
+        });
+        return data;
     });
-    return data;
 }
 
 export async function fetchLabelById(labelId: number): Promise<LabelDetailDto> {
-    const { data } = await apiClient.get<LabelDetailDto>(`/api/labels/${labelId}`);
-    return data;
+    return dedupeInFlight(`label:${labelId}`, async () => {
+        const { data } = await apiClient.get<LabelDetailDto>(`/api/labels/${labelId}`);
+        return data;
+    });
 }
 
 export async function createLabel(

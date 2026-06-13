@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { dedupeInFlight } from './inFlight';
 import type { PriorityType, ScrollResponse, TaskDto, TaskFilterType } from './types';
 import { readCompleted, readInstanceId, type RecurrenceApiPayload } from './mappers';
 import { buildPageParams, TASK_PAGE_SIZE } from './pagination';
@@ -34,40 +35,48 @@ function buildTaskFormData(body: Record<string, unknown>, file?: File | null) {
 }
 
 export async function fetchTaskCount(taskFilterType: TaskFilterType): Promise<number> {
-    const { data } = await apiClient.get<number>('/api/tasks/count', {
-        params: { taskFilterType },
+    return dedupeInFlight(`task-count:${taskFilterType}`, async () => {
+        const { data } = await apiClient.get<number>('/api/tasks/count', {
+            params: { taskFilterType },
+        });
+        return data;
     });
-    return data;
 }
 
 export async function fetchInboxTasks(
     page = 0,
     size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
-    const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/inbox', {
-        params: buildPageParams(size, page),
+    return dedupeInFlight(`tasks:inbox:${page}:${size}`, async () => {
+        const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/inbox', {
+            params: buildPageParams(size, page),
+        });
+        return data;
     });
-    return data;
 }
 
 export async function fetchTodayTasks(
     page = 0,
     size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
-    const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/today', {
-        params: buildPageParams(size, page),
+    return dedupeInFlight(`tasks:today:${page}:${size}`, async () => {
+        const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/today', {
+            params: buildPageParams(size, page),
+        });
+        return data;
     });
-    return data;
 }
 
 export async function fetchUpcomingTasks(
     page = 0,
     size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
-    const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/upcoming', {
-        params: buildPageParams(size, page),
+    return dedupeInFlight(`tasks:upcoming:${page}:${size}`, async () => {
+        const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/upcoming', {
+            params: buildPageParams(size, page),
+        });
+        return data;
     });
-    return data;
 }
 
 export async function fetchAllTaskPages(
@@ -92,14 +101,18 @@ export async function fetchAllTaskPages(
 }
 
 export async function fetchProjectTasks(projectId: number): Promise<TaskDto[]> {
-    const { data } = await apiClient.get<TaskDto[]>(`/api/projects/${projectId}/tasks`);
-    return data;
+    return dedupeInFlight(`project-tasks:${projectId}`, async () => {
+        const { data } = await apiClient.get<TaskDto[]>(`/api/projects/${projectId}/tasks`);
+        return data;
+    });
 }
 
 /** TaskInstance 상세 조회 */
 export async function fetchTaskInstanceById(instanceId: number): Promise<TaskDto> {
-    const { data } = await apiClient.get<TaskDto>(`/api/task-instances/${instanceId}`);
-    return data;
+    return dedupeInFlight(`task-instance:${instanceId}`, async () => {
+        const { data } = await apiClient.get<TaskDto>(`/api/task-instances/${instanceId}`);
+        return data;
+    });
 }
 
 /** @deprecated TaskMaster ID로 조회 불가 — fetchTaskInstanceById 사용 */

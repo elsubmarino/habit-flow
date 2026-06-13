@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { dedupeInFlight } from './inFlight';
 
 export async function createComment(taskId: number, content: string, file?: File | null) {
     const form = new FormData();
@@ -21,8 +22,10 @@ export interface CommentResponseDto {
 }
 
 export async function fetchTaskComments(taskId: number): Promise<CommentResponseDto[]> {
-    const { data } = await apiClient.get<CommentResponseDto[]>(`/api/tasks/${taskId}/comments`);
-    return data;
+    return dedupeInFlight(`task-comments:${taskId}`, async () => {
+        const { data } = await apiClient.get<CommentResponseDto[]>(`/api/tasks/${taskId}/comments`);
+        return data;
+    });
 }
 
 export async function updateComment(commentId: number, taskId: number, content: string) {

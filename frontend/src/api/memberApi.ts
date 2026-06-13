@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { dedupeInFlight } from './inFlight';
 import type { MemberDto } from './types';
 
 export interface MemberSignUpPayload {
@@ -17,8 +18,10 @@ export interface MemberLoginResponse {
 }
 
 export async function fetchMember(): Promise<MemberDto> {
-    const { data } = await apiClient.get<MemberDto>('/api/members');
-    return data;
+    return dedupeInFlight('member', async () => {
+        const { data } = await apiClient.get<MemberDto>('/api/members');
+        return data;
+    });
 }
 
 export async function loginMember(payload: MemberLoginPayload): Promise<MemberLoginResponse> {
