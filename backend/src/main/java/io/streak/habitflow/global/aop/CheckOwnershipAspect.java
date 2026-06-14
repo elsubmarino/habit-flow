@@ -9,7 +9,7 @@ import io.streak.habitflow.domain.notification.repository.NotificationRepository
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
+import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +50,7 @@ public class CheckOwnershipAspect {
         Long loginMemberId = null;
         Long notificationId = null;
         Long projectId = null;
-        TaskCreateRequest taskCreateRequest = null;
+        TaskRequest.Create request = null;
 
         for(int i=0;i<parameterNames.length;i++){
             if("taskId".equals(parameterNames[i])) taskId = (Long)args[i];
@@ -59,7 +59,7 @@ public class CheckOwnershipAspect {
             else if("loginMemberId".equals(parameterNames[i])) loginMemberId = (Long)args[i];
             else if("notificationId".equals(parameterNames[i])) notificationId = (Long)args[i];
             else if("projectId".equals(parameterNames[i])) projectId = (Long)args[i];
-            else if(args[i] instanceof TaskCreateRequest)taskCreateRequest = (TaskCreateRequest)args[i];
+            else if(args[i] instanceof TaskRequest.Create)request = (TaskRequest.Create)args[i];
 
         }
 
@@ -68,8 +68,8 @@ public class CheckOwnershipAspect {
             if("TASK".equals(domainType) && taskId != null && memberId != null){
                 checkTaskOwner(taskId,memberId);
             }else if("SUB_TASK".equals(domainType)){
-                if(taskCreateRequest != null && taskCreateRequest.getParentId() != null && memberId != null){
-                    checkTaskOwner(taskCreateRequest.getParentId(),memberId);
+                if(request != null && request.parentId() != null && memberId != null){
+                    checkTaskOwner(request.parentId(),memberId);
                 }
             }else if("COMMENT".equals(domainType) && commentId != null && memberId != null){
                 checkCommentOwner(commentId,memberId);

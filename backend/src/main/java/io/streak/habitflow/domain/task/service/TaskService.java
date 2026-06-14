@@ -10,10 +10,7 @@ import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.domain.task.dto.request.TaskCreateRequest;
-import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
-import io.streak.habitflow.domain.task.dto.request.TaskUpdateDueDateRequest;
-import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
+import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
@@ -72,13 +69,13 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="SUB_TASK")
-    public TaskResponse createTask(TaskCreateRequest taskCreateRequest, MultipartFile file, Long memberId){
+    public TaskResponse createTask(TaskRequest.Create request, MultipartFile file, Long memberId){
 
         Member member = memberRepository.getReferenceById(memberId);
 
         Task parentTask = null;
-        if(taskCreateRequest.getParentId() != null){
-            parentTask = taskRepository.findById(taskCreateRequest.getParentId())
+        if(request.parentId() != null){
+            parentTask = taskRepository.findById(request.parentId())
                     .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 테스크입니다."));
 
             if(parentTask.getSubTasks().size() >= 4){
@@ -87,8 +84,8 @@ public class TaskService {
         }
 
         Project project = null;
-        if(taskCreateRequest.getProjectId() != null){
-            project = projectRepository.findById(taskCreateRequest.getProjectId())
+        if(request.projectId() != null){
+            project = projectRepository.findById(request.projectId())
                     .orElseThrow(()->new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
             boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
             if(!isMember){
@@ -99,20 +96,20 @@ public class TaskService {
         }
 
         Task task = Task.builder()
-                .name(taskCreateRequest.getName())
-                .description(taskCreateRequest.getDescription())
-                .taskPriorityType(taskCreateRequest.getTaskPriorityType())
+                .name(request.name())
+                .description(request.description())
+                .taskPriorityType(request.taskPriorityType())
                 .member(member)
                 .project(project)
                 .parent(parentTask)
-                .recurring(taskCreateRequest.isRecurring())
-                .recurrenceRule(taskCreateRequest.getRecurrenceRule())
-                .recurrenceInterval(taskCreateRequest.getRecurrenceInterval())
-                .recurrenceDays(taskCreateRequest.getRecurrenceDays())
-                .recurrenceDayOfMonth(taskCreateRequest.getRecurrenceDayOfMonth())
+                .recurring(request.recurring())
+                .recurrenceRule(request.recurrenceRule())
+                .recurrenceInterval(request.recurrenceInterval())
+                .recurrenceDays(request.recurrenceDays())
+                .recurrenceDayOfMonth(request.recurrenceDayOfMonth())
                 .subTasks(new ArrayList<>())
                 .taskLabels(new ArrayList<>())
-                .dueDate(taskCreateRequest.getDueDate())
+                .dueDate(request.dueDate())
                 .comments(new ArrayList<>())
                 .build();
 
@@ -121,9 +118,9 @@ public class TaskService {
             parentTask.getSubTasks().add(task);
         }
 
-        if(taskCreateRequest.getLabelIds() != null && !taskCreateRequest.getLabelIds().isEmpty()){
-            List<Label> labels = labelRepository.findAllById(taskCreateRequest.getLabelIds());
-            if(labels.size() != taskCreateRequest.getLabelIds().size()){
+        if(request.labelIds() != null && !request.labelIds().isEmpty()){
+            List<Label> labels = labelRepository.findAllById(request.labelIds());
+            if(labels.size() != request.labelIds().size()){
                 throw new IllegalArgumentException("존재하지 않는 라벨이 있습니다.");
             }
             List<TaskLabel> taskLabels = labels.stream()
@@ -199,9 +196,9 @@ public class TaskService {
                 .toList();
     }
 
-    public ScrollResponse<TaskListResponse> getTasks(TaskSearchCondition taskSearchCondition, Long memberId, Pageable pageable){
+    public ScrollResponse<TaskListResponse> getTasks(TaskRequest.SearchCondition searchCondition, Long memberId, Pageable pageable){
 
-        List<TaskListQuery> tasks = taskRepository.searchTasksByCondition(taskSearchCondition, memberId, pageable);
+        List<TaskListQuery> tasks = taskRepository.searchTasksByCondition(searchCondition, memberId, pageable);
 
         boolean hasNext = false;
 
@@ -223,41 +220,27 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public TaskResponse updateTask(Long taskId, TaskUpdateRequest taskUpdateRequest, Long memberId){
+    public TaskResponse updateTask(Long taskId, TaskRequest.Update request, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
         boolean isNameChanged = false;
         boolean isDescriptionChanged = false;
 
-        if(taskUpdateRequest.getName()!=null){
-            if(!task.getName().equals(taskUpdateRequest.getName())){
-                task.updateName(taskUpdateRequest.getName());
+        if(request.name()!=null){
+            if(!task.getName().equals(request.name())){
+                task.updateName(request.name());
                 isNameChanged = true;
             }
         }
 
-        if(taskUpdateRequest.getDescription()!=null){
-            if(!task.getDescription().equals(taskUpdateRequest.getDescription())){
-                task.updateDescription(taskUpdateRequest.getDescription());
+        if(request.description()!=null){
+            if(!task.getDescription().equals(request.description())){
+                task.updateDescription(request.description());
                 isDescriptionChanged = true;
             }
         }
 
-        if(taskUpdateRequest.getLabelIds() != null){
-            task.getTaskLabels().clear();
-            List<Label> labels = labelRepository.findAllById(taskUpdateRequest.getLabelIds());
-            if(labels.size() != taskUpdateRequest.getLabelIds().size()){
-                throw new IllegalArgumentException("존재하지 않는 라벨이 있습니다.");
-            }
-            List<TaskLabel> taskLabels = labels.stream()
-                    .map(label -> TaskLabel.builder()
-                            .label(label)
-                            .task(task)
-                            .build())
-                    .toList();
-            taskLabels.forEach(task::addTaskLabel);
-        }
 
         if(isNameChanged || isDescriptionChanged){
             StringBuilder sb = new StringBuilder();
@@ -368,16 +351,16 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse updateTaskDueDate(Long taskId, TaskUpdateDueDateRequest taskUpdateDueDateRequest, Long memberId){
+    public TaskResponse updateTaskDueDate(Long taskId, TaskRequest.UpdateDueDate request, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
-        task.updateDueDate(taskUpdateDueDateRequest.getDueDate());
-        task.updateRecurring(taskUpdateDueDateRequest.isRecurring());
-        task.updateRecurrenceInterval(taskUpdateDueDateRequest.getRecurrenceInterval());
-        task.updateRecurrenceDays(taskUpdateDueDateRequest.getRecurrenceDays());
-        task.updateRecurrenceDayOfMonth(taskUpdateDueDateRequest.getRecurrenceDayOfMonth());
-        task.updateRecurrenceRule(taskUpdateDueDateRequest.getRecurrenceRule());
+        task.updateDueDate(request.dueDate());
+        task.updateRecurring(request.recurring());
+        task.updateRecurrenceInterval(request.recurrenceInterval());
+        task.updateRecurrenceDays(request.recurrenceDays());
+        task.updateRecurrenceDayOfMonth(request.recurrenceDayOfMonth());
+        task.updateRecurrenceRule(request.recurrenceRule());
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 task.getId(),

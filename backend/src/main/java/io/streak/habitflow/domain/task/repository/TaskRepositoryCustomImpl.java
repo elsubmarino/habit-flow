@@ -6,12 +6,9 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.comment.entity.QComment;
-import io.streak.habitflow.domain.label.entity.QLabel;
-import io.streak.habitflow.domain.task.dto.request.TaskSearchCondition;
-import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
+import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
-import io.streak.habitflow.domain.task.entity.QTaskLabel;
 import io.streak.habitflow.domain.task.entity.QTask;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
@@ -33,12 +30,12 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<Task> searchTasks(TaskUpdateRequest taskUpdateRequest, String email) {
+    public List<Task> searchTasks(TaskRequest.Update request, String email) {
         return queryFactory
                 .selectFrom(task)
                 .where(
-                        nameContains(taskUpdateRequest.getName()),
-                        descriptionContains(taskUpdateRequest.getDescription()),
+                        nameContains(request.name()),
+                        descriptionContains(request.description()),
                         task.member.email.eq(email)
                 )
                 .orderBy(task.createdAt.desc())
@@ -81,13 +78,13 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskListQuery> searchTasksByCondition(TaskSearchCondition taskSearchCondition, Long memberId, Pageable pageable) {
+    public List<TaskListQuery> searchTasksByCondition(TaskRequest.SearchCondition searchCondition, Long memberId, Pageable pageable) {
 
         List<Long> ids = queryFactory
                 .select(task.id)
                 .from(task)
                 .where(task.member.id.eq(memberId),
-                        filterTypeEq(taskSearchCondition.getTaskFilterType())
+                        filterTypeEq(searchCondition.taskFilterType())
                 )
                 .orderBy(
                         task.dueDate.asc(),

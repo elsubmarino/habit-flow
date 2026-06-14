@@ -40,17 +40,17 @@ public class TaskController {
     })
     public ResponseEntity<TaskResponse> createTask(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                    @RequestPart(value = "file", required = false) MultipartFile file,
-                                                   @RequestPart("taskRequest") @Valid TaskCreateRequest taskCreateRequest){
-        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(taskCreateRequest, file, userPrincipal.getMemberId()));
+                                                   @RequestPart("taskRequest") @Valid TaskRequest.Create request){
+        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(request, file, userPrincipal.getMemberId()));
     }
 
     @PutMapping("/{taskId}")
     @Operation(summary = "테스크 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 업데이트 성공")})
     public ResponseEntity<TaskResponse> updateTask(@PathVariable Long taskId,
-                                                   @RequestBody TaskUpdateRequest taskUpdateRequest,
+                                                   @RequestBody TaskRequest.Update request,
                                                    @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        TaskResponse taskResponse = taskService.updateTask(taskId, taskUpdateRequest,userPrincipal.getMemberId());
+        TaskResponse taskResponse = taskService.updateTask(taskId, request,userPrincipal.getMemberId());
         return ResponseEntity.ok(taskResponse);
     }
 
@@ -58,9 +58,9 @@ public class TaskController {
     @Operation(summary = "우선순위 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "우선순위 업데이트 성공")})
     public ResponseEntity<TaskResponse> updatePriority(@PathVariable Long taskId,
-                                                          @RequestBody TaskUpdatePriorityRequest taskUpdatePriorityRequest,
+                                                          @RequestBody TaskRequest.UpdatePriority request,
                                                           @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        TaskResponse taskResponse = taskService.updatePriority(taskId, taskUpdatePriorityRequest.getTaskPriorityType(), userPrincipal.getMemberId());
+        TaskResponse taskResponse = taskService.updatePriority(taskId, request.taskPriorityType(), userPrincipal.getMemberId());
         return ResponseEntity.ok(taskResponse);
     }
 
@@ -68,9 +68,9 @@ public class TaskController {
     @Operation(summary = "라벨 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "라벨 업데이트 성공")})
     public ResponseEntity<TaskResponse> updateLabels(@PathVariable Long taskId,
-                                                       @RequestBody TaskUpdateLabelRequest taskUpdateLabelRequest,
+                                                       @RequestBody TaskRequest.UpdateLabel request,
                                                        @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        TaskResponse taskResponse = taskService.updateTaskLabels(taskId, taskUpdateLabelRequest.getLabelIds(), userPrincipal.getMemberId());
+        TaskResponse taskResponse = taskService.updateTaskLabels(taskId, request.labelIds(), userPrincipal.getMemberId());
         return ResponseEntity.ok(taskResponse);
     }
 
@@ -78,16 +78,17 @@ public class TaskController {
     @Operation(summary = "테스크가 속한 프로젝트 이동")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크가 속한 프로젝트 이동 성공")})
     public ResponseEntity<TaskResponse> updateProject(@PathVariable Long taskId,
-                                                      @RequestBody TaskUpdateProjectRequest taskUpdateProjectRequest,
+                                                      @RequestBody TaskRequest.UpdateProject request,
                                                       @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        TaskResponse taskResponse = taskService.updateProject(taskId, taskUpdateProjectRequest.getProjectId(), userPrincipal.getMemberId());
+        TaskResponse taskResponse = taskService.updateProject(taskId, request.projectId(), userPrincipal.getMemberId());
         return ResponseEntity.ok(taskResponse);
     }
 
     @DeleteMapping("/{taskId}")
     @Operation(summary = "테스크 삭제")
     @ApiResponses(value={@ApiResponse(responseCode = "204",description = "테스크 삭제 성공")})
-    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId, @AuthenticationPrincipal UserPrincipal userPrincipal) {
+    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId,
+                                           @AuthenticationPrincipal UserPrincipal userPrincipal) {
         taskService.deleteTask(taskId,userPrincipal.getMemberId());
         return ResponseEntity.noContent().build();
     }
@@ -122,9 +123,11 @@ public class TaskController {
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "관리함 테스크 조회 성공")})
     public ResponseEntity<ScrollResponse<TaskListResponse>> getInboxTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                                           @PageableDefault(size=20) Pageable pageable) {
-        TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
-        taskSearchCondition.setTaskFilterType(TaskFilterType.INBOX);
-        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition, userPrincipal.getMemberId(),pageable));
+        TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
+                TaskFilterType.INBOX
+        );
+
+        return ResponseEntity.ok(taskService.getTasks(searchCondition, userPrincipal.getMemberId(),pageable));
     }
 
     @GetMapping("/today")
@@ -132,9 +135,10 @@ public class TaskController {
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "오늘 테스크 조회 성공")})
     public ResponseEntity<ScrollResponse<TaskListResponse>> getTodayTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                                           @PageableDefault(size=20) Pageable pageable) {
-        TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
-        taskSearchCondition.setTaskFilterType(TaskFilterType.TODAY);
-        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userPrincipal.getMemberId(), pageable));
+        TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
+                TaskFilterType.TODAY
+        );
+        return ResponseEntity.ok(taskService.getTasks(searchCondition,userPrincipal.getMemberId(), pageable));
     }
 
     @GetMapping("/upcoming")
@@ -142,19 +146,20 @@ public class TaskController {
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "다가오는 테스크 조회 성공")})
     public ResponseEntity<ScrollResponse<TaskListResponse>> getUpcomingTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                                              @PageableDefault(size = 20) Pageable pageable) {
-        TaskSearchCondition taskSearchCondition = new TaskSearchCondition();
-        taskSearchCondition.setTaskFilterType(TaskFilterType.UPCOMING);
+        TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
+                TaskFilterType.UPCOMING
+        );
 
-        return ResponseEntity.ok(taskService.getTasks(taskSearchCondition,userPrincipal.getMemberId(), pageable));
+        return ResponseEntity.ok(taskService.getTasks(searchCondition,userPrincipal.getMemberId(), pageable));
     }
 
     @PatchMapping("/{taskId}/due-date")
     @Operation(summary = "만료일 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "만료일 업데이트 성공")})
     public ResponseEntity<TaskResponse> updateTaskDueDate(@PathVariable Long taskId,
-                                                          @RequestBody TaskUpdateDueDateRequest taskUpdateDueDateRequest,
+                                                          @RequestBody TaskRequest.UpdateDueDate request,
                                                           @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        TaskResponse taskResponse = taskService.updateTaskDueDate(taskId, taskUpdateDueDateRequest, userPrincipal.getMemberId());
+        TaskResponse taskResponse = taskService.updateTaskDueDate(taskId, request, userPrincipal.getMemberId());
         return ResponseEntity.ok(taskResponse);
     }
 

@@ -67,7 +67,7 @@ public class Task extends BaseTimeEntity {
     private boolean recurring;
 
     private String recurrenceRule; //DAILY, WEEKLY, MONTHLY
-    private int recurrenceInterval;  //1(매일,매주) 2(이틀마다, 격주 등)
+    private Integer recurrenceInterval;  //1(매일,매주) 2(이틀마다, 격주 등)
     private String recurrenceDays; //MON, WED, FRI (WEEKLY 일 때 사용)
     private Integer recurrenceDayOfMonth; //11 (MONTHLY 일 때 사용. NULL 허용을 위해 Integer
 
@@ -113,7 +113,7 @@ public class Task extends BaseTimeEntity {
         this.recurrenceRule = recurrenceRule;
     }
 
-    public void updateRecurrenceInterval(int recurrenceInterval){
+    public void updateRecurrenceInterval(Integer recurrenceInterval){
         this.recurrenceInterval = recurrenceInterval;
     }
     public void updateRecurrenceDays(String recurrenceDays){
