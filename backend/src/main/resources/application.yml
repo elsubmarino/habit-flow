@@ -20,6 +20,9 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100
   data:
     redis:
       host: 127.0.0.1
