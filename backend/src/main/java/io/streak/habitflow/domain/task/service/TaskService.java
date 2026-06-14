@@ -122,16 +122,17 @@ public class TaskService {
         }
 
         if(taskCreateRequest.getLabelIds() != null && !taskCreateRequest.getLabelIds().isEmpty()){
-            for(Long labelId : taskCreateRequest.getLabelIds()){
-                Label label = labelRepository.findById(labelId)
-                        .orElseThrow(()->new IllegalArgumentException("존재하지 않는 라벨입니다."));
-
-                TaskLabel taskLabel = TaskLabel.builder()
-                        .label(label)
-                        .build();
-
-                task.addTaskLabel(taskLabel);
+            List<Label> labels = labelRepository.findAllById(taskCreateRequest.getLabelIds());
+            if(labels.size() != taskCreateRequest.getLabelIds().size()){
+                throw new IllegalArgumentException("존재하지 않는 라벨이 있습니다.");
             }
+            List<TaskLabel> taskLabels = labels.stream()
+                    .map(label -> TaskLabel.builder()
+                            .label(label)
+                            .task(task)
+                            .build())
+                    .toList();
+            taskLabels.forEach(task::addTaskLabel);
         }
 
         if(file != null && !file.isEmpty()){
@@ -245,11 +246,17 @@ public class TaskService {
 
         if(taskUpdateRequest.getLabelIds() != null){
             task.getTaskLabels().clear();
-            for(Long labelId : taskUpdateRequest.getLabelIds()){
-                Label label = labelRepository.findById(labelId)
-                        .orElseThrow(()->new IllegalArgumentException("라벨이 존재하지 않습니다."));
-                task.addTaskLabel(TaskLabel.builder().label(label).build());
+            List<Label> labels = labelRepository.findAllById(taskUpdateRequest.getLabelIds());
+            if(labels.size() != taskUpdateRequest.getLabelIds().size()){
+                throw new IllegalArgumentException("존재하지 않는 라벨이 있습니다.");
             }
+            List<TaskLabel> taskLabels = labels.stream()
+                    .map(label -> TaskLabel.builder()
+                            .label(label)
+                            .task(task)
+                            .build())
+                    .toList();
+            taskLabels.forEach(task::addTaskLabel);
         }
 
         if(isNameChanged || isDescriptionChanged){
@@ -366,7 +373,7 @@ public class TaskService {
                 .orElseThrow();
 
         task.updateDueDate(taskUpdateDueDateRequest.getDueDate());
-        task.updateIsRecurring(taskUpdateDueDateRequest.isRecurring());
+        task.updateRecurring(taskUpdateDueDateRequest.isRecurring());
         task.updateRecurrenceInterval(taskUpdateDueDateRequest.getRecurrenceInterval());
         task.updateRecurrenceDays(taskUpdateDueDateRequest.getRecurrenceDays());
         task.updateRecurrenceDayOfMonth(taskUpdateDueDateRequest.getRecurrenceDayOfMonth());

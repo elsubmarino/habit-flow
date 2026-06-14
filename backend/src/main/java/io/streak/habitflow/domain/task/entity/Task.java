@@ -105,7 +105,7 @@ public class Task extends BaseTimeEntity {
         this.project = project;
     }
 
-    public void updateIsRecurring(boolean recurring){
+    public void updateRecurring(boolean recurring){
         this.recurring = recurring;
     }
 

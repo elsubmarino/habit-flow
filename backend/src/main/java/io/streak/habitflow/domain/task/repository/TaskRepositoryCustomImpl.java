@@ -175,6 +175,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .where(
                         task.member.id.eq(memberId),
                         task.completed.eq(false),
+                        task.parent.isNull(),
                         filterTypeEq(taskFilterType)
                 )
                 .fetchOne();
