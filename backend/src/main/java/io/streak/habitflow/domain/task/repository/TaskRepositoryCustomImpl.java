@@ -5,7 +5,6 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.streak.habitflow.domain.comment.entity.QComment;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
@@ -21,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static io.streak.habitflow.domain.comment.entity.QComment.comment;
 import static io.streak.habitflow.domain.project.entity.QProject.project;
 import static io.streak.habitflow.domain.task.entity.QTask.task;
 
@@ -100,7 +100,6 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         }
 
         QTask subTask = new QTask("subTask");
-        QComment comment = QComment.comment;
 
         return queryFactory
                 .select(
@@ -121,7 +120,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                                         JPAExpressions.select(subTask.count())
                                                 .from(subTask)
                                                 .where(subTask.parent.eq(task)
-                                                        .and(task.completed.eq(true))),"countSubTasksCompleted"),
+                                                        .and(subTask.completed.eq(true))),"countSubTasksCompleted"),
                                 ExpressionUtils.as(
                                         JPAExpressions.select(comment.count())
                                                 .from(comment)

@@ -5,31 +5,26 @@ import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.favorite.dto.response.FavoriteListResponse;
-import io.streak.habitflow.domain.favorite.entity.QFavorite;
 import io.streak.habitflow.domain.favorite.type.TargetType;
-import io.streak.habitflow.domain.label.entity.QLabel;
-import io.streak.habitflow.domain.member.entity.QMember;
-import io.streak.habitflow.domain.project.entity.QProject;
-import io.streak.habitflow.domain.task.entity.QTaskLabel;
 import io.streak.habitflow.domain.task.entity.QTask;
+import io.streak.habitflow.domain.task.entity.QTaskLabel;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+
+import static io.streak.habitflow.domain.favorite.entity.QFavorite.favorite;
+import static io.streak.habitflow.domain.label.entity.QLabel.label;
+import static io.streak.habitflow.domain.member.entity.QMember.member;
+import static io.streak.habitflow.domain.project.entity.QProject.project;
+import static io.streak.habitflow.domain.task.entity.QTask.task;
+import static io.streak.habitflow.domain.task.entity.QTaskLabel.taskLabel;
 
 @RequiredArgsConstructor
 public class FavoriteRepositoryCustomImpl implements FavoriteRepositoryCustom {
     private final JPAQueryFactory queryFactory;
     @Override
     public List<FavoriteListResponse> findByMemberId(Long memberId) {
-        QFavorite favorite = QFavorite.favorite;
-        QMember member = QMember.member;
-        QProject project = QProject.project;
-        QLabel label = QLabel.label;
-
-        QTask pTask = new QTask("pTask");
-
-        QTaskLabel lTaskLabel = new QTaskLabel("lTaskLabel");
-        QTask lTask = new QTask("lMaster");
+        QTask subTask = new QTask("subTask");
 
         return queryFactory
                 .select(Projections.fields(FavoriteListResponse.class,
@@ -38,18 +33,18 @@ public class FavoriteRepositoryCustomImpl implements FavoriteRepositoryCustom {
                         favorite.targetId,
                         new CaseBuilder()
                                 .when(favorite.targetType.eq(TargetType.PROJECT)).then(
-                                        JPAExpressions.select(pTask.count())
-                                                .from(pTask)
-                                                .where(pTask.project.id.eq(favorite.targetId),
-                                                        pTask.completed.eq(false)
+                                        JPAExpressions.select(task.count())
+                                                .from(task)
+                                                .where(task.project.id.eq(favorite.targetId),
+                                                        task.completed.eq(false)
                                                 )
                                 )
                                 .when(favorite.targetType.eq(TargetType.LABEL)).then(
-                                        JPAExpressions.select(lTaskLabel.count())
-                                                .from(lTaskLabel)
-                                                .join(lTaskLabel.task,lTask)
-                                                .where(lTaskLabel.label.id.eq(favorite.targetId),
-                                                        lTask.completed.eq(false)
+                                        JPAExpressions.select(taskLabel.count())
+                                                .from(taskLabel)
+                                                .join(taskLabel.task,subTask)
+                                                .where(taskLabel.label.id.eq(favorite.targetId),
+                                                        subTask.completed.eq(false)
                                                 )
                                 )
                                 .otherwise(0L).as("targetCount"),
