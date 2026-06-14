@@ -44,13 +44,9 @@ export interface ScrollResponse<T> {
     nextCursor: number | null;
 }
 
-/** TaskMaster ID — 이름·우선순위·프로젝트·라벨·댓글 등 정의 필드 */
+/** Task ID */
 export interface TaskDto {
     id: number;
-    /** TaskInstance ID — 완료 토글·일정(마감일) 등 발생 단위 */
-    instanceId?: number | null;
-    taskInstanceId?: number | null;
-    masterId?: number | null;
     name: string;
     description?: string | null;
     isCompleted?: boolean;

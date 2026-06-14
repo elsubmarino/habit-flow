@@ -1,22 +1,22 @@
 import type { NavItem } from '../components/Sidebar';
 import { OAUTH_CALLBACK_PATH } from '../api/authBootstrap';
 
-/** 브라우저 주소창 경로 — 백엔드 TaskInstance 목록 API와 동일한 prefix 사용 */
+/** 브라우저 주소창 경로 — 백엔드 Task 목록 API와 동일한 prefix 사용 */
 export const APP_ROUTES = {
-    inbox: '/api/task-instances/inbox',
-    today: '/api/task-instances/today',
-    upcoming: '/api/task-instances/upcoming',
+    inbox: '/api/tasks/inbox',
+    today: '/api/tasks/today',
+    upcoming: '/api/tasks/upcoming',
     labels: '/api/labels',
     projects: '/api/projects',
     activityLogs: '/api/activity-logs',
     notifications: '/api/notifications',
 } as const;
 
-/** 예전 SPA 경로 (북마크 호환용, URL은 새 경로로 치환됨) */
+/** 예전 SPA 경로 (북마크 호환용) */
 const LEGACY_TASK_LIST_ROUTES: Record<string, NavItem> = {
-    '/api/tasks/inbox': 'inbox',
-    '/api/tasks/today': 'today',
-    '/api/tasks/upcoming': 'upcoming',
+    '/api/task-instances/inbox': 'inbox',
+    '/api/task-instances/today': 'today',
+    '/api/task-instances/upcoming': 'upcoming',
 };
 
 export type AppLocation =

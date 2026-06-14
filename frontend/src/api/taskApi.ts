@@ -1,7 +1,7 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
 import type { PriorityType, ScrollResponse, TaskDto, TaskFilterType } from './types';
-import { readCompleted, readInstanceId, type RecurrenceApiPayload } from './mappers';
+import { readCompleted, type RecurrenceApiPayload } from './mappers';
 import { buildPageParams, TASK_PAGE_SIZE } from './pagination';
 
 export interface CreateTaskPayload extends RecurrenceApiPayload {
@@ -48,7 +48,7 @@ export async function fetchInboxTasks(
     size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
     return dedupeInFlight(`tasks:inbox:${page}:${size}`, async () => {
-        const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/inbox', {
+        const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/inbox', {
             params: buildPageParams(size, page),
         });
         return data;
@@ -60,7 +60,7 @@ export async function fetchTodayTasks(
     size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
     return dedupeInFlight(`tasks:today:${page}:${size}`, async () => {
-        const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/today', {
+        const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/today', {
             params: buildPageParams(size, page),
         });
         return data;
@@ -72,7 +72,7 @@ export async function fetchUpcomingTasks(
     size = TASK_PAGE_SIZE,
 ): Promise<ScrollResponse<TaskDto>> {
     return dedupeInFlight(`tasks:upcoming:${page}:${size}`, async () => {
-        const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/task-instances/upcoming', {
+        const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/upcoming', {
             params: buildPageParams(size, page),
         });
         return data;
@@ -107,17 +107,11 @@ export async function fetchProjectTasks(projectId: number): Promise<TaskDto[]> {
     });
 }
 
-/** TaskInstance 상세 조회 */
-export async function fetchTaskInstanceById(instanceId: number): Promise<TaskDto> {
-    return dedupeInFlight(`task-instance:${instanceId}`, async () => {
-        const { data } = await apiClient.get<TaskDto>(`/api/task-instances/${instanceId}`);
+export async function fetchTaskById(taskId: number): Promise<TaskDto> {
+    return dedupeInFlight(`task:${taskId}`, async () => {
+        const { data } = await apiClient.get<TaskDto>(`/api/tasks/${taskId}`);
         return data;
     });
-}
-
-/** @deprecated TaskMaster ID로 조회 불가 — fetchTaskInstanceById 사용 */
-export async function fetchTaskById(instanceId: number): Promise<TaskDto> {
-    return fetchTaskInstanceById(instanceId);
 }
 
 export async function createTask(payload: CreateTaskPayload): Promise<TaskDto> {
@@ -157,7 +151,7 @@ export interface PatchTaskDueDatePayload {
 }
 
 export async function patchTaskDueDate(
-    instanceId: number,
+    taskId: number,
     payload: PatchTaskDueDatePayload,
 ): Promise<TaskDto> {
     const date = payload.dueDate == null ? null : payload.dueDate.slice(0, 10);
@@ -172,7 +166,7 @@ export async function patchTaskDueDate(
             body.recurrenceDayOfMonth = recurrence.recurrenceDayOfMonth;
         }
     }
-    const { data } = await apiClient.patch<TaskDto>(`/api/task-instances/${instanceId}/due-date`, body);
+    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/due-date`, body);
     return data;
 }
 
@@ -201,24 +195,11 @@ export async function deleteTask(taskId: number): Promise<void> {
     await apiClient.delete(`/api/tasks/${taskId}`);
 }
 
-/** 목록 API에서 masterId로 TaskInstance ID 조회 (하위 작업 탐색용) */
-export async function findInstanceIdByMasterId(masterId: number): Promise<number | null> {
-    const loaders = [fetchTodayTasks, fetchUpcomingTasks, fetchInboxTasks];
-    for (const loadPage of loaders) {
-        const tasks = await fetchAllTaskPages(loadPage);
-        const match = tasks.find(t => t.id === masterId);
-        const instanceId = match ? readInstanceId(match) : null;
-        if (instanceId != null) return instanceId;
-    }
-    return null;
-}
-
-/** @param instanceId TaskInstance ID (백엔드 toggle API는 인스턴스 기준) */
 export async function toggleTaskCompletion(
-    instanceId: number,
+    taskId: number,
     previousCompleted?: boolean,
 ): Promise<TaskDto> {
-    const { data } = await apiClient.patch<TaskDto>(`/api/task-instances/${instanceId}/toggle`);
+    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/toggle`);
     if (
         previousCompleted !== undefined
         && readCompleted(data) === previousCompleted

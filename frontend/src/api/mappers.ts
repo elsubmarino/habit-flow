@@ -5,17 +5,6 @@ export function readCompleted(task: TaskDto): boolean {
     return task.completed ?? task.isCompleted ?? false;
 }
 
-/** TaskMaster ID */
-export function readMasterId(task: TaskDto): number {
-    return task.masterId ?? task.id;
-}
-
-/** TaskInstance ID (완료 토글·일정 변경에 사용) */
-export function readInstanceId(task: TaskDto): number | null {
-    const id = task.instanceId ?? task.taskInstanceId;
-    return id != null ? id : null;
-}
-
 export interface RecurrenceApiPayload {
     isRecurring?: boolean;
     recurrenceRule?: string;
@@ -251,21 +240,14 @@ export function mapCommentDtos(comments: CommentDtoLike[]): CommentItem[] {
         .filter((c): c is CommentItem => c != null);
 }
 
-function mapSubtasks(
-    subTasks?: TaskDto[],
-    instanceIdByMasterId?: Record<number, number>,
-): Subtask[] {
-    return (subTasks ?? []).map(st => {
-        const masterId = readMasterId(st);
-        return {
-            id: masterId,
-            instanceId: readInstanceId(st) ?? instanceIdByMasterId?.[masterId] ?? null,
-            name: st.name,
-            description: st.description ?? '',
-            completed: readCompleted(st),
-            childCount: st.subTasks?.length ?? 0,
-        };
-    });
+function mapSubtasks(subTasks?: TaskDto[]): Subtask[] {
+    return (subTasks ?? []).map(st => ({
+        id: st.id,
+        name: st.name,
+        description: st.description ?? '',
+        completed: readCompleted(st),
+        childCount: st.subTasks?.length ?? 0,
+    }));
 }
 
 function parseDueDateTime(value?: string | null): { date: string | null; time: string | null } {
@@ -309,18 +291,12 @@ function readTaskPriority(task: TaskDto): PriorityType | null | undefined {
     return task.priorityType ?? task.taskPriorityType;
 }
 
-export function mapTaskToHabit(
-    task: TaskDto,
-    knownInstanceId?: number | null,
-    subtaskInstanceIds?: Record<number, number>,
-): Habit {
+export function mapTaskToHabit(task: TaskDto): Habit {
     const completed = readCompleted(task);
     const { date: dueDate, time: dueTime } = parseDueDateTime(task.dueDate);
     const counts = resolveTaskCounts(task);
-    const instanceId = readInstanceId(task) ?? knownInstanceId ?? null;
     return {
-        id: readMasterId(task),
-        instanceId,
+        id: task.id,
         name: task.name,
         description: task.description ?? '',
         streak: 0,
@@ -337,7 +313,7 @@ export function mapTaskToHabit(
         labels: (task.labels ?? []).map(l => mapLabel(l)),
         attachments: mapAttachments(task.comments),
         reminders: [],
-        subtasks: mapSubtasks(task.subTasks, subtaskInstanceIds),
+        subtasks: mapSubtasks(task.subTasks),
         comments: mapComments(task.comments),
         subtaskCount: counts.subtaskCount,
         subtaskCompletedCount: counts.subtaskCompletedCount,

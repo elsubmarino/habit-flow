@@ -22,9 +22,7 @@ import {
     type Habit,
     type Label,
     type Project,
-    type TaskSelection,
     habitRowKey,
-    selectionFromHabit,
 } from './store/habitSlice';
 import HabitItem from './components/HabitItem';
 import AddHabitForm, { type AddHabitFormHandle } from './components/AddHabitForm';
@@ -137,7 +135,7 @@ function App() {
         () => localStorage.getItem('habitflow.favoritesListExpanded') !== 'false',
     );
     const [showSearchModal, setShowSearchModal] = useState(false);
-    const [selectedTask, setSelectedTask] = useState<TaskSelection | null>(null);
+    const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => bootstrapAuthFromCallback());
     const addFormRef = useRef<AddHabitFormHandle>(null);
     const mainPanelRef = useRef<HTMLElement>(null);
@@ -163,27 +161,22 @@ function App() {
     }, [showCompleteToast, refreshSidebarCounts]);
 
     const handleOpenHabit = useCallback((habit: Habit) => {
-        const selection = selectionFromHabit(habit);
-        if (!selection) {
-            window.alert('작업 일정 정보를 불러올 수 없습니다. 목록을 새로고침해 주세요.');
-            return;
-        }
-        setSelectedTask(selection);
+        setSelectedTaskId(habit.id);
     }, []);
 
-    const handleOpenMasterId = useCallback((masterId: number) => {
-        const habit = habits.find(h => h.id === masterId);
+    const handleOpenTaskId = useCallback((taskId: number) => {
+        const habit = habits.find(h => h.id === taskId);
         if (habit) {
             handleOpenHabit(habit);
             return;
         }
-        window.alert('작업을 찾을 수 없습니다. 목록을 새로고침한 뒤 다시 시도해 주세요.');
+        setSelectedTaskId(taskId);
     }, [habits, handleOpenHabit]);
 
     const handleTaskDeleted = useCallback((habitId: number) => {
-        if (selectedTask?.masterId === habitId) setSelectedTask(null);
+        if (selectedTaskId === habitId) setSelectedTaskId(null);
         refreshSidebarCounts();
-    }, [selectedTask?.masterId, refreshSidebarCounts]);
+    }, [selectedTaskId, refreshSidebarCounts]);
 
     const handleUndoComplete = useCallback(async () => {
         if (completedTaskId == null) return;
@@ -637,7 +630,7 @@ function App() {
                 {showNotifications ? (
                     <NotificationsView
                         onOpenTask={id => {
-                            handleOpenMasterId(id);
+                            handleOpenTaskId(id);
                             setShowNotifications(false);
                         }}
                         onOpenProject={id => {
@@ -649,7 +642,7 @@ function App() {
                     <ActivityLogView
                         projects={projects}
                         scrollRootRef={mainPanelRef}
-                        onOpenTask={handleOpenMasterId}
+                        onOpenTask={handleOpenTaskId}
                     />
                 ) : showProjectsPanel ? (
                     <ProjectsBrowseView
@@ -817,10 +810,10 @@ function App() {
                 />
             )}
 
-            {selectedTask != null && (
+            {selectedTaskId != null && (
                 <TaskDetailModal
-                    selection={selectedTask}
-                    onClose={() => setSelectedTask(null)}
+                    taskId={selectedTaskId}
+                    onClose={() => setSelectedTaskId(null)}
                     onTaskCompleted={handleTaskCompleted}
                 />
             )}

@@ -16,7 +16,6 @@ import {
     type CommentItem,
     type Habit,
     type Subtask,
-    type TaskSelection,
 } from '../store/habitSlice';
 import { getApiErrorMessage } from '../api/apiError';
 import { displayLabelName } from '../api/labelMappers';
@@ -27,7 +26,7 @@ import TaskEditBox from './TaskEditBox';
 import { CloseIcon, HashIcon } from './icons';
 
 interface TaskDetailModalProps {
-    selection: TaskSelection;
+    taskId: number;
     onClose: () => void;
     onTaskCompleted?: (habit: Habit) => void;
 }
@@ -44,10 +43,10 @@ const PRIORITY_OPTIONS = [
     { value: 4, icon: '⚑', label: '우선 순위 4' },
 ] as const;
 
-const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, onTaskCompleted }) => {
+const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTaskCompleted }) => {
     const dispatch = useAppDispatch();
     const { projects, labels } = useAppSelector(state => state.habits);
-    const [stack, setStack] = useState<TaskSelection[]>([selection]);
+    const [stack, setStack] = useState<number[]>([taskId]);
     const [tasks, setTasks] = useState<Record<number, Habit>>({});
     const [loading, setLoading] = useState(true);
     const [subtasksExpanded, setSubtasksExpanded] = useState(true);
@@ -72,45 +71,33 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
     const [draftLabelIds, setDraftLabelIds] = useState<number[]>([]);
     const [savingLabels, setSavingLabels] = useState(false);
     const labelMenuRef = useRef<HTMLDivElement>(null);
-    /** API가 하위 작업 instanceId를 내려주지 않을 때 탐색용 캐시 (masterId → instanceId) */
-    const subtaskInstanceIdsRef = useRef<Record<number, number>>({});
 
-    const mapWithSubtaskInstances = useCallback(
-        (task: Parameters<typeof mapTaskToHabit>[0], instanceId: number) =>
-            mapTaskToHabit(task, instanceId, subtaskInstanceIdsRef.current),
-        [],
-    );
-
-    const cacheSubtaskInstance = useCallback((masterId: number, instanceId: number) => {
-        subtaskInstanceIdsRef.current[masterId] = instanceId;
-    }, []);
-
-    const current = stack[stack.length - 1];
-    const habit = tasks[current.instanceId];
+    const currentTaskId = stack[stack.length - 1];
+    const habit = tasks[currentTaskId];
 
     useEffect(() => {
-        setStack([selection]);
-    }, [selection.masterId, selection.instanceId]);
+        setStack([taskId]);
+    }, [taskId]);
 
     useEffect(() => {
         setIsEditingMain(false);
         setEditingSubtaskId(null);
-    }, [current.instanceId]);
+    }, [currentTaskId]);
 
     useEffect(() => {
         if (habit) setRecurrence(habit.recurrenceLabel);
-    }, [habit?.recurrenceLabel, current.instanceId]);
+    }, [habit?.recurrenceLabel, currentTaskId]);
 
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
-        void taskApi.fetchTaskInstanceById(current.instanceId)
+        void taskApi.fetchTaskById(currentTaskId)
             .then(async task => {
                 if (cancelled) return;
-                const mapped = mapWithSubtaskInstances(task, current.instanceId);
-                setTasks(prev => ({ ...prev, [current.instanceId]: mapped }));
+                const mapped = mapTaskToHabit(task);
+                setTasks(prev => ({ ...prev, [currentTaskId]: mapped }));
                 try {
-                    const commentDtos = await commentApi.fetchTaskComments(current.masterId);
+                    const commentDtos = await commentApi.fetchTaskComments(currentTaskId);
                     if (!cancelled) setComments(mapCommentDtos(commentDtos));
                 } catch {
                     if (!cancelled) setComments(mapped.comments);
@@ -123,7 +110,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
         return () => {
             cancelled = true;
         };
-    }, [current.instanceId, current.masterId]);
+    }, [currentTaskId]);
 
     const completedSubtasks = useMemo(
         () => habit?.subtasks.filter(s => s.completed).length ?? 0,
@@ -140,7 +127,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
         if (!canAddSubtask) {
             setShowSubtaskForm(false);
         }
-    }, [canAddSubtask, current.instanceId, stack.length]);
+    }, [canAddSubtask, currentTaskId, stack.length]);
 
     const filteredProjects = useMemo(
         () => projects.filter(p => p.name.toLowerCase().includes(projectQuery.toLowerCase())),
@@ -152,34 +139,24 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
     );
 
     const applyLocalHabit = useCallback((mapped: Habit) => {
-        setTasks(prev => ({ ...prev, [current.instanceId]: mapped }));
-    }, [current.instanceId]);
+        setTasks(prev => ({ ...prev, [currentTaskId]: mapped }));
+    }, [currentTaskId]);
 
     const refreshCurrent = async () => {
-        const task = await taskApi.fetchTaskInstanceById(current.instanceId);
-        const mapped = mapWithSubtaskInstances(task, current.instanceId);
-        setTasks(prev => ({ ...prev, [current.instanceId]: mapped }));
+        const task = await taskApi.fetchTaskById(currentTaskId);
+        const mapped = mapTaskToHabit(task);
+        setTasks(prev => ({ ...prev, [currentTaskId]: mapped }));
         try {
-            const commentDtos = await commentApi.fetchTaskComments(current.masterId);
+            const commentDtos = await commentApi.fetchTaskComments(currentTaskId);
             setComments(mapCommentDtos(commentDtos));
         } catch {
             setComments(mapped.comments);
         }
     };
 
-    const navigateToSubtask = async (sub: Subtask) => {
-        let resolvedInstanceId: number | null =
-            sub.instanceId ?? subtaskInstanceIdsRef.current[sub.id] ?? null;
-        if (resolvedInstanceId == null) {
-            resolvedInstanceId = await taskApi.findInstanceIdByMasterId(sub.id);
-        }
-        if (resolvedInstanceId == null) {
-            window.alert('하위 작업 일정 정보를 불러올 수 없습니다.');
-            return;
-        }
-        cacheSubtaskInstance(sub.id, resolvedInstanceId);
+    const navigateToSubtask = (sub: Subtask) => {
         setEditingSubtaskId(null);
-        setStack(prev => [...prev, { masterId: sub.id, instanceId: resolvedInstanceId }]);
+        setStack(prev => [...prev, sub.id]);
         setActiveMenu(null);
     };
 
@@ -217,10 +194,10 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
         const cached = habit?.subtasks.find(s => s.id === subtaskId);
         setSubEditName(cached?.name ?? '');
         setSubEditDesc(cached?.description ?? '');
-        if (cached?.instanceId != null) {
+        if (cached) {
             try {
-                const task = await taskApi.fetchTaskInstanceById(cached.instanceId);
-                const mapped = mapTaskToHabit(task, cached.instanceId);
+                const task = await taskApi.fetchTaskById(cached.id);
+                const mapped = mapTaskToHabit(task);
                 setSubEditName(mapped.name);
                 setSubEditDesc(mapped.description ?? '');
             } catch {
@@ -256,10 +233,9 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
         const result = await dispatch(checkHabit({
             habitId: habit.id,
             wasCompleted,
-            instanceId: habit.instanceId,
         }));
         if (checkHabit.fulfilled.match(result)) {
-            setTasks(prev => ({ ...prev, [current.instanceId]: result.payload }));
+            setTasks(prev => ({ ...prev, [currentTaskId]: result.payload }));
             if (!wasCompleted && result.payload.completedToday) {
                 onTaskCompleted?.(result.payload);
             }
@@ -273,7 +249,6 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
         const result = await dispatch(toggleSubtask({
             habitId: habit.id,
             subtaskId,
-            instanceId: subtask?.instanceId,
         }));
         if (toggleSubtask.fulfilled.match(result)) {
             let { subtaskId: id, completed } = result.payload;
@@ -281,11 +256,11 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
                 completed = !previousCompleted;
             }
             setTasks(prev => {
-                const currentHabit = prev[current.instanceId];
+                const currentHabit = prev[currentTaskId];
                 if (!currentHabit) return prev;
                 return {
                     ...prev,
-                    [current.instanceId]: {
+                    [currentTaskId]: {
                         ...currentHabit,
                         subtasks: currentHabit.subtasks.map(s =>
                             s.id === id ? { ...s, completed } : s,
@@ -303,7 +278,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
 
     const resolveProjectIdForSubtask = (): number | null => {
         for (let i = stack.length - 1; i >= 0; i -= 1) {
-            const projectId = tasks[stack[i].instanceId]?.projectId;
+            const projectId = tasks[stack[i]]?.projectId;
             if (projectId != null) return projectId;
         }
         return habit?.projectId ?? null;
@@ -333,13 +308,6 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
         if (addSubtask.rejected.match(result)) {
             window.alert(getApiErrorMessage(result.error, '하위 작업을 추가하지 못했습니다.'));
             return;
-        }
-
-        if (addSubtask.fulfilled.match(result) && result.payload.subtask.instanceId != null) {
-            cacheSubtaskInstance(
-                result.payload.subtask.id,
-                result.payload.subtask.instanceId,
-            );
         }
 
         await refreshCurrent();
@@ -375,7 +343,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
     };
 
     const handleDatePickerChange = (change: DatePickerChange) => {
-        if (!habit || habit.instanceId == null) return;
+        if (!habit) return;
 
         const nextDate = change.date !== undefined ? change.date : habit.dueDate;
         const nextRecurrence = change.repeat !== undefined ? change.repeat : recurrence;
@@ -383,7 +351,6 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
 
         void dispatch(patchTaskDueDate({
             habitId: habit.id,
-            instanceId: habit.instanceId,
             dueDate: nextDate,
             recurrenceLabel: nextRecurrence,
         })).then(result => {
@@ -498,15 +465,15 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
                                 <div className="task-detail-header-left">
                                     {stack.length > 1 ? (
                                         <div className="task-detail-breadcrumb">
-                                            {stack.slice(0, -1).map((entry, index) => (
-                                                <span key={entry.instanceId} className="task-detail-crumb-wrap">
+                                            {stack.slice(0, -1).map((id, index) => (
+                                                <span key={id} className="task-detail-crumb-wrap">
                                                     {index > 0 && <span className="task-detail-crumb-sep">›</span>}
                                                     <button
                                                         type="button"
                                                         className="task-detail-crumb-btn"
                                                         onClick={() => navigateToStackIndex(index)}
                                                     >
-                                                        {tasks[entry.instanceId]?.name ?? '작업'}
+                                                        {tasks[id]?.name ?? '작업'}
                                                     </button>
                                                 </span>
                                             ))}
@@ -614,7 +581,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ selection, onClose, o
                                                                 type="button"
                                                                 className="subtask-nav-btn"
                                                                 aria-label="하위 작업 열기"
-                                                                onClick={() => void navigateToSubtask(sub)}
+                                                                onClick={() => navigateToSubtask(sub)}
                                                             >
                                                                 ›
                                                             </button>
