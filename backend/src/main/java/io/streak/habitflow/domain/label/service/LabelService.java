@@ -55,8 +55,7 @@ public class LabelService {
     }
 
     public LabelResponse getLabelById(Long labelId, Long memberId) {
-        Label label = labelRepository.findById(labelId)
-                .orElseThrow(()->new IllegalArgumentException("라벨이 존재하지 않습니다."));
+        Label label = labelRepository.getOrThrow(labelId);
         boolean isFavorite = false;
         Optional<Favorite> favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(
                 memberId,TargetType.LABEL, label.getId());
@@ -68,8 +67,7 @@ public class LabelService {
 
     @Transactional
     public LabelResponse updateLabel(Long labelId, LabelUpdateRequest labelUpdateRequest, Long memberId) {
-        Label label = labelRepository.findById(labelId)
-                .orElseThrow(()->new IllegalArgumentException("라벨이 존재하지 않습니다."));
+        Label label = labelRepository.getOrThrow(labelId);
 
         Member member = memberRepository.getReferenceById(memberId);
 
@@ -125,8 +123,7 @@ public class LabelService {
 
     @Transactional
     public void deleteLabel(Long labelId, Long memberId){
-        Label label = labelRepository.findById(labelId)
-                        .orElseThrow(()->new IllegalArgumentException("검색된 라벨이 존재하지 않습니다."));
+        Label label = labelRepository.getOrThrow(labelId);
 
         if(!label.getMember().getId().equals(memberId)) {
             throw new IllegalStateException("삭제 권한이 없습니다.");
