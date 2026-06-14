@@ -133,8 +133,6 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 )
                 .from(task)
                 .leftJoin(task.project, project)
-                .leftJoin(task.taskLabels, QTaskLabel.taskLabel)
-                .leftJoin(QTaskLabel.taskLabel.label, QLabel.label)
                 .where(
                         task.id.in(ids).and(task.completed.eq(false))
                 )
