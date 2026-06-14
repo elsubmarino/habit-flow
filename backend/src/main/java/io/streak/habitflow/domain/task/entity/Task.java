@@ -8,6 +8,7 @@ import io.streak.habitflow.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,10 +20,10 @@ import java.util.List;
 @Table(name="tasks",indexes = {
         @Index(name = "idx_master_member_id",columnList = "member_id")
 })
-public class TaskMaster extends BaseTimeEntity {
+public class Task extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="task_master_id")
+    @Column(name="task_id")
     private Long id;
 
     @Column(nullable = false, length=100)
@@ -46,19 +47,22 @@ public class TaskMaster extends BaseTimeEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="parent_id")
-    private TaskMaster parent;
+    private Task parent;
 
     @OneToMany(mappedBy = "parent",cascade = CascadeType.ALL)
     @Builder.Default
-    private List<TaskMaster> subTaskMasters = new ArrayList<>();
+    private List<Task> subTasks = new ArrayList<>();
 
-    @OneToMany(mappedBy = "taskMaster", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Comment> comments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "taskMaster", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<TaskLabel> taskLabels = new ArrayList<>();
+
+    private boolean completed;
+    private LocalDate dueDate;
 
     private boolean recurring;
 
@@ -66,11 +70,6 @@ public class TaskMaster extends BaseTimeEntity {
     private int recurrenceInterval;  //1(매일,매주) 2(이틀마다, 격주 등)
     private String recurrenceDays; //MON, WED, FRI (WEEKLY 일 때 사용)
     private Integer recurrenceDayOfMonth; //11 (MONTHLY 일 때 사용. NULL 허용을 위해 Integer
-
-    @OneToMany(mappedBy = "taskMaster", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<TaskInstance> taskInstances = new ArrayList<>();
-
 
     public void addTaskLabel(TaskLabel taskLabel){
         this.taskLabels.add(taskLabel);
@@ -123,5 +122,11 @@ public class TaskMaster extends BaseTimeEntity {
     public void updateRecurrenceDayOfMonth(Integer recurrenceDayOfMonth){
         this.recurrenceDayOfMonth = recurrenceDayOfMonth;
     }
+
+    public void updateCompleted(boolean completed){
+        this.completed = completed;
+    }
+
+    public void updateDueDate(LocalDate targetDate){this.dueDate =targetDate;}
 
 }

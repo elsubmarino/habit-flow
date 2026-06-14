@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.task.dto.response;
 
 import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
-import io.streak.habitflow.domain.task.entity.TaskMaster;
+import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import lombok.Builder;
 
@@ -21,7 +21,6 @@ public record TaskListResponse(
         long countSubTasks,
         long countSubTasksCompleted,
         long countComments,
-        Long taskInstanceId,
         List<LabelListResponse> labels
 ) {
     public TaskListResponse{
@@ -38,7 +37,6 @@ public record TaskListResponse(
                 .taskPriorityType(taskListQuery.getTaskPriorityType())
                 .dueDate(taskListQuery.getDueDate())
                 .projectName(taskListQuery.getProjectName())
-                .taskInstanceId(taskListQuery.getTaskInstanceId())
                 .countSubTasks(taskListQuery.getCountSubTasks())
                 .countSubTasksCompleted(taskListQuery.getCountSubTasksCompleted())
                 .countComments(taskListQuery.getCountComments())
@@ -46,15 +44,15 @@ public record TaskListResponse(
                 .build();
     }
 
-    public static TaskListResponse of(TaskMaster taskMaster, List<LabelListResponse> labelListResponses) {
+    public static TaskListResponse of(Task task, List<LabelListResponse> labelListResponses) {
         TaskListResponse.TaskListResponseBuilder builder = TaskListResponse.builder()
-                .id(taskMaster.getId())
-                .name(taskMaster.getName())
-                .taskPriorityType(taskMaster.getTaskPriorityType())
-                .sortOrder(taskMaster.getSortOrder())
+                .id(task.getId())
+                .name(task.getName())
+                .taskPriorityType(task.getTaskPriorityType())
+                .sortOrder(task.getSortOrder())
                 .labels(labelListResponses);
-        if(taskMaster.getProject() != null){
-            builder.projectName(taskMaster.getProject().getName());
+        if(task.getProject() != null){
+            builder.projectName(task.getProject().getName());
         }else{
             builder.projectName("관리함");
         }

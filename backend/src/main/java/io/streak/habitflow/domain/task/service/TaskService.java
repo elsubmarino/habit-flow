@@ -17,12 +17,10 @@ import io.streak.habitflow.domain.task.dto.request.TaskUpdateRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
-import io.streak.habitflow.domain.task.entity.TaskInstance;
+import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.entity.TaskLabel;
-import io.streak.habitflow.domain.task.entity.TaskMaster;
 import io.streak.habitflow.domain.task.event.TaskChangedEvent;
-import io.streak.habitflow.domain.task.repository.TaskInstanceRepository;
-import io.streak.habitflow.domain.task.repository.TaskMasterMasterRepository;
+import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.domain.task.type.TargetType;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
@@ -35,9 +33,7 @@ import io.streak.habitflow.global.infra.file.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.retry.annotation.Backoff;
-import org.springframework.retry.annotation.Retryable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -51,8 +47,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class TaskService {
-    private final TaskMasterMasterRepository taskMasterRepository;
-    private final TaskInstanceRepository taskInstanceRepository;
+    private final TaskRepository taskRepository;
     private final MemberRepository memberRepository;
     private final ProjectRepository projectRepository;
     private final FileStorageService fileStorageService;
@@ -64,14 +59,14 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
     public void deleteTask(Long taskId, Long memberId){
-        TaskMaster taskMaster = taskMasterRepository.findById(taskId).orElseThrow();
-        taskMasterRepository.deleteById(taskId);
+        Task task = taskRepository.findById(taskId).orElseThrow();
+        taskRepository.deleteById(taskId);
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 taskId,
                 memberId,
                 TargetType.TASK,
                 ActivityType.DELETED,
-                "당신이 테스크 "+ taskMaster.getName()+"을(를) 삭제했습니다"
+                "당신이 테스크 "+ task.getName()+"을(를) 삭제했습니다"
         ));
     }
 
@@ -81,12 +76,12 @@ public class TaskService {
 
         Member member = memberRepository.getReferenceById(memberId);
 
-        TaskMaster parentTaskMaster = null;
+        Task parentTask = null;
         if(taskCreateRequest.getParentId() != null){
-            parentTaskMaster = taskMasterRepository.findById(taskCreateRequest.getParentId())
+            parentTask = taskRepository.findById(taskCreateRequest.getParentId())
                     .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 테스크입니다."));
 
-            if(parentTaskMaster.getSubTaskMasters().size() >= 4){
+            if(parentTask.getSubTasks().size() >= 4){
                 throw new IllegalStateException("하위 테스크는 최대 4개 까지만 생성할 수 있습니다.");
             }
         }
@@ -99,41 +94,31 @@ public class TaskService {
             if(!isMember){
                 throw new IllegalStateException("해당 프로젝트에 대한 접근 권한이 없습니다.");
             }
-        }else if(parentTaskMaster != null){
-            project = parentTaskMaster.getProject();
+        }else if(parentTask != null){
+            project = parentTask.getProject();
         }
 
-        TaskMaster taskMaster = TaskMaster.builder()
+        Task task = Task.builder()
                 .name(taskCreateRequest.getName())
                 .description(taskCreateRequest.getDescription())
                 .taskPriorityType(taskCreateRequest.getTaskPriorityType())
                 .member(member)
                 .project(project)
-                .parent(parentTaskMaster)
+                .parent(parentTask)
                 .recurring(taskCreateRequest.isRecurring())
                 .recurrenceRule(taskCreateRequest.getRecurrenceRule())
                 .recurrenceInterval(taskCreateRequest.getRecurrenceInterval())
                 .recurrenceDays(taskCreateRequest.getRecurrenceDays())
                 .recurrenceDayOfMonth(taskCreateRequest.getRecurrenceDayOfMonth())
-                .subTaskMasters(new ArrayList<>())
+                .subTasks(new ArrayList<>())
                 .taskLabels(new ArrayList<>())
+                .dueDate(taskCreateRequest.getDueDate())
                 .comments(new ArrayList<>())
-                .taskInstances(new ArrayList<>())
                 .build();
 
-        LocalDate initialDate = taskCreateRequest.getDueDate() != null ?
-                taskCreateRequest.getDueDate() : null;
 
-        TaskInstance firstInstance = TaskInstance.builder()
-                .taskMaster(taskMaster)
-                .dueDate(initialDate)
-                .isCompleted(false)
-                .build();
-
-        taskMaster.getTaskInstances().add(firstInstance);
-
-        if(parentTaskMaster != null){
-            parentTaskMaster.getSubTaskMasters().add(taskMaster);
+        if(parentTask != null){
+            parentTask.getSubTasks().add(task);
         }
 
         if(taskCreateRequest.getLabelIds() != null && !taskCreateRequest.getLabelIds().isEmpty()){
@@ -145,7 +130,7 @@ public class TaskService {
                         .label(label)
                         .build();
 
-                taskMaster.addTaskLabel(taskLabel);
+                task.addTaskLabel(taskLabel);
             }
         }
 
@@ -165,20 +150,20 @@ public class TaskService {
                     .build();
 
             comment.addAttachment(attachment);
-            taskMaster.addComment(comment);
+            task.addComment(comment);
         }
 
-        TaskMaster savedTaskMaster = taskMasterRepository.save(taskMaster);
+        Task savedTask = taskRepository.save(task);
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                savedTaskMaster.getId(),
+                savedTask.getId(),
                 memberId,
                 TargetType.TASK,
                 ActivityType.ADDED,
-                "당신이 테스크 "+ savedTaskMaster.getName()+"을(를) 추가했습니다"
+                "당신이 테스크 "+ savedTask.getName()+"을(를) 추가했습니다"
         ));
 
-        List<LabelListResponse> labelListResponses = savedTaskMaster.getTaskLabels()
+        List<LabelListResponse> labelListResponses = savedTask.getTaskLabels()
                 .stream()
                 .map(taskLabel -> {
                     Label realLabel = taskLabel.getLabel();
@@ -186,36 +171,36 @@ public class TaskService {
                 })
                 .toList();
 
-        return TaskResponse.of(savedTaskMaster, firstInstance, labelListResponses);
+        return TaskResponse.of(savedTask, labelListResponses);
     }
 
-    @CheckOwnership(type="TASK")
-    @SuppressWarnings("unused")
-    public TaskResponse getTaskById(Long taskInstanceId, Long memberId){
-        TaskInstance taskInstance = taskInstanceRepository.findById(taskInstanceId)
-                .orElseThrow();
+    public TaskResponse getTaskById(Long taskId, Long memberId){
+        Task task = taskRepository.findByIdWithProject(taskId)
+                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 테스크입니다."));
 
-        TaskMaster taskMaster = taskInstance.getTaskMaster();
+        if(!task.getMember().getId().equals(memberId)){
+            throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
+        }
 
-        List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels().stream()
+        List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
 
-        return TaskResponse.of(taskMaster, taskInstance, labelListResponses);
+        return TaskResponse.of(task, labelListResponses);
     }
 
     public List<TaskListResponse> getTasksByProject(Long ProjectId){
-        List<TaskMaster> taskMasters = taskMasterRepository.findByProjectId(ProjectId);
+        List<Task> tasks = taskRepository.findByProjectId(ProjectId);
 
 
-        return taskMasters.stream()
+        return tasks.stream()
                 .map(task -> TaskListResponse.of(task,new ArrayList<>()))
                 .toList();
     }
 
     public ScrollResponse<TaskListResponse> getTasks(TaskSearchCondition taskSearchCondition, Long memberId, Pageable pageable){
 
-        List<TaskListQuery> tasks = taskMasterRepository.searchTasksByCondition(taskSearchCondition, memberId, pageable);
+        List<TaskListQuery> tasks = taskRepository.searchTasksByCondition(taskSearchCondition, memberId, pageable);
 
         boolean hasNext = false;
 
@@ -238,38 +223,38 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     public TaskResponse updateTask(Long taskId, TaskUpdateRequest taskUpdateRequest, Long memberId){
-        TaskMaster taskMaster = taskMasterRepository.findById(taskId)
+        Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
         boolean isNameChanged = false;
         boolean isDescriptionChanged = false;
 
         if(taskUpdateRequest.getName()!=null){
-            if(!taskMaster.getName().equals(taskUpdateRequest.getName())){
-                taskMaster.updateName(taskUpdateRequest.getName());
+            if(!task.getName().equals(taskUpdateRequest.getName())){
+                task.updateName(taskUpdateRequest.getName());
                 isNameChanged = true;
             }
         }
 
         if(taskUpdateRequest.getDescription()!=null){
-            if(!taskMaster.getDescription().equals(taskUpdateRequest.getDescription())){
-                taskMaster.updateDescription(taskUpdateRequest.getDescription());
+            if(!task.getDescription().equals(taskUpdateRequest.getDescription())){
+                task.updateDescription(taskUpdateRequest.getDescription());
                 isDescriptionChanged = true;
             }
         }
 
         if(taskUpdateRequest.getLabelIds() != null){
-            taskMaster.getTaskLabels().clear();
+            task.getTaskLabels().clear();
             for(Long labelId : taskUpdateRequest.getLabelIds()){
                 Label label = labelRepository.findById(labelId)
                         .orElseThrow(()->new IllegalArgumentException("라벨이 존재하지 않습니다."));
-                taskMaster.addTaskLabel(TaskLabel.builder().label(label).build());
+                task.addTaskLabel(TaskLabel.builder().label(label).build());
             }
         }
 
         if(isNameChanged || isDescriptionChanged){
             StringBuilder sb = new StringBuilder();
-            sb.append("당신이").append(" 테스크 ").append(taskMaster.getName()).append("의");
+            sb.append("당신이").append(" 테스크 ").append(task.getName()).append("의");
             if(isNameChanged && isDescriptionChanged) sb.append("이름과 설명을");
             else if(isNameChanged) sb.append("이름을");
             else sb.append("설명을");
@@ -277,7 +262,7 @@ public class TaskService {
             sb.append(" 변경했습니다.");
 
             applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                    taskMaster.getId(),
+                    task.getId(),
                     memberId,
                     TargetType.TASK,
                     ActivityType.UPDATED,
@@ -285,86 +270,74 @@ public class TaskService {
             ));
         }
 
-        TaskInstance activeInstance = taskInstanceRepository.findByTaskMasterAndIsCompletedFalse(taskMaster)
-                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByDueDateDesc(taskMaster)
-                        .orElseThrow(() -> new IllegalStateException("실행 기록이 존재하지 않는 테스크입니다.")));
-
-        List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels().stream()
+        List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
 
-        return TaskResponse.of(taskMaster,activeInstance, labelListResponses);
+        return TaskResponse.of(task, labelListResponses);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
-    @DistributedLock(key = "#taskInstanceId")
-    public TaskResponse toggleCompletion(Long taskInstanceId, Long memberId){
-        TaskInstance taskInstance = taskInstanceRepository.findById(taskInstanceId)
+    @DistributedLock(key = "#taskId")
+    public TaskResponse toggleCompletion(Long taskId, Long memberId){
+        Task task = taskRepository.findById(taskId)
                  .orElseThrow();
 
-        TaskMaster taskMaster = taskInstance.getTaskMaster();
+        boolean nextCompletion = !task.isCompleted();
+        task.updateCompleted(nextCompletion);
 
-        boolean nextCompletion = !taskInstance.isCompleted();
-        taskInstance.updateCompleted(nextCompletion);
+        if(task.isRecurring() && nextCompletion){
+            LocalDate nextDueDate = calculateNextInstanceDate(task.getDueDate(), task);
 
-        if(taskMaster.isRecurring() && nextCompletion){
-            LocalDate nextDueDate = calculateNextInstanceDate(taskInstance.getDueDate(),taskMaster);
-
-            TaskInstance nextParentInstance = TaskInstance.builder()
-                    .taskMaster(taskMaster)
-                    .dueDate(nextDueDate)
-                    .isCompleted(false)
-                    .build();
-            taskInstanceRepository.save(nextParentInstance);
+            task.updateDueDate(nextDueDate);
 
             applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                    taskInstanceId,
+                    taskId,
                     memberId,
                     TargetType.TASK,
                     ActivityType.COMPLETED,
-                    "당신이 테스크 "+ taskMaster.getName()+"을(를) 완료했습니다"
+                    "당신이 테스크 "+ task.getName()+"을(를) 완료했습니다"
             ));
         }else{
             ActivityType activityType = nextCompletion ? ActivityType.COMPLETED : ActivityType.UNCOMPLETED;
             String statusText = nextCompletion ? "완료했습니다":"미완료했습니다";
 
             applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                    taskMaster.getId(),
+                    task.getId(),
                     memberId,
                     TargetType.TASK,
                     activityType,
-                    "당신이 테스크 "+ taskMaster.getName()+"을(를) "+statusText
+                    "당신이 테스크 "+ task.getName()+"을(를) "+statusText
             ));
         }
 
 
-        List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels().stream()
+        List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
 
-        taskInstanceRepository.flush();
-        return TaskResponse.of(taskMaster,taskInstance, labelListResponses);
+        return TaskResponse.of(task,labelListResponses);
     }
 
     public long getTaskCount(TaskFilterType taskFilterType, Long memberId){
-        return taskMasterRepository.countTasksByCondition(taskFilterType, memberId);
+        return taskRepository.countTasksByCondition(taskFilterType, memberId);
     }
 
-    private LocalDate calculateNextInstanceDate(LocalDate currentDueDate, TaskMaster taskMaster){
-        int interval = taskMaster.getRecurrenceInterval() > 0 ? taskMaster.getRecurrenceInterval() : 1;
+    private LocalDate calculateNextInstanceDate(LocalDate currentDueDate, Task task){
+        int interval = task.getRecurrenceInterval() > 0 ? task.getRecurrenceInterval() : 1;
 
-        switch(taskMaster.getRecurrenceRule()){
+        switch(task.getRecurrenceRule()){
             case "DAILY":
                 //매일 또는 interval일 마다
                 return currentDueDate.plusDays(interval);
             case "WEEKLY":
                 // 매주 특정 요일 (예: MON, WED, FRI)
-               if(taskMaster.getRecurrenceDays() != null && !taskMaster.getRecurrenceDays().isEmpty()){
+               if(task.getRecurrenceDays() != null && !task.getRecurrenceDays().isEmpty()){
                    LocalDate nextDay = currentDueDate.plusDays(1);
                    for(int i=0;i<7;i++){
                        String dayName = nextDay.getDayOfWeek().name().substring(0,3);
-                       if(taskMaster.getRecurrenceDays().contains(dayName)){
+                       if(task.getRecurrenceDays().contains(dayName)){
                            return nextDay;
                        }
                        nextDay = nextDay.plusDays(1);
@@ -374,8 +347,8 @@ public class TaskService {
             case "MONTHLY":
                 //매월 특정 일(예: 매월 11일)
                 LocalDate nextMonth = currentDueDate.plusMonths(interval);
-                if(taskMaster.getRecurrenceDayOfMonth() != null){
-                    int targetDay = taskMaster.getRecurrenceDayOfMonth();
+                if(task.getRecurrenceDayOfMonth() != null){
+                    int targetDay = task.getRecurrenceDayOfMonth();
                     int maxDayInMonth = nextMonth.lengthOfMonth();
                     return nextMonth.withDayOfMonth(Math.min(targetDay, maxDayInMonth));
                 }
@@ -388,76 +361,66 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse updateTaskDueDate(Long taskInstanceId, TaskUpdateDueDateRequest taskUpdateDueDateRequest, Long memberId){
-        TaskInstance taskInstance = taskInstanceRepository.findById(taskInstanceId)
+    public TaskResponse updateTaskDueDate(Long taskId, TaskUpdateDueDateRequest taskUpdateDueDateRequest, Long memberId){
+        Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
-        TaskMaster taskMaster = taskInstance.getTaskMaster();
-
-        taskInstance.updateDueDate(taskUpdateDueDateRequest.getDueDate());
-        taskMaster.updateIsRecurring(taskUpdateDueDateRequest.isRecurring());
-        taskMaster.updateRecurrenceInterval(taskUpdateDueDateRequest.getRecurrenceInterval());
-        taskMaster.updateRecurrenceDays(taskUpdateDueDateRequest.getRecurrenceDays());
-        taskMaster.updateRecurrenceDayOfMonth(taskUpdateDueDateRequest.getRecurrenceDayOfMonth());
-        taskMaster.updateRecurrenceRule(taskUpdateDueDateRequest.getRecurrenceRule());
+        task.updateDueDate(taskUpdateDueDateRequest.getDueDate());
+        task.updateIsRecurring(taskUpdateDueDateRequest.isRecurring());
+        task.updateRecurrenceInterval(taskUpdateDueDateRequest.getRecurrenceInterval());
+        task.updateRecurrenceDays(taskUpdateDueDateRequest.getRecurrenceDays());
+        task.updateRecurrenceDayOfMonth(taskUpdateDueDateRequest.getRecurrenceDayOfMonth());
+        task.updateRecurrenceRule(taskUpdateDueDateRequest.getRecurrenceRule());
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                taskMaster.getId(),
+                task.getId(),
                 memberId,
                 TargetType.TASK,
                 ActivityType.UPDATED,
-                "당신이 테스크 "+ taskMaster.getName()+"의 날짜를 "+ taskInstance.getDueDate()+"으로 변경했습니다."
+                "당신이 테스크 "+ task.getName()+"의 날짜를 "+ task.getDueDate()+"으로 변경했습니다."
         ));
 
-        List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels()
+        List<LabelListResponse> labelListResponses = task.getTaskLabels()
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.of(taskMaster,taskInstance, labelListResponses);
+        return TaskResponse.of(task, labelListResponses);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
     public TaskResponse updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
-        TaskMaster taskMaster = taskMasterRepository.findById(taskId)
+        Task task = taskRepository.findById(taskId)
                 .orElseThrow();
-        taskMaster.updatePriorityType(taskPriorityType);
+        task.updatePriorityType(taskPriorityType);
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                taskMaster.getId(),
+                task.getId(),
                 memberId,
                 TargetType.TASK,
                 ActivityType.UPDATED,
-                "당신이 테스크 "+ taskMaster.getName()+"의 우선순위를 "+ taskMaster.getTaskPriorityType().name()+"으로 변경했습니다."
+                "당신이 테스크 "+ task.getName()+"의 우선순위를 "+ task.getTaskPriorityType().name()+"으로 변경했습니다."
         ));
 
-        TaskInstance activeInstance = taskInstanceRepository.findByTaskMasterAndIsCompletedFalse(taskMaster)
-                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByDueDateDesc(taskMaster)
-                        .orElseThrow(() -> new IllegalStateException("실행 기록이 존재하지 않는 테스크입니다.")));
 
-
-        List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels()
+        List<LabelListResponse> labelListResponses = task.getTaskLabels()
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.of(taskMaster,activeInstance, labelListResponses);
+        return TaskResponse.of(task,labelListResponses);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
     public TaskResponse updateTaskLabels(Long taskId, List<Long> labelIds, Long memberId){
-        TaskMaster taskMaster = taskMasterRepository.findById(taskId)
+        Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
-        TaskInstance activeInstance = taskInstanceRepository.findByTaskMasterAndIsCompletedFalse(taskMaster)
-                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByDueDateDesc(taskMaster)
-                        .orElseThrow(() -> new IllegalStateException("실행 기록이 존재하지 않는 테스크입니다.")));
-
         if(labelIds == null || labelIds.isEmpty()){
-            taskMaster.getSubTaskMasters().clear();
-            return TaskResponse.of(taskMaster,activeInstance, new ArrayList<>());
+            task.getSubTasks().clear();
+            return TaskResponse.of(task, new ArrayList<>());
         }
 
         List<Label> realLabels  =labelRepository.findAllById(labelIds);
@@ -466,25 +429,25 @@ public class TaskService {
             throw new IllegalArgumentException("존재하지 않는 라벨이 포함되어 있습니다.");
         }
 
-        taskMaster.getTaskLabels().clear();
+        task.getTaskLabels().clear();
 
-        realLabels.forEach(label-> taskMaster.addTaskLabel(TaskLabel.builder().label(label).build()));
+        realLabels.forEach(label-> task.addTaskLabel(TaskLabel.builder().label(label).build()));
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                taskMaster.getId(),
+                task.getId(),
                 memberId,
                 TargetType.TASK,
                 ActivityType.UPDATED,
-                "당신이 테스크 "+ taskMaster.getName()+"의 라벨을 "+realLabels.stream().map(Label::getName)
+                "당신이 테스크 "+ task.getName()+"의 라벨을 "+realLabels.stream().map(Label::getName)
                         .collect(Collectors.joining(", "))+"으로 변경했습니다."
         ));
 
 
-        List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels()
+        List<LabelListResponse> labelListResponses = task.getTaskLabels()
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.of(taskMaster,activeInstance, labelListResponses);
+        return TaskResponse.of(task, labelListResponses);
     }
 
     @Transactional
@@ -492,29 +455,25 @@ public class TaskService {
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
     public TaskResponse updateProject(Long taskId, Long projectId, Long memberId){
-        TaskMaster taskMaster = taskMasterRepository.findById(taskId)
+        Task task = taskRepository.findById(taskId)
                 .orElseThrow();
-
-        TaskInstance activeInstance = taskInstanceRepository.findByTaskMasterAndIsCompletedFalse(taskMaster)
-                .orElseGet(() -> taskInstanceRepository.findTopByTaskMasterOrderByDueDateDesc(taskMaster)
-                        .orElseThrow(() -> new IllegalStateException("실행 기록이 존재하지 않는 테스크입니다.")));
 
         Project project = projectRepository.findById(projectId)
                         .orElseThrow();
-        taskMaster.updateProject(project);
+        task.updateProject(project);
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                taskMaster.getId(),
+                task.getId(),
                 memberId,
                 TargetType.TASK,
                 ActivityType.MOVED,
-                "당신이 테스크 "+ taskMaster.getName()+"를 "+ taskMaster.getProject().getName()+"으로 이동시켰습니다."
+                "당신이 테스크 "+ task.getName()+"를 "+ task.getProject().getName()+"으로 이동시켰습니다."
         ));
-        List<LabelListResponse> labelListResponses = taskMaster.getTaskLabels()
+        List<LabelListResponse> labelListResponses = task.getTaskLabels()
                 .stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-        return TaskResponse.of(taskMaster,activeInstance, labelListResponses);
+        return TaskResponse.of(task, labelListResponses);
     }
 
 }

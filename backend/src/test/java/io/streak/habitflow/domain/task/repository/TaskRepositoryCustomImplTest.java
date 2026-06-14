@@ -52,7 +52,7 @@
 //        for(int i=0;i<3;i++){
 //            commentRepository.save(Comment.builder()
 //                    .content("코멘트"+i)
-//                    .taskMaster(testTaskMaster)
+//                    .task(testTaskMaster)
 //                    .member(testMember)
 //                    .build());
 //        }

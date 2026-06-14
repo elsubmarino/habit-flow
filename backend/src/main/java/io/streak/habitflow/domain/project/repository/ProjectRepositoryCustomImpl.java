@@ -10,7 +10,7 @@ import java.util.List;
 
 import static io.streak.habitflow.domain.project.entity.QProject.project;
 import static io.streak.habitflow.domain.project.entity.QProjectMember.projectMember;
-import static io.streak.habitflow.domain.task.entity.QTaskMaster.taskMaster;
+import static io.streak.habitflow.domain.task.entity.QTask.task;
 
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
@@ -45,12 +45,12 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                         project.id,
                         project.name,
                         project.color,
-                        taskMaster.count()
+                        task.count()
                 ))
                 .from(project)
-                .leftJoin(taskMaster).on(taskMaster.project.eq(project)
+                .leftJoin(task).on(task.project.eq(project)
                         //TODO
-                        //.and(taskMaster.completed.eq(false))
+                        //.and(task.completed.eq(false))
                 )
                 .innerJoin(projectMember).on(projectMember.project.eq(project).and(projectMember.member.id.eq(memberId)))
                 .groupBy(project.id)

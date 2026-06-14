@@ -15,7 +15,6 @@ public class TaskListQuery {
     private TaskPriorityType taskPriorityType;
     private LocalDate dueDate;
     private String projectName;
-    private Long taskInstanceId;
     private long countSubTasks;
     private long countSubTasksCompleted;
     private long countComments;

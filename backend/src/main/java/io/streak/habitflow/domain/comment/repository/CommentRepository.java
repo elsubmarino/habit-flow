@@ -8,6 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
-    @Query("SELECT c FROM Comment c LEFT JOIN FETCH c.attachments WHERE c.taskMaster.id = :taskMasterId")
-    List<Comment> findByTaskMasterIdWithAttachments(@Param("taskMasterId") Long taskMasterId);
+    @Query("SELECT c FROM Comment c LEFT JOIN FETCH c.attachments WHERE c.task.id = :taskId")
+    List<Comment> findByTaskIdWithAttachments(@Param("taskId") Long taskId);
 }

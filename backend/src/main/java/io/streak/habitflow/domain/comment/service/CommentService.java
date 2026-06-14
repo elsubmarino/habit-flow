@@ -7,8 +7,8 @@ import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.task.entity.TaskMaster;
-import io.streak.habitflow.domain.task.repository.TaskMasterMasterRepository;
+import io.streak.habitflow.domain.task.entity.Task;
+import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
@@ -25,19 +25,19 @@ import java.util.List;
 public class CommentService {
     private final CommentRepository commentRepository;
     private final MemberRepository memberRepository;
-    private final TaskMasterMasterRepository taskMasterRepository;
+    private final TaskRepository taskRepository;
     private final FileStorageService fileStorageService;
 
     @Transactional
     public CommentResponse createComment(CommentRequest commentRequest, MultipartFile file, Long memberId) {
         Member member = memberRepository.getReferenceById(memberId);
 
-        TaskMaster taskMaster = taskMasterRepository.findById(commentRequest.getTaskId())
+        Task task = taskRepository.findById(commentRequest.getTaskId())
                 .orElseThrow(()->new IllegalArgumentException("테스크가 없습니다."));
 
         Comment comment = Comment.builder()
                 .member(member)
-                .taskMaster(taskMaster)
+                .task(task)
                 .content(commentRequest.getContent())
                 .build();
 
@@ -57,9 +57,9 @@ public class CommentService {
     }
 
     public List<CommentResponse> getComments(Long taskId) {
-        TaskMaster taskMaster = taskMasterRepository.findById(taskId)
+        Task task = taskRepository.findById(taskId)
                 .orElseThrow(()->new IllegalArgumentException("테스크가 없습니다."));
-        List<Comment> comments = commentRepository.findByTaskMasterIdWithAttachments(taskMaster.getId());
+        List<Comment> comments = commentRepository.findByTaskIdWithAttachments(task.getId());
         return comments.stream()
                 .map(CommentResponse::from)
                 .toList();

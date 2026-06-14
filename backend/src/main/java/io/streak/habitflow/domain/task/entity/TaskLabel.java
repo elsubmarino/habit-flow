@@ -13,18 +13,18 @@ import lombok.*;
 public class TaskLabel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="task_label_id")
+    @Column(name="task_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_master_id")
-    private TaskMaster taskMaster;
+    private Task task;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "label_id")
     private Label label;
 
-    public void assignTask(TaskMaster taskMaster){
-        this.taskMaster = taskMaster;
+    public void assignTask(Task task){
+        this.task = task;
     }
 }

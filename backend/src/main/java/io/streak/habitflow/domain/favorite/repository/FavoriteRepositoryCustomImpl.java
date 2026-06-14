@@ -1,6 +1,5 @@
 package io.streak.habitflow.domain.favorite.repository;
 
-import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.JPAExpressions;
@@ -11,9 +10,8 @@ import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.label.entity.QLabel;
 import io.streak.habitflow.domain.member.entity.QMember;
 import io.streak.habitflow.domain.project.entity.QProject;
-import io.streak.habitflow.domain.task.entity.QTaskInstance;
 import io.streak.habitflow.domain.task.entity.QTaskLabel;
-import io.streak.habitflow.domain.task.entity.QTaskMaster;
+import io.streak.habitflow.domain.task.entity.QTask;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -28,12 +26,10 @@ public class FavoriteRepositoryCustomImpl implements FavoriteRepositoryCustom {
         QProject project = QProject.project;
         QLabel label = QLabel.label;
 
-        QTaskMaster pTask = new QTaskMaster("pTask");
-        QTaskInstance pInstance = new QTaskInstance("pInstance");
+        QTask pTask = new QTask("pTask");
 
         QTaskLabel lTaskLabel = new QTaskLabel("lTaskLabel");
-        QTaskMaster lTask = new QTaskMaster("lMaster");
-        QTaskInstance lInstance = new QTaskInstance("lInstance");
+        QTask lTask = new QTask("lMaster");
 
         return queryFactory
                 .select(Projections.fields(FavoriteListResponse.class,
@@ -42,20 +38,18 @@ public class FavoriteRepositoryCustomImpl implements FavoriteRepositoryCustom {
                         favorite.targetId,
                         new CaseBuilder()
                                 .when(favorite.targetType.eq(TargetType.PROJECT)).then(
-                                        JPAExpressions.select(pInstance.count())
-                                                .from(pInstance)
-                                                .join(pInstance.taskMaster, pTask)
+                                        JPAExpressions.select(pTask.count())
+                                                .from(pTask)
                                                 .where(pTask.project.id.eq(favorite.targetId),
-                                                        pInstance.isCompleted.eq(false)
+                                                        pTask.completed.eq(false)
                                                 )
                                 )
                                 .when(favorite.targetType.eq(TargetType.LABEL)).then(
                                         JPAExpressions.select(lTaskLabel.count())
                                                 .from(lTaskLabel)
-                                                .join(lTaskLabel.taskMaster,lTask)
-                                                .join(lTask.taskInstances, lInstance)
+                                                .join(lTaskLabel.task,lTask)
                                                 .where(lTaskLabel.label.id.eq(favorite.targetId),
-                                                        lInstance.isCompleted.eq(false)
+                                                        lTask.completed.eq(false)
                                                 )
                                 )
                                 .otherwise(0L).as("targetCount"),
