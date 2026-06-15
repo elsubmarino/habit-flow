@@ -49,3 +49,4 @@ public class ActivityLogService {
 
         return ScrollResponse.of(activityLogListResponses, pageable.getPageSize(), ActivityLogListResponse::id);
     }
+}
