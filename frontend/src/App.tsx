@@ -444,8 +444,7 @@ function App() {
     const showUpcomingGrouped = activeNav === 'upcoming' && !selectedProjectId && !selectedLabelId;
     const showInboxList = activeNav === 'inbox' && !selectedProjectId && !selectedLabelId;
     const showTaskPagination =
-        (showTodaySections || showUpcomingGrouped || showInboxList || selectedProjectId != null)
-        && tasksHasNext;
+        showTodaySections || showUpcomingGrouped || showInboxList || selectedProjectId != null;
     const showLabelsPagination = showLabelsPanel && labelsHasNext;
 
     const headerTaskCount = showTodaySections
@@ -780,7 +779,7 @@ function App() {
                         hideTrigger={showTodaySections || showUpcomingGrouped || !!selectedProjectId}
                     />
 
-                    {showTaskPagination && (
+                    {showTaskPagination && tasksHasNext && (
                         <div ref={loadMoreSentinelRef} className="tasks-scroll-sentinel" aria-hidden="true">
                             {loadMoreStatus === 'loading' && (
                                 <p className="tasks-scroll-loading">불러오는 중…</p>

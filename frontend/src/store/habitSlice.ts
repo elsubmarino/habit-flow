@@ -373,7 +373,7 @@ export const fetchMoreHabits = createAsyncThunk(
     {
         condition: (_, { getState }) => {
             const { loadMoreStatus, tasksHasNext } = (getState() as { habits: HabitState }).habits;
-            return loadMoreStatus === 'idle' && tasksHasNext;
+            return loadMoreStatus !== 'loading' && tasksHasNext;
         },
     },
 );

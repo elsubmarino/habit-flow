@@ -83,7 +83,8 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .select(task.id)
                 .from(task)
                 .where(task.member.id.eq(memberId),
-                        task.project.id.eq(projectId)
+                        task.project.id.eq(projectId),
+                        task.completed.eq(false)
                 )
                 .orderBy(
                         task.dueDate.asc(),
@@ -130,7 +131,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .from(task)
                 .leftJoin(task.project, project)
                 .where(
-                        task.id.in(ids).and(task.completed.eq(false))
+                        task.id.in(ids)
                 )
                 .orderBy(
                         task.dueDate.asc(),
@@ -138,8 +139,6 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         task.sortOrder.asc(),
                         task.id.desc()
                 )
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize()+1)
                 .fetch();
     }
 
@@ -150,7 +149,8 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .select(task.id)
                 .from(task)
                 .where(task.member.id.eq(memberId),
-                        filterTypeEq(searchCondition.taskFilterType())
+                        filterTypeEq(searchCondition.taskFilterType()),
+                        task.completed.eq(false)
                 )
                 .orderBy(
                         task.dueDate.asc(),
@@ -196,7 +196,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .from(task)
                 .leftJoin(task.project, project)
                 .where(
-                        task.id.in(ids).and(task.completed.eq(false))
+                        task.id.in(ids)
                 )
                 .orderBy(
                         task.dueDate.asc(),
@@ -204,8 +204,6 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         task.sortOrder.asc(),
                         task.id.desc()
                 )
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize()+1)
                 .fetch();
     }
 

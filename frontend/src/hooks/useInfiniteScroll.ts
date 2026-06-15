@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useRef } from 'react';
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 
 export function useInfiniteScroll(
     enabled: boolean,
@@ -7,11 +7,15 @@ export function useInfiniteScroll(
     onLoadMore: () => void,
     scrollRootRef?: RefObject<HTMLElement | null>,
 ) {
-    const sentinelRef = useRef<HTMLDivElement>(null);
     const onLoadMoreRef = useRef(onLoadMore);
     const isLoadingRef = useRef(isLoading);
     const loadLockRef = useRef(false);
-    const wasIntersectingRef = useRef(false);
+    const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
+    const [scrollRoot, setScrollRoot] = useState<HTMLElement | null>(null);
+
+    const sentinelRef = useCallback((node: HTMLDivElement | null) => {
+        setSentinelNode(node);
+    }, []);
 
     useEffect(() => {
         onLoadMoreRef.current = onLoadMore;
@@ -19,29 +23,18 @@ export function useInfiniteScroll(
 
     useEffect(() => {
         isLoadingRef.current = isLoading;
-        if (isLoading) return;
-
-        loadLockRef.current = false;
-
-        const el = sentinelRef.current;
-        const root = scrollRootRef?.current ?? null;
-        if (!el || !enabled || !hasNext) return;
-
-        requestAnimationFrame(() => {
-            const rootRect = root?.getBoundingClientRect();
-            const viewportBottom = rootRect?.bottom ?? window.innerHeight;
-            const elRect = el.getBoundingClientRect();
-            wasIntersectingRef.current = elRect.top <= viewportBottom + 240;
-        });
-    }, [isLoading, enabled, hasNext, scrollRootRef]);
+        if (!isLoading) {
+            loadLockRef.current = false;
+        }
+    }, [isLoading]);
 
     useEffect(() => {
-        if (!enabled || !hasNext) return;
-
-        const el = sentinelRef.current;
-        if (!el) return;
-
         const root = scrollRootRef?.current ?? null;
+        setScrollRoot(root);
+    }, [scrollRootRef, sentinelNode, enabled, hasNext]);
+
+    useEffect(() => {
+        if (!enabled || !hasNext || !sentinelNode) return;
 
         const requestLoad = () => {
             if (loadLockRef.current || isLoadingRef.current) return;
@@ -49,27 +42,18 @@ export function useInfiniteScroll(
             onLoadMoreRef.current();
         };
 
-        let skipInitial = true;
-
         const observer = new IntersectionObserver(
             entries => {
-                const intersecting = entries[0]?.isIntersecting ?? false;
-                if (skipInitial) {
-                    skipInitial = false;
-                    wasIntersectingRef.current = intersecting;
-                    return;
-                }
-                if (intersecting && !wasIntersectingRef.current) {
+                if (entries[0]?.isIntersecting) {
                     requestLoad();
                 }
-                wasIntersectingRef.current = intersecting;
             },
-            { root, rootMargin: '240px', threshold: 0 },
+            { root: scrollRoot, rootMargin: '240px', threshold: 0 },
         );
 
-        observer.observe(el);
+        observer.observe(sentinelNode);
         return () => observer.disconnect();
-    }, [enabled, hasNext, scrollRootRef]);
+    }, [enabled, hasNext, scrollRoot, sentinelNode]);
 
     return sentinelRef;
 }
