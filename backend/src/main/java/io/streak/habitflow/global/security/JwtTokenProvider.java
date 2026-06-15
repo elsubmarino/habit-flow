@@ -4,6 +4,7 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -12,11 +13,15 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Date;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class JwtTokenProvider {
+    private final Clock clock;
 
     @Value("${jwt.secret}")
     private String secretKeyString;
@@ -42,15 +47,15 @@ public class JwtTokenProvider {
     }
 
     public String buildToken(String email, Long memberId, long validityTime){
-        Date now = new Date();
-        Date validity = new Date(now.getTime() + validityTime);
+        Instant now = Instant.now(clock);
+        Instant validity = now.plusMillis(validityTime);
 
         return Jwts.builder()
                 .setSubject(email)
                 .claim("memberId",memberId)
                 .claim("role","ROLE_USER")
-                .setIssuedAt(now)
-                .setExpiration(validity)
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(validity))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
