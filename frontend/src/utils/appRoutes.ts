@@ -1,23 +1,31 @@
 import type { NavItem } from '../components/Sidebar';
 import { OAUTH_CALLBACK_PATH } from '../api/authBootstrap';
 
-/** 브라우저 주소창 경로 — 백엔드 Task 목록 API와 동일한 prefix 사용 */
+/** 브라우저 주소창용 SPA 경로 (백엔드 API와 분리) */
 export const APP_ROUTES = {
-    inbox: '/api/tasks/inbox',
-    today: '/api/tasks/today',
-    upcoming: '/api/tasks/upcoming',
-    labels: '/api/labels',
-    projects: '/api/projects',
-    activityLogs: '/api/activity-logs',
-    notifications: '/api/notifications',
+    inbox: '/inbox',
+    today: '/today',
+    upcoming: '/upcoming',
+    labels: '/labels',
+    projects: '/projects',
+    report: '/report',
+    notifications: '/notifications',
 } as const;
 
-/** 예전 SPA 경로 (북마크 호환용) */
+/** 예전 SPA/API 미러 경로 (북마크 호환) */
 const LEGACY_TASK_LIST_ROUTES: Record<string, NavItem> = {
     '/api/task-instances/inbox': 'inbox',
     '/api/task-instances/today': 'today',
     '/api/task-instances/upcoming': 'upcoming',
+    '/api/tasks/inbox': 'inbox',
+    '/api/tasks/today': 'today',
+    '/api/tasks/upcoming': 'upcoming',
 };
+
+const LEGACY_LABELS_BROWSE = new Set(['/api/labels']);
+const LEGACY_PROJECTS_BROWSE = new Set(['/api/projects']);
+const LEGACY_REPORT = new Set(['/api/activity-logs']);
+const LEGACY_NOTIFICATIONS = new Set(['/api/notifications']);
 
 export type AppLocation =
     | { kind: 'oauth' }
@@ -33,6 +41,22 @@ export function isOAuthCallbackPath(pathname: string): boolean {
     return pathname === OAUTH_CALLBACK_PATH || pathname.endsWith(OAUTH_CALLBACK_PATH);
 }
 
+function parseLabelId(pathname: string): number | null {
+    const match = pathname.match(/^\/labels\/(\d+)$/);
+    if (match) return Number(match[1]);
+    const legacy = pathname.match(/^\/api\/labels\/(\d+)$/);
+    if (legacy) return Number(legacy[1]);
+    return null;
+}
+
+function parseProjectId(pathname: string): number | null {
+    const match = pathname.match(/^\/projects\/(\d+)$/);
+    if (match) return Number(match[1]);
+    const legacy = pathname.match(/^\/api\/projects\/(\d+)\/tasks$/);
+    if (legacy) return Number(legacy[1]);
+    return null;
+}
+
 export function parseAppPath(pathname: string): AppLocation {
     if (isOAuthCallbackPath(pathname)) {
         return { kind: 'oauth' };
@@ -44,19 +68,28 @@ export function parseAppPath(pathname: string): AppLocation {
 
     const legacyNav = LEGACY_TASK_LIST_ROUTES[pathname];
     if (legacyNav) return { kind: 'nav', nav: legacyNav };
-    if (pathname === APP_ROUTES.activityLogs) return { kind: 'nav', nav: 'report' };
-    if (pathname === APP_ROUTES.notifications) return { kind: 'notifications' };
-    if (pathname === APP_ROUTES.labels) return { kind: 'labelsBrowse' };
-    if (pathname === APP_ROUTES.projects) return { kind: 'projectsBrowse' };
 
-    const labelMatch = pathname.match(/^\/api\/labels\/(\d+)$/);
-    if (labelMatch) {
-        return { kind: 'label', labelId: Number(labelMatch[1]) };
+    if (pathname === APP_ROUTES.report || LEGACY_REPORT.has(pathname)) {
+        return { kind: 'nav', nav: 'report' };
+    }
+    if (pathname === APP_ROUTES.notifications || LEGACY_NOTIFICATIONS.has(pathname)) {
+        return { kind: 'notifications' };
+    }
+    if (pathname === APP_ROUTES.labels || LEGACY_LABELS_BROWSE.has(pathname)) {
+        return { kind: 'labelsBrowse' };
+    }
+    if (pathname === APP_ROUTES.projects || LEGACY_PROJECTS_BROWSE.has(pathname)) {
+        return { kind: 'projectsBrowse' };
     }
 
-    const projectMatch = pathname.match(/^\/api\/projects\/(\d+)\/tasks$/);
-    if (projectMatch) {
-        return { kind: 'project', projectId: Number(projectMatch[1]) };
+    const labelId = parseLabelId(pathname);
+    if (labelId != null) {
+        return { kind: 'label', labelId };
+    }
+
+    const projectId = parseProjectId(pathname);
+    if (projectId != null) {
+        return { kind: 'project', projectId };
     }
 
     return { kind: 'unknown' };
@@ -73,10 +106,10 @@ export function buildAppPath(params: {
         return APP_ROUTES.notifications;
     }
     if (params.selectedProjectId != null) {
-        return `/api/projects/${params.selectedProjectId}/tasks`;
+        return `/projects/${params.selectedProjectId}`;
     }
     if (params.selectedLabelId != null) {
-        return `/api/labels/${params.selectedLabelId}`;
+        return `/labels/${params.selectedLabelId}`;
     }
     if (params.showProjectsBrowse) {
         return APP_ROUTES.projects;
@@ -85,7 +118,7 @@ export function buildAppPath(params: {
         return APP_ROUTES.labels;
     }
     if (params.activeNav === 'report') {
-        return APP_ROUTES.activityLogs;
+        return APP_ROUTES.report;
     }
     if (params.activeNav === 'inbox') {
         return APP_ROUTES.inbox;

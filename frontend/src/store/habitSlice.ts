@@ -517,14 +517,16 @@ export const addHabit = createAsyncThunk(
             labels: true,
             nav: true,
         }));
+        void dispatch(refetchCurrentTaskList());
         return mapTaskToHabit(task);
     },
 );
 
 export const addProject = createAsyncThunk(
     'habits/addProject',
-    async (payload: { name: string; color?: string }) => {
+    async (payload: { name: string; color?: string }, { dispatch }) => {
         const project = await projectApi.createProject(payload.name, payload.color);
+        await dispatch(invalidateSidebarAggregates({ projects: true }));
         return mapProject(project);
     },
 );
@@ -557,15 +559,23 @@ export const updateProject = createAsyncThunk(
     },
 );
 
-export const deleteProject = createAsyncThunk('habits/deleteProject', async (projectId: number) => {
-    await projectApi.deleteProject(projectId);
-    return projectId;
-});
+export const deleteProject = createAsyncThunk(
+    'habits/deleteProject',
+    async (projectId: number, { dispatch }) => {
+        await projectApi.deleteProject(projectId);
+        await Promise.all([
+            dispatch(invalidateSidebarAggregates({ projects: true, nav: true })),
+            dispatch(refetchCurrentTaskList()),
+        ]);
+        return projectId;
+    },
+);
 
 export const addLabel = createAsyncThunk(
     'habits/addLabel',
-    async (payload: { name: string; color?: string; favorite?: boolean }) => {
+    async (payload: { name: string; color?: string; favorite?: boolean }, { dispatch }) => {
         const label = await labelApi.createLabel(payload.name, payload.color, payload.favorite);
+        await dispatch(invalidateSidebarAggregates({ labels: true }));
         return mapLabel(label);
     },
 );
@@ -581,10 +591,17 @@ export const updateLabel = createAsyncThunk(
     },
 );
 
-export const deleteLabel = createAsyncThunk('habits/deleteLabel', async (labelId: number) => {
-    await labelApi.deleteLabel(labelId);
-    return labelId;
-});
+export const deleteLabel = createAsyncThunk(
+    'habits/deleteLabel',
+    async (labelId: number, { dispatch }) => {
+        await labelApi.deleteLabel(labelId);
+        await Promise.all([
+            dispatch(invalidateSidebarAggregates({ labels: true })),
+            dispatch(refetchCurrentTaskList()),
+        ]);
+        return labelId;
+    },
+);
 
 export interface CheckHabitPayload {
     habitId: number;
@@ -595,7 +612,10 @@ export const checkHabit = createAsyncThunk(
     'habits/check',
     async ({ habitId, wasCompleted }: CheckHabitPayload, { dispatch }) => {
         const task = await taskApi.toggleTaskCompletion(habitId, wasCompleted);
-        void dispatch(invalidateSidebarAggregates({ projects: true, nav: true }));
+        await Promise.all([
+            dispatch(invalidateSidebarAggregates({ projects: true, nav: true })),
+            dispatch(refetchCurrentTaskList()),
+        ]);
         const habit = mapTaskToHabit(task);
         return {
             ...habit,
@@ -624,7 +644,10 @@ export const patchTaskProject = createAsyncThunk(
     'habits/patchProject',
     async ({ habitId, projectId }: { habitId: number; projectId: number | null }, { dispatch }) => {
         const task = await taskApi.patchTaskProject(habitId, projectId);
-        void dispatch(invalidateSidebarAggregates({ projects: true }));
+        await Promise.all([
+            dispatch(invalidateSidebarAggregates({ projects: true, nav: true })),
+            dispatch(refetchCurrentTaskList()),
+        ]);
         return mapTaskToHabit(task);
     },
 );
@@ -644,7 +667,10 @@ export const patchTaskDueDate = createAsyncThunk(
             ? repeatLabelToRecurrence(recurrenceLabel, dueDate)
             : undefined;
         const task = await taskApi.patchTaskDueDate(habitId, { dueDate, recurrence });
-        void dispatch(invalidateSidebarAggregates({ nav: true }));
+        await Promise.all([
+            dispatch(invalidateSidebarAggregates({ nav: true })),
+            dispatch(refetchCurrentTaskList()),
+        ]);
         const habit = mapTaskToHabit(task);
         return {
             ...habit,
@@ -661,8 +687,9 @@ export const patchTaskDueDate = createAsyncThunk(
 
 export const patchTaskPriority = createAsyncThunk(
     'habits/patchPriority',
-    async ({ habitId, priority }: { habitId: number; priority: 1 | 2 | 3 | 4 }) => {
+    async ({ habitId, priority }: { habitId: number; priority: 1 | 2 | 3 | 4 }, { dispatch }) => {
         const task = await taskApi.patchTaskPriority(habitId, priorityToApi(priority));
+        await dispatch(refetchCurrentTaskList());
         return mapTaskToHabit(task);
     },
 );
@@ -671,7 +698,10 @@ export const patchTaskLabels = createAsyncThunk(
     'habits/patchLabels',
     async ({ habitId, labelIds }: { habitId: number; labelIds: number[] }, { dispatch }) => {
         const task = await taskApi.patchTaskLabels(habitId, labelIds);
-        void dispatch(invalidateSidebarAggregates({ labels: true }));
+        await Promise.all([
+            dispatch(invalidateSidebarAggregates({ labels: true })),
+            dispatch(refetchCurrentTaskList()),
+        ]);
         return mapTaskToHabit(task);
     },
 );
@@ -680,7 +710,10 @@ export const deleteHabit = createAsyncThunk(
     'habits/delete',
     async (habitId: number, { dispatch }) => {
         await taskApi.deleteTask(habitId);
-        void dispatch(invalidateSidebarAggregates({ projects: true, labels: true, nav: true }));
+        await Promise.all([
+            dispatch(invalidateSidebarAggregates({ projects: true, labels: true, nav: true })),
+            dispatch(refetchCurrentTaskList()),
+        ]);
         return habitId;
     },
 );

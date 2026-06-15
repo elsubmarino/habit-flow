@@ -273,15 +273,38 @@ function App() {
 
     const showLabelsBrowse = activeNav === 'filters' && !selectedLabelId && !selectedProjectId && !showProjectsBrowse;
 
+    /** 화면(라우트) 진입 시 해당 뷰 데이터 재조회 */
     useEffect(() => {
-        if (activeNav === 'report' || showProjectsBrowse || showLabelsBrowse) return;
+        if (showNotifications) return;
+        if (activeNav === 'report') return;
+
+        if (showProjectsBrowse) {
+            dispatch(fetchProjects());
+            dispatch(fetchFavorites());
+            return;
+        }
+
+        if (showLabelsBrowse) {
+            dispatch(fetchLabels());
+            return;
+        }
+
         if (selectedProjectId != null) {
             dispatch(fetchProjectHabits(selectedProjectId));
             return;
         }
+
         const view = selectedLabelId != null ? 'all' : toApiView(activeNav);
         dispatch(fetchHabits({ view, projectId: null, labelId: selectedLabelId }));
-    }, [dispatch, activeNav, selectedProjectId, selectedLabelId, showProjectsBrowse, showLabelsBrowse]);
+    }, [
+        dispatch,
+        activeNav,
+        selectedProjectId,
+        selectedLabelId,
+        showProjectsBrowse,
+        showLabelsBrowse,
+        showNotifications,
+    ]);
 
     const handleNavChange = (nav: NavItem) => {
         setShowNotifications(false);
@@ -335,6 +358,7 @@ function App() {
         setShowNotifications(false);
         setShowProjectsBrowse(false);
         setActiveNav('filters');
+        dispatch(setActiveView('filters'));
         dispatch(setSelectedLabel(null));
         dispatch(setSelectedProject(null));
     };
@@ -342,7 +366,10 @@ function App() {
     const handleLabelSelect = (labelId: number | null) => {
         setShowNotifications(false);
         setShowProjectsBrowse(false);
-        if (labelId != null) setActiveNav('filters');
+        if (labelId != null) {
+            setActiveNav('filters');
+            dispatch(setActiveView('filters'));
+        }
         dispatch(setSelectedLabel(labelId));
         dispatch(setSelectedProject(null));
     };
@@ -795,10 +822,7 @@ function App() {
                 <AddProjectModal
                     onClose={() => setShowAddProjectModal(false)}
                     onAdd={(name, color) => {
-                        void dispatch(addProject({ name, color })).then(() => {
-                            dispatch(fetchProjects());
-                            dispatch(fetchFavorites());
-                        });
+                        void dispatch(addProject({ name, color }));
                     }}
                 />
             )}
@@ -816,10 +840,7 @@ function App() {
                     allProjects={projects}
                     onClose={() => setEditingProject(null)}
                     onSave={payload => {
-                        void dispatch(updateProject(payload)).then(() => {
-                            dispatch(fetchProjects());
-                            dispatch(fetchFavorites());
-                        });
+                        void dispatch(updateProject(payload));
                     }}
                 />
             )}
@@ -828,10 +849,7 @@ function App() {
                 <AddLabelModal
                     onClose={() => setShowAddLabelModal(false)}
                     onAdd={payload => {
-                        void dispatch(addLabel(payload)).then(() => {
-                            dispatch(fetchLabels());
-                            dispatch(fetchFavorites());
-                        });
+                        void dispatch(addLabel(payload));
                     }}
                 />
             )}
@@ -841,10 +859,7 @@ function App() {
                     label={editingLabel}
                     onClose={() => setEditingLabel(null)}
                     onSave={(id, payload) => {
-                        void dispatch(updateLabel({ id, ...payload })).then(() => {
-                            dispatch(fetchLabels());
-                            dispatch(fetchFavorites());
-                        });
+                        void dispatch(updateLabel({ id, ...payload }));
                     }}
                 />
             )}

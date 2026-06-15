@@ -142,7 +142,7 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
     };
 
     const handleCopyLink = async () => {
-        const url = `${window.location.origin}/api/projects/${project.id}`;
+        const url = `${window.location.origin}/projects/${project.id}`;
         try {
             await navigator.clipboard.writeText(url);
             setLinkCopied(true);
