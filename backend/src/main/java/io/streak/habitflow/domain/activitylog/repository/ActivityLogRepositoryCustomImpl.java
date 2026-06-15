@@ -2,7 +2,6 @@ package io.streak.habitflow.domain.activitylog.repository;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogSearchCondition;
 import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -17,18 +16,6 @@ import static io.streak.habitflow.domain.member.entity.QMember.member;
 @RequiredArgsConstructor
 public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCustom {
     private final JPAQueryFactory queryFactory;
-    @Override
-    public List<ActivityLog> searchActivityLogs(ActivityLogSearchCondition activityLogSearchCondition) {
-        return queryFactory
-                .selectFrom(activityLog)
-                .leftJoin(activityLog.member, member).fetchJoin()
-                .where(
-                        memberIdsIn(activityLogSearchCondition.getMemberIds()),
-                        targetDateEq(activityLogSearchCondition.getTargetDate())
-                )
-                .orderBy(activityLog.createdAt.desc())
-                .fetch();
-    }
 
     @Override
     public List<ActivityLog> searchActivityLogsByCondition(Long activityLogId, Long memberId, Pageable pageable) {

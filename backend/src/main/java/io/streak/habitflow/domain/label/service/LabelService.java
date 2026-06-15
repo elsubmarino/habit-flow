@@ -3,9 +3,7 @@ package io.streak.habitflow.domain.label.service;
 import io.streak.habitflow.domain.favorite.entity.Favorite;
 import io.streak.habitflow.domain.favorite.repository.FavoriteRepository;
 import io.streak.habitflow.domain.favorite.type.TargetType;
-import io.streak.habitflow.domain.label.dto.request.LabelCreateRequest;
-import io.streak.habitflow.domain.label.dto.request.LabelUpdateRequest;
-import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
+import io.streak.habitflow.domain.label.dto.request.LabelRequest;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
@@ -29,17 +27,17 @@ public class LabelService {
     private final FavoriteRepository favoriteRepository;
 
     @Transactional
-    public LabelResponse createLabel(LabelCreateRequest labelCreateRequest, Long memberId) {
+    public LabelResponse.Detail createLabel(LabelRequest.Create request, Long memberId) {
         Member member = memberRepository.getReferenceById(memberId);
         Label label = Label.builder()
-                .name(labelCreateRequest.getName())
-                .color(labelCreateRequest.getColor())
+                .name(request.name())
+                .color(request.color())
                 .member(member)
                 .build();
 
         Label savedLabel = labelRepository.save(label);
 
-        if(labelCreateRequest.isFavorite()){
+        if(request.favorite()){
             Favorite favorite = Favorite.builder()
                     .targetType(TargetType.LABEL)
                     .targetId(savedLabel.getId())
@@ -51,10 +49,10 @@ public class LabelService {
                     savedLabel.getId()
             ).orElseGet(()->favoriteRepository.save(favorite));
         }
-        return LabelResponse.of(savedLabel, labelCreateRequest.isFavorite());
+        return LabelResponse.Detail.of(savedLabel, request.favorite());
     }
 
-    public LabelResponse getLabelById(Long labelId, Long memberId) {
+    public LabelResponse.Detail getLabelById(Long labelId, Long memberId) {
         Label label = labelRepository.getOrThrow(labelId);
         boolean isFavorite = false;
         Optional<Favorite> favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(
@@ -62,11 +60,11 @@ public class LabelService {
         if(favorite.isPresent()){
             isFavorite = true;
         }
-        return LabelResponse.of(label,isFavorite);
+        return LabelResponse.Detail.of(label,isFavorite);
     }
 
     @Transactional
-    public void updateLabel(Long labelId, LabelUpdateRequest labelUpdateRequest, Long memberId) {
+    public void updateLabel(Long labelId, LabelRequest.Update request, Long memberId) {
         Label label = labelRepository.getOrThrow(labelId);
 
         Member member = memberRepository.getReferenceById(memberId);
@@ -75,7 +73,7 @@ public class LabelService {
             throw new IllegalStateException("수정 권한이 없습니다.");
         }
 
-        if(labelUpdateRequest.isFavorite()) {
+        if(request.favorite()) {
             Favorite favorite = Favorite.builder()
                     .targetType(TargetType.LABEL)
                     .targetId(label.getId())
@@ -90,18 +88,18 @@ public class LabelService {
             favoriteRepository.deleteByMemberIdAndTargetTypeAndTargetId(member.getId(),TargetType.LABEL,label.getId());
         }
 
-        label.updateLabel(labelUpdateRequest.getName(),
-                labelUpdateRequest.getColor());
+        label.updateLabel(request.name(),
+                request.color());
     }
 
-    public ScrollResponse<LabelListResponse> getLabels(Long labelId, Long memberId, Pageable pageable) {
+    public ScrollResponse<LabelResponse.List> getLabels(Long labelId, Long memberId, Pageable pageable) {
         List<Label> labels = labelRepository.searchLabelsByCondition(labelId,memberId,pageable);
 
-        List<LabelListResponse> labelResponses =  labels.stream()
-                .map(LabelListResponse::from)
+        List<LabelResponse.List> labelResponses =  labels.stream()
+                .map(LabelResponse.List::from)
                 .toList();
 
-        return ScrollResponse.of(labelResponses,pageable.getPageSize(),LabelListResponse::id);
+        return ScrollResponse.of(labelResponses,pageable.getPageSize(),LabelResponse.List::id);
     }
 
     @Transactional
@@ -114,9 +112,9 @@ public class LabelService {
         labelRepository.deleteById(labelId);
     }
 
-    public List<LabelListResponse> searchLabels(String keyword){
+    public List<LabelResponse.List> searchLabels(String keyword){
         return labelRepository.findByNameContaining(keyword)
-                .stream().map(LabelListResponse::from)
+                .stream().map(LabelResponse.List::from)
                 .toList();
     }
 }

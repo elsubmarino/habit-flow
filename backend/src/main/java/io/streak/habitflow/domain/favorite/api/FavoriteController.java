@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.favorite.api;
 
-import io.streak.habitflow.domain.favorite.dto.response.FavoriteListResponse;
+import io.streak.habitflow.domain.favorite.dto.response.FavoriteResponse;
 import io.streak.habitflow.domain.favorite.service.FavoriteService;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +24,7 @@ public class FavoriteController {
     @Operation(summary = "즐겨찾기 목록 조회")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "즐겨찾기 조회 성공")})
     @GetMapping
-    public ResponseEntity<List<FavoriteListResponse>> getFavorites(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+    public ResponseEntity<List<FavoriteResponse.List>> getFavorites(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         return ResponseEntity.ok(favoriteService.getFavoriteListByMemberId(userPrincipal.getMemberId()));
     }
 }

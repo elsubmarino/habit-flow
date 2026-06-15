@@ -1,6 +1,7 @@
 package io.streak.habitflow.domain.task.dto.response;
 
-import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
+import io.streak.habitflow.domain.label.dto.response.LabelResponse;
+import io.streak.habitflow.domain.task.dto.query.TaskListQuery;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import lombok.Builder;
@@ -21,7 +22,7 @@ public record TaskListResponse(
         long countSubTasks,
         long countSubTasksCompleted,
         long countComments,
-        List<LabelListResponse> labels
+        List<LabelResponse.List> labels
 ) {
     public TaskListResponse{
         if(labels== null){
@@ -29,7 +30,7 @@ public record TaskListResponse(
         }
     }
 
-    public static TaskListResponse of(TaskListQuery taskListQuery, List<LabelListResponse> labelListResponses) {
+    public static TaskListResponse of(TaskListQuery taskListQuery, List<LabelResponse.List> labelListResponses) {
         return TaskListResponse.builder()
                 .id(taskListQuery.getId())
                 .name(taskListQuery.getName())
@@ -44,7 +45,7 @@ public record TaskListResponse(
                 .build();
     }
 
-    public static TaskListResponse of(Task task, List<LabelListResponse> labelListResponses) {
+    public static TaskListResponse of(Task task, List<LabelResponse.List> labelListResponses) {
         TaskListResponse.TaskListResponseBuilder builder = TaskListResponse.builder()
                 .id(task.getId())
                 .name(task.getName())

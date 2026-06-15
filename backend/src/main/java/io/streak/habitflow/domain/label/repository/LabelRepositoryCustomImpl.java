@@ -3,7 +3,7 @@ package io.streak.habitflow.domain.label.repository;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
+import io.streak.habitflow.domain.label.dto.query.LabelListQuery;
 import io.streak.habitflow.domain.label.entity.Label;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -18,10 +18,10 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
     @Override
-    public List<LabelListResponse> searchKeyword(String name, Long memberId, Pageable pageable) {
+    public List<LabelListQuery> searchKeyword(String name, Long memberId, Pageable pageable) {
         return queryFactory
                 .select(Projections.fields(
-                        LabelListResponse.class,
+                        LabelListQuery.class,
                         label.id,
                         label.name,
                         label.color,

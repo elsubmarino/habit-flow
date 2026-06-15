@@ -55,22 +55,6 @@ public final class TaskRequest {
         }
     }
 
-    public record Delete(
-            @NotBlank(message = "제목은 필수 입력 항목입니다.")
-            @Size(max = 100, message = "제목은 100자를 초과할 수 없습니다.")
-            String name,
-            String description,
-            String priorityType,
-            LocalDate dueDate,
-            Long projectId,
-            Long parentId,
-            List<Long> labelIds
-    ){
-        public Delete{
-            labelIds = (labelIds == null) ? new ArrayList<>() : new ArrayList<>(labelIds);
-        }
-    }
-
     public record SearchCondition(
             TaskFilterType taskFilterType
     ){}

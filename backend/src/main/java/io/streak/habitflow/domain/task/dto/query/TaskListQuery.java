@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.task.dto.response;
+package io.streak.habitflow.domain.task.dto.query;
 
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import lombok.Getter;

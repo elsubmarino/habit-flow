@@ -29,16 +29,16 @@ public class CommentService {
     private final FileStorageService fileStorageService;
 
     @Transactional
-    public CommentResponse createComment(CommentRequest commentRequest, MultipartFile file, Long memberId) {
+    public CommentResponse.Detail createComment(CommentRequest.Create request, MultipartFile file, Long memberId) {
         Member member = memberRepository.getReferenceById(memberId);
 
-        Task task = taskRepository.findById(commentRequest.getTaskId())
+        Task task = taskRepository.findById(request.taskId())
                 .orElseThrow(()->new IllegalArgumentException("테스크가 없습니다."));
 
         Comment comment = Comment.builder()
                 .member(member)
                 .task(task)
-                .content(commentRequest.getContent())
+                .content(request.content())
                 .build();
 
         if(file != null && !file.isEmpty()){
@@ -53,26 +53,26 @@ public class CommentService {
         }
 
         Comment result = commentRepository.save(comment);
-        return CommentResponse.from(result);
+        return CommentResponse.Detail.from(result);
     }
 
-    public List<CommentResponse> getComments(Long taskId) {
+    public List<CommentResponse.Detail> getComments(Long taskId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(()->new IllegalArgumentException("테스크가 없습니다."));
         List<Comment> comments = commentRepository.findByTaskIdWithAttachments(task.getId());
         return comments.stream()
-                .map(CommentResponse::from)
+                .map(CommentResponse.Detail::from)
                 .toList();
     }
 
     @Transactional
     @CheckOwnership(type="COMMENT")
     @SuppressWarnings("unused")
-    public void updateComment(Long commentId, CommentRequest request, Long memberId) {
+    public void updateComment(Long commentId, CommentRequest.Update request, Long memberId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow();
 
-        comment.updateContent(request.getContent());
+        comment.updateContent(request.content());
     }
 
     @Transactional

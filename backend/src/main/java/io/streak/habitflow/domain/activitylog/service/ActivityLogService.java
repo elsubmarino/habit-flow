@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.activitylog.service;
 
 import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogRequest;
-import io.streak.habitflow.domain.activitylog.dto.response.ActivityLogListResponse;
+import io.streak.habitflow.domain.activitylog.dto.response.ActivityLogResponse;
 import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
 import io.streak.habitflow.domain.activitylog.repository.ActivityLogRepository;
 import io.streak.habitflow.domain.member.entity.Member;
@@ -24,29 +24,26 @@ public class ActivityLogService {
     private final TaskRepository taskRepository;
 
     @Transactional
-    public void create(ActivityLogRequest activityLogRequest, Long memberId) {
+    public void create(ActivityLogRequest.Create request, Long memberId) {
         Member member = memberRepository.getReferenceById(memberId);
-
-
-        Long targetId = activityLogRequest.getTargetId();
 
         ActivityLog activityLog = ActivityLog.builder()
                 .member(member)
-                .activityType(activityLogRequest.getActivityType())
-                .targetId(activityLogRequest.getTargetId())
-                .customMessage(activityLogRequest.getCustomMessage())
+                .activityType(request.activityType())
+                .targetId(request.targetId())
+                .customMessage(request.customMessage())
                 .build();
         activityLogRepository.save(activityLog);
     }
 
-    public ScrollResponse<ActivityLogListResponse> getActivityLogs(Long lastActivityLogId, Long memberId, Pageable pageable) {
+    public ScrollResponse<ActivityLogResponse.List> getActivityLogs(Long lastActivityLogId, Long memberId, Pageable pageable) {
 
         List<ActivityLog> activityLogs = activityLogRepository.searchActivityLogsByCondition(lastActivityLogId, memberId, pageable);
 
-        List<ActivityLogListResponse> activityLogListResponses = activityLogs.stream()
-                .map(ActivityLogListResponse::from)
+        List<ActivityLogResponse.List> activityLogResponses = activityLogs.stream()
+                .map(ActivityLogResponse.List::from)
                 .toList();
 
-        return ScrollResponse.of(activityLogListResponses, pageable.getPageSize(), ActivityLogListResponse::id);
+        return ScrollResponse.of(activityLogResponses, pageable.getPageSize(), ActivityLogResponse.List::id);
     }
 }

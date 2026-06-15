@@ -1,9 +1,6 @@
 package io.streak.habitflow.domain.project.api;
 
-import io.streak.habitflow.domain.project.dto.request.ProjectCreateRequest;
-import io.streak.habitflow.domain.project.dto.request.ProjectInviteRequest;
-import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
-import io.streak.habitflow.domain.project.dto.response.ProjectMemberListResponse;
+import io.streak.habitflow.domain.project.dto.request.ProjectRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.service.ProjectService;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
@@ -36,31 +33,31 @@ public class ProjectController {
     @ApiResponses(value={
             @ApiResponse(responseCode = "201",description = "프로젝트 생성 성공")
     })
-    public ResponseEntity<ProjectResponse> createProject(@RequestBody ProjectCreateRequest projectCreateRequest,
+    public ResponseEntity<ProjectResponse.Detail> createProject(@RequestBody ProjectRequest.Create request,
                                                          @AuthenticationPrincipal UserPrincipal userPrincipal) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(projectService.createProject(projectCreateRequest, userPrincipal.getMemberId()));
+                .body(projectService.createProject(request, userPrincipal.getMemberId()));
     }
 
     @GetMapping("/{projectId}")
     @Operation(summary = "프로젝트 상세 조회")
-    public ResponseEntity<ProjectResponse> getProjectById(@PathVariable Long projectId,
+    public ResponseEntity<ProjectResponse.Detail> getProjectById(@PathVariable Long projectId,
                                                           @AuthenticationPrincipal UserPrincipal userPrincipal) {
         return ResponseEntity.ok(projectService.getProjectById(projectId,userPrincipal.getMemberId()));
     }
 
     @GetMapping
     @Operation(summary = "프로젝트 다건 조회")
-    public ResponseEntity<List<ProjectListResponse>> getProjectsByMember(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+    public ResponseEntity<List<ProjectResponse.List>> getProjectsByMember(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         return ResponseEntity.ok(projectService.getProjectsByMember(userPrincipal.getMemberId()));
     }
 
     @PutMapping("/{projectId}")
     @Operation(summary = "프로젝트 업데이트")
-    public ResponseEntity<Void> updateProject(@RequestBody ProjectCreateRequest projectCreateRequest,
+    public ResponseEntity<Void> updateProject(@RequestBody ProjectRequest.Create request,
                                                          @PathVariable Long projectId,
                                                          @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        projectService.updateProject(projectCreateRequest,projectId,userPrincipal.getMemberId());
+        projectService.updateProject(request,projectId,userPrincipal.getMemberId());
         return ResponseEntity.noContent().build();
     }
 
@@ -82,7 +79,7 @@ public class ProjectController {
 
     @GetMapping("/search")
     @Operation(summary = "프로젝트 검색")
-    public ResponseEntity<List<ProjectListResponse>> searchProjects(@AuthenticationPrincipal UserPrincipal userPrincipal,
+    public ResponseEntity<List<ProjectResponse.List>> searchProjects(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                                     @RequestParam("keyword") String keyword,
                                                                     @PageableDefault(size=20) Pageable pageable){
         return ResponseEntity.ok(projectService.searchProjects(keyword,userPrincipal.getMemberId(),pageable));
@@ -90,13 +87,13 @@ public class ProjectController {
 
     @PostMapping("/invitation")
     public ResponseEntity<Void> invite(@AuthenticationPrincipal UserPrincipal userPrincipal,
-                                       @RequestBody ProjectInviteRequest projectInviteRequest){
-        projectService.invite(projectInviteRequest, userPrincipal.getMemberId());
+                                       @RequestBody ProjectRequest.Invite request){
+        projectService.invite(request, userPrincipal.getMemberId());
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{projectId}/members")
-    public ResponseEntity<List<ProjectMemberListResponse>> getProjectMembers(@AuthenticationPrincipal UserPrincipal userPrincipal,
+    public ResponseEntity<List<ProjectResponse.Member>> getProjectMembers(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                                    @PathVariable Long projectId){
         return ResponseEntity.ok(projectService.getProjectMembers(projectId,userPrincipal.getMemberId()));
     }

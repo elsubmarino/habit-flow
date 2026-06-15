@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.task.repository;
 
+import io.streak.habitflow.domain.task.dto.query.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
-import io.streak.habitflow.domain.task.dto.response.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.TaskFilterType;

@@ -1,8 +1,6 @@
 package io.streak.habitflow.domain.label.api;
 
-import io.streak.habitflow.domain.label.dto.request.LabelCreateRequest;
-import io.streak.habitflow.domain.label.dto.request.LabelUpdateRequest;
-import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
+import io.streak.habitflow.domain.label.dto.request.LabelRequest;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.service.LabelService;
 import io.streak.habitflow.global.common.dto.ScrollResponse;
@@ -29,17 +27,17 @@ public class LabelController {
     @PostMapping
     @Operation(summary = "라벨 생성")
     @ApiResponses({@ApiResponse(responseCode = "201", description = "라벨 생성 성공")})
-    public ResponseEntity<LabelResponse> createLabel(
+    public ResponseEntity<LabelResponse.Detail> createLabel(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
-            @RequestBody LabelCreateRequest labelCreateRequest) {
+            @RequestBody LabelRequest.Create request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(labelService.createLabel(labelCreateRequest, userPrincipal.getMemberId()));
+                .body(labelService.createLabel(request, userPrincipal.getMemberId()));
     }
 
     @GetMapping
     @Operation(summary = "라벨 다건 조회")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "라벨 다건 조회 성공")})
-    public ResponseEntity<ScrollResponse<LabelListResponse>> getLabels(
+    public ResponseEntity<ScrollResponse<LabelResponse.List>> getLabels(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestParam(value = "lastLabelId",required = false) Long lastLabelId,
             @PageableDefault(size=20) Pageable pageable) {
@@ -49,7 +47,7 @@ public class LabelController {
     @GetMapping("/{labelId}")
     @Operation(summary = "라벨 상세 조회")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "라벨 상세 조회 성공")})
-    public ResponseEntity<LabelResponse> getLabelById(@PathVariable Long labelId,
+    public ResponseEntity<LabelResponse.Detail> getLabelById(@PathVariable Long labelId,
                                                       @AuthenticationPrincipal UserPrincipal userPrincipal) {
         return ResponseEntity.ok(labelService.getLabelById(labelId,userPrincipal.getMemberId()));
     }
@@ -59,8 +57,8 @@ public class LabelController {
     @ApiResponses({@ApiResponse(responseCode = "200", description = "라벨 업데이트 성공")})
     public ResponseEntity<Void> updateLabel(@PathVariable Long labelId,
                                                      @AuthenticationPrincipal UserPrincipal userPrincipal,
-                                                     @RequestBody LabelUpdateRequest labelUpdateRequest) {
-        labelService.updateLabel(labelId, labelUpdateRequest, userPrincipal.getMemberId());
+                                                     @RequestBody LabelRequest.Update request) {
+        labelService.updateLabel(labelId, request, userPrincipal.getMemberId());
         return ResponseEntity.noContent().build();
     }
 
@@ -76,7 +74,7 @@ public class LabelController {
     @GetMapping("/search")
     @Operation(summary = "라벨 검색")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "라벨 검색 성공")})
-    public ResponseEntity<List<LabelListResponse>> searchLabels(@RequestParam("keyword") String keyword) {
+    public ResponseEntity<List<LabelResponse.List>> searchLabels(@RequestParam("keyword") String keyword) {
         return ResponseEntity.ok(labelService.searchLabels(keyword));
     }
 }

@@ -2,7 +2,7 @@ package io.streak.habitflow.domain.task.service;
 
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
-import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
+import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;
@@ -10,8 +10,8 @@ import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
+import io.streak.habitflow.domain.task.dto.query.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
-import io.streak.habitflow.domain.task.dto.response.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
@@ -69,7 +69,7 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="SUB_TASK")
-    public TaskResponse createTask(TaskRequest.Create request, MultipartFile file, Long memberId){
+    public TaskResponse.Detail createTask(TaskRequest.Create request, MultipartFile file, Long memberId){
 
         Member member = memberRepository.getReferenceById(memberId);
 
@@ -161,18 +161,18 @@ public class TaskService {
                 "당신이 테스크 "+ savedTask.getName()+"을(를) 추가했습니다"
         ));
 
-        List<LabelListResponse> labelListResponses = savedTask.getTaskLabels()
+        List<LabelResponse.List> labelListResponses = savedTask.getTaskLabels()
                 .stream()
                 .map(taskLabel -> {
                     Label realLabel = taskLabel.getLabel();
-                    return LabelListResponse.from(realLabel);
+                    return LabelResponse.List.from(realLabel);
                 })
                 .toList();
 
-        return TaskResponse.of(savedTask, labelListResponses);
+        return TaskResponse.Detail.of(savedTask, labelListResponses);
     }
 
-    public TaskResponse getTaskById(Long taskId, Long memberId){
+    public TaskResponse.Detail getTaskById(Long taskId, Long memberId){
         Task task = taskRepository.findByIdWithProject(taskId)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 테스크입니다."));
 
@@ -180,11 +180,11 @@ public class TaskService {
             throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
         }
 
-        List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
-                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
+        List<LabelResponse.List> labelListResponses = task.getTaskLabels().stream()
+                .map(taskLabel -> LabelResponse.List.from(taskLabel.getLabel()))
                 .toList();
 
-        return TaskResponse.of(task, labelListResponses);
+        return TaskResponse.Detail.of(task, labelListResponses);
     }
 
     @CheckOwnership(type="PROJECT")
@@ -249,16 +249,12 @@ public class TaskService {
                     sb.toString()
             ));
         }
-
-        List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
-                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
-                .toList();
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @DistributedLock(key = "#taskId")
-    public TaskResponse toggleCompletion(Long taskId, Long memberId){
+    public void toggleCompletion(Long taskId, Long memberId){
         Task task = taskRepository.findById(taskId)
                  .orElseThrow();
 
@@ -288,14 +284,7 @@ public class TaskService {
                     activityType,
                     "당신이 테스크 "+ task.getName()+"을(를) "+statusText
             ));
-        }
-
-
-        List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
-                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
-                .toList();
-
-        return TaskResponse.of(task,labelListResponses);
+        };
     }
 
     public long getTaskCount(TaskFilterType taskFilterType, Long memberId){
@@ -339,7 +328,7 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse updateTaskDueDate(Long taskId, TaskRequest.UpdateDueDate request, Long memberId){
+    public void updateTaskDueDate(Long taskId, TaskRequest.UpdateDueDate request, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
@@ -357,18 +346,12 @@ public class TaskService {
                 ActivityType.UPDATED,
                 "당신이 테스크 "+ task.getName()+"의 날짜를 "+ task.getDueDate()+"으로 변경했습니다."
         ));
-
-        List<LabelListResponse> labelListResponses = task.getTaskLabels()
-                .stream()
-                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
-                .toList();
-        return TaskResponse.of(task, labelListResponses);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
+    public void updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
         task.updatePriorityType(taskPriorityType);
@@ -380,25 +363,18 @@ public class TaskService {
                 ActivityType.UPDATED,
                 "당신이 테스크 "+ task.getName()+"의 우선순위를 "+ task.getTaskPriorityType().name()+"으로 변경했습니다."
         ));
-
-
-        List<LabelListResponse> labelListResponses = task.getTaskLabels()
-                .stream()
-                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
-                .toList();
-        return TaskResponse.of(task,labelListResponses);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse updateTaskLabels(Long taskId, List<Long> labelIds, Long memberId){
+    public void updateTaskLabels(Long taskId, List<Long> labelIds, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
         if(labelIds == null || labelIds.isEmpty()){
             task.getSubTasks().clear();
-            return TaskResponse.of(task, new ArrayList<>());
+            return;
         }
 
         List<Label> realLabels  =labelRepository.findAllById(labelIds);
@@ -419,20 +395,13 @@ public class TaskService {
                 "당신이 테스크 "+ task.getName()+"의 라벨을 "+realLabels.stream().map(Label::getName)
                         .collect(Collectors.joining(", "))+"으로 변경했습니다."
         ));
-
-
-        List<LabelListResponse> labelListResponses = task.getTaskLabels()
-                .stream()
-                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
-                .toList();
-        return TaskResponse.of(task, labelListResponses);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public TaskResponse updateProject(Long taskId, Long projectId, Long memberId){
+    public void updateProject(Long taskId, Long projectId, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
@@ -451,11 +420,6 @@ public class TaskService {
                 "당신이 테스크 "+ task.getName()+"를 "+
                         ((task.getProject() != null) ? task.getProject().getName() : "관리함") +"으로 이동시켰습니다."
         ));
-        List<LabelListResponse> labelListResponses = task.getTaskLabels()
-                .stream()
-                .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
-                .toList();
-        return TaskResponse.of(task, labelListResponses);
     }
 
 }

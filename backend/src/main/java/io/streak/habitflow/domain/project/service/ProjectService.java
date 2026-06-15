@@ -8,10 +8,8 @@ import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.notification.dto.request.NotificationRequest;
 import io.streak.habitflow.domain.notification.service.NotificationService;
 import io.streak.habitflow.domain.notification.type.NotificationType;
-import io.streak.habitflow.domain.project.dto.request.ProjectCreateRequest;
-import io.streak.habitflow.domain.project.dto.request.ProjectInviteRequest;
-import io.streak.habitflow.domain.project.dto.response.ProjectListResponse;
-import io.streak.habitflow.domain.project.dto.response.ProjectMemberListResponse;
+import io.streak.habitflow.domain.project.dto.query.ProjectListQuery;
+import io.streak.habitflow.domain.project.dto.request.ProjectRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
@@ -41,16 +39,16 @@ public class ProjectService {
     private final NotificationService notificationService;
 
     @Transactional
-    public ProjectResponse createProject(ProjectCreateRequest projectCreateRequest,
+    public ProjectResponse.Detail createProject(ProjectRequest.Create request,
                                          Long memberId) {
         Project.ProjectBuilder projectBuilder = Project.builder()
-                .name(projectCreateRequest.getName())
-                .color(projectCreateRequest.getColor())
-                .accessType(projectCreateRequest.getAccessType())
-                .layoutType(projectCreateRequest.getLayoutType());
+                .name(request.name())
+                .color(request.color())
+                .accessType(request.accessType())
+                .layoutType(request.layoutType());
 
-        if(projectCreateRequest.getParentId() != null){
-            Project parentProject = projectRepository.findById(projectCreateRequest.getParentId())
+        if(request.parentId() != null){
+            Project parentProject = projectRepository.findById(request.parentId())
                     .orElseThrow(()->new IllegalArgumentException("부모 프로젝트가 존재하지 않습니다."));
             projectBuilder.parent(parentProject);
         }
@@ -68,7 +66,7 @@ public class ProjectService {
                 .build();
         projectMemberRepository.save(projectMember);
 
-        if(projectCreateRequest.isFavorite()){
+        if(request.favorite()){
             Favorite favorite = Favorite.builder()
                     .targetType(TargetType.PROJECT)
                     .targetId(savedProject.getId())
@@ -90,31 +88,31 @@ public class ProjectService {
                 "당신이 프로젝트 "+project.getName()+"을(를) 추가했습니다"
         ));
 
-        return ProjectResponse.of(savedProject, projectCreateRequest.isFavorite());
+        return ProjectResponse.Detail.of(savedProject, request.favorite());
     }
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public void updateProject(ProjectCreateRequest projectCreateRequest, Long projectId, Long memberId) {
+    public void updateProject(ProjectRequest.Create request, Long projectId, Long memberId) {
         Project project =  projectRepository.findById(projectId)
                 .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
 
         Member member = memberRepository.getReferenceById(memberId);
 
         Project parentProject = null;
-        if(projectCreateRequest.getParentId() != null){
-            parentProject = projectRepository.findById(projectCreateRequest.getParentId())
+        if(request.parentId() != null){
+            parentProject = projectRepository.findById(request.parentId())
                     .orElseThrow(()->new IllegalArgumentException("부모 프로젝트가 존재하지 않습니다."));
         }
 
 
-        project.updateProject(projectCreateRequest.getName(),
-                projectCreateRequest.getColor(),
-                projectCreateRequest.getAccessType(),
-                projectCreateRequest.getLayoutType(),
+        project.updateProject(request.name(),
+                request.color(),
+                request.accessType(),
+                request.layoutType(),
                 parentProject);
 
-        if(projectCreateRequest.isFavorite()){
+        if(request.favorite()){
             Favorite favorite = Favorite.builder()
                     .targetType(TargetType.PROJECT)
                     .targetId(project.getId())
@@ -139,7 +137,7 @@ public class ProjectService {
 
     }
 
-    public ProjectResponse getProjectById(Long projectId, Long memberId) {
+    public ProjectResponse.Detail getProjectById(Long projectId, Long memberId) {
        Project project = projectRepository.findById(projectId)
                .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
        boolean isFavorite = false;
@@ -148,11 +146,14 @@ public class ProjectService {
        if(favorite.isPresent()){
            isFavorite = true;
        }
-       return ProjectResponse.of(project,isFavorite);
+       return ProjectResponse.Detail.of(project,isFavorite);
     }
 
-    public List<ProjectListResponse> getProjectsByMember(Long memberId) {
-        return projectRepository.findByMemberId(memberId);
+    public List<ProjectResponse.List> getProjectsByMember(Long memberId) {
+        List<ProjectListQuery> projectListQueries = projectRepository.findByMemberId(memberId);
+        return projectListQueries.stream()
+                .map(ProjectResponse.List::from)
+                .toList();
     }
 
 
@@ -176,20 +177,23 @@ public class ProjectService {
 
     }
 
-    public List<ProjectListResponse> searchProjects(String keyword, Long memberId, Pageable pageable) {
-        return projectRepository.searchKeyword(keyword,memberId, pageable);
+    public List<ProjectResponse.List> searchProjects(String keyword, Long memberId, Pageable pageable) {
+        List<ProjectListQuery> projectListQueries = projectRepository.searchKeyword(keyword,memberId, pageable);
+        return projectListQueries.stream()
+                .map(ProjectResponse.List::from)
+                .toList();
     }
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public void invite(ProjectInviteRequest projectInviteRequest, Long memberId){
-        Project project = projectRepository.findById(projectInviteRequest.getId())
+    public void invite(ProjectRequest.Invite inviteRequest, Long memberId){
+        Project project = projectRepository.findById(inviteRequest.id())
                 .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
 
         Member inviter = memberRepository.findById(memberId)
                 .orElseThrow(()->new IllegalArgumentException("초대자 정보가 올바르지 않습니다."));
 
-        List<String> inviteEmails  = projectInviteRequest.getEmails();
+        List<String> inviteEmails  = inviteRequest.emails();
         if(inviteEmails == null || inviteEmails.isEmpty()) return;
 
         List<Member> inviteMembers = memberRepository.findByEmailIn(inviteEmails);
@@ -208,16 +212,16 @@ public class ProjectService {
         projectMemberRepository.saveAll(projectMembers);
 
         for(Member targetMember: inviteMembers){
-            NotificationRequest notificationRequest = NotificationRequest.builder()
+            NotificationRequest.Create request = NotificationRequest.Create.builder()
                     .targetId(project.getId())
                     .notificationType(NotificationType.PROJECT)
                     .activityType(ActivityType.INVITED)
                     .customMessage(inviter.getName()+" 님이 ["+project.getName()+"] 프로젝트에 당신을 초대했습니다.")
                     .build();
-            notificationService.createNotification(notificationRequest, targetMember.getId(),memberId );
+            notificationService.createNotification(request, targetMember.getId(),memberId );
 
 
-            NotificationRequest joinedRequest = NotificationRequest.builder()
+            NotificationRequest.Create joinedRequest = NotificationRequest.Create.builder()
                     .targetId(project.getId())
                     .notificationType(NotificationType.PROJECT)
                     .activityType(ActivityType.JOINED)
@@ -231,12 +235,12 @@ public class ProjectService {
 
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public List<ProjectMemberListResponse> getProjectMembers(Long projectId,Long memberId) {
+    public List<ProjectResponse.Member> getProjectMembers(Long projectId,Long memberId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow();
         List<ProjectMember> projectMembers = projectMemberRepository.findByProject(project);
         return projectMembers.stream()
-                .map(ProjectMemberListResponse::from)
+                .map(ProjectResponse.Member::from)
                 .toList();
     }
 }

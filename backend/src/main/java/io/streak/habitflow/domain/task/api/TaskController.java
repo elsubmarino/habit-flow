@@ -38,7 +38,7 @@ public class TaskController {
     @ApiResponses(value={
             @ApiResponse(responseCode = "201",description = "테스크 생성 성공")
     })
-    public ResponseEntity<TaskResponse> createTask(@AuthenticationPrincipal UserPrincipal userPrincipal,
+    public ResponseEntity<TaskResponse.Detail> createTask(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                    @RequestPart(value = "file", required = false) MultipartFile file,
                                                    @RequestPart("taskRequest") @Valid TaskRequest.Create request){
         return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(request, file, userPrincipal.getMemberId()));
@@ -57,31 +57,31 @@ public class TaskController {
     @PatchMapping("/{taskId}/priority")
     @Operation(summary = "우선순위 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "우선순위 업데이트 성공")})
-    public ResponseEntity<TaskResponse> updatePriority(@PathVariable Long taskId,
+    public ResponseEntity<Void> updatePriority(@PathVariable Long taskId,
                                                           @RequestBody TaskRequest.UpdatePriority request,
                                                           @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        TaskResponse taskResponse = taskService.updatePriority(taskId, request.taskPriorityType(), userPrincipal.getMemberId());
-        return ResponseEntity.ok(taskResponse);
+        taskService.updatePriority(taskId, request.taskPriorityType(), userPrincipal.getMemberId());
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{taskId}/labels")
     @Operation(summary = "라벨 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "라벨 업데이트 성공")})
-    public ResponseEntity<TaskResponse> updateLabels(@PathVariable Long taskId,
+    public ResponseEntity<Void> updateLabels(@PathVariable Long taskId,
                                                        @RequestBody TaskRequest.UpdateLabel request,
                                                        @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        TaskResponse taskResponse = taskService.updateTaskLabels(taskId, request.labelIds(), userPrincipal.getMemberId());
-        return ResponseEntity.ok(taskResponse);
+        taskService.updateTaskLabels(taskId, request.labelIds(), userPrincipal.getMemberId());
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{taskId}/project")
     @Operation(summary = "테스크가 속한 프로젝트 이동")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크가 속한 프로젝트 이동 성공")})
-    public ResponseEntity<TaskResponse> updateProject(@PathVariable Long taskId,
+    public ResponseEntity<Void> updateProject(@PathVariable Long taskId,
                                                       @RequestBody TaskRequest.UpdateProject request,
                                                       @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        TaskResponse taskResponse = taskService.updateProject(taskId, request.projectId(), userPrincipal.getMemberId());
-        return ResponseEntity.ok(taskResponse);
+        taskService.updateProject(taskId, request.projectId(), userPrincipal.getMemberId());
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{taskId}")
@@ -96,7 +96,7 @@ public class TaskController {
     @GetMapping("/{taskId}/comments")
     @Operation(summary = "테스크에 속한 댓글 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크에 속한 댓글 조회 성공")})
-    public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long taskId) {
+    public ResponseEntity<List<CommentResponse.Detail>> getComments(@PathVariable Long taskId) {
         return ResponseEntity.ok(commentService.getComments(taskId));
     }
 
@@ -112,7 +112,7 @@ public class TaskController {
     @GetMapping("/{taskId}")
     @Operation(summary = "테스크 상세 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 상세 조회 성공")})
-    public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long taskId,
+    public ResponseEntity<TaskResponse.Detail> getTaskById(@PathVariable Long taskId,
                                                     @AuthenticationPrincipal UserPrincipal userPrincipal) {
         return ResponseEntity.ok(taskService.getTaskById(taskId,userPrincipal.getMemberId()));
     }
@@ -156,19 +156,20 @@ public class TaskController {
     @PatchMapping("/{taskId}/due-date")
     @Operation(summary = "만료일 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "만료일 업데이트 성공")})
-    public ResponseEntity<TaskResponse> updateTaskDueDate(@PathVariable Long taskId,
+    public ResponseEntity<Void> updateTaskDueDate(@PathVariable Long taskId,
                                                           @RequestBody TaskRequest.UpdateDueDate request,
                                                           @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        TaskResponse taskResponse = taskService.updateTaskDueDate(taskId, request, userPrincipal.getMemberId());
-        return ResponseEntity.ok(taskResponse);
+        taskService.updateTaskDueDate(taskId, request, userPrincipal.getMemberId());
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{taskId}/toggle")
     @Operation(summary = "테스크 토글(완료/미완료)")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 토글(완료/미완료) 성공")})
-    public ResponseEntity<TaskResponse> toggleCompletion(@AuthenticationPrincipal UserPrincipal userPrincipal,
+    public ResponseEntity<Void> toggleCompletion(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                          @PathVariable Long taskId) {
-        return ResponseEntity.ok(taskService.toggleCompletion(taskId,userPrincipal.getMemberId()));
+        taskService.toggleCompletion(taskId,userPrincipal.getMemberId());
+        return ResponseEntity.noContent().build();
     }
 
 }

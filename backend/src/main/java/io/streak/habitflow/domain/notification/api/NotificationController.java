@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.notification.api;
 
 import io.streak.habitflow.domain.notification.dto.request.NotificationRequest;
-import io.streak.habitflow.domain.notification.dto.response.NotificationListResponse;
+import io.streak.habitflow.domain.notification.dto.response.NotificationResponse;
 import io.streak.habitflow.domain.notification.service.NotificationService;
 import io.streak.habitflow.global.infra.sse.SseEmitters;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
@@ -25,7 +25,7 @@ public class NotificationController {
 
     @GetMapping
     @Operation(summary = "알림 다건 조회")
-    public ResponseEntity<List<NotificationListResponse>> getNotifications(@AuthenticationPrincipal UserPrincipal userPrincipal
+    public ResponseEntity<List<NotificationResponse.List>> getNotifications(@AuthenticationPrincipal UserPrincipal userPrincipal
                                                                        ) {
         return ResponseEntity.ok(notificationService.getNotifications(userPrincipal.getMemberId()));
     }
@@ -33,9 +33,9 @@ public class NotificationController {
     @PutMapping("/{notificationId}/confirm")
     @Operation(summary = "알림 확인")
     public ResponseEntity<Void> confirmNotification(@PathVariable Long notificationId,
-                                                    @RequestBody NotificationRequest notificationRequest,
+                                                    @RequestBody NotificationRequest.Create request,
                                                     @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        notificationService.confirmNotification(notificationId, notificationRequest, userPrincipal.getMemberId());
+        notificationService.confirmNotification(notificationId, request, userPrincipal.getMemberId());
         return ResponseEntity.noContent().build();
     }
 

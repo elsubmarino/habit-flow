@@ -25,12 +25,12 @@ public class CommentController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "댓글 생성")
     @ApiResponses({@ApiResponse(responseCode = "201", description = "댓글 성공")})
-    public ResponseEntity<CommentResponse> createComment(
+    public ResponseEntity<CommentResponse.Detail> createComment(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestPart(value="file",required = false) MultipartFile file,
-            @RequestPart("commentRequest") @Valid CommentRequest commentRequest) {
+            @RequestPart("commentRequest") @Valid CommentRequest.Create request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body( commentService.createComment(commentRequest,file,userPrincipal.getMemberId()));
+                .body( commentService.createComment(request,file,userPrincipal.getMemberId()));
     }
 
     @PutMapping("/{commentId}")
@@ -38,8 +38,8 @@ public class CommentController {
     @ApiResponses({@ApiResponse(responseCode = "200", description = "댓글 업데이트 성공")})
     public ResponseEntity<Void> updateComment(@PathVariable Long commentId,
                                                          @AuthenticationPrincipal UserPrincipal userPrincipal,
-                                                         @RequestBody CommentRequest commentRequest) {
-        commentService.updateComment(commentId, commentRequest, userPrincipal.getMemberId());
+                                                         @RequestBody CommentRequest.Update request) {
+        commentService.updateComment(commentId, request, userPrincipal.getMemberId());
         return ResponseEntity.noContent().build();
     }
 

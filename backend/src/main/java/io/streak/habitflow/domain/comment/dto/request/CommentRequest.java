@@ -1,16 +1,13 @@
 package io.streak.habitflow.domain.comment.dto.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-
-@Getter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class CommentRequest {
-    private Long id;
-    private String content;
-    private Long taskId;
+public final class CommentRequest {
+    public record Create(
+            String content,
+            Long taskId
+    ){}
+    public record Update(
+            Long id,
+            String content,
+            Long taskId
+    ){}
 }

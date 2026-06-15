@@ -20,13 +20,13 @@ public class ActivityLogEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleChanged(TaskChangedEvent taskChangedEvent) {
         log.info("[Async Event Check] 현재 쓰레드 : {} -> 로그 저장 시작", Thread.currentThread().getName());
-        ActivityLogRequest activityLogRequest = ActivityLogRequest.builder()
+        ActivityLogRequest.Create request = ActivityLogRequest.Create.builder()
                 .targetId(taskChangedEvent.targetId())
                 .targetType(taskChangedEvent.targetType())
                 .activityType(taskChangedEvent.activityType())
                 .customMessage(taskChangedEvent.customMessage())
                 .build();
-        activityLogService.create(activityLogRequest, taskChangedEvent.memberId());
+        activityLogService.create(request, taskChangedEvent.memberId());
     }
 
 }

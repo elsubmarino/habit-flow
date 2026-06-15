@@ -1,8 +1,6 @@
 package io.streak.habitflow.domain.member.api;
 
-import io.streak.habitflow.domain.member.dto.request.MemberLoginRequest;
-import io.streak.habitflow.domain.member.dto.request.MemberSignUpRequest;
-import io.streak.habitflow.domain.member.dto.request.MemberUpdateRequest;
+import io.streak.habitflow.domain.member.dto.request.MemberRequest;
 import io.streak.habitflow.domain.member.dto.response.MemberResponse;
 import io.streak.habitflow.domain.member.service.MemberService;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
@@ -28,16 +26,16 @@ public class MemberController {
     @PostMapping
     @Operation(summary = "회원 가입")
     @ApiResponses({@ApiResponse(responseCode = "201", description = "회원 가입 성공")})
-    public ResponseEntity<MemberResponse> createMember(@RequestBody MemberSignUpRequest memberSignUpRequest){
+    public ResponseEntity<MemberResponse.Detail> createMember(@RequestBody MemberRequest.SignUp request){
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(memberService.createMember(memberSignUpRequest));
+                .body(memberService.createMember(request));
     }
 
     @GetMapping
     @Operation(summary="회원 정보 조회")
     @ApiResponses({@ApiResponse(responseCode = "200",description = "회원 정보 조회 성공")})
-    public ResponseEntity<MemberResponse> getMember(@AuthenticationPrincipal UserPrincipal userPrincipal){
-        MemberResponse memberResponse = memberService.getMember(userPrincipal.getMemberId());
+    public ResponseEntity<MemberResponse.Detail> getMember(@AuthenticationPrincipal UserPrincipal userPrincipal){
+        MemberResponse.Detail memberResponse = memberService.getMember(userPrincipal.getMemberId());
         return ResponseEntity.ok(memberResponse);
     }
 
@@ -45,17 +43,17 @@ public class MemberController {
     @Operation(summary = "회원 정보 업데이트")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 정보 업데이트 성공")})
     public ResponseEntity<Void> updateMember(@PathVariable Long memberId,
-                                                       @RequestBody MemberUpdateRequest memberUpdateRequest,
+                                                       @RequestBody MemberRequest.Update request,
                                                        @AuthenticationPrincipal UserPrincipal userPrincipal){
-        memberService.updateMember(memberId,memberUpdateRequest,userPrincipal.getMemberId());
+        memberService.updateMember(memberId,request,userPrincipal.getMemberId());
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/login")
     @Operation(summary = "회원 로그인")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 로그인 성공")})
-    public ResponseEntity<Map<String, String>> loginMember(@RequestBody MemberLoginRequest memberLoginRequest){
-        Map<String, String> result = memberService.login(memberLoginRequest);
+    public ResponseEntity<Map<String, String>> loginMember(@RequestBody MemberRequest.Login request){
+        Map<String, String> result = memberService.login(request);
         return ResponseEntity.ok(result);
     }
 

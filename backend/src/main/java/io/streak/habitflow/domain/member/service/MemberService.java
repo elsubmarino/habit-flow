@@ -1,8 +1,6 @@
 package io.streak.habitflow.domain.member.service;
 
-import io.streak.habitflow.domain.member.dto.request.MemberLoginRequest;
-import io.streak.habitflow.domain.member.dto.request.MemberSignUpRequest;
-import io.streak.habitflow.domain.member.dto.request.MemberUpdateRequest;
+import io.streak.habitflow.domain.member.dto.request.MemberRequest;
 import io.streak.habitflow.domain.member.dto.response.MemberResponse;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
@@ -28,38 +26,38 @@ public class MemberService {
     private final RedisTemplate<String, String> redisTemplate;
 
     @Transactional
-    public MemberResponse createMember(MemberSignUpRequest memberSignUpRequest){
+    public MemberResponse.Detail createMember(MemberRequest.SignUp request){
         Member member = Member.builder()
-                .email(memberSignUpRequest.getEmail())
-                .name(memberSignUpRequest.getName())
-                .password(passwordEncoder.encode(memberSignUpRequest.getPassword()))
+                .email(request.email())
+                .name(request.name())
+                .password(passwordEncoder.encode(request.password()))
                 .role(Role.USER)
                 .build();
         Member result = memberRepository.save(member);
-        return MemberResponse.from(result);
+        return MemberResponse.Detail.from(result);
     }
 
     @Transactional
     @CheckOwnership(type = "MEMBER")
     @SuppressWarnings("unused")
-    public void updateMember(Long memberId,MemberUpdateRequest  memberUpdateRequest,Long loginMemberId){
+    public void updateMember(Long memberId,MemberRequest.Update  request,Long loginMemberId){
         Member member = memberRepository.findById(memberId)
                 .orElseThrow();
 
-        member.updateMember(memberUpdateRequest.getPassword());
+        member.updateMember(request.password());
     }
 
-    public MemberResponse getMember(Long memberId){
+    public MemberResponse.Detail getMember(Long memberId){
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(()->new IllegalArgumentException("존재하지 않는 회원입니다."));
-        return MemberResponse.from(member);
+        return MemberResponse.Detail.from(member);
     }
 
     @Transactional
-    public Map<String, String> login(MemberLoginRequest memberLoginRequest){
-        Member member = memberRepository.findByEmail(memberLoginRequest.getEmail())
+    public Map<String, String> login(MemberRequest.Login request){
+        Member member = memberRepository.findByEmail(request.email())
                 .orElseThrow(()->new IllegalArgumentException("가입되지 않은 이메일입니다."));
-        if(!passwordEncoder.matches(memberLoginRequest.getPassword(),member.getPassword())){
+        if(!passwordEncoder.matches(request.password(),member.getPassword())){
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 

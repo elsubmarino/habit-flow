@@ -3,7 +3,7 @@ package io.streak.habitflow.domain.notification.service;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.notification.dto.request.NotificationRequest;
-import io.streak.habitflow.domain.notification.dto.response.NotificationListResponse;
+import io.streak.habitflow.domain.notification.dto.response.NotificationResponse;
 import io.streak.habitflow.domain.notification.entity.Notification;
 import io.streak.habitflow.domain.notification.repository.NotificationRepository;
 import io.streak.habitflow.global.aop.CheckOwnership;
@@ -23,40 +23,40 @@ public class NotificationService {
     private final MemberRepository memberRepository;
 
     @Transactional
-    public void createNotification(NotificationRequest notificationRequest, Long receiverId, Long actorId) {
+    public void createNotification(NotificationRequest.Create request, Long receiverId, Long actorId) {
         Member receiver = memberRepository.getReferenceById(receiverId);
         Member actor = memberRepository.getReferenceById(actorId);
 
         Notification notification = Notification.builder()
                 .receiver(receiver)
                 .actor(actor)
-                .targetId(notificationRequest.getTargetId())
-                .notificationType(notificationRequest.getNotificationType())
-                .activityType(notificationRequest.getActivityType())
-                .customMessage(notificationRequest.getCustomMessage())
+                .targetId(request.targetId())
+                .notificationType(request.notificationType())
+                .activityType(request.activityType())
+                .customMessage(request.customMessage())
                 .isConfirmed(false)
                 .build();
 
         Notification savedNotification = notificationRepository.save(notification);
 
-        NotificationListResponse notificationListResponse = NotificationListResponse.from(savedNotification);
+        NotificationResponse.List notificationListResponse = NotificationResponse.List.from(savedNotification);
         sseEmitters.sendToMember(receiverId,notificationListResponse);
     }
 
-    public List<NotificationListResponse> getNotifications(Long memberId) {
+    public List<NotificationResponse.List> getNotifications(Long memberId) {
         Member receiver = memberRepository.getReferenceById(memberId);
         List<Notification> notifications = notificationRepository.findByReceiver(receiver);
         return notifications.stream()
-                .map(NotificationListResponse::from)
+                .map(NotificationResponse.List::from)
                 .toList();
     }
 
     @Transactional
     @CheckOwnership(type="NOTIFICATION")
     @SuppressWarnings("unused")
-    public void confirmNotification(Long notificationId, NotificationRequest notificationRequest, Long memberId) {
+    public void confirmNotification(Long notificationId, NotificationRequest.Create request, Long memberId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow();
-        notification.confirmNotification(notificationRequest.isConfirmed());
+        notification.confirmNotification(request.isConfirmed());
     }
 }

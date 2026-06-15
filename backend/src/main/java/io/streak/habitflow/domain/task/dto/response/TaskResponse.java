@@ -1,89 +1,146 @@
 package io.streak.habitflow.domain.task.dto.response;
 
 import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
-import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
+import io.streak.habitflow.domain.label.dto.response.LabelResponse;
+import io.streak.habitflow.domain.task.dto.query.TaskListQuery;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import lombok.Builder;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.List;
 
-@Builder
-public record TaskResponse(
-        Long id,
-        String name,
-        String description,
-        boolean completed,
-        TaskPriorityType taskPriorityType,
-        LocalDate dueDate,
-        long sortOrder,
-        Long userId,
-        String userName,
-        Long projectId,
-        String projectName,
-        String projectColor,
-        Long parentId,
-        boolean recurring,
-        List<TaskResponse> subTasks,
-        List<LabelListResponse> labels,
-        List<CommentResponse> comments
-) {
-    public TaskResponse{
-        if(subTasks == null){
-            subTasks = new ArrayList<>();
+public final class TaskResponse{
+    @Builder
+    public record Detail(
+            Long id,
+            String name,
+            String description,
+            boolean completed,
+            TaskPriorityType taskPriorityType,
+            LocalDate dueDate,
+            long sortOrder,
+            Long userId,
+            String userName,
+            Long projectId,
+            String projectName,
+            String projectColor,
+            Long parentId,
+            boolean recurring,
+            java.util.List<Detail> subTasks,
+            java.util.List<LabelResponse.List> labels,
+            java.util.List<CommentResponse.Detail> comments
+    ) {
+        @Builder
+        public Detail{
+            if(subTasks == null){
+                subTasks = new ArrayList<>();
+            }
+            if(labels == null){
+                labels = new ArrayList<>();
+            }
+            if(comments == null){
+                comments = new ArrayList<>();
+            }
         }
-        if(labels == null){
-            labels = new ArrayList<>();
+        public static Detail of(Task task, java.util.List<LabelResponse.List> labelListResponses) {
+            DetailBuilder builder = Detail.builder()
+                    .id(task.getId())
+                    .name(task.getName())
+                    .description(task.getDescription())
+                    .completed(task.isCompleted())
+                    .taskPriorityType(task.getTaskPriorityType())
+                    .dueDate(task.getDueDate())
+                    .sortOrder(task.getSortOrder())
+                    .labels(labelListResponses)
+                    .recurring(task.isRecurring())
+                    .subTasks(task.getSubTasks().stream()
+                            .map(Detail::fromSimpleSubTask)
+                            .toList());
+
+
+            if(task.getProject() != null){
+                builder.projectId(task.getProject().getId())
+                        .projectName(task.getProject().getName())
+                        .projectColor(task.getProject().getColor());
+            }else{
+                builder.projectId(null)
+                        .projectName("관리함")
+                        .projectColor("#808080");
+            }
+
+            if(task.getMember() != null){
+                builder.userId(task.getMember().getId());
+            }
+
+            if(task.getParent() != null){
+                builder.parentId(task.getParent().getId());
+            }
+
+
+            return builder.build();
         }
-        if(comments == null){
-            comments = new ArrayList<>();
+
+        private static Detail fromSimpleSubTask(Task subTask){
+            return Detail.builder()
+                    .id(subTask.getId())
+                    .name(subTask.getName())
+                    .completed(subTask.isCompleted())
+                    .build();
         }
     }
-    public static TaskResponse of(Task task, List<LabelListResponse> labelListResponses) {
-        TaskResponseBuilder builder = TaskResponse.builder()
-                .id(task.getId())
-                .name(task.getName())
-                .description(task.getDescription())
-                .completed(task.isCompleted())
-                .taskPriorityType(task.getTaskPriorityType())
-                .dueDate(task.getDueDate())
-                .sortOrder(task.getSortOrder())
-                .labels(labelListResponses)
-                .recurring(task.isRecurring())
-                .subTasks(task.getSubTasks().stream()
-                        .map(TaskResponse::fromSimpleSubTask)
-                        .toList());
 
-
-        if(task.getProject() != null){
-            builder.projectId(task.getProject().getId())
-                    .projectName(task.getProject().getName())
-                    .projectColor(task.getProject().getColor());
-        }else{
-            builder.projectId(null)
-                    .projectName("관리함")
-                    .projectColor("#808080");
+    @Builder
+    public record List(
+            Long id,
+            String name,
+            String description,
+            TaskPriorityType taskPriorityType,
+            LocalDate dueDate,
+            long sortOrder,
+            String projectName,
+            long countSubTasks,
+            long countSubTasksCompleted,
+            long countComments,
+            java.util.List<LabelResponse.List> labels
+    ){
+        public List{
+            if(labels== null){
+                labels = new ArrayList<>();
+            }
         }
 
-        if(task.getMember() != null){
-            builder.userId(task.getMember().getId());
+        public static List of(TaskListQuery taskListQuery, java.util.List<LabelResponse.List> labelListResponses) {
+            return List.builder()
+                    .id(taskListQuery.getId())
+                    .name(taskListQuery.getName())
+                    .description(taskListQuery.getDescription())
+                    .taskPriorityType(taskListQuery.getTaskPriorityType())
+                    .dueDate(taskListQuery.getDueDate())
+                    .projectName(taskListQuery.getProjectName())
+                    .countSubTasks(taskListQuery.getCountSubTasks())
+                    .countSubTasksCompleted(taskListQuery.getCountSubTasksCompleted())
+                    .countComments(taskListQuery.getCountComments())
+                    .labels(labelListResponses)
+                    .build();
         }
 
-        if(task.getParent() != null){
-            builder.parentId(task.getParent().getId());
+        public static List of(Task task, java.util.List<LabelResponse.List> labelListResponses) {
+            ListBuilder builder = List.builder()
+                    .id(task.getId())
+                    .name(task.getName())
+                    .taskPriorityType(task.getTaskPriorityType())
+                    .sortOrder(task.getSortOrder())
+                    .labels(labelListResponses);
+            if(task.getProject() != null){
+                builder.projectName(task.getProject().getName());
+            }else{
+                builder.projectName("관리함");
+            }
+
+            return builder.build();
         }
-
-
-        return builder.build();
-    }
-
-    private static TaskResponse fromSimpleSubTask(Task subTask){
-        return TaskResponse.builder()
-                .id(subTask.getId())
-                .name(subTask.getName())
-                .completed(subTask.isCompleted())
-                .build();
     }
 }
+
+

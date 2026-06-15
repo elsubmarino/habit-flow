@@ -5,8 +5,8 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import io.streak.habitflow.domain.task.dto.query.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
-import io.streak.habitflow.domain.task.dto.response.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.QTask;
 import io.streak.habitflow.domain.task.entity.Task;
@@ -44,7 +44,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
 
     @Override
     public Optional<Task> searchTaskInfo(Long taskId) {
-        Task result =  queryFactory
+        Task result = queryFactory
                 .selectFrom(task)
                 .leftJoin(task.project, project).fetchJoin()
                 .where(task.id.eq(taskId))
@@ -55,6 +55,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     private BooleanExpression nameContains(String name) {
         return StringUtils.hasText(name) ? task.name.contains(name) : null;
     }
+
     private BooleanExpression descriptionContains(String description) {
         return StringUtils.hasText(description) ? task.description.contains(description) : null;
     }
@@ -93,10 +94,10 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         task.id.desc()
                 )
                 .offset(pageable.getOffset())
-                .limit(pageable.getPageSize()+1)
+                .limit(pageable.getPageSize() + 1)
                 .fetch();
 
-        if(ids.isEmpty()){
+        if (ids.isEmpty()) {
             return new ArrayList<>();
         }
 
@@ -116,16 +117,16 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                                 ExpressionUtils.as(
                                         JPAExpressions.select(subTask.count())
                                                 .from(subTask)
-                                                .where(subTask.parent.eq(task)),"countSubTasks"),
+                                                .where(subTask.parent.eq(task)), "countSubTasks"),
                                 ExpressionUtils.as(
                                         JPAExpressions.select(subTask.count())
                                                 .from(subTask)
                                                 .where(subTask.parent.eq(task)
-                                                        .and(subTask.completed.eq(true))),"countSubTasksCompleted"),
+                                                        .and(subTask.completed.eq(true))), "countSubTasksCompleted"),
                                 ExpressionUtils.as(
                                         JPAExpressions.select(comment.count())
                                                 .from(comment)
-                                                .where(comment.task.eq(task)),"countComments")
+                                                .where(comment.task.eq(task)), "countComments")
                         )
                 )
                 .from(task)
@@ -159,9 +160,9 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         task.id.desc()
                 )
                 .offset(pageable.getOffset())
-                .limit(pageable.getPageSize()+1)
+                .limit(pageable.getPageSize() + 1)
                 .fetch();
-        if(ids.isEmpty()){
+        if (ids.isEmpty()) {
             return new ArrayList<>();
         }
 
@@ -181,17 +182,17 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                                 ExpressionUtils.as(
                                         JPAExpressions.select(subTask.count())
                                                 .from(subTask)
-                                                .where(subTask.parent.eq(task)),"countSubTasks"),
+                                                .where(subTask.parent.eq(task)), "countSubTasks"),
                                 ExpressionUtils.as(
                                         JPAExpressions.select(subTask.count())
                                                 .from(subTask)
                                                 .where(subTask.parent.eq(task)
-                                                        .and(subTask.completed.eq(true))),"countSubTasksCompleted"),
+                                                        .and(subTask.completed.eq(true))), "countSubTasksCompleted"),
                                 ExpressionUtils.as(
                                         JPAExpressions.select(comment.count())
                                                 .from(comment)
-                                                .where(comment.task.eq(task)),"countComments")
-                                )
+                                                .where(comment.task.eq(task)), "countComments")
+                        )
                 )
                 .from(task)
                 .leftJoin(task.project, project)
@@ -208,26 +209,26 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     private BooleanExpression filterTypeEq(TaskFilterType taskFilterType) {
-        if(taskFilterType == null) return null;
+        if (taskFilterType == null) return null;
         LocalDate localDate = LocalDate.now();
-        if(TaskFilterType.TODAY == taskFilterType){
+        if (TaskFilterType.TODAY == taskFilterType) {
             return task.dueDate.isNotNull().and(task.dueDate.loe(localDate));
-        }else if(TaskFilterType.UPCOMING == taskFilterType){
+        } else if (TaskFilterType.UPCOMING == taskFilterType) {
             return task.dueDate.isNotNull();
-        }else if(TaskFilterType.INBOX == taskFilterType){
+        } else if (TaskFilterType.INBOX == taskFilterType) {
             return task.project.isNull();
         }
         return null;
     }
 
-    private BooleanExpression ltTaskId(Long taskId){
-        if(taskId == null) return null;
+    private BooleanExpression ltTaskId(Long taskId) {
+        if (taskId == null) return null;
         return task.id.lt(taskId);
     }
 
     @Override
     public long countTasksByCondition(TaskFilterType taskFilterType, Long memberId) {
-        Long totalCount =  queryFactory
+        Long totalCount = queryFactory
                 .select(task.count())
                 .from(task)
                 .where(
@@ -244,7 +245,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     public Optional<Task> findByIdWithProject(Long taskId) {
         return Optional.ofNullable(queryFactory
                 .selectFrom(task)
-                .leftJoin(task.project,project).fetchJoin()
+                .leftJoin(task.project, project).fetchJoin()
                 .where(task.id.eq(taskId))
                 .fetchOne());
     }

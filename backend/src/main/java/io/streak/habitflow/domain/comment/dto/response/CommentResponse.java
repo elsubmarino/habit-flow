@@ -7,23 +7,26 @@ import lombok.Builder;
 import java.util.ArrayList;
 import java.util.List;
 
-@Builder
-public record CommentResponse(
-        String content,
-        List<AttachmentResponse> attachments
-) {
-    public CommentResponse{
-        if(attachments == null){
-            attachments = new ArrayList<>();
+public final class CommentResponse{
+    @Builder
+    public record Detail(
+            String content,
+            List<AttachmentResponse.Detail> attachments
+    ) {
+        public Detail{
+            if(attachments == null){
+                attachments = new ArrayList<>();
+            }
+        }
+
+        public static Detail from(Comment comment) {
+            return Detail.builder()
+                    .content(comment.getContent())
+                    .attachments(comment.getAttachments().stream()
+                            .map(AttachmentResponse.Detail::from)
+                            .toList())
+                    .build();
         }
     }
-
-    public static CommentResponse from(Comment comment) {
-        return CommentResponse.builder()
-                .content(comment.getContent())
-                .attachments(comment.getAttachments().stream()
-                        .map(AttachmentResponse::from)
-                        .toList())
-                .build();
-    }
 }
+
