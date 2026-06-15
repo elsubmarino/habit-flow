@@ -44,11 +44,7 @@ function isOAuthCallbackPath(): boolean {
 
 function shouldSkipTokenRefresh(url?: string): boolean {
     if (!url) return false;
-    return (
-        url.includes('/api/members/login') ||
-        url.includes('/api/members/reissue') ||
-        url.includes('/api/members/logout')
-    );
+    return url.includes('/api/members/login') || url.includes('/api/members/reissue');
 }
 
 apiClient.interceptors.request.use(config => {
@@ -114,6 +110,7 @@ async function reissueTokensRequest(
 ): Promise<{ accessToken: string; refreshToken: string }> {
     const response = await fetch('/api/members/reissue', {
         method: 'POST',
+        credentials: 'include',
         headers: {
             Accept: 'application/json',
             'X-Refresh-Token': refreshToken,
@@ -131,6 +128,11 @@ async function reissueTokensRequest(
 
     if (!data.accessToken) {
         throw new Error('재발급 응답에 accessToken이 없습니다.');
+    }
+    if (!data.refreshToken && import.meta.env.DEV) {
+        console.warn(
+            '[auth] reissue 응답에 refreshToken이 없습니다. RTR 적용 시 두 번째 재발급부터 실패할 수 있습니다.',
+        );
     }
 
     return {

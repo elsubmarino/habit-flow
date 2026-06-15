@@ -21,18 +21,13 @@ const LabelsBrowseView: React.FC<LabelsBrowseViewProps> = ({
     onDeleteLabel,
 }) => {
     const [sectionExpanded, setSectionExpanded] = useState(true);
-    const [headerHover, setHeaderHover] = useState(false);
 
     return (
         <div className="labels-browse-page">
             <h1 className="labels-browse-title">라벨</h1>
 
             <section className="labels-browse-section">
-                <div
-                    className="labels-section-header"
-                    onMouseEnter={() => setHeaderHover(true)}
-                    onMouseLeave={() => setHeaderHover(false)}
-                >
+                <div className="labels-section-header">
                     <button
                         type="button"
                         className="labels-section-toggle"
@@ -42,16 +37,14 @@ const LabelsBrowseView: React.FC<LabelsBrowseViewProps> = ({
                         {sectionExpanded ? <ChevronDownIcon /> : <ChevronUpIcon />}
                     </button>
                     <span className="labels-section-title">라벨</span>
-                    {headerHover && (
-                        <button
-                            type="button"
-                            className="labels-section-add-btn"
-                            aria-label="라벨 추가"
-                            onClick={onAddLabel}
-                        >
-                            <PlusIcon />
-                        </button>
-                    )}
+                    <button
+                        type="button"
+                        className="labels-section-add-btn"
+                        aria-label="라벨 추가"
+                        onClick={onAddLabel}
+                    >
+                        <PlusIcon />
+                    </button>
                 </div>
 
                 {sectionExpanded && (

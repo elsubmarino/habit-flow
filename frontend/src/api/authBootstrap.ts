@@ -1,4 +1,8 @@
-import { getStoredAccessToken, setStoredTokens } from './client';
+import { getStoredAccessToken, getStoredRefreshToken, setStoredTokens } from './client';
+
+function hasStoredSession(): boolean {
+    return !!(getStoredAccessToken() || getStoredRefreshToken());
+}
 import { defaultAppPath } from '../utils/appRoutes';
 
 /** 백엔드 OAuth2LoginSuccessHandler 와 동일한 경로 */
@@ -24,7 +28,7 @@ export function bootstrapAuthFromCallback(): boolean {
         window.location.pathname.endsWith(OAUTH_CALLBACK_PATH);
 
     if (!isCallback) {
-        return !!getStoredAccessToken();
+        return hasStoredSession();
     }
 
     const tokens = readOAuthTokensFromUrl();
@@ -34,5 +38,5 @@ export function bootstrapAuthFromCallback(): boolean {
         return true;
     }
 
-    return !!getStoredAccessToken();
+    return hasStoredSession();
 }
