@@ -45,7 +45,6 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
                         ltLabelId(labelId)
                 )
                 .orderBy(label.id.desc())
-                .offset(pageable.getOffset())
                 .limit(pageable.getPageSize()+1)
                 .fetch();
     }

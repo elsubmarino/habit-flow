@@ -7,7 +7,6 @@ import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
-import io.streak.habitflow.global.common.dto.ScrollResponse;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -15,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -121,7 +121,7 @@ public class TaskController {
     @GetMapping("/inbox")
     @Operation(summary = "관리함 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "관리함 테스크 조회 성공")})
-    public ResponseEntity<ScrollResponse<TaskListResponse>> getInboxTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
+    public ResponseEntity<Slice<TaskListResponse>> getInboxTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                                           @PageableDefault(size=20) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.INBOX
@@ -133,8 +133,8 @@ public class TaskController {
     @GetMapping("/today")
     @Operation(summary = "오늘 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "오늘 테스크 조회 성공")})
-    public ResponseEntity<ScrollResponse<TaskListResponse>> getTodayTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
-                                                                          @PageableDefault(size=20) Pageable pageable) {
+    public ResponseEntity<Slice<TaskListResponse>> getTodayTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                                 @PageableDefault(size=20) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.TODAY
         );
@@ -144,7 +144,7 @@ public class TaskController {
     @GetMapping("/upcoming")
     @Operation(summary = "다가오는 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "다가오는 테스크 조회 성공")})
-    public ResponseEntity<ScrollResponse<TaskListResponse>> getUpcomingTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
+    public ResponseEntity<Slice<TaskListResponse>> getUpcomingTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
                                                                              @PageableDefault(size = 20) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.UPCOMING

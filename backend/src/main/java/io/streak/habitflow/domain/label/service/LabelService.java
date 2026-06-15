@@ -9,9 +9,10 @@ import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.global.common.dto.ScrollResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,14 +93,22 @@ public class LabelService {
                 request.color());
     }
 
-    public ScrollResponse<LabelResponse.List> getLabels(Long labelId, Long memberId, Pageable pageable) {
+    public Slice<LabelResponse.List> getLabels(Long labelId, Long memberId, Pageable pageable) {
+        int pageSize = pageable.getPageSize();
+
         List<Label> labels = labelRepository.searchLabelsByCondition(labelId,memberId,pageable);
+
+        boolean hasNext = false;
+        if(labels.size() > pageSize){
+            labels.remove(pageSize);
+            hasNext = true;
+        }
 
         List<LabelResponse.List> labelResponses =  labels.stream()
                 .map(LabelResponse.List::from)
                 .toList();
 
-        return ScrollResponse.of(labelResponses,pageable.getPageSize(),LabelResponse.List::id);
+        return new SliceImpl<>(labelResponses, pageable, hasNext);
     }
 
     @Transactional

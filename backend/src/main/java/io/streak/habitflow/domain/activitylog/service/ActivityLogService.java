@@ -7,9 +7,10 @@ import io.streak.habitflow.domain.activitylog.repository.ActivityLogRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
-import io.streak.habitflow.global.common.dto.ScrollResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,14 +37,21 @@ public class ActivityLogService {
         activityLogRepository.save(activityLog);
     }
 
-    public ScrollResponse<ActivityLogResponse.List> getActivityLogs(Long lastActivityLogId, Long memberId, Pageable pageable) {
+    public Slice<ActivityLogResponse.List> getActivityLogs(Long lastActivityLogId, Long memberId, Pageable pageable) {
+        int pageSize = pageable.getPageSize();
 
         List<ActivityLog> activityLogs = activityLogRepository.searchActivityLogsByCondition(lastActivityLogId, memberId, pageable);
+
+        boolean hasNext = false;
+        if(activityLogs.size() > pageSize){
+            activityLogs.remove(pageSize);
+            hasNext = true;
+        }
 
         List<ActivityLogResponse.List> activityLogResponses = activityLogs.stream()
                 .map(ActivityLogResponse.List::from)
                 .toList();
 
-        return ScrollResponse.of(activityLogResponses, pageable.getPageSize(), ActivityLogResponse.List::id);
+        return new SliceImpl<>(activityLogResponses, pageable ,hasNext);
     }
 }

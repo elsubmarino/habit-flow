@@ -3,13 +3,13 @@ package io.streak.habitflow.domain.label.api;
 import io.streak.habitflow.domain.label.dto.request.LabelRequest;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.service.LabelService;
-import io.streak.habitflow.global.common.dto.ScrollResponse;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +37,7 @@ public class LabelController {
     @GetMapping
     @Operation(summary = "라벨 다건 조회")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "라벨 다건 조회 성공")})
-    public ResponseEntity<ScrollResponse<LabelResponse.List>> getLabels(
+    public ResponseEntity<Slice<LabelResponse.List>> getLabels(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestParam(value = "lastLabelId",required = false) Long lastLabelId,
             @PageableDefault(size=20) Pageable pageable) {

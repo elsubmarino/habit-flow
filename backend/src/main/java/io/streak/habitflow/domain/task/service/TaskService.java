@@ -24,12 +24,13 @@ import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.DistributedLock;
-import io.streak.habitflow.global.common.dto.ScrollResponse;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -188,24 +189,37 @@ public class TaskService {
     }
 
     @CheckOwnership(type="PROJECT")
-    public ScrollResponse<TaskListResponse> getTasksByProject(Long projectId, Long memberId, Pageable pageable){
+    public Slice<TaskListResponse> getTasksByProject(Long projectId, Long memberId, Pageable pageable){
+        int pageSize = pageable.getPageSize();
+
         List<TaskListQuery> tasks = taskRepository.findTasksByProject(projectId,memberId,pageable);
+
+        boolean hasNext = false;
+        if(tasks.size() > pageSize){
+            tasks.remove(pageSize);
+            hasNext = true;
+        }
         List<TaskListResponse> taskListResponses =  tasks.stream()
                 .map(task->TaskListResponse.of(task,new ArrayList<>()))
                 .toList();
-
-        return ScrollResponse.of(taskListResponses,pageable.getPageSize(),TaskListResponse::id);
+        return new SliceImpl<>(taskListResponses,pageable,hasNext);
     }
 
-    public ScrollResponse<TaskListResponse> getTasks(TaskRequest.SearchCondition searchCondition, Long memberId, Pageable pageable){
-
+    public Slice<TaskListResponse> getTasks(TaskRequest.SearchCondition searchCondition, Long memberId, Pageable pageable){
+        int pageSize = pageable.getPageSize();
         List<TaskListQuery> tasks = taskRepository.searchTasksByCondition(searchCondition, memberId, pageable);
+
+        boolean hasNext = false;
+        if(tasks.size() > pageSize){
+            tasks.remove(pageSize);
+            hasNext = true;
+        }
 
         List<TaskListResponse> taskListResponses = tasks.stream()
                 .map(task->TaskListResponse.of(task,new ArrayList<>()))
                 .toList();
 
-        return ScrollResponse.of(taskListResponses,pageable.getPageSize(),TaskListResponse::id);
+        return new SliceImpl<>(taskListResponses,pageable,hasNext);
     }
 
     @Transactional
