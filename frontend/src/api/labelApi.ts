@@ -36,12 +36,11 @@ export async function createLabel(
     return data;
 }
 
-export async function updateLabel(labelId: number, payload: LabelUpdatePayload): Promise<LabelDetailDto> {
-    const { data } = await apiClient.put<LabelDetailDto>(
+export async function updateLabel(labelId: number, payload: LabelUpdatePayload): Promise<void> {
+    await apiClient.put(
         `/api/labels/${labelId}`,
         toLabelUpdateBody(labelId, payload),
     );
-    return data;
 }
 
 export async function deleteLabel(labelId: number): Promise<void> {

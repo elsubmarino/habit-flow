@@ -28,12 +28,11 @@ export async function fetchProjectById(projectId: number): Promise<ProjectDetail
     });
 }
 
-export async function updateProject(projectId: number, payload: ProjectUpdatePayload): Promise<ProjectDetailDto> {
-    const { data } = await apiClient.put<ProjectDetailDto>(
+export async function updateProject(projectId: number, payload: ProjectUpdatePayload): Promise<void> {
+    await apiClient.put(
         `/api/projects/${projectId}`,
         toProjectWriteBody(payload),
     );
-    return data;
 }
 
 export async function deleteProject(projectId: number): Promise<void> {

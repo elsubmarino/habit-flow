@@ -455,6 +455,31 @@ export const invalidateSidebarAggregates = createAsyncThunk(
     },
 );
 
+/** 현재 화면의 태스크 목록 캐시 무효화 후 재조회 */
+export const refetchCurrentTaskList = createAsyncThunk(
+    'habits/refetchCurrentTaskList',
+    async (_, { dispatch, getState }) => {
+        const { activeView, selectedProjectId, selectedLabelId } = (
+            getState() as { habits: HabitState }
+        ).habits;
+
+        if (selectedProjectId != null) {
+            await dispatch(fetchProjectHabits(selectedProjectId));
+            return;
+        }
+
+        if (activeView === 'report' || activeView === 'filters') {
+            return;
+        }
+
+        await dispatch(fetchHabits({
+            view: selectedLabelId != null ? 'all' : activeView,
+            projectId: null,
+            labelId: selectedLabelId,
+        }));
+    },
+);
+
 export const fetchHabitDetail = createAsyncThunk(
     'habits/fetchDetail',
     async (taskId: number) => {
@@ -514,10 +539,21 @@ export const updateProject = createAsyncThunk(
         accessType?: 'PRIVATE' | 'PUBLIC';
         layoutType?: 'LIST' | 'BOARD';
         favorite?: boolean;
-    }) => {
+    }, { dispatch, getState }) => {
         const { id, ...body } = payload;
-        const project = await projectApi.updateProject(id, body);
-        return mapProject(project);
+        await projectApi.updateProject(id, body);
+        const detail = await projectApi.fetchProjectById(id);
+        const project = mapProject(detail);
+        const { selectedProjectId } = (getState() as { habits: HabitState }).habits;
+        const jobs: Array<Promise<unknown>> = [
+            dispatch(invalidateSidebarAggregates({ projects: true })),
+            dispatch(refetchCurrentTaskList()),
+        ];
+        if (selectedProjectId === id) {
+            jobs.push(dispatch(fetchProjectDetail(id)));
+        }
+        await Promise.all(jobs);
+        return project;
     },
 );
 
@@ -536,10 +572,12 @@ export const addLabel = createAsyncThunk(
 
 export const updateLabel = createAsyncThunk(
     'habits/updateLabel',
-    async (payload: { id: number; name: string; color?: string; favorite?: boolean }) => {
+    async (payload: { id: number; name: string; color?: string; favorite?: boolean }, { dispatch }) => {
         const { id, ...body } = payload;
-        const label = await labelApi.updateLabel(id, body);
-        return mapLabel(label);
+        await labelApi.updateLabel(id, body);
+        const detail = await labelApi.fetchLabelById(id);
+        await dispatch(invalidateSidebarAggregates({ labels: true }));
+        return mapLabel(detail);
     },
 );
 
@@ -569,12 +607,16 @@ export const checkHabit = createAsyncThunk(
 
 export const updateHabit = createAsyncThunk(
     'habits/updateHabit',
-    async ({ habitId, changes }: { habitId: number; changes: Partial<Habit> }) => {
-        const task = await taskApi.updateTask(habitId, {
+    async ({ habitId, changes }: { habitId: number; changes: Partial<Habit> }, { dispatch }) => {
+        await taskApi.updateTask(habitId, {
             name: changes.name,
             description: changes.description,
         });
-        return mapTaskToHabit(task);
+        const [habit] = await Promise.all([
+            dispatch(fetchHabitDetail(habitId)).unwrap(),
+            dispatch(refetchCurrentTaskList()),
+        ]);
+        return habit;
     },
 );
 

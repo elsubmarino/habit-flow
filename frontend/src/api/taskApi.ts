@@ -149,12 +149,11 @@ export async function createTask(payload: CreateTaskPayload): Promise<TaskDto> {
     return data;
 }
 
-export async function updateTask(taskId: number, payload: UpdateTaskPayload): Promise<TaskDto> {
+export async function updateTask(taskId: number, payload: UpdateTaskPayload): Promise<void> {
     const body: Record<string, unknown> = {};
     if (payload.name !== undefined) body.name = payload.name;
     if (payload.description !== undefined) body.description = payload.description;
-    const { data } = await apiClient.put<TaskDto>(`/api/tasks/${taskId}`, body);
-    return data;
+    await apiClient.put(`/api/tasks/${taskId}`, body);
 }
 
 export interface PatchTaskDueDatePayload {
