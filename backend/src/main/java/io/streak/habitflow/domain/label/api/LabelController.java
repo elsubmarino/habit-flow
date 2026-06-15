@@ -57,10 +57,11 @@ public class LabelController {
     @PutMapping("/{labelId}")
     @Operation(summary = "라벨 업데이트")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "라벨 업데이트 성공")})
-    public ResponseEntity<LabelResponse> updateLabel(@PathVariable Long labelId,
+    public ResponseEntity<Void> updateLabel(@PathVariable Long labelId,
                                                      @AuthenticationPrincipal UserPrincipal userPrincipal,
                                                      @RequestBody LabelUpdateRequest labelUpdateRequest) {
-        return ResponseEntity.ok(labelService.updateLabel(labelId, labelUpdateRequest, userPrincipal.getMemberId()));
+        labelService.updateLabel(labelId, labelUpdateRequest, userPrincipal.getMemberId());
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{labelId}")

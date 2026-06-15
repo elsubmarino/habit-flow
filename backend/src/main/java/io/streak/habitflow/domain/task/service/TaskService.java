@@ -210,7 +210,7 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public TaskResponse updateTask(Long taskId, TaskRequest.Update request, Long memberId){
+    public void updateTask(Long taskId, TaskRequest.Update request, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
@@ -253,8 +253,6 @@ public class TaskService {
         List<LabelListResponse> labelListResponses = task.getTaskLabels().stream()
                 .map(taskLabel -> LabelListResponse.from(taskLabel.getLabel()))
                 .toList();
-
-        return TaskResponse.of(task, labelListResponses);
     }
 
     @Transactional

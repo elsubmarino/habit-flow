@@ -42,13 +42,11 @@ public class MemberService {
     @Transactional
     @CheckOwnership(type = "MEMBER")
     @SuppressWarnings("unused")
-    public MemberResponse updateMember(Long memberId,MemberUpdateRequest  memberUpdateRequest,Long loginMemberId){
+    public void updateMember(Long memberId,MemberUpdateRequest  memberUpdateRequest,Long loginMemberId){
         Member member = memberRepository.findById(memberId)
                 .orElseThrow();
 
         member.updateMember(memberUpdateRequest.getPassword());
-
-        return MemberResponse.from(member);
     }
 
     public MemberResponse getMember(Long memberId){

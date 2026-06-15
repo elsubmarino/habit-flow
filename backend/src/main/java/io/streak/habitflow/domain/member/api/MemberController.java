@@ -44,10 +44,11 @@ public class MemberController {
     @PutMapping("/{memberId}")
     @Operation(summary = "회원 정보 업데이트")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 정보 업데이트 성공")})
-    public ResponseEntity<MemberResponse> updateMember(@PathVariable Long memberId,
+    public ResponseEntity<Void> updateMember(@PathVariable Long memberId,
                                                        @RequestBody MemberUpdateRequest memberUpdateRequest,
                                                        @AuthenticationPrincipal UserPrincipal userPrincipal){
-        return ResponseEntity.ok(memberService.updateMember(memberId,memberUpdateRequest,userPrincipal.getMemberId()));
+        memberService.updateMember(memberId,memberUpdateRequest,userPrincipal.getMemberId());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/login")

@@ -95,7 +95,7 @@ public class ProjectService {
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public ProjectResponse updateProject(ProjectCreateRequest projectCreateRequest, Long projectId, Long memberId) {
+    public void updateProject(ProjectCreateRequest projectCreateRequest, Long projectId, Long memberId) {
         Project project =  projectRepository.findById(projectId)
                 .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
 
@@ -137,7 +137,6 @@ public class ProjectService {
                 "당신이 프로젝트 "+project.getName()+"을(를) 변경했습니다"
         ));
 
-        return ProjectResponse.of(project, projectCreateRequest.isFavorite());
     }
 
     public ProjectResponse getProjectById(Long projectId, Long memberId) {

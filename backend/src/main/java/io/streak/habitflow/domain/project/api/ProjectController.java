@@ -57,10 +57,11 @@ public class ProjectController {
 
     @PutMapping("/{projectId}")
     @Operation(summary = "프로젝트 업데이트")
-    public ResponseEntity<ProjectResponse> updateProject(@RequestBody ProjectCreateRequest projectCreateRequest,
+    public ResponseEntity<Void> updateProject(@RequestBody ProjectCreateRequest projectCreateRequest,
                                                          @PathVariable Long projectId,
                                                          @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        return ResponseEntity.ok(projectService.updateProject(projectCreateRequest,projectId,userPrincipal.getMemberId()));
+        projectService.updateProject(projectCreateRequest,projectId,userPrincipal.getMemberId());
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{projectId}")

@@ -47,11 +47,11 @@ public class TaskController {
     @PutMapping("/{taskId}")
     @Operation(summary = "테스크 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 업데이트 성공")})
-    public ResponseEntity<TaskResponse> updateTask(@PathVariable Long taskId,
+    public ResponseEntity<Void> updateTask(@PathVariable Long taskId,
                                                    @RequestBody TaskRequest.Update request,
                                                    @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        TaskResponse taskResponse = taskService.updateTask(taskId, request,userPrincipal.getMemberId());
-        return ResponseEntity.ok(taskResponse);
+        taskService.updateTask(taskId, request,userPrincipal.getMemberId());
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{taskId}/priority")

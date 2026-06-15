@@ -66,7 +66,7 @@ public class LabelService {
     }
 
     @Transactional
-    public LabelResponse updateLabel(Long labelId, LabelUpdateRequest labelUpdateRequest, Long memberId) {
+    public void updateLabel(Long labelId, LabelUpdateRequest labelUpdateRequest, Long memberId) {
         Label label = labelRepository.getOrThrow(labelId);
 
         Member member = memberRepository.getReferenceById(memberId);
@@ -92,7 +92,6 @@ public class LabelService {
 
         label.updateLabel(labelUpdateRequest.getName(),
                 labelUpdateRequest.getColor());
-        return LabelResponse.of(label, labelUpdateRequest.isFavorite());
     }
 
     public ScrollResponse<LabelListResponse> getLabels(Long labelId, Long memberId, Pageable pageable) {
