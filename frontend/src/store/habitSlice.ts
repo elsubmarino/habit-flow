@@ -21,6 +21,7 @@ import {
 } from '../api/mappers';
 import type { FavoriteDto, ProjectDetailDto, TaskDto } from '../api/types';
 import { parseProjectAccessType, parseProjectLayoutType } from '../api/projectMappers';
+import { habitRouteStateFromPath } from '../utils/appRoutes';
 
 export interface Label {
     id: number;
@@ -142,6 +143,16 @@ interface HabitState {
     todayTaskCount: number;
 }
 
+function readInitialRouteState(): Pick<
+    HabitState,
+    'activeView' | 'selectedProjectId' | 'selectedLabelId'
+> {
+    if (typeof window === 'undefined') {
+        return { activeView: 'today', selectedProjectId: null, selectedLabelId: null };
+    }
+    return habitRouteStateFromPath(window.location.pathname);
+}
+
 const initialState: HabitState = {
     list: [],
     projects: [],
@@ -156,9 +167,7 @@ const initialState: HabitState = {
     labelsHasNext: false,
     labelsNextCursor: null,
     error: null,
-    activeView: 'today',
-    selectedProjectId: null,
-    selectedLabelId: null,
+    ...readInitialRouteState(),
     selectedProjectDetail: null,
     selectedProjectDetailStatus: 'idle',
     tasksHasNext: false,

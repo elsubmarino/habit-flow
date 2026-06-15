@@ -132,3 +132,44 @@ export function buildAppPath(params: {
 export function defaultAppPath(): string {
     return APP_ROUTES.today;
 }
+
+/** Redux 초기값·직접 URL 진입 시 선택 상태 복원 */
+export function habitRouteStateFromPath(pathname: string): {
+    activeView: NavItem;
+    selectedProjectId: number | null;
+    selectedLabelId: number | null;
+} {
+    const location = parseAppPath(pathname);
+    switch (location.kind) {
+        case 'nav':
+            return {
+                activeView: location.nav,
+                selectedProjectId: null,
+                selectedLabelId: null,
+            };
+        case 'labelsBrowse':
+            return {
+                activeView: 'filters',
+                selectedProjectId: null,
+                selectedLabelId: null,
+            };
+        case 'label':
+            return {
+                activeView: 'filters',
+                selectedProjectId: null,
+                selectedLabelId: location.labelId,
+            };
+        case 'project':
+            return {
+                activeView: 'today',
+                selectedProjectId: location.projectId,
+                selectedLabelId: null,
+            };
+        default:
+            return {
+                activeView: 'today',
+                selectedProjectId: null,
+                selectedLabelId: null,
+            };
+    }
+}
