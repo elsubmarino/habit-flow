@@ -212,7 +212,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         if (taskFilterType == null) return null;
         LocalDate localDate = LocalDate.now();
         if (TaskFilterType.TODAY == taskFilterType) {
-            return task.dueDate.isNotNull().and(task.dueDate.loe(localDate));
+            return task.dueDate.loe(localDate);
         } else if (TaskFilterType.UPCOMING == taskFilterType) {
             return task.dueDate.isNotNull();
         } else if (TaskFilterType.INBOX == taskFilterType) {

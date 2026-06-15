@@ -10,7 +10,9 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Getter
-@Table(name="labels")
+@Table(name="labels",indexes = {
+        @Index(name="idx_labels_member_paging",columnList = "member_id,label_id")
+})
 public class Label  extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
