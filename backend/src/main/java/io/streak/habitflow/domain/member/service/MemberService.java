@@ -10,6 +10,7 @@ import io.streak.habitflow.domain.member.type.Role;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
+import net.bytebuddy.pool.TypePool;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -51,6 +52,12 @@ public class MemberService {
         return MemberResponse.from(member);
     }
 
+    public MemberResponse getMember(Long memberId){
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 회원입니다."));
+        return MemberResponse.from(member);
+    }
+
     @Transactional
     public Map<String, String> login(MemberLoginRequest memberLoginRequest){
         Member member = memberRepository.findByEmail(memberLoginRequest.getEmail())
@@ -80,7 +87,7 @@ public class MemberService {
                 "BLACKLIST:"+accessToken,
                 "logout",
                 expiration,
-                TimeUnit.MICROSECONDS
+                TimeUnit.MILLISECONDS
         );
     }
 

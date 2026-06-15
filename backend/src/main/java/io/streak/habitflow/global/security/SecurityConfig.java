@@ -52,6 +52,7 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/members").permitAll()
                         .requestMatchers(HttpMethod.POST,"/api/members/login").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/members/reissue").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, redisTemplate),

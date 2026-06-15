@@ -9,7 +9,9 @@ import io.streak.habitflow.global.security.dto.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +33,14 @@ public class MemberController {
     public ResponseEntity<MemberResponse> createMember(@RequestBody MemberSignUpRequest memberSignUpRequest){
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(memberService.createMember(memberSignUpRequest));
+    }
+
+    @GetMapping
+    @Operation(summary="회원 정보 조회")
+    @ApiResponses({@ApiResponse(responseCode = "200",description = "회원 정보 조회 성공")})
+    public ResponseEntity<MemberResponse> getMember(@AuthenticationPrincipal UserPrincipal userPrincipal){
+        MemberResponse memberResponse = memberService.getMember(userPrincipal.getMemberId());
+        return ResponseEntity.ok(memberResponse);
     }
 
     @PutMapping("/{memberId}")
@@ -66,7 +76,8 @@ public class MemberController {
     @PostMapping("/reissue")
     @Operation(summary = "토큰 재발급")
     public ResponseEntity<Map<String, String>> reissue(
-            @RequestHeader("X-Refresh-Token") String refreshToken){
+            @RequestHeader("X-Refresh-Token") String refreshToken,
+            HttpServletResponse response){
         Map<String, String> tokens = memberService.reissue(refreshToken);
 
         ResponseCookie cookie = ResponseCookie.from("refreshToken", tokens.get("refreshToken"))
@@ -76,6 +87,7 @@ public class MemberController {
                 .path("/")
                 .maxAge(60 * 60 * 24 *14)//14일
                 .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return ResponseEntity.ok(Map.of("accessToken",tokens.get("accessToken")));
     }

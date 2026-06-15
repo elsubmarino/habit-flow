@@ -18,6 +18,7 @@ public record MemberResponse(
         return MemberResponse.builder()
                 .name(member.getName())
                 .email(member.getEmail())
+                .role(member.getRole().name())
                 .build();
     };
 }
