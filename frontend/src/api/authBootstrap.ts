@@ -1,8 +1,18 @@
-import { getStoredToken, setStoredToken } from './client';
+import { getStoredAccessToken, setStoredTokens } from './client';
 import { defaultAppPath } from '../utils/appRoutes';
 
 /** 백엔드 OAuth2LoginSuccessHandler 와 동일한 경로 */
 export const OAUTH_CALLBACK_PATH = '/oauth2/redirect';
+
+function readOAuthTokensFromUrl(): { accessToken: string; refreshToken?: string } | null {
+    const params = new URLSearchParams(window.location.search);
+
+    const accessToken = params.get('accessToken') ?? params.get('token');
+    if (!accessToken) return null;
+
+    const refreshToken = params.get('refreshToken') ?? undefined;
+    return { accessToken, refreshToken };
+}
 
 /**
  * OAuth 리다이렉트 URL의 token을 useEffect 전에 동기 처리.
@@ -14,15 +24,15 @@ export function bootstrapAuthFromCallback(): boolean {
         window.location.pathname.endsWith(OAUTH_CALLBACK_PATH);
 
     if (!isCallback) {
-        return !!getStoredToken();
+        return !!getStoredAccessToken();
     }
 
-    const token = new URLSearchParams(window.location.search).get('token');
-    if (token) {
-        setStoredToken(token);
+    const tokens = readOAuthTokensFromUrl();
+    if (tokens) {
+        setStoredTokens(tokens.accessToken, tokens.refreshToken);
         window.history.replaceState({}, '', defaultAppPath());
         return true;
     }
 
-    return !!getStoredToken();
+    return !!getStoredAccessToken();
 }

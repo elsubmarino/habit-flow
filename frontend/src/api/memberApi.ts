@@ -13,8 +13,9 @@ export interface MemberLoginPayload {
     password: string;
 }
 
-export interface MemberLoginResponse {
+export interface AuthTokenResponse {
     accessToken: string;
+    refreshToken: string;
 }
 
 export async function fetchMember(): Promise<MemberDto> {
@@ -24,8 +25,8 @@ export async function fetchMember(): Promise<MemberDto> {
     });
 }
 
-export async function loginMember(payload: MemberLoginPayload): Promise<MemberLoginResponse> {
-    const { data } = await apiClient.post<MemberLoginResponse>(
+export async function loginMember(payload: MemberLoginPayload): Promise<AuthTokenResponse> {
+    const { data } = await apiClient.post<AuthTokenResponse>(
         '/api/members/login',
         {
             email: payload.email,
@@ -34,6 +35,10 @@ export async function loginMember(payload: MemberLoginPayload): Promise<MemberLo
         { headers: { 'Content-Type': 'application/json' } },
     );
     return data;
+}
+
+export async function logoutMember(): Promise<void> {
+    await apiClient.post('/api/members/logout');
 }
 
 export async function signUpMember(payload: MemberSignUpPayload): Promise<MemberDto> {

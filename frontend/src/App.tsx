@@ -49,9 +49,9 @@ import ViewMenuButton from './components/ViewMenuButton';
 import { fetchNotifications, selectUnreadCount } from './store/notificationsSlice';
 import { BellIcon, PanelToggleIcon } from './components/icons';
 import { saveUserProfile } from './utils/userProfile';
-import { clearStoredToken } from './api/client';
 import { bootstrapAuthFromCallback } from './api/authBootstrap';
-import { fetchMember } from './api/memberApi';
+import { clearStoredTokens, onAuthLogout } from './api/client';
+import { fetchMember, logoutMember } from './api/memberApi';
 import OAuthRedirectHandler from './components/OAuthRedirectHandler';
 import { clearHabitError } from './store/habitSlice';
 import { useAppUrlSync } from './hooks/useAppUrlSync';
@@ -137,6 +137,12 @@ function App() {
     const [showSearchModal, setShowSearchModal] = useState(false);
     const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => bootstrapAuthFromCallback());
+
+    useEffect(() => onAuthLogout(() => {
+        setIsAuthenticated(false);
+        setShowNotifications(false);
+    }), []);
+
     const addFormRef = useRef<AddHabitFormHandle>(null);
     const mainPanelRef = useRef<HTMLElement>(null);
 
@@ -289,9 +295,13 @@ function App() {
     };
 
     const handleLogout = () => {
-        clearStoredToken();
-        setIsAuthenticated(false);
-        setShowNotifications(false);
+        void logoutMember()
+            .catch(() => undefined)
+            .finally(() => {
+                clearStoredTokens();
+                setIsAuthenticated(false);
+                setShowNotifications(false);
+            });
     };
 
     const toggleSidebar = () => {

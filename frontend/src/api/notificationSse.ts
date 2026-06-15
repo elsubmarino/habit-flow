@@ -1,4 +1,4 @@
-import { getStoredToken } from './client';
+import { getStoredAccessToken } from './client';
 import type { NotificationDto } from './types';
 
 export interface NotificationSseHandlers {
@@ -43,7 +43,7 @@ export async function subscribeNotificationStream(
     handlers: NotificationSseHandlers,
     signal: AbortSignal,
 ): Promise<void> {
-    const token = getStoredToken();
+    const token = getStoredAccessToken();
     if (!token) {
         throw new Error('인증 토큰이 없습니다.');
     }

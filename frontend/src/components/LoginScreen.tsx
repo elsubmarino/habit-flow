@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { getApiErrorMessage } from '../api/apiError';
-import { setStoredToken } from '../api/client';
+import { setStoredTokens } from '../api/client';
 import { loginMember, signUpMember } from '../api/memberApi';
 
 interface LoginScreenProps {
@@ -86,11 +86,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
         setLoading(true);
         setStatus(null);
         try {
-            const { accessToken } = await loginMember({
+            const { accessToken, refreshToken } = await loginMember({
                 email: trimmedEmail,
                 password: trimmedPassword,
             });
-            setStoredToken(accessToken);
+            setStoredTokens(accessToken, refreshToken);
             onLoginSuccess();
         } catch (err) {
             setStatus({
