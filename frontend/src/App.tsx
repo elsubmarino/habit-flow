@@ -38,6 +38,7 @@ import EditProjectModal from './components/EditProjectModal';
 import ProjectShareModal from './components/ProjectShareModal';
 import ProjectsBrowseView from './components/ProjectsBrowseView';
 import UpcomingTaskList from './components/UpcomingTaskList';
+import OverdueTasksSection from './components/OverdueTasksSection';
 import TaskDetailModal from './components/TaskDetailModal';
 import TaskCompleteToast from './components/TaskCompleteToast';
 import { useTaskCompleteToast } from './hooks/useTaskCompleteToast';
@@ -60,6 +61,7 @@ import { useAppUrlSync } from './hooks/useAppUrlSync';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll';
 import { parseAppPath } from './utils/appRoutes';
 import { formatSectionDate, formatTodayHeader } from './utils/date';
+import { splitOverdueTasks } from './utils/overdueTasks';
 import {
     filterHabits,
     groupHabits,
@@ -587,9 +589,20 @@ function App() {
         }
 
         if (showTodaySections && viewPrefs.grouping === 'none') {
+            const { overdue: overdueHabits, rest: todayHabits } = splitOverdueTasks(displayHabits);
             return (
                 <>
-                    {renderTaskList(displayHabits)}
+                    {overdueHabits.length > 0 && (
+                        <OverdueTasksSection
+                            habits={overdueHabits}
+                            layout="list"
+                            onOpenDetails={handleOpenHabit}
+                            onOpenProject={handleProjectSelect}
+                            onTaskCompleted={handleTaskCompleted}
+                            onTaskDeleted={handleTaskDeleted}
+                        />
+                    )}
+                    {renderTaskList(todayHabits)}
                     <InlineAddTaskButton onClick={() => addFormRef.current?.open()} />
                 </>
             );

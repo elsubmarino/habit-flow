@@ -3165,9 +3165,9 @@
 
 .date-picker-dropdown {
   position: absolute;
-  top: -8px;
-  right: calc(100% + 10px);
-  left: auto;
+  top: calc(100% + 6px);
+  left: 0;
+  right: auto;
   z-index: 30;
   width: min(320px, 72vw);
   max-height: min(88vh, 680px);
@@ -3177,6 +3177,10 @@
   border-radius: 10px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
   padding: 8px 0 0;
+}
+
+.detail-row .date-picker-dropdown {
+  width: min(320px, 100%);
 }
 
 .date-picker-header {

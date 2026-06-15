@@ -71,6 +71,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     const [draftLabelIds, setDraftLabelIds] = useState<number[]>([]);
     const [savingLabels, setSavingLabels] = useState(false);
     const labelMenuRef = useRef<HTMLDivElement>(null);
+    const dateMenuRef = useRef<HTMLDivElement>(null);
 
     const currentTaskId = stack[stack.length - 1];
     const habit = tasks[currentTaskId];
@@ -441,6 +442,19 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         return () => document.removeEventListener('mousedown', handlePointerDown);
     }, [activeMenu, closeLabelMenu]);
 
+    useEffect(() => {
+        if (activeMenu !== 'date') return;
+
+        const handlePointerDown = (event: MouseEvent) => {
+            if (!dateMenuRef.current?.contains(event.target as Node)) {
+                setActiveMenu(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handlePointerDown);
+        return () => document.removeEventListener('mousedown', handlePointerDown);
+    }, [activeMenu]);
+
     const projectText = habit?.projectName ?? '관리함';
     const visibleLabels = useMemo(() => {
         if (!habit) return [];
@@ -674,6 +688,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
                             )}
 
                             <div
+                                ref={dateMenuRef}
                                 className={`detail-row interactive${activeMenu === 'date' ? ' date-menu-open' : ''}`}
                                 onClick={() => setActiveMenu(m => m === 'date' ? null : 'date')}
                             >
