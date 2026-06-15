@@ -1,7 +1,7 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
-import type { PriorityType, ScrollResponse, TaskDto, TaskFilterType } from './types';
-import { readCompleted, type RecurrenceApiPayload } from './mappers';
+import type { PriorityType, ScrollResponse, TaskDto, TaskFilterType, TaskListDto } from './types';
+import { mapTaskListToDto, readCompleted, type RecurrenceApiPayload } from './mappers';
 import { buildPageParams, TASK_PAGE_SIZE } from './pagination';
 
 export interface CreateTaskPayload extends RecurrenceApiPayload {
@@ -100,10 +100,22 @@ export async function fetchAllTaskPages(
     return all;
 }
 
-export async function fetchProjectTasks(projectId: number): Promise<TaskDto[]> {
-    return dedupeInFlight(`project-tasks:${projectId}`, async () => {
-        const { data } = await apiClient.get<TaskDto[]>(`/api/projects/${projectId}/tasks`);
-        return data;
+export async function fetchProjectTasks(
+    projectId: number,
+    page = 0,
+    size = TASK_PAGE_SIZE,
+): Promise<ScrollResponse<TaskDto>> {
+    return dedupeInFlight(`project-tasks:${projectId}:${page}:${size}`, async () => {
+        const { data } = await apiClient.get<ScrollResponse<TaskListDto>>(
+            `/api/projects/${projectId}/tasks`,
+            { params: buildPageParams(size, page) },
+        );
+        const content = Array.isArray(data.content) ? data.content : [];
+        return {
+            content: content.map(task => mapTaskListToDto(task, projectId)),
+            hasNext: Boolean(data.hasNext),
+            nextCursor: data.nextCursor ?? null,
+        };
     });
 }
 

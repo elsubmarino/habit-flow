@@ -6,6 +6,7 @@ import {
     deleteLabel,
     deleteProject,
     fetchHabits,
+    fetchProjectHabits,
     fetchMoreHabits,
     fetchFavorites,
     fetchLabels,
@@ -106,6 +107,7 @@ function App() {
         error: habitError,
         selectedProjectId,
         selectedLabelId,
+        selectedProjectDetail,
         inboxTaskCount,
         todayTaskCount,
     } = useAppSelector(state => state.habits);
@@ -273,8 +275,12 @@ function App() {
 
     useEffect(() => {
         if (activeNav === 'report' || showProjectsBrowse || showLabelsBrowse) return;
+        if (selectedProjectId != null) {
+            dispatch(fetchProjectHabits(selectedProjectId));
+            return;
+        }
         const view = selectedLabelId != null ? 'all' : toApiView(activeNav);
-        dispatch(fetchHabits({ view, projectId: selectedProjectId, labelId: selectedLabelId }));
+        dispatch(fetchHabits({ view, projectId: null, labelId: selectedLabelId }));
     }, [dispatch, activeNav, selectedProjectId, selectedLabelId, showProjectsBrowse, showLabelsBrowse]);
 
     const handleNavChange = (nav: NavItem) => {
@@ -322,9 +328,7 @@ function App() {
     const handleProjectSelect = (projectId: number) => {
         setShowNotifications(false);
         setShowProjectsBrowse(false);
-        setActiveNav('today');
         dispatch(setSelectedProject(projectId));
-        dispatch(setSelectedLabel(null));
     };
 
     const handleLabelsBrowse = () => {
@@ -409,13 +413,15 @@ function App() {
 
     const displayHabits = useMemo(() => {
         let list = filterHabits(habits, viewPrefs, {
-            preserveOrder: paginatedTaskView && viewPrefs.grouping === 'none',
+            preserveOrder:
+                (paginatedTaskView || selectedProjectId != null)
+                && viewPrefs.grouping === 'none',
         });
         if (!viewPrefs.showCompleted) {
             list = list.filter(h => !h.completedToday);
         }
         return list;
-    }, [habits, viewPrefs, paginatedTaskView]);
+    }, [habits, viewPrefs, paginatedTaskView, selectedProjectId]);
 
     const meta = selectedLabelId
         ? {
@@ -424,7 +430,9 @@ function App() {
         }
         : selectedProjectId
             ? {
-                title: projects.find(p => p.id === selectedProjectId)?.name ?? '프로젝트',
+                title: selectedProjectDetail?.name
+                    ?? projects.find(p => p.id === selectedProjectId)?.name
+                    ?? '프로젝트',
                 subtitle: '프로젝트',
             }
             : NAV_META[activeNav];
@@ -435,7 +443,9 @@ function App() {
     const showTodaySections = activeNav === 'today' && !selectedProjectId && !selectedLabelId;
     const showUpcomingGrouped = activeNav === 'upcoming' && !selectedProjectId && !selectedLabelId;
     const showInboxList = activeNav === 'inbox' && !selectedProjectId && !selectedLabelId;
-    const showTaskPagination = (showTodaySections || showUpcomingGrouped || showInboxList) && tasksHasNext;
+    const showTaskPagination =
+        (showTodaySections || showUpcomingGrouped || showInboxList || selectedProjectId != null)
+        && tasksHasNext;
     const showLabelsPagination = showLabelsPanel && labelsHasNext;
 
     const headerTaskCount = showTodaySections
@@ -447,11 +457,14 @@ function App() {
     const handleLoadMoreTasks = useCallback(() => {
         if (!tasksHasNext || loadMoreStatus === 'loading') return;
 
+        if (selectedProjectId != null) {
+            dispatch(fetchMoreHabits('all'));
+            return;
+        }
+
         const view = selectedLabelId != null
             ? 'all'
-            : selectedProjectId != null
-                ? 'all'
-                : toApiView(activeNav);
+            : toApiView(activeNav);
         if (view !== 'today' && view !== 'upcoming' && view !== 'inbox') return;
         dispatch(fetchMoreHabits(view));
     }, [dispatch, activeNav, selectedProjectId, selectedLabelId, tasksHasNext, loadMoreStatus]);
@@ -462,7 +475,7 @@ function App() {
     }, [dispatch, labelsLoadMoreStatus]);
 
     const loadMoreSentinelRef = useInfiniteScroll(
-        status !== 'loading' && paginatedTaskView && tasksHasNext,
+        status !== 'loading' && (paginatedTaskView || selectedProjectId != null) && tasksHasNext,
         tasksHasNext,
         loadMoreStatus === 'loading',
         handleLoadMoreTasks,
@@ -539,7 +552,29 @@ function App() {
             );
         }
 
-        if (displayHabits.length === 0) return null;
+        if (displayHabits.length === 0) {
+            if (selectedProjectId != null && status !== 'loading') {
+                return (
+                    <div className="empty-state">
+                        <p className="empty-title">이 프로젝트에 작업이 없습니다</p>
+                        <p className="empty-desc">아래에서 작업을 추가해 보세요.</p>
+                    </div>
+                );
+            }
+            return null;
+        }
+
+        if (selectedProjectId != null) {
+            if (viewPrefs.grouping !== 'none') {
+                return <>{renderGroupedTasks(displayHabits)}</>;
+            }
+            return (
+                <>
+                    {renderTaskList(displayHabits)}
+                    <InlineAddTaskButton onClick={() => addFormRef.current?.open()} />
+                </>
+            );
+        }
 
         if (showUpcomingGrouped && viewPrefs.grouping === 'none') {
             return (

@@ -1,5 +1,5 @@
 import type { Habit, Label, Project, CommentItem, Subtask, Attachment } from '../store/habitSlice';
-import type { PriorityType, TaskDto, LabelDto, ProjectDto } from './types';
+import type { PriorityType, TaskDto, TaskListDto, LabelDto, ProjectDto } from './types';
 
 export function readCompleted(task: TaskDto): boolean {
     return task.completed ?? task.isCompleted ?? false;
@@ -289,6 +289,23 @@ function resolveTaskCounts(task: TaskDto): {
 
 function readTaskPriority(task: TaskDto): PriorityType | null | undefined {
     return task.priorityType ?? task.taskPriorityType;
+}
+
+export function mapTaskListToDto(task: TaskListDto, projectId?: number): TaskDto {
+    return {
+        id: task.id,
+        name: task.name,
+        description: task.description ?? '',
+        taskPriorityType: task.taskPriorityType,
+        dueDate: task.dueDate ?? null,
+        sortOrder: task.sortOrder,
+        projectId: projectId ?? null,
+        projectName: task.projectName ?? null,
+        countSubTasks: task.countSubTasks,
+        countSubTasksCompleted: task.countSubTasksCompleted,
+        countComments: task.countComments,
+        labels: task.labels ?? [],
+    };
 }
 
 export function mapTaskToHabit(task: TaskDto): Habit {

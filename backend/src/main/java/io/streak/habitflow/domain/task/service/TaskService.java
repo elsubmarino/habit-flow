@@ -187,13 +187,14 @@ public class TaskService {
         return TaskResponse.of(task, labelListResponses);
     }
 
-    public List<TaskListResponse> getTasksByProject(Long ProjectId){
-        List<Task> tasks = taskRepository.findByProjectId(ProjectId);
-
-
-        return tasks.stream()
-                .map(task -> TaskListResponse.of(task,new ArrayList<>()))
+    @CheckOwnership(type="PROJECT")
+    public ScrollResponse<TaskListResponse> getTasksByProject(Long projectId, Long memberId, Pageable pageable){
+        List<TaskListQuery> tasks = taskRepository.findTasksByProject(projectId,memberId,pageable);
+        List<TaskListResponse> taskListResponses =  tasks.stream()
+                .map(task->TaskListResponse.of(task,new ArrayList<>()))
                 .toList();
+
+        return ScrollResponse.of(taskListResponses,pageable.getPageSize(),TaskListResponse::id);
     }
 
     public ScrollResponse<TaskListResponse> getTasks(TaskRequest.SearchCondition searchCondition, Long memberId, Pageable pageable){

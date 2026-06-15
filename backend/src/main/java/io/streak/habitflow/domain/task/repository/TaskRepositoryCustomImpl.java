@@ -78,6 +78,72 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
+    public List<TaskListQuery> findTasksByProject(Long projectId, Long memberId, Pageable pageable) {
+        List<Long> ids = queryFactory
+                .select(task.id)
+                .from(task)
+                .where(task.member.id.eq(memberId),
+                        task.project.id.eq(projectId)
+                )
+                .orderBy(
+                        task.dueDate.asc(),
+                        task.taskPriorityType.asc(),
+                        task.sortOrder.asc(),
+                        task.id.desc()
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize()+1)
+                .fetch();
+
+        if(ids.isEmpty()){
+            return new ArrayList<>();
+        }
+
+        QTask subTask = new QTask("subTask");
+
+        return queryFactory
+                .select(
+                        Projections.fields(
+                                TaskListQuery.class,
+                                task.id,
+                                task.name,
+                                task.description,
+                                task.taskPriorityType,
+                                task.dueDate,
+                                task.sortOrder,
+                                task.project.name.as("projectName"),
+                                ExpressionUtils.as(
+                                        JPAExpressions.select(subTask.count())
+                                                .from(subTask)
+                                                .where(subTask.parent.eq(task)),"countSubTasks"),
+                                ExpressionUtils.as(
+                                        JPAExpressions.select(subTask.count())
+                                                .from(subTask)
+                                                .where(subTask.parent.eq(task)
+                                                        .and(subTask.completed.eq(true))),"countSubTasksCompleted"),
+                                ExpressionUtils.as(
+                                        JPAExpressions.select(comment.count())
+                                                .from(comment)
+                                                .where(comment.task.eq(task)),"countComments")
+                        )
+                )
+                .from(task)
+                .leftJoin(task.project, project)
+                .where(
+                        task.id.in(ids).and(task.completed.eq(false))
+                )
+                .orderBy(
+                        task.dueDate.asc(),
+                        task.taskPriorityType.asc(),
+                        task.sortOrder.asc(),
+                        task.id.desc()
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize()+1)
+                .fetch();
+    }
+
+    @Override
     public List<TaskListQuery> searchTasksByCondition(TaskRequest.SearchCondition searchCondition, Long memberId, Pageable pageable) {
 
         List<Long> ids = queryFactory

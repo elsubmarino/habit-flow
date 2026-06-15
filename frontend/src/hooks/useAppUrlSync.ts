@@ -83,10 +83,7 @@ export function useAppUrlSync({
             case 'project':
                 setShowNotifications(false);
                 setShowProjectsBrowse(false);
-                setActiveNav('today');
-                dispatch(setActiveView('today'));
                 dispatch(setSelectedProject(location.projectId));
-                dispatch(setSelectedLabel(null));
                 break;
             case 'unknown':
             case 'oauth':

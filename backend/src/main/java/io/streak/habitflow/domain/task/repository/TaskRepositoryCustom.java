@@ -15,6 +15,7 @@ public interface TaskRepositoryCustom {
     Optional<Task> searchTaskInfo(Long taskId);
     List<TaskResponse> searchKeyword(String keyword, Long memberId, Pageable pageable);
     List<TaskListQuery> searchTasksByCondition(TaskRequest.SearchCondition searchCondition, Long memberId, Pageable pageable);
+    List<TaskListQuery> findTasksByProject(Long projectId, Long memberId, Pageable pageable);
     long countTasksByCondition(TaskFilterType taskFilterType, Long memberId);
     Optional<Task> findByIdWithProject(Long taskId);
 }

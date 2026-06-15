@@ -76,6 +76,21 @@ export interface TaskDto {
     comments?: CommentDto[];
 }
 
+/** GET /api/tasks/*, /api/projects/{id}/tasks 목록 응답 항목 */
+export interface TaskListDto {
+    id: number;
+    name: string;
+    description?: string | null;
+    taskPriorityType?: PriorityType | null;
+    dueDate?: string | null;
+    sortOrder?: number;
+    projectName?: string | null;
+    countSubTasks?: number;
+    countSubTasksCompleted?: number;
+    countComments?: number;
+    labels?: LabelDto[];
+}
+
 export type TaskFilterType = 'INBOX' | 'TODAY' | 'UPCOMING';
 
 export interface ProjectDto {
