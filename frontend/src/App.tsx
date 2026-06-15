@@ -568,12 +568,7 @@ function App() {
             if (viewPrefs.grouping !== 'none') {
                 return <>{renderGroupedTasks(displayHabits)}</>;
             }
-            return (
-                <>
-                    {renderTaskList(displayHabits)}
-                    <InlineAddTaskButton onClick={() => addFormRef.current?.open()} />
-                </>
-            );
+            return renderTaskList(displayHabits);
         }
 
         if (showUpcomingGrouped && viewPrefs.grouping === 'none') {
