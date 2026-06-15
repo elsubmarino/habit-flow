@@ -10,7 +10,6 @@ import io.streak.habitflow.domain.member.type.Role;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
-import net.bytebuddy.pool.TypePool;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;

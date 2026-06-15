@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 @Builder
 public record MemberResponse(
-        Long id,
         String userId,
         String name,
         String email,

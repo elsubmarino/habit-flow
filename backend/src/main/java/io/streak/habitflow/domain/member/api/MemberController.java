@@ -80,15 +80,17 @@ public class MemberController {
             HttpServletResponse response){
         Map<String, String> tokens = memberService.reissue(refreshToken);
 
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", tokens.get("refreshToken"))
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("Strict")
-                .path("/")
-                .maxAge(60 * 60 * 24 *14)//14일
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        //TODO 추후 HTTPS 적용시에 손댐
+//        ResponseCookie cookie = ResponseCookie.from("refreshToken", tokens.get("refreshToken"))
+//                .httpOnly(true)
+//                .secure(true)
+//                .sameSite("Strict")
+//                .path("/")
+//                .maxAge(60 * 60 * 24 *14)//14일
+//                .build();
+//        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        return ResponseEntity.ok(Map.of("accessToken",tokens.get("accessToken")));
+        return ResponseEntity.ok(Map.of("accessToken",tokens.get("accessToken"),
+                "refreshToken",tokens.get("refreshToken")));
     }
 }
