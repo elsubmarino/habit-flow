@@ -403,29 +403,66 @@ export const fetchProjectDetail = createAsyncThunk(
     },
 );
 
-export const fetchLabels = createAsyncThunk('habits/fetchLabels', async () => {
-    const page = await labelApi.fetchLabels();
-    return {
-        labels: page.content.map(l => mapLabel(l)),
-        hasNext: page.hasNext,
-        nextCursor: page.nextCursor,
-    };
-});
+const LABELS_FIRST_PAGE_DEBOUNCE_MS = 800;
+let labelsFirstPageFetchStartedAt = 0;
 
-export const fetchMoreLabels = createAsyncThunk('habits/fetchMoreLabels', async (_, { getState }) => {
-    const state = getState() as { habits: HabitState };
-    const { labelsNextCursor } = state.habits;
-    if (labelsNextCursor == null) {
-        return { labels: [], hasNext: false, nextCursor: null };
+export function resetLabelsFirstPageFetchDebounce() {
+    labelsFirstPageFetchStartedAt = 0;
+}
+
+function claimLabelsFirstPageFetch(): boolean {
+    const now = Date.now();
+    if (now - labelsFirstPageFetchStartedAt < LABELS_FIRST_PAGE_DEBOUNCE_MS) {
+        return false;
     }
+    labelsFirstPageFetchStartedAt = now;
+    return true;
+}
 
-    const page = await labelApi.fetchLabels(labelsNextCursor);
-    return {
-        labels: page.content.map(l => mapLabel(l)),
-        hasNext: page.hasNext,
-        nextCursor: page.nextCursor,
-    };
-});
+export const fetchLabels = createAsyncThunk(
+    'habits/fetchLabels',
+    async () => {
+        const page = await labelApi.fetchLabels();
+        return {
+            labels: page.content.map(l => mapLabel(l)),
+            hasNext: page.hasNext,
+            nextCursor: page.nextCursor,
+        };
+    },
+    {
+        condition: (_, { getState }) => {
+            const { labelsStatus } = (getState() as { habits: HabitState }).habits;
+            if (labelsStatus === 'loading') return false;
+            return claimLabelsFirstPageFetch();
+        },
+    },
+);
+
+export const fetchMoreLabels = createAsyncThunk(
+    'habits/fetchMoreLabels',
+    async (_, { getState }) => {
+        const state = getState() as { habits: HabitState };
+        const { labelsNextCursor } = state.habits;
+        if (labelsNextCursor == null) {
+            return { labels: [], hasNext: false, nextCursor: null };
+        }
+
+        const page = await labelApi.fetchLabels(labelsNextCursor);
+        return {
+            labels: page.content.map(l => mapLabel(l)),
+            hasNext: page.hasNext,
+            nextCursor: page.nextCursor,
+        };
+    },
+    {
+        condition: (_, { getState }) => {
+            const { labelsLoadMoreStatus, labelsHasNext, labelsNextCursor } = (
+                getState() as { habits: HabitState }
+            ).habits;
+            return labelsLoadMoreStatus !== 'loading' && labelsHasNext && labelsNextCursor != null;
+        },
+    },
+);
 
 export type SidebarAggregateScope = {
     projects?: boolean;
@@ -444,6 +481,7 @@ export const invalidateSidebarAggregates = createAsyncThunk(
             jobs.push(dispatch(fetchFavorites()));
         }
         if (scope.labels) {
+            resetLabelsFirstPageFetchDebounce();
             jobs.push(dispatch(fetchLabels()));
             jobs.push(dispatch(fetchFavorites()));
         }

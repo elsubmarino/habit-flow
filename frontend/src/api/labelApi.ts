@@ -13,7 +13,11 @@ export async function fetchLabels(
         const { data } = await apiClient.get<ScrollResponse<LabelDto>>('/api/labels', {
             params: buildScrollParams(lastLabelId, 'lastLabelId', size),
         });
-        return data;
+        return {
+            content: Array.isArray(data.content) ? data.content : [],
+            hasNext: Boolean(data.hasNext),
+            nextCursor: data.nextCursor ?? null,
+        };
     });
 }
 

@@ -148,6 +148,8 @@ function App() {
 
     const addFormRef = useRef<AddHabitFormHandle>(null);
     const mainPanelRef = useRef<HTMLElement>(null);
+    const prevShowLabelsBrowseRef = useRef(false);
+    const prevShowProjectsBrowseRef = useRef(false);
 
     useQuickAddShortcut(() => addFormRef.current?.open());
     useNotificationSse(isAuthenticated);
@@ -255,11 +257,12 @@ function App() {
     }
 
     useEffect(() => {
-        dispatch(fetchProjects());
         dispatch(fetchFavorites());
         dispatch(fetchNavTaskCounts());
-        dispatch(fetchLabels());
         dispatch(fetchNotifications());
+        if (initialLocation.kind !== 'projectsBrowse') {
+            dispatch(fetchProjects());
+        }
         void fetchMember()
             .then(member => {
                 saveUserProfile({
@@ -278,15 +281,29 @@ function App() {
         if (showNotifications) return;
         if (activeNav === 'report') return;
 
+        const enteredProjectsBrowse = showProjectsBrowse && !prevShowProjectsBrowseRef.current;
+        prevShowProjectsBrowseRef.current = showProjectsBrowse;
+
+        const enteredLabelsBrowse = showLabelsBrowse && !prevShowLabelsBrowseRef.current;
+        prevShowLabelsBrowseRef.current = showLabelsBrowse;
+
         if (showProjectsBrowse) {
-            dispatch(fetchProjects());
-            dispatch(fetchFavorites());
+            if (enteredProjectsBrowse) {
+                dispatch(fetchProjects());
+                dispatch(fetchFavorites());
+            }
             return;
         }
 
         if (showLabelsBrowse) {
-            dispatch(fetchLabels());
+            if (enteredLabelsBrowse) {
+                dispatch(fetchLabels());
+            }
             return;
+        }
+
+        if (labels.length === 0) {
+            dispatch(fetchLabels());
         }
 
         if (selectedProjectId != null) {
@@ -496,9 +513,9 @@ function App() {
     }, [dispatch, activeNav, selectedProjectId, selectedLabelId, tasksHasNext, loadMoreStatus]);
 
     const handleLoadMoreLabels = useCallback(() => {
-        if (labelsLoadMoreStatus === 'loading') return;
+        if (!labelsHasNext || labelsLoadMoreStatus === 'loading') return;
         dispatch(fetchMoreLabels());
-    }, [dispatch, labelsLoadMoreStatus]);
+    }, [dispatch, labelsHasNext, labelsLoadMoreStatus]);
 
     const loadMoreSentinelRef = useInfiniteScroll(
         status !== 'loading' && (paginatedTaskView || selectedProjectId != null) && tasksHasNext,
@@ -509,7 +526,7 @@ function App() {
     );
 
     const labelsLoadMoreSentinelRef = useInfiniteScroll(
-        labelsStatus !== 'loading' && showLabelsPagination,
+        labelsStatus !== 'loading' && showLabelsPanel && labelsHasNext,
         labelsHasNext,
         labelsLoadMoreStatus === 'loading',
         handleLoadMoreLabels,
