@@ -12,6 +12,7 @@ import {
     fetchMoreLabels,
     fetchNavTaskCounts,
     fetchProjects,
+    invalidateSidebarAggregates,
     setActiveView,
     setSelectedLabel,
     setSelectedProject,
@@ -157,8 +158,7 @@ function App() {
     } = useTaskCompleteToast();
 
     const refreshSidebarCounts = useCallback(() => {
-        dispatch(fetchNavTaskCounts());
-        dispatch(fetchProjects());
+        void dispatch(invalidateSidebarAggregates({ projects: true, nav: true }));
     }, [dispatch]);
 
     const handleTaskCompleted = useCallback((habit: Habit) => {

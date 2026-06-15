@@ -351,6 +351,34 @@ export const fetchMoreLabels = createAsyncThunk('habits/fetchMoreLabels', async 
     };
 });
 
+export type SidebarAggregateScope = {
+    projects?: boolean;
+    labels?: boolean;
+    nav?: boolean;
+};
+
+/** 태스크 변경 후 사이드바 집계(프로젝트·라벨·관리함/오늘 카운트) 재조회 */
+export const invalidateSidebarAggregates = createAsyncThunk(
+    'habits/invalidateSidebarAggregates',
+    async (scope: SidebarAggregateScope, { dispatch }) => {
+        const jobs: Array<ReturnType<typeof dispatch>> = [];
+
+        if (scope.projects) {
+            jobs.push(dispatch(fetchProjects()));
+            jobs.push(dispatch(fetchFavorites()));
+        }
+        if (scope.labels) {
+            jobs.push(dispatch(fetchLabels()));
+            jobs.push(dispatch(fetchFavorites()));
+        }
+        if (scope.nav) {
+            jobs.push(dispatch(fetchNavTaskCounts()));
+        }
+
+        await Promise.all(jobs);
+    },
+);
+
 export const fetchHabitDetail = createAsyncThunk(
     'habits/fetchDetail',
     async (taskId: number) => {
@@ -371,7 +399,7 @@ export const addHabit = createAsyncThunk(
         labelIds?: number[];
         file?: File | null;
         priority?: 1 | 2 | 3 | 4;
-    }) => {
+    }, { dispatch }) => {
         const recurrence = repeatLabelToRecurrence(payload.recurrenceLabel, payload.dueDate);
         const task = await taskApi.createTask({
             name: payload.name,
@@ -383,6 +411,11 @@ export const addHabit = createAsyncThunk(
             priorityType: priorityToApi(payload.priority),
             ...recurrence,
         });
+        void dispatch(invalidateSidebarAggregates({
+            projects: true,
+            labels: true,
+            nav: true,
+        }));
         return mapTaskToHabit(task);
     },
 );
@@ -446,8 +479,9 @@ export interface CheckHabitPayload {
 
 export const checkHabit = createAsyncThunk(
     'habits/check',
-    async ({ habitId, wasCompleted }: CheckHabitPayload) => {
+    async ({ habitId, wasCompleted }: CheckHabitPayload, { dispatch }) => {
         const task = await taskApi.toggleTaskCompletion(habitId, wasCompleted);
+        void dispatch(invalidateSidebarAggregates({ projects: true, nav: true }));
         const habit = mapTaskToHabit(task);
         return {
             ...habit,
@@ -470,8 +504,9 @@ export const updateHabit = createAsyncThunk(
 
 export const patchTaskProject = createAsyncThunk(
     'habits/patchProject',
-    async ({ habitId, projectId }: { habitId: number; projectId: number | null }) => {
+    async ({ habitId, projectId }: { habitId: number; projectId: number | null }, { dispatch }) => {
         const task = await taskApi.patchTaskProject(habitId, projectId);
+        void dispatch(invalidateSidebarAggregates({ projects: true }));
         return mapTaskToHabit(task);
     },
 );
@@ -486,11 +521,12 @@ export const patchTaskDueDate = createAsyncThunk(
         habitId: number;
         dueDate: string | null;
         recurrenceLabel?: string | null;
-    }) => {
+    }, { dispatch }) => {
         const recurrence = recurrenceLabel !== undefined
             ? repeatLabelToRecurrence(recurrenceLabel, dueDate)
             : undefined;
         const task = await taskApi.patchTaskDueDate(habitId, { dueDate, recurrence });
+        void dispatch(invalidateSidebarAggregates({ nav: true }));
         const habit = mapTaskToHabit(task);
         return {
             ...habit,
@@ -515,16 +551,21 @@ export const patchTaskPriority = createAsyncThunk(
 
 export const patchTaskLabels = createAsyncThunk(
     'habits/patchLabels',
-    async ({ habitId, labelIds }: { habitId: number; labelIds: number[] }) => {
+    async ({ habitId, labelIds }: { habitId: number; labelIds: number[] }, { dispatch }) => {
         const task = await taskApi.patchTaskLabels(habitId, labelIds);
+        void dispatch(invalidateSidebarAggregates({ labels: true }));
         return mapTaskToHabit(task);
     },
 );
 
-export const deleteHabit = createAsyncThunk('habits/delete', async (habitId: number) => {
-    await taskApi.deleteTask(habitId);
-    return habitId;
-});
+export const deleteHabit = createAsyncThunk(
+    'habits/delete',
+    async (habitId: number, { dispatch }) => {
+        await taskApi.deleteTask(habitId);
+        void dispatch(invalidateSidebarAggregates({ projects: true, labels: true, nav: true }));
+        return habitId;
+    },
+);
 
 export const addSubtask = createAsyncThunk(
     'habits/addSubtask',
@@ -540,7 +581,7 @@ export const addSubtask = createAsyncThunk(
         description: string;
         projectId?: number | null;
         dueDate?: string | null;
-    }) => {
+    }, { dispatch }) => {
         const task = await taskApi.createTask({
             name,
             description,
@@ -548,6 +589,7 @@ export const addSubtask = createAsyncThunk(
             projectId: projectId ?? null,
             dueDate: dueDate ?? null,
         });
+        void dispatch(invalidateSidebarAggregates({ projects: true, nav: true }));
         return {
             habitId,
             subtask: {
