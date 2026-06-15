@@ -412,37 +412,37 @@ export const fetchProjectDetail = createAsyncThunk(
     },
 );
 
-const LABELS_FIRST_PAGE_DEBOUNCE_MS = 800;
-let labelsFirstPageFetchStartedAt = 0;
+const LABELS_INITIAL_FETCH_DEBOUNCE_MS = 800;
+let labelsInitialFetchStartedAt = 0;
 
-export function resetLabelsFirstPageFetchDebounce() {
-    labelsFirstPageFetchStartedAt = 0;
+export function resetLabelsInitialFetchDebounce() {
+    labelsInitialFetchStartedAt = 0;
 }
 
-function claimLabelsFirstPageFetch(): boolean {
+function claimLabelsInitialFetch(): boolean {
     const now = Date.now();
-    if (now - labelsFirstPageFetchStartedAt < LABELS_FIRST_PAGE_DEBOUNCE_MS) {
+    if (now - labelsInitialFetchStartedAt < LABELS_INITIAL_FETCH_DEBOUNCE_MS) {
         return false;
     }
-    labelsFirstPageFetchStartedAt = now;
+    labelsInitialFetchStartedAt = now;
     return true;
 }
 
 export const fetchLabels = createAsyncThunk(
     'habits/fetchLabels',
     async () => {
-        const page = await labelApi.fetchLabels();
+        const slice = await labelApi.fetchLabels();
         return {
-            labels: page.content.map(l => mapLabel(l)),
-            hasNext: page.hasNext,
-            nextCursor: page.nextCursor,
+            labels: slice.content.map(l => mapLabel(l)),
+            hasNext: slice.hasNext,
+            nextCursor: slice.nextCursor,
         };
     },
     {
         condition: (_, { getState }) => {
             const { labelsStatus } = (getState() as { habits: HabitState }).habits;
             if (labelsStatus === 'loading') return false;
-            return claimLabelsFirstPageFetch();
+            return claimLabelsInitialFetch();
         },
     },
 );
@@ -456,11 +456,11 @@ export const fetchMoreLabels = createAsyncThunk(
             return { labels: [], hasNext: false, nextCursor: null };
         }
 
-        const page = await labelApi.fetchLabels(labelsNextCursor);
+        const slice = await labelApi.fetchLabels(labelsNextCursor);
         return {
-            labels: page.content.map(l => mapLabel(l)),
-            hasNext: page.hasNext,
-            nextCursor: page.nextCursor,
+            labels: slice.content.map(l => mapLabel(l)),
+            hasNext: slice.hasNext,
+            nextCursor: slice.nextCursor,
         };
     },
     {
@@ -490,7 +490,7 @@ export const invalidateSidebarAggregates = createAsyncThunk(
             jobs.push(dispatch(fetchFavorites()));
         }
         if (scope.labels) {
-            resetLabelsFirstPageFetchDebounce();
+            resetLabelsInitialFetchDebounce();
             jobs.push(dispatch(fetchLabels()));
             jobs.push(dispatch(fetchFavorites()));
         }

@@ -1,23 +1,20 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
 import { toLabelUpdateBody, toLabelWriteBody } from './labelMappers';
-import { buildScrollParams, LABEL_PAGE_SIZE } from './pagination';
-import type { LabelDetailDto, LabelDto, LabelUpdatePayload, ScrollResponse } from './types';
+import { buildLabelCursorParams, LABEL_PAGE_SIZE } from './pagination';
+import type { LabelDetailDto, LabelDto, LabelUpdatePayload } from './types';
+import { parseSlicePage, type PaginatedResult, type SpringSlice } from './slice';
 
 export async function fetchLabels(
     lastLabelId?: number,
     size = LABEL_PAGE_SIZE,
-): Promise<ScrollResponse<LabelDto>> {
+): Promise<PaginatedResult<LabelDto>> {
     const cursorKey = lastLabelId ?? 'first';
     return dedupeInFlight(`labels:${cursorKey}:${size}`, async () => {
-        const { data } = await apiClient.get<ScrollResponse<LabelDto>>('/api/labels', {
-            params: buildScrollParams(lastLabelId, 'lastLabelId', size),
+        const { data } = await apiClient.get<SpringSlice<LabelDto>>('/api/labels', {
+            params: buildLabelCursorParams(lastLabelId, size),
         });
-        return {
-            content: Array.isArray(data.content) ? data.content : [],
-            hasNext: Boolean(data.hasNext),
-            nextCursor: data.nextCursor ?? null,
-        };
+        return parseSlicePage(data, label => label.id);
     });
 }
 

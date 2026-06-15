@@ -1,8 +1,9 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
-import type { PriorityType, ScrollResponse, TaskDto, TaskFilterType, TaskListDto } from './types';
+import type { PriorityType, TaskDto, TaskFilterType, TaskListDto } from './types';
 import { mapTaskListToDto, readCompleted, type RecurrenceApiPayload } from './mappers';
 import { buildPageParams, TASK_PAGE_SIZE } from './pagination';
+import { parseSlicePage, type PaginatedResult, type SpringSlice } from './slice';
 
 export interface CreateTaskPayload extends RecurrenceApiPayload {
     name: string;
@@ -34,6 +35,17 @@ function buildTaskFormData(body: Record<string, unknown>, file?: File | null) {
     return form;
 }
 
+function mapTaskListPage(
+    slice: SpringSlice<TaskListDto>,
+    projectId?: number,
+): PaginatedResult<TaskDto> {
+    const page = parseSlicePage(slice);
+    return {
+        ...page,
+        content: page.content.map(task => mapTaskListToDto(task, projectId)),
+    };
+}
+
 export async function fetchTaskCount(taskFilterType: TaskFilterType): Promise<number> {
     return dedupeInFlight(`task-count:${taskFilterType}`, async () => {
         const { data } = await apiClient.get<number>('/api/tasks/count', {
@@ -46,41 +58,41 @@ export async function fetchTaskCount(taskFilterType: TaskFilterType): Promise<nu
 export async function fetchInboxTasks(
     page = 0,
     size = TASK_PAGE_SIZE,
-): Promise<ScrollResponse<TaskDto>> {
+): Promise<PaginatedResult<TaskDto>> {
     return dedupeInFlight(`tasks:inbox:${page}:${size}`, async () => {
-        const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/inbox', {
+        const { data } = await apiClient.get<SpringSlice<TaskListDto>>('/api/tasks/inbox', {
             params: buildPageParams(size, page),
         });
-        return data;
+        return mapTaskListPage(data);
     });
 }
 
 export async function fetchTodayTasks(
     page = 0,
     size = TASK_PAGE_SIZE,
-): Promise<ScrollResponse<TaskDto>> {
+): Promise<PaginatedResult<TaskDto>> {
     return dedupeInFlight(`tasks:today:${page}:${size}`, async () => {
-        const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/today', {
+        const { data } = await apiClient.get<SpringSlice<TaskListDto>>('/api/tasks/today', {
             params: buildPageParams(size, page),
         });
-        return data;
+        return mapTaskListPage(data);
     });
 }
 
 export async function fetchUpcomingTasks(
     page = 0,
     size = TASK_PAGE_SIZE,
-): Promise<ScrollResponse<TaskDto>> {
+): Promise<PaginatedResult<TaskDto>> {
     return dedupeInFlight(`tasks:upcoming:${page}:${size}`, async () => {
-        const { data } = await apiClient.get<ScrollResponse<TaskDto>>('/api/tasks/upcoming', {
+        const { data } = await apiClient.get<SpringSlice<TaskListDto>>('/api/tasks/upcoming', {
             params: buildPageParams(size, page),
         });
-        return data;
+        return mapTaskListPage(data);
     });
 }
 
 export async function fetchAllTaskPages(
-    fetchPage: (page?: number) => Promise<ScrollResponse<TaskDto>>,
+    fetchPage: (page?: number) => Promise<PaginatedResult<TaskDto>>,
 ): Promise<TaskDto[]> {
     const all: TaskDto[] = [];
     let page = 0;
@@ -104,18 +116,13 @@ export async function fetchProjectTasks(
     projectId: number,
     page = 0,
     size = TASK_PAGE_SIZE,
-): Promise<ScrollResponse<TaskDto>> {
+): Promise<PaginatedResult<TaskDto>> {
     return dedupeInFlight(`project-tasks:${projectId}:${page}:${size}`, async () => {
-        const { data } = await apiClient.get<ScrollResponse<TaskListDto>>(
+        const { data } = await apiClient.get<SpringSlice<TaskListDto>>(
             `/api/projects/${projectId}/tasks`,
             { params: buildPageParams(size, page) },
         );
-        const content = Array.isArray(data.content) ? data.content : [];
-        return {
-            content: content.map(task => mapTaskListToDto(task, projectId)),
-            hasNext: Boolean(data.hasNext),
-            nextCursor: data.nextCursor ?? null,
-        };
+        return mapTaskListPage(data, projectId);
     });
 }
 

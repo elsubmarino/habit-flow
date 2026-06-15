@@ -38,11 +38,8 @@ export interface CommentDto {
     attachments?: { fileUrl: string; originalFileName: string }[];
 }
 
-export interface ScrollResponse<T> {
-    content: T[];
-    hasNext: boolean;
-    nextCursor: number | null;
-}
+/** @deprecated PaginatedResult 사용 */
+export type ScrollResponse<T> = import('./slice').PaginatedResult<T>;
 
 /** Task ID */
 export interface TaskDto {

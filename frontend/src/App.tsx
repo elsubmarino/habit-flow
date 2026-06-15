@@ -737,7 +737,6 @@ function App() {
                 ) : showReport ? (
                     <ActivityLogView
                         projects={projects}
-                        scrollRootRef={mainPanelRef}
                         onOpenTask={handleOpenTaskId}
                     />
                 ) : showProjectsPanel ? (

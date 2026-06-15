@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Project } from '../store/habitSlice';
 import { fetchActivityLogs } from '../api/activityApi';
 import type { ActivityLogDto, ActivityType } from '../api/types';
@@ -11,7 +11,6 @@ type DateFilter = 'all' | 'today' | 'week';
 
 interface ActivityLogViewProps {
     projects: Project[];
-    scrollRootRef?: RefObject<HTMLElement | null>;
     onOpenTask?: (taskId: number) => void;
 }
 
@@ -78,7 +77,8 @@ function renderActivityText(entry: ActivityLogDto): React.ReactNode {
     );
 }
 
-const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, scrollRootRef }) => {
+const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
+    const scrollBodyRef = useRef<HTMLDivElement>(null);
     const [items, setItems] = useState<ActivityLogDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadMoreStatus, setLoadMoreStatus] = useState<'idle' | 'loading' | 'failed'>('idle');
@@ -144,7 +144,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, scrollRootR
         hasNext,
         loadMoreStatus === 'loading',
         handleLoadMore,
-        scrollRootRef,
+        scrollBodyRef,
     );
 
     const filtered = useMemo(() => {
@@ -256,7 +256,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects, scrollRootR
                 </div>
             </header>
 
-            <div className="activity-log-body">
+            <div ref={scrollBodyRef} className="activity-log-body">
                 {loading && <p className="activity-empty">불러오는 중…</p>}
                 {error && <p className="activity-empty">{error}</p>}
                 {!loading && !error && grouped.length === 0 ? (
