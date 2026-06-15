@@ -1,8 +1,8 @@
 package io.streak.habitflow.global.security.oauth;
 
 import io.streak.habitflow.domain.member.entity.Member;
-import io.streak.habitflow.domain.member.type.Role;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
+import io.streak.habitflow.domain.member.type.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;

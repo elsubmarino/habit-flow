@@ -1,18 +1,16 @@
 package io.streak.habitflow.domain.label.repository;
 
-import static io.streak.habitflow.domain.label.entity.QLabel.label;
-
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.streak.habitflow.domain.label.dto.request.LabelSearchRequest;
 import io.streak.habitflow.domain.label.dto.response.LabelListResponse;
-import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+
+import static io.streak.habitflow.domain.label.entity.QLabel.label;
 
 @SuppressWarnings("unused")
 @RequiredArgsConstructor

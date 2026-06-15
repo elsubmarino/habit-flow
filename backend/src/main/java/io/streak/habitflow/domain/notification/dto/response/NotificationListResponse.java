@@ -3,7 +3,7 @@ package io.streak.habitflow.domain.notification.dto.response;
 import io.streak.habitflow.domain.notification.entity.Notification;
 import io.streak.habitflow.domain.notification.type.NotificationType;
 import io.streak.habitflow.domain.task.type.ActivityType;
-import lombok.*;
+import lombok.Builder;
 
 import java.time.LocalDateTime;
 

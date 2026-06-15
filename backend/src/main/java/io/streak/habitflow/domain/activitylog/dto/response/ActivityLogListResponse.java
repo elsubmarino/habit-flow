@@ -2,10 +2,7 @@ package io.streak.habitflow.domain.activitylog.dto.response;
 
 import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
 import io.streak.habitflow.domain.task.type.ActivityType;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 

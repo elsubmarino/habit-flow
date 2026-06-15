@@ -1,10 +1,7 @@
 package io.streak.habitflow.domain.member.dto.response;
 
 import io.streak.habitflow.domain.member.entity.Member;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 @Builder
 public record MemberResponse(

@@ -7,7 +7,6 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.favorite.dto.response.FavoriteListResponse;
 import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.task.entity.QTask;
-import io.streak.habitflow.domain.task.entity.QTaskLabel;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;

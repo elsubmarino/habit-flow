@@ -2,7 +2,7 @@ package io.streak.habitflow.domain.task.api;
 
 import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.comment.service.CommentService;
-import io.streak.habitflow.domain.task.dto.request.*;
+import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;

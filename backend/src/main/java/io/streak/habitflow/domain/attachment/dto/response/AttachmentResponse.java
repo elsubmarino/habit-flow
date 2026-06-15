@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.attachment.dto.response;
 
 import io.streak.habitflow.domain.attachment.entity.Attachment;
-import lombok.*;
+import lombok.Builder;
 
 @Builder
 public record AttachmentResponse(

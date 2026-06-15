@@ -3,7 +3,6 @@ package io.streak.habitflow.domain.project.dto.response;
 
 import io.streak.habitflow.domain.project.entity.ProjectMember;
 import lombok.Builder;
-import lombok.Getter;
 
 @Builder
 public record ProjectMemberListResponse(

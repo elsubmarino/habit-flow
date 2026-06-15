@@ -1,7 +1,6 @@
 package io.streak.habitflow.domain.activitylog.repository;
 
 import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogSearchCondition;
-import io.streak.habitflow.domain.activitylog.dto.response.ActivityLogListResponse;
 import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
 import org.springframework.data.domain.Pageable;
 

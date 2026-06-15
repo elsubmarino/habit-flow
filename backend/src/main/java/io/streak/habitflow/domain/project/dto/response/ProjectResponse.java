@@ -3,7 +3,7 @@ package io.streak.habitflow.domain.project.dto.response;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.type.AccessType;
 import io.streak.habitflow.domain.project.type.LayoutType;
-import lombok.*;
+import lombok.Builder;
 
 @Builder
 public record ProjectResponse(

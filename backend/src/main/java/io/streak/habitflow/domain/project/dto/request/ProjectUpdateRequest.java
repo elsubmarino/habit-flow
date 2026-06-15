@@ -2,7 +2,10 @@ package io.streak.habitflow.domain.project.dto.request;
 
 import io.streak.habitflow.domain.project.type.AccessType;
 import io.streak.habitflow.domain.project.type.LayoutType;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Builder

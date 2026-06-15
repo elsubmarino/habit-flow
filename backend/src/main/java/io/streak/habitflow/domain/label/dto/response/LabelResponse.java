@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.label.dto.response;
 
 import io.streak.habitflow.domain.label.entity.Label;
-import lombok.*;
+import lombok.Builder;
 
 @Builder
 public record LabelResponse(

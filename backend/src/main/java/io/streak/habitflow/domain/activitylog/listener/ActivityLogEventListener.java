@@ -5,8 +5,6 @@ import io.streak.habitflow.domain.activitylog.service.ActivityLogService;
 import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.annotation.Aspect;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
