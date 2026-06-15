@@ -448,8 +448,11 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
-        Project project = projectRepository.findById(projectId)
-                        .orElseThrow();
+        Project project = null;
+        if(projectId != null) {
+            project = projectRepository.findById(projectId)
+                    .orElseThrow();
+        }
         task.updateProject(project);
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
@@ -457,7 +460,8 @@ public class TaskService {
                 memberId,
                 TargetType.TASK,
                 ActivityType.MOVED,
-                "당신이 테스크 "+ task.getName()+"를 "+ task.getProject().getName()+"으로 이동시켰습니다."
+                "당신이 테스크 "+ task.getName()+"를 "+
+                        ((task.getProject() != null) ? task.getProject().getName() : "관리함") +"으로 이동시켰습니다."
         ));
         List<LabelListResponse> labelListResponses = task.getTaskLabels()
                 .stream()
