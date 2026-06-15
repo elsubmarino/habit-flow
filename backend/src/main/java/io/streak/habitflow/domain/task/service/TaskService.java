@@ -56,7 +56,7 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
     public void deleteTask(Long taskId, Long memberId){
-        Task task = taskRepository.findById(taskId).orElseThrow();
+        Task task = taskRepository.getOrThrow(taskId);
         taskRepository.deleteById(taskId);
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 taskId,
@@ -211,8 +211,7 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     public void updateTask(Long taskId, TaskRequest.Update request, Long memberId){
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow();
+        Task task = taskRepository.getOrThrow(taskId);
 
         boolean isNameChanged = false;
         boolean isDescriptionChanged = false;

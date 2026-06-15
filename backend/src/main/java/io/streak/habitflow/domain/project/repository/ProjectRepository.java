@@ -12,4 +12,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
     List<Project> findByMemberEmail(@Param("email") String email);
 
     List<Project> findByNameContaining(String name);
+
+    default Project getOrThrow(Long projectId){
+        return findById(projectId).orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
+    }
 }

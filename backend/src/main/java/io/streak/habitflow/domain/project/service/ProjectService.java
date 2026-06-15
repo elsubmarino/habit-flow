@@ -94,8 +94,7 @@ public class ProjectService {
     @Transactional
     @CheckOwnership(type="PROJECT")
     public void updateProject(ProjectRequest.Create request, Long projectId, Long memberId) {
-        Project project =  projectRepository.findById(projectId)
-                .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
+        Project project =  projectRepository.getOrThrow(projectId);
 
         Member member = memberRepository.getReferenceById(memberId);
 
@@ -138,8 +137,7 @@ public class ProjectService {
     }
 
     public ProjectResponse.Detail getProjectById(Long projectId, Long memberId) {
-       Project project = projectRepository.findById(projectId)
-               .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
+       Project project = projectRepository.getOrThrow(projectId);
        boolean isFavorite = false;
        Optional<Favorite> favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(
                memberId, TargetType.PROJECT, project.getId());
@@ -187,8 +185,7 @@ public class ProjectService {
     @Transactional
     @CheckOwnership(type="PROJECT")
     public void invite(ProjectRequest.Invite inviteRequest, Long memberId){
-        Project project = projectRepository.findById(inviteRequest.id())
-                .orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
+        Project project = projectRepository.getOrThrow(inviteRequest.id());
 
         Member inviter = memberRepository.findById(memberId)
                 .orElseThrow(()->new IllegalArgumentException("초대자 정보가 올바르지 않습니다."));
@@ -236,8 +233,7 @@ public class ProjectService {
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
     public List<ProjectResponse.Member> getProjectMembers(Long projectId,Long memberId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow();
+        Project project = projectRepository.getOrThrow(projectId);
         List<ProjectMember> projectMembers = projectMemberRepository.findByProject(project);
         return projectMembers.stream()
                 .map(ProjectResponse.Member::from)

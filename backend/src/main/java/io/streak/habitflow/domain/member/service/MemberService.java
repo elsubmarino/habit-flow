@@ -41,15 +41,13 @@ public class MemberService {
     @CheckOwnership(type = "MEMBER")
     @SuppressWarnings("unused")
     public void updateMember(Long memberId,MemberRequest.Update  request,Long loginMemberId){
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow();
+        Member member = memberRepository.getOrThrow(memberId);
 
         member.updateMember(request.password());
     }
 
     public MemberResponse.Detail getMember(Long memberId){
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 회원입니다."));
+        Member member = memberRepository.getOrThrow(memberId);
         return MemberResponse.Detail.from(member);
     }
 

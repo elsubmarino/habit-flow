@@ -9,4 +9,8 @@ import java.util.Optional;
 public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByEmail(String email);
     List<Member> findByEmailIn(List<String> email);
+
+    default Member getOrThrow(Long memberId){
+        return findById(memberId).orElseThrow(()->new IllegalArgumentException("멤버가 존재하지 않습니다."));
+    }
 }

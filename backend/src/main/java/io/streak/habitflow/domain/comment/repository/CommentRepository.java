@@ -10,4 +10,8 @@ import java.util.List;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Query("SELECT c FROM Comment c LEFT JOIN FETCH c.attachments WHERE c.task.id = :taskId")
     List<Comment> findByTaskIdWithAttachments(@Param("taskId") Long taskId);
+
+    default Comment getOrThrow(Long commentId){
+        return findById(commentId).orElseThrow(()->new IllegalArgumentException("코멘트가 존재하지 않습니다."));
+    }
 }

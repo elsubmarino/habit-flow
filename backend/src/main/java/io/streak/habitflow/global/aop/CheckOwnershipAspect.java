@@ -84,8 +84,7 @@ public class CheckOwnershipAspect {
     }
 
     public void checkTaskOwner(Long taskId, Long memberId){
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 테스크입니다."));
+        Task task = taskRepository.getOrThrow(taskId);
 
         if(!task.getMember().getId().equals(memberId)){
             throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
@@ -93,32 +92,28 @@ public class CheckOwnershipAspect {
     }
 
     public void checkCommentOwner(Long commentId, Long memberId){
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 댓글입니다."));
+        Comment comment = commentRepository.getOrThrow(commentId);
         if(!comment.getMember().getId().equals(memberId)){
             throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
         }
     }
 
     public void checkMemberOwner(Long loginMemberId, Long memberId){
-        Member member = memberRepository.findById(memberId)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 유저입니다."));
+        Member member = memberRepository.getOrThrow(memberId);
         if(!member.getId().equals(loginMemberId)){
             throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
         }
     }
 
     public void checkNotificationOwner(Long notificationId, Long memberId){
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 알림입니다."));
+        Notification notification = notificationRepository.getOrThrow(notificationId);
         if(!notification.getActor().getId().equals(memberId)){
             throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
         }
     }
 
     public void checkProjectOwner(Long projectId, Long memberId){
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
+        Project project = projectRepository.getOrThrow(projectId);
         Member member = memberRepository.getReferenceById(memberId);
         boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
         if(!isMember){

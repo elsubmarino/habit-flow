@@ -32,8 +32,7 @@ public class CommentService {
     public CommentResponse.Detail createComment(CommentRequest.Create request, MultipartFile file, Long memberId) {
         Member member = memberRepository.getReferenceById(memberId);
 
-        Task task = taskRepository.findById(request.taskId())
-                .orElseThrow(()->new IllegalArgumentException("테스크가 없습니다."));
+        Task task = taskRepository.getOrThrow(request.taskId());
 
         Comment comment = Comment.builder()
                 .member(member)
@@ -57,8 +56,7 @@ public class CommentService {
     }
 
     public List<CommentResponse.Detail> getComments(Long taskId) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(()->new IllegalArgumentException("테스크가 없습니다."));
+        Task task = taskRepository.getOrThrow(taskId);
         List<Comment> comments = commentRepository.findByTaskIdWithAttachments(task.getId());
         return comments.stream()
                 .map(CommentResponse.Detail::from)
@@ -69,8 +67,7 @@ public class CommentService {
     @CheckOwnership(type="COMMENT")
     @SuppressWarnings("unused")
     public void updateComment(Long commentId, CommentRequest.Update request, Long memberId) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow();
+        Comment comment = commentRepository.getOrThrow(commentId);
 
         comment.updateContent(request.content());
     }
