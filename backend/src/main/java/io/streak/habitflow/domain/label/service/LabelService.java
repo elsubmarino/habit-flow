@@ -98,27 +98,11 @@ public class LabelService {
     public ScrollResponse<LabelListResponse> getLabels(Long labelId, Long memberId, Pageable pageable) {
         List<Label> labels = labelRepository.searchLabelsByCondition(labelId,memberId,pageable);
 
-        boolean hasNext = false;
-        Long nextCursor = null;
-
-        if(labels.size() > pageable.getPageSize()){
-            hasNext = true;
-            labels = labels.subList(0, pageable.getPageSize());
-        }
-
-        if(!labels.isEmpty()){
-            nextCursor = labels.get(labels.size()-1).getId();
-        }
-
         List<LabelListResponse> labelResponses =  labels.stream()
                 .map(LabelListResponse::from)
                 .toList();
 
-        return ScrollResponse.<LabelListResponse>builder()
-                .content(labelResponses)
-                .hasNext(hasNext)
-                .nextCursor(nextCursor)
-                .build();
+        return ScrollResponse.of(labelResponses,pageable.getPageSize(),LabelListResponse::id);
     }
 
     @Transactional

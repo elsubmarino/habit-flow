@@ -200,22 +200,11 @@ public class TaskService {
 
         List<TaskListQuery> tasks = taskRepository.searchTasksByCondition(searchCondition, memberId, pageable);
 
-        boolean hasNext = false;
-
-        if(tasks.size() > pageable.getPageSize()){
-            hasNext = true;
-            tasks = tasks.subList(0, pageable.getPageSize());
-        }
-
         List<TaskListResponse> taskListResponses = tasks.stream()
                 .map(task->TaskListResponse.of(task,new ArrayList<>()))
                 .toList();
 
-        return ScrollResponse.<TaskListResponse>builder()
-                .content(taskListResponses)
-                .hasNext(hasNext)
-                .build();
-
+        return ScrollResponse.of(taskListResponses,pageable.getPageSize(),TaskListResponse::id);
     }
 
     @Transactional

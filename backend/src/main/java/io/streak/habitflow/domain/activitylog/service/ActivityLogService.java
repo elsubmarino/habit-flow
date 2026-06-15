@@ -40,36 +40,12 @@ public class ActivityLogService {
     }
 
     public ScrollResponse<ActivityLogListResponse> getActivityLogs(Long lastActivityLogId, Long memberId, Pageable pageable) {
-        boolean hasNext = false;
-        Long nextCursor = null;
 
         List<ActivityLog> activityLogs = activityLogRepository.searchActivityLogsByCondition(lastActivityLogId, memberId, pageable);
-
-        if(activityLogs.size() > pageable.getPageSize()){
-            hasNext = true;
-            activityLogs = activityLogs.subList(0, pageable.getPageSize());
-        }
-
-        if(!activityLogs.isEmpty()){
-            nextCursor = activityLogs.get(activityLogs.size()-1).getId();
-        }
 
         List<ActivityLogListResponse> activityLogListResponses = activityLogs.stream()
                 .map(ActivityLogListResponse::from)
                 .toList();
 
-        return ScrollResponse.<ActivityLogListResponse>builder()
-                .content(activityLogListResponses)
-                .hasNext(hasNext)
-                .nextCursor(nextCursor)
-                .build();
-
-
+        return ScrollResponse.of(activityLogListResponses, pageable.getPageSize(), ActivityLogListResponse::id);
     }
-
-//    public List<ActivityLogListResponse> searchActivityLogs(ActivityLogSearchCondition activityLogSearchCondition){
-//        return  activityLogRepository.searchActivityLogs(activityLogSearchCondition).stream()
-//                .map(ActivityLogListResponse::from)
-//                .toList();
-//    }
-}
