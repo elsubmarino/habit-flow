@@ -11,8 +11,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -44,7 +46,37 @@ public class MemberController {
     @Operation(summary = "회원 로그인")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 로그인 성공")})
     public ResponseEntity<Map<String, String>> loginMember(@RequestBody MemberLoginRequest memberLoginRequest){
-        String token = memberService.login(memberLoginRequest);
-        return ResponseEntity.ok(Map.of("accessToken", token));
+        Map<String, String> result = memberService.login(memberLoginRequest);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "회원 로그아웃")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "로그아웃 성공")})
+    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String bearerToken,
+                                       @AuthenticationPrincipal UserPrincipal userPrincipal){
+        String accessToken = null;
+        if(StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")){
+            accessToken = bearerToken.substring(7);
+        }
+        memberService.logout(accessToken, userPrincipal.getUsername());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reissue")
+    @Operation(summary = "토큰 재발급")
+    public ResponseEntity<Map<String, String>> reissue(
+            @RequestHeader("X-Refresh-Token") String refreshToken){
+        Map<String, String> tokens = memberService.reissue(refreshToken);
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", tokens.get("refreshToken"))
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(60 * 60 * 24 *14)//14일
+                .build();
+
+        return ResponseEntity.ok(Map.of("accessToken",tokens.get("accessToken")));
     }
 }
