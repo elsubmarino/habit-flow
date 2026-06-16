@@ -1,5 +1,5 @@
 import type { Habit } from '../store/habitSlice';
-import { dueDateToTimeInput, toISODate } from './date';
+import { formatTime12From24, toISODate } from './date';
 
 function dateOnly(iso: string): string {
     return iso.slice(0, 10);
@@ -9,13 +9,8 @@ export function getHabitDueTimestamp(habit: Habit): number | null {
     if (!habit.dueDate) return null;
 
     const day = dateOnly(habit.dueDate);
-    const hasTime = Boolean(habit.dueTime) || habit.dueDate.includes('T');
-
-    if (hasTime) {
-        const time24 = habit.dueDate.includes('T')
-            ? (habit.dueDate.split('T')[1] ?? '').slice(0, 5)
-            : dueDateToTimeInput(habit.dueDate, habit.dueTime);
-        return new Date(`${day}T${time24}:00`).getTime();
+    if (habit.hasTime && habit.dueTime24) {
+        return new Date(`${day}T${habit.dueTime24}:00`).getTime();
     }
 
     return new Date(`${day}T23:59:59.999`).getTime();
@@ -35,7 +30,7 @@ export function formatOverdueDueLabel(habit: Habit): string {
         month: 'long',
         day: 'numeric',
     });
-    if (habit.dueTime) return `${dateLabel} ${habit.dueTime}`;
+    if (habit.hasTime && habit.dueTime24) return `${dateLabel} ${formatTime12From24(habit.dueTime24)}`;
     return dateLabel;
 }
 
@@ -52,9 +47,10 @@ export function splitOverdueTasks(habits: Habit[]): { overdue: Habit[]; rest: Ha
     return { overdue, rest };
 }
 
-export function rescheduleHabitToToday(habit: Habit): string {
+export function rescheduleHabitToToday(habit: Habit): { dueDate: string; hasTime: boolean; dueTime24: string | null } {
     const today = toISODate(new Date());
-    if (!habit.dueTime) return today;
-    const time24 = dueDateToTimeInput(habit.dueDate, habit.dueTime);
-    return `${today}T${time24}:00`;
+    if (!habit.hasTime || !habit.dueTime24) {
+        return { dueDate: today, hasTime: false, dueTime24: null };
+    }
+    return { dueDate: today, hasTime: true, dueTime24: habit.dueTime24 };
 }

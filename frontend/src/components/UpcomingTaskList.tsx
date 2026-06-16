@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { habitRowKey, type Habit } from '../store/habitSlice';
 import {
+    addDays,
     formatMonthYear,
     formatUpcomingSectionTitle,
+    getUpcomingCalendarMaxDate,
     getWeekStrip,
+    isWithinUpcomingCalendarRange,
     startOfWeekMonday,
     toISODate,
 } from '../utils/date';
@@ -58,6 +61,11 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
 
     const weekDays = useMemo(() => getWeekStrip(weekStart, 7), [weekStart]);
     const todayIso = toISODate(new Date());
+    const maxCalendarDate = useMemo(() => getUpcomingCalendarMaxDate(), []);
+    const maxCalendarIso = useMemo(() => toISODate(maxCalendarDate), [maxCalendarDate]);
+    const maxCalendarMonth = maxCalendarDate.getFullYear() * 12 + maxCalendarDate.getMonth();
+    const canGoNextWeek = toISODate(addDays(weekStart, 7)) <= maxCalendarIso;
+    const canGoNextMonth = viewYear * 12 + viewMonth < maxCalendarMonth;
 
     const activeHabits = useMemo(
         () => habits.filter(h => !h.completedToday),
@@ -100,6 +108,7 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
     }, [groupedKeys]);
 
     const selectDate = useCallback((iso: string) => {
+        if (!isWithinUpcomingCalendarRange(iso)) return;
         setSelectedDate(iso);
         setWeekStart(startOfWeekMonday(parseISO(iso)));
         scrollToDate(iso);
@@ -167,7 +176,9 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                                 <button
                                     type="button"
                                     className="cal-nav-btn"
+                                    disabled={!canGoNextMonth}
                                     onClick={() => {
+                                        if (!canGoNextMonth) return;
                                         const d = new Date(viewYear, viewMonth + 1, 1);
                                         setViewYear(d.getFullYear());
                                         setViewMonth(d.getMonth());
@@ -188,10 +199,12 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                                     const iso = toISODate(date);
                                     const isSelected = selectedDate === iso;
                                     const isToday = iso === todayIso;
+                                    const isDisabled = !isWithinUpcomingCalendarRange(iso);
                                     return (
                                         <button
                                             key={iso + String(inMonth)}
                                             type="button"
+                                            disabled={isDisabled}
                                             className={[
                                                 'calendar-day',
                                                 !inMonth && 'other-month',
@@ -199,6 +212,7 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                                                 isSelected && 'is-selected',
                                             ].filter(Boolean).join(' ')}
                                             onClick={() => {
+                                                if (isDisabled) return;
                                                 selectDate(iso);
                                                 setMonthOpen(false);
                                             }}
@@ -218,18 +232,28 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                     <button type="button" className="upcoming-today-btn" onClick={goToday}>
                         오늘
                     </button>
-                    <button type="button" onClick={() => setWeekStart(d => startOfWeekMonday(new Date(d.getTime() + 7 * 86400000)))}>
+                    <button
+                        type="button"
+                        disabled={!canGoNextWeek}
+                        onClick={() => {
+                            if (!canGoNextWeek) return;
+                            setWeekStart(d => startOfWeekMonday(addDays(d, 7)));
+                        }}
+                    >
                         ›
                     </button>
                 </div>
             </div>
 
             <div className="upcoming-week-strip" role="tablist">
-                {weekDays.map(day => (
+                {weekDays.map(day => {
+                    const isDisabled = !isWithinUpcomingCalendarRange(day.iso);
+                    return (
                     <button
                         key={day.iso}
                         type="button"
                         role="tab"
+                        disabled={isDisabled}
                         aria-selected={selectedDate === day.iso}
                         className={`upcoming-day-btn ${day.isToday ? 'is-today' : ''} ${selectedDate === day.iso ? 'selected' : ''}`}
                         onClick={() => selectDate(day.iso)}
@@ -237,7 +261,8 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                         <span className="upcoming-day-weekday">{day.weekday}</span>
                         <span className="upcoming-day-num">{day.dayNum}</span>
                     </button>
-                ))}
+                    );
+                })}
             </div>
 
             {overdueHabits.length > 0 && (

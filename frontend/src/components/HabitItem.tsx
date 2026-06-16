@@ -3,7 +3,7 @@ import { useAppDispatch } from '../store/hooks';
 import { checkHabit, deleteHabit } from '../store/habitSlice';
 import type { Habit } from '../store/habitSlice';
 import { displayLabelName } from '../api/labelMappers';
-import { formatDueLabel, toISODate } from '../utils/date';
+import { formatDueLabel, formatTaskDetailDue, toISODate } from '../utils/date';
 import { formatOverdueDueLabel, isOverdueHabit } from '../utils/overdueTasks';
 import { CommentBubbleIcon, HashIcon, SubtaskCountIcon } from './icons';
 
@@ -94,7 +94,9 @@ const HabitItem: React.FC<HabitItemProps> = ({
     const dueLabel = habit.dueDate
         ? overdue
             ? formatOverdueDueLabel(habit)
-            : habit.dueTime ?? formatDueLabel(habit.dueDate)
+            : habit.hasTime && habit.dueTime24
+                ? formatTaskDetailDue(habit.dueDate, true, habit.dueTime24)
+                : formatDueLabel(habit.dueDate)
         : null;
 
     return (
@@ -169,7 +171,7 @@ const HabitItem: React.FC<HabitItemProps> = ({
                     )}
                     {dueLabel && (
                         <span className={`task-meta-chip due-chip ${dueChipClass}`.trim()}>
-                            {habit.dueTime && !overdue && <span className="task-meta-icon">🕐</span>}
+                            {habit.hasTime && !overdue && <span className="task-meta-icon">🕐</span>}
                             {dueLabel}
                         </span>
                     )}

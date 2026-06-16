@@ -1370,10 +1370,22 @@
   font-weight: 600;
 }
 
-.upcoming-day-btn.is-today .upcoming-day-num,
 .upcoming-day-btn.selected .upcoming-day-num {
   background: var(--todoist-red);
   color: #fff;
+}
+
+.upcoming-day-btn.is-today:not(.selected) .upcoming-day-num {
+  border: 1px solid var(--todoist-red);
+  color: var(--todoist-red);
+}
+
+.upcoming-day-btn:disabled,
+.upcoming-today-nav button:disabled,
+.upcoming-month-popover .cal-nav-btn:disabled,
+.upcoming-month-popover .calendar-day:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .upcoming-day-weekday {
@@ -3170,7 +3182,7 @@
   right: auto;
   z-index: 30;
   width: min(320px, 72vw);
-  max-height: min(88vh, 680px);
+  max-height: min(520px, calc(100vh - 220px));
   overflow-y: auto;
   background: #fff;
   border: 1px solid #e6e6e6;
@@ -3181,6 +3193,7 @@
 
 .detail-row .date-picker-dropdown {
   width: min(320px, 100%);
+  max-height: min(460px, calc(100vh - 260px));
 }
 
 .date-picker-header {
@@ -3338,6 +3351,10 @@
   padding: 10px 12px 12px;
   border-top: 1px solid #f0f0f0;
   margin-top: 4px;
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  z-index: 2;
 }
 
 .date-footer-btn {
@@ -3353,6 +3370,27 @@
   font-size: 13px;
   color: var(--text-secondary);
   cursor: pointer;
+}
+
+.date-footer-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date-footer-clear {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.date-footer-clear:hover {
+  color: var(--text-primary);
 }
 
 .date-footer-btn:hover {

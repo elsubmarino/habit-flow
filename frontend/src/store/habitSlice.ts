@@ -67,6 +67,8 @@ export interface Habit {
     lastCompletedDate: string | null;
     dueDate: string | null;
     dueTime: string | null;
+    dueTime24: string | null;
+    hasTime: boolean;
     parentId: number | null;
     userName: string | null;
     projectId: number | null;
@@ -543,6 +545,8 @@ export const addHabit = createAsyncThunk(
         view: NavItem;
         projectId?: number | null;
         dueDate?: string | null;
+        dueTime24?: string | null;
+        hasTime?: boolean;
         recurrenceLabel?: string | null;
         labelIds?: number[];
         file?: File | null;
@@ -553,6 +557,8 @@ export const addHabit = createAsyncThunk(
             name: payload.name,
             description: payload.description,
             dueDate: payload.dueDate,
+            dueTime24: payload.dueTime24,
+            hasTime: payload.hasTime,
             projectId: payload.projectId,
             labelIds: payload.labelIds,
             file: payload.file,
@@ -704,16 +710,25 @@ export const patchTaskDueDate = createAsyncThunk(
     async ({
         habitId,
         dueDate,
+        dueTime24,
+        hasTime,
         recurrenceLabel,
     }: {
         habitId: number;
         dueDate: string | null;
+        dueTime24?: string | null;
+        hasTime: boolean;
         recurrenceLabel?: string | null;
     }, { dispatch }) => {
         const recurrence = recurrenceLabel !== undefined
             ? repeatLabelToRecurrence(recurrenceLabel, dueDate)
             : undefined;
-        const task = await taskApi.patchTaskDueDate(habitId, { dueDate, recurrence });
+        const task = await taskApi.patchTaskDueDate(habitId, {
+            dueDate,
+            dueTime24,
+            hasTime,
+            recurrence,
+        });
         await Promise.all([
             dispatch(invalidateSidebarAggregates({ nav: true })),
             dispatch(refetchCurrentTaskList()),

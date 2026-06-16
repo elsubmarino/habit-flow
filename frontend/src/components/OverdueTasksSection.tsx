@@ -33,12 +33,15 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
         setRescheduling(true);
         try {
             await Promise.all(
-                habits.map(habit =>
-                    dispatch(patchTaskDueDate({
+                habits.map(habit => {
+                    const next = rescheduleHabitToToday(habit);
+                    return dispatch(patchTaskDueDate({
                         habitId: habit.id,
-                        dueDate: rescheduleHabitToToday(habit),
-                    })).unwrap(),
-                ),
+                        dueDate: next.dueDate,
+                        dueTime24: next.dueTime24,
+                        hasTime: next.hasTime,
+                    })).unwrap();
+                }),
             );
         } catch {
             window.alert('일정 변경에 실패했습니다.');

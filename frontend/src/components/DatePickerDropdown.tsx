@@ -1,16 +1,18 @@
 import React, { useMemo, useState } from 'react';
-import { combineDateAndTime, dueDateToTimeInput, toISODate } from '../utils/date';
+import { dueDateToTimeInput, formatTime12From24, toISODate } from '../utils/date';
 import { buildDatePresets, formatPickerHeader } from '../utils/datePresets';
 
 export interface DatePickerChange {
     date: string | null;
     time?: string | null;
+    hasTime?: boolean;
     repeat?: string | null;
 }
 
 interface DatePickerDropdownProps {
     value: string | null;
     timeValue?: string | null;
+    hasTimeValue?: boolean;
     repeatValue?: string | null;
     onChange: (change: DatePickerChange) => void;
 }
@@ -55,6 +57,7 @@ function buildRepeatOptions(selectedDate: string | null) {
 const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
     value,
     timeValue = null,
+    hasTimeValue = false,
     repeatValue = null,
     onChange,
 }) => {
@@ -71,6 +74,8 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
     const presets = useMemo(() => buildDatePresets(today), [today]);
     const grid = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
     const repeatOptions = useMemo(() => buildRepeatOptions(value), [value]);
+    const timeLabel = hasTimeValue && timeDraft ? formatTime12From24(timeDraft) : '시간';
+    const repeatLabel = repeatDraft ?? '반복';
 
     const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString('ko-KR', {
         year: 'numeric',
@@ -79,9 +84,11 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
 
     const selectDate = (date: Date | null) => {
         const iso = date ? toISODate(date) : null;
+        const nextHasTime = iso != null && hasTimeValue && Boolean(timeDraft);
         onChange({
-            date: iso && timeDraft ? combineDateAndTime(iso, timeDraft) : iso,
-            time: timeDraft || null,
+            date: iso,
+            time: nextHasTime ? timeDraft : null,
+            hasTime: nextHasTime,
             repeat: repeatDraft,
         });
     };
@@ -107,8 +114,9 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
     const saveTime = () => {
         const datePart = value?.slice(0, 10) ?? todayIso;
         onChange({
-            date: combineDateAndTime(datePart, timeDraft),
+            date: datePart,
             time: timeDraft,
+            hasTime: true,
             repeat: repeatDraft,
         });
         setPanel('main');
@@ -118,10 +126,32 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
         setRepeatDraft(repeat);
         onChange({
             date: value,
-            time: timeValue,
+            time: hasTimeValue ? timeDraft : null,
+            hasTime: hasTimeValue,
             repeat,
         });
         setPanel('main');
+    };
+
+    const clearTime = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        onChange({
+            date: value,
+            time: null,
+            hasTime: false,
+            repeat: repeatDraft,
+        });
+    };
+
+    const clearRepeat = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        setRepeatDraft(null);
+        onChange({
+            date: value,
+            time: hasTimeValue ? timeDraft : null,
+            hasTime: hasTimeValue,
+            repeat: null,
+        });
     };
 
     if (panel === 'time') {
@@ -178,7 +208,7 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
                             {repeatDraft === option.label && <span className="date-repeat-check">✓</span>}
                         </button>
                     ))}
-                    {repeatValue && (
+                    {repeatDraft && (
                         <button type="button" className="date-repeat-row danger" onClick={() => saveRepeat(null)}>
                             반복 제거
                         </button>
@@ -191,7 +221,11 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
     return (
         <div className="date-picker-dropdown" onClick={e => e.stopPropagation()} role="dialog" aria-label="날짜 선택">
             <div className="date-picker-header">
-                <span className="date-picker-selected">{formatPickerHeader(value)}</span>
+                <span className="date-picker-selected">
+                    {value
+                        ? formatPickerHeader(value)
+                        : '날짜 선택'}
+                </span>
             </div>
 
             <button type="button" className="date-preset-row" onClick={() => selectDate(today)}>
@@ -252,12 +286,56 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
             </div>
 
             <div className="date-picker-footer date-picker-footer-stack">
-                <button type="button" className="date-footer-btn" onClick={() => setPanel('time')}>
-                    <span>🕐</span> 시간
-                </button>
-                <button type="button" className="date-footer-btn" onClick={() => setPanel('repeat')}>
-                    <span>🔁</span> 반복
-                </button>
+                <div
+                    className="date-footer-btn"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setPanel('time')}
+                    onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setPanel('time');
+                        }
+                    }}
+                >
+                    <span>🕐</span>
+                    <span className="date-footer-label">{timeLabel}</span>
+                    {hasTimeValue && (
+                        <button
+                            type="button"
+                            className="date-footer-clear"
+                            aria-label="시간 해제"
+                            onClick={clearTime}
+                        >
+                            ×
+                        </button>
+                    )}
+                </div>
+                <div
+                    className="date-footer-btn"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setPanel('repeat')}
+                    onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            setPanel('repeat');
+                        }
+                    }}
+                >
+                    <span>🔁</span>
+                    <span className="date-footer-label">{repeatLabel}</span>
+                    {repeatValue && (
+                        <button
+                            type="button"
+                            className="date-footer-clear"
+                            aria-label="반복 해제"
+                            onClick={clearRepeat}
+                        >
+                            ×
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );

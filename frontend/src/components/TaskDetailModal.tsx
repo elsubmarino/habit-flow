@@ -19,7 +19,7 @@ import {
 } from '../store/habitSlice';
 import { getApiErrorMessage } from '../api/apiError';
 import { displayLabelName } from '../api/labelMappers';
-import { formatDueLabel, toISODate } from '../utils/date';
+import { formatTaskDetailDue, toISODate } from '../utils/date';
 import CommentListItem from './CommentListItem';
 import DatePickerDropdown, { type DatePickerChange } from './DatePickerDropdown';
 import TaskEditBox from './TaskEditBox';
@@ -347,12 +347,16 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         if (!habit) return;
 
         const nextDate = change.date !== undefined ? change.date : habit.dueDate;
+        const nextHasTime = change.hasTime !== undefined ? change.hasTime : habit.hasTime;
+        const nextTime24 = change.time !== undefined ? change.time : habit.dueTime24;
         const nextRecurrence = change.repeat !== undefined ? change.repeat : recurrence;
         setRecurrence(nextRecurrence);
 
         void dispatch(patchTaskDueDate({
             habitId: habit.id,
             dueDate: nextDate,
+            dueTime24: nextTime24,
+            hasTime: nextHasTime,
             recurrenceLabel: nextRecurrence,
         })).then(result => {
             if (patchTaskDueDate.fulfilled.match(result)) {
@@ -464,7 +468,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         return habit.labels;
     }, [activeMenu, draftLabelIds, habit, labels]);
     const dateText = habit?.dueDate
-        ? `${formatDueLabel(habit.dueDate)}${habit.dueTime ? ` ${habit.dueTime}` : ''}${recurrence ? ` · ${recurrence}` : ''}`
+        ? `${formatTaskDetailDue(habit.dueDate, habit.hasTime, habit.dueTime24)}${recurrence ? ` · ${recurrence}` : ''}`
         : null;
 
     return (
@@ -698,6 +702,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
                                     <DatePickerDropdown
                                         value={habit.dueDate}
                                         timeValue={habit.dueTime}
+                                        hasTimeValue={habit.hasTime}
                                         repeatValue={recurrence}
                                         onChange={handleDatePickerChange}
                                     />

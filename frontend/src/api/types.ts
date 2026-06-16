@@ -51,6 +51,8 @@ export interface TaskDto {
     priorityType?: PriorityType | null;
     taskPriorityType?: PriorityType | null;
     dueDate?: string | null;
+    dueTime?: string | null;
+    hasTime?: boolean;
     sortOrder?: number;
     userId?: number | null;
     userName?: string | null;
@@ -80,6 +82,8 @@ export interface TaskListDto {
     description?: string | null;
     taskPriorityType?: PriorityType | null;
     dueDate?: string | null;
+    dueTime?: string | null;
+    hasTime?: boolean;
     sortOrder?: number;
     projectName?: string | null;
     countSubTasks?: number;

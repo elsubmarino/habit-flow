@@ -1,5 +1,6 @@
 import type { Habit, Label, Project, CommentItem, Subtask, Attachment } from '../store/habitSlice';
 import type { PriorityType, TaskDto, TaskListDto, LabelDto, ProjectDto } from './types';
+import { datePartFromDue, formatTime12From24, localTimeTo24 } from '../utils/date';
 
 export function readCompleted(task: TaskDto): boolean {
     return task.completed ?? task.isCompleted ?? false;
@@ -250,20 +251,23 @@ function mapSubtasks(subTasks?: TaskDto[]): Subtask[] {
     }));
 }
 
-function parseDueDateTime(value?: string | null): { date: string | null; time: string | null } {
-    if (!value) return { date: null, time: null };
-    const date = value.slice(0, 10);
-    if (!value.includes('T')) return { date, time: null };
-    const timePart = value.split('T')[1] ?? '';
-    if (!timePart || timePart.startsWith('00:00:00')) return { date, time: null };
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return { date, time: null };
-    const time = parsed.toLocaleTimeString('ko-KR', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-    });
-    return { date, time };
+function parseDueFromApi(task: Pick<TaskDto, 'dueDate' | 'dueTime'>): {
+    dueDate: string | null;
+    dueTime24: string | null;
+    hasTime: boolean;
+} {
+    const date = datePartFromDue(task.dueDate);
+    const fromDueTime = localTimeTo24(task.dueTime);
+    if (fromDueTime) {
+        return { dueDate: date, dueTime24: fromDueTime, hasTime: true };
+    }
+
+    const embedded = task.dueDate?.includes('T') ? localTimeTo24(task.dueDate.split('T')[1]) : null;
+    if (embedded && !task.dueDate?.endsWith('T00:00:00')) {
+        return { dueDate: date, dueTime24: embedded, hasTime: true };
+    }
+
+    return { dueDate: date, dueTime24: null, hasTime: false };
 }
 
 function resolveTaskCounts(task: TaskDto): {
@@ -298,6 +302,8 @@ export function mapTaskListToDto(task: TaskListDto, projectId?: number): TaskDto
         description: task.description ?? '',
         taskPriorityType: task.taskPriorityType,
         dueDate: task.dueDate ?? null,
+        dueTime: task.dueTime ?? null,
+        hasTime: Boolean(task.dueTime),
         sortOrder: task.sortOrder,
         projectId: projectId ?? null,
         projectName: task.projectName ?? null,
@@ -310,7 +316,7 @@ export function mapTaskListToDto(task: TaskListDto, projectId?: number): TaskDto
 
 export function mapTaskToHabit(task: TaskDto): Habit {
     const completed = readCompleted(task);
-    const { date: dueDate, time: dueTime } = parseDueDateTime(task.dueDate);
+    const { dueDate, dueTime24, hasTime } = parseDueFromApi(task);
     const counts = resolveTaskCounts(task);
     return {
         id: task.id,
@@ -319,7 +325,9 @@ export function mapTaskToHabit(task: TaskDto): Habit {
         streak: 0,
         lastCompletedDate: completed ? dueDate : null,
         dueDate,
-        dueTime,
+        dueTime: hasTime && dueTime24 ? formatTime12From24(dueTime24) : null,
+        dueTime24,
+        hasTime,
         parentId: task.parentId ?? null,
         userName: task.userName ?? null,
         projectId: task.projectId ?? null,

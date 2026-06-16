@@ -3,7 +3,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addHabit, fetchHabits, fetchNavTaskCounts, fetchProjects, type ApiView } from '../store/habitSlice';
 import { formatFileSize, validateFile } from '../utils/file';
 import type { NavItem } from './Sidebar';
-import { defaultDueDateForView, formatDueLabel } from '../utils/date';
+import { defaultDueDateForView, formatDueLabel, formatTaskDetailDue } from '../utils/date';
 import DatePickerDropdown from './DatePickerDropdown';
 
 interface QuickAddModalProps {
@@ -44,6 +44,8 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [dueDate, setDueDate] = useState<string | null>(null);
+    const [dueTime24, setDueTime24] = useState<string | null>(null);
+    const [hasTime, setHasTime] = useState(false);
     const [recurrenceLabel, setRecurrenceLabel] = useState<string | null>(null);
     const [selectedProjectId, setSelectedProjectId] = useState<number | ''>('');
     const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>([]);
@@ -59,6 +61,8 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
         setName('');
         setDescription('');
         setDueDate(null);
+        setDueTime24(null);
+        setHasTime(false);
         setRecurrenceLabel(null);
         setSelectedProjectId(projectId ?? '');
         setSelectedLabelIds(labelId ? [labelId] : []);
@@ -73,6 +77,8 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
     const initForm = () => {
         const defaultDate = defaultDueDateForView(view);
         setDueDate(defaultDate);
+        setDueTime24(null);
+        setHasTime(false);
         setRecurrenceLabel(null);
         setSelectedProjectId(projectId ?? '');
         setSelectedLabelIds(labelId ? [labelId] : []);
@@ -112,6 +118,8 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                 view,
                 projectId: selectedProjectId === '' ? null : selectedProjectId,
                 dueDate,
+                dueTime24,
+                hasTime,
                 recurrenceLabel,
                 labelIds: selectedLabelIds,
                 file: pendingFiles[0] ?? null,
@@ -181,7 +189,15 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
     const clearDate = (e: React.MouseEvent) => {
         e.stopPropagation();
         setDueDate(null);
+        setDueTime24(null);
+        setHasTime(false);
     };
+
+    const dueDateLabel = dueDate
+        ? hasTime && dueTime24
+            ? formatTaskDetailDue(dueDate, true, dueTime24)
+            : formatDueLabel(dueDate)
+        : '날짜';
 
     const selectedProject = projects.find(p => p.id === selectedProjectId);
     const selectedLabels = labels.filter(l => selectedLabelIds.includes(l.id));
@@ -228,7 +244,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                             }}
                         >
                             <CalendarIcon />
-                            <span>{dueDate ? formatDueLabel(dueDate) : '날짜'}</span>
+                            <span>{dueDateLabel}</span>
                             {dueDate && (
                                 <span className="pill-clear" onClick={clearDate} aria-label="날짜 지우기">×</span>
                             )}
@@ -236,9 +252,13 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                         {showDatePicker && (
                             <DatePickerDropdown
                                 value={dueDate}
+                                timeValue={hasTime && dueTime24 ? dueTime24 : null}
+                                hasTimeValue={hasTime}
                                 repeatValue={recurrenceLabel}
                                 onChange={change => {
-                                    setDueDate(change.date);
+                                    if (change.date !== undefined) setDueDate(change.date);
+                                    if (change.time !== undefined) setDueTime24(change.time);
+                                    if (change.hasTime !== undefined) setHasTime(change.hasTime);
                                     if (change.repeat !== undefined) {
                                         setRecurrenceLabel(change.repeat);
                                     }

@@ -3,12 +3,15 @@ import { dedupeInFlight } from './inFlight';
 import type { PriorityType, TaskDto, TaskFilterType, TaskListDto } from './types';
 import { mapTaskListToDto, readCompleted, type RecurrenceApiPayload } from './mappers';
 import { buildPageParams, TASK_PAGE_SIZE } from './pagination';
+import { toLocalDateTime } from '../utils/date';
 import { parseSlicePage, type PaginatedResult, type SpringSlice } from './slice';
 
 export interface CreateTaskPayload extends RecurrenceApiPayload {
     name: string;
     description?: string;
     dueDate?: string | null;
+    dueTime24?: string | null;
+    hasTime?: boolean;
     priorityType?: PriorityType;
     projectId?: number | null;
     parentId?: number | null;
@@ -137,7 +140,10 @@ export async function createTask(payload: CreateTaskPayload): Promise<TaskDto> {
     const body = {
         name: payload.name,
         description: payload.description ?? '',
-        dueDate: payload.dueDate ? payload.dueDate.slice(0, 10) : undefined,
+        dueDate: payload.dueDate
+            ? toLocalDateTime(payload.dueDate, payload.dueTime24, payload.hasTime ?? false)
+            : undefined,
+        hasTime: payload.hasTime ?? false,
         taskPriorityType: payload.priorityType ?? 'P4',
         projectId: payload.projectId ?? null,
         parentId: payload.parentId ?? null,
@@ -165,6 +171,8 @@ export async function updateTask(taskId: number, payload: UpdateTaskPayload): Pr
 
 export interface PatchTaskDueDatePayload {
     dueDate: string | null;
+    dueTime24?: string | null;
+    hasTime: boolean;
     recurrence?: RecurrenceApiPayload;
 }
 
@@ -172,20 +180,20 @@ export async function patchTaskDueDate(
     taskId: number,
     payload: PatchTaskDueDatePayload,
 ): Promise<TaskDto> {
-    const date = payload.dueDate == null ? null : payload.dueDate.slice(0, 10);
     const recurrence = payload.recurrence;
-    const body: Record<string, unknown> = { dueDate: date };
-    if (recurrence != null) {
-        body.recurring = recurrence.isRecurring ?? false;
-        body.recurrenceInterval = recurrence.recurrenceInterval ?? 0;
-        body.recurrenceRule = recurrence.recurrenceRule ?? null;
-        body.recurrenceDays = recurrence.recurrenceDays ?? null;
-        if (recurrence.recurrenceDayOfMonth != null) {
-            body.recurrenceDayOfMonth = recurrence.recurrenceDayOfMonth;
-        }
-    }
-    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/due-date`, body);
-    return data;
+    const body: Record<string, unknown> = {
+        dueDate: payload.dueDate == null
+            ? null
+            : toLocalDateTime(payload.dueDate, payload.dueTime24, payload.hasTime),
+        hasTime: payload.hasTime,
+        recurring: recurrence?.isRecurring ?? false,
+        recurrenceInterval: recurrence?.recurrenceInterval ?? 0,
+        recurrenceRule: recurrence?.recurrenceRule ?? null,
+        recurrenceDays: recurrence?.recurrenceDays ?? null,
+        recurrenceDayOfMonth: recurrence?.recurrenceDayOfMonth ?? null,
+    };
+    await apiClient.patch(`/api/tasks/${taskId}/due-date`, body);
+    return fetchTaskById(taskId);
 }
 
 export async function patchTaskPriority(taskId: number, priorityType: PriorityType): Promise<TaskDto> {

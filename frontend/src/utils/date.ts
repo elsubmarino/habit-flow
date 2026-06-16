@@ -17,6 +17,60 @@ export function combineDateAndTime(isoDate: string, time24: string): string {
     return `${isoDate.slice(0, 10)}T${time24}:00`;
 }
 
+export function localTimeTo24(value?: string | null): string | null {
+    if (!value) return null;
+    const part = value.slice(0, 5);
+    return /^\d{2}:\d{2}$/.test(part) ? part : null;
+}
+
+export function formatTime12From24(time24: string): string {
+    const [hourText, minuteText] = time24.split(':');
+    const hour = Number(hourText);
+    const minute = Number(minuteText);
+    if (Number.isNaN(hour) || Number.isNaN(minute)) return time24;
+    const date = new Date();
+    date.setHours(hour, minute, 0, 0);
+    return date.toLocaleTimeString('ko-KR', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    });
+}
+
+/** API LocalDateTime 문자열 (시간 없으면 T00:00:00) */
+export function toLocalDateTime(
+    date: string | null | undefined,
+    time24?: string | null,
+    hasTime = false,
+): string | null {
+    if (!date) return null;
+    const day = date.slice(0, 10);
+    if (!hasTime || !time24) return `${day}T00:00:00`;
+    const hhmm = time24.slice(0, 5);
+    return `${day}T${hhmm}:00`;
+}
+
+export function datePartFromDue(value?: string | null): string | null {
+    if (!value) return null;
+    return value.slice(0, 10);
+}
+
+export function formatTaskDetailDue(
+    date: string | null,
+    hasTime: boolean,
+    time24?: string | null,
+): string {
+    if (!date) return '';
+    const d = new Date(`${date.slice(0, 10)}T00:00:00`);
+    const base = d.toLocaleDateString('ko-KR', {
+        month: 'long',
+        day: 'numeric',
+        weekday: 'short',
+    });
+    if (!hasTime || !time24) return base;
+    return `${base} ${formatTime12From24(time24)}`;
+}
+
 export function dueDateToTimeInput(dueDate: string | null, dueTime: string | null): string {
     if (dueDate?.includes('T')) {
         const timePart = dueDate.split('T')[1] ?? '';
@@ -45,6 +99,26 @@ export function addDays(date: Date, days: number): Date {
     const next = new Date(date);
     next.setDate(next.getDate() + days);
     return next;
+}
+
+export const UPCOMING_CALENDAR_YEARS_LIMIT = 2;
+
+export function addYears(date: Date, years: number): Date {
+    const next = new Date(date);
+    next.setFullYear(next.getFullYear() + years);
+    return next;
+}
+
+export function getUpcomingCalendarMaxDate(from = new Date()): Date {
+    const max = addYears(from, UPCOMING_CALENDAR_YEARS_LIMIT);
+    max.setHours(23, 59, 59, 999);
+    return max;
+}
+
+export function isWithinUpcomingCalendarRange(iso: string, from = new Date()): boolean {
+    const day = iso.slice(0, 10);
+    const maxIso = toISODate(getUpcomingCalendarMaxDate(from));
+    return day <= maxIso;
 }
 
 export function formatDueLabel(iso: string): string {
