@@ -1,4 +1,4 @@
-import { getStoredAccessToken } from './client';
+import { ensureAccessToken } from './client';
 import type { NotificationDto } from './types';
 
 export interface NotificationSseHandlers {
@@ -43,7 +43,7 @@ export async function subscribeNotificationStream(
     handlers: NotificationSseHandlers,
     signal: AbortSignal,
 ): Promise<void> {
-    const token = getStoredAccessToken();
+    const token = await ensureAccessToken();
     if (!token) {
         throw new Error('인증 토큰이 없습니다.');
     }
@@ -56,6 +56,10 @@ export async function subscribeNotificationStream(
         },
         signal,
     });
+
+    if (response.status === 401 || response.status === 403) {
+        throw new Error(`SSE 연결 실패 (${response.status})`);
+    }
 
     if (!response.ok) {
         throw new Error(`SSE 연결 실패 (${response.status})`);

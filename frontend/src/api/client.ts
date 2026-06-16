@@ -6,6 +6,7 @@ const AUTH_FLAG_KEY = 'habitflow.auth';
 const LEGACY_TOKEN_KEY = 'habitflow.token';
 
 const AUTH_LOGOUT_EVENT = 'habitflow:logout';
+const ACCESS_TOKEN_SKEW_MS = 30_000;
 
 function migrateLegacyToken() {
     const legacy = localStorage.getItem(LEGACY_TOKEN_KEY);
@@ -29,6 +30,7 @@ type RefreshQueueEntry = {
 
 let isRefreshing = false;
 let refreshQueue: RefreshQueueEntry[] = [];
+let inFlightRefresh: Promise<string | null> | null = null;
 
 function flushRefreshQueue(error: unknown | null, token: string | null) {
     refreshQueue.forEach(entry => {
@@ -42,67 +44,26 @@ function isOAuthCallbackPath(): boolean {
     return window.location.pathname.includes('/oauth2/redirect');
 }
 
-function shouldSkipTokenRefresh(url?: string): boolean {
-    if (!url) return false;
-    return url.includes('/api/members/login') || url.includes('/api/members/reissue');
+function isPublicAuthRequest(url: string, method?: string): boolean {
+    const path = url.split('?')[0];
+    if (path.includes('/api/members/login')) return true;
+    if (path.includes('/api/members/reissue')) return true;
+    if (method?.toUpperCase() === 'POST' && /\/api\/members\/?$/.test(path)) return true;
+    return false;
 }
 
-apiClient.interceptors.request.use(config => {
-    const token = getStoredAccessToken();
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+function isAccessTokenExpired(token: string, skewMs = ACCESS_TOKEN_SKEW_MS): boolean {
+    try {
+        const payloadPart = token.split('.')[1];
+        if (!payloadPart) return true;
+        const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(atob(normalized)) as { exp?: number };
+        if (typeof payload.exp !== 'number') return false;
+        return payload.exp * 1000 <= Date.now() + skewMs;
+    } catch {
+        return true;
     }
-    return config;
-});
-
-apiClient.interceptors.response.use(
-    response => response,
-    async (error: AxiosError) => {
-        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-
-        if (
-            error.response?.status !== 401 ||
-            !originalRequest ||
-            originalRequest._retry ||
-            shouldSkipTokenRefresh(originalRequest.url) ||
-            isOAuthCallbackPath()
-        ) {
-            return Promise.reject(error);
-        }
-
-        const refreshToken = getStoredRefreshToken();
-        if (!refreshToken) {
-            clearStoredTokens();
-            return Promise.reject(error);
-        }
-
-        if (isRefreshing) {
-            return new Promise<string>((resolve, reject) => {
-                refreshQueue.push({ resolve, reject });
-            }).then(token => {
-                originalRequest.headers.Authorization = `Bearer ${token}`;
-                return apiClient(originalRequest);
-            });
-        }
-
-        originalRequest._retry = true;
-        isRefreshing = true;
-
-        try {
-            const tokens = await reissueTokensRequest(refreshToken);
-            setStoredTokens(tokens.accessToken, tokens.refreshToken);
-            flushRefreshQueue(null, tokens.accessToken);
-            originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`;
-            return apiClient(originalRequest);
-        } catch (refreshError) {
-            flushRefreshQueue(refreshError, null);
-            clearStoredTokens();
-            return Promise.reject(refreshError);
-        } finally {
-            isRefreshing = false;
-        }
-    },
-);
+}
 
 /** 인터셉터 없이 호출 — refresh 루프 방지 */
 async function reissueTokensRequest(
@@ -140,6 +101,112 @@ async function reissueTokensRequest(
         refreshToken: data.refreshToken ?? refreshToken,
     };
 }
+
+async function refreshAccessToken(): Promise<string | null> {
+    const refreshToken = getStoredRefreshToken();
+    if (!refreshToken) {
+        clearStoredTokens();
+        return null;
+    }
+
+    if (!inFlightRefresh) {
+        inFlightRefresh = reissueTokensRequest(refreshToken)
+            .then(tokens => {
+                setStoredTokens(tokens.accessToken, tokens.refreshToken);
+                return tokens.accessToken;
+            })
+            .catch(error => {
+                clearStoredTokens();
+                throw error;
+            })
+            .finally(() => {
+                inFlightRefresh = null;
+            });
+    }
+
+    try {
+        return await inFlightRefresh;
+    } catch {
+        return null;
+    }
+}
+
+/** access 만료 시 refreshToken으로 선(reissue) 갱신 */
+export async function ensureAccessToken(): Promise<string | null> {
+    const accessToken = getStoredAccessToken();
+    if (accessToken && !isAccessTokenExpired(accessToken)) {
+        return accessToken;
+    }
+    return refreshAccessToken();
+}
+
+apiClient.interceptors.request.use(async config => {
+    const url = config.url ?? '';
+    if (isPublicAuthRequest(url, config.method)) {
+        delete config.headers.Authorization;
+        return config;
+    }
+
+    const token = await ensureAccessToken();
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    } else {
+        delete config.headers.Authorization;
+    }
+    return config;
+});
+
+apiClient.interceptors.response.use(
+    response => response,
+    async (error: AxiosError) => {
+        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+        const status = error.response?.status;
+
+        if (
+            (status !== 401 && status !== 403) ||
+            !originalRequest ||
+            originalRequest._retry ||
+            isPublicAuthRequest(originalRequest.url ?? '', originalRequest.method) ||
+            isOAuthCallbackPath()
+        ) {
+            return Promise.reject(error);
+        }
+
+        const refreshToken = getStoredRefreshToken();
+        if (!refreshToken) {
+            clearStoredTokens();
+            return Promise.reject(error);
+        }
+
+        if (isRefreshing) {
+            return new Promise<string>((resolve, reject) => {
+                refreshQueue.push({ resolve, reject });
+            }).then(token => {
+                originalRequest.headers.Authorization = `Bearer ${token}`;
+                return apiClient(originalRequest);
+            });
+        }
+
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        try {
+            const accessToken = await refreshAccessToken();
+            if (!accessToken) {
+                throw new Error('토큰 재발급에 실패했습니다.');
+            }
+            flushRefreshQueue(null, accessToken);
+            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            return apiClient(originalRequest);
+        } catch (refreshError) {
+            flushRefreshQueue(refreshError, null);
+            clearStoredTokens();
+            return Promise.reject(refreshError);
+        } finally {
+            isRefreshing = false;
+        }
+    },
+);
 
 export function getStoredAccessToken(): string | null {
     return localStorage.getItem(ACCESS_TOKEN_KEY);

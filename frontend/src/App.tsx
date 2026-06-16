@@ -249,16 +249,9 @@ function App() {
             .catch(() => undefined);
     };
 
-    if (!isAuthenticated) {
-        return (
-            <>
-                <OAuthRedirectHandler onSuccess={handleAuthSuccess} />
-                <LoginScreen onLoginSuccess={handleAuthSuccess} />
-            </>
-        );
-    }
-
     useEffect(() => {
+        if (!isAuthenticated) return;
+
         dispatch(fetchFavorites());
         dispatch(fetchNavTaskCounts());
         dispatch(fetchNotifications());
@@ -274,12 +267,13 @@ function App() {
                 });
             })
             .catch(() => undefined);
-    }, [dispatch]);
+    }, [dispatch, isAuthenticated]);
 
     const showLabelsBrowse = activeNav === 'filters' && !selectedLabelId && !selectedProjectId && !showProjectsBrowse;
 
     /** 화면(라우트) 진입 시 해당 뷰 데이터 재조회 */
     useEffect(() => {
+        if (!isAuthenticated) return;
         if (showNotifications) return;
         if (activeNav === 'report') return;
 
@@ -317,6 +311,7 @@ function App() {
         dispatch(fetchHabits({ view, projectId: null, labelId: selectedLabelId }));
     }, [
         dispatch,
+        isAuthenticated,
         activeNav,
         selectedProjectId,
         selectedLabelId,
@@ -343,12 +338,12 @@ function App() {
     };
 
     const handleLogout = () => {
+        setIsAuthenticated(false);
+        setShowNotifications(false);
         void logoutMember()
             .catch(() => undefined)
             .finally(() => {
                 clearStoredTokens();
-                setIsAuthenticated(false);
-                setShowNotifications(false);
             });
     };
 
@@ -671,6 +666,15 @@ function App() {
             </button>
         </div>
     ) : null;
+
+    if (!isAuthenticated) {
+        return (
+            <>
+                <OAuthRedirectHandler onSuccess={handleAuthSuccess} />
+                <LoginScreen onLoginSuccess={handleAuthSuccess} />
+            </>
+        );
+    }
 
     return (
         <>
