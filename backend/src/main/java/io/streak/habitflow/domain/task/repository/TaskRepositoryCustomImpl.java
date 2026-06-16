@@ -145,7 +145,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskListQuery> searchTasksByCondition(TaskRequest.SearchCondition searchCondition, Long memberId, Pageable pageable) {
+    public List<TaskListQuery> searchTasksByCondition(TaskRequest.SearchCondition searchCondition, Long memberId) {
 
         List<Long> ids = queryFactory
                 .select(task.id)
@@ -160,8 +160,6 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         task.sortOrder.asc(),
                         task.id.desc()
                 )
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize() + 1)
                 .fetch();
         if (ids.isEmpty()) {
             return new ArrayList<>();
@@ -216,7 +214,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         if (TaskFilterType.TODAY == taskFilterType) {
             return task.dueDate.loe(localDate);
         } else if (TaskFilterType.UPCOMING == taskFilterType) {
-            return task.dueDate.isNotNull();
+            return task.dueDate.loe(localDate.plusYears(2));
         } else if (TaskFilterType.INBOX == taskFilterType) {
             return task.project.isNull();
         }

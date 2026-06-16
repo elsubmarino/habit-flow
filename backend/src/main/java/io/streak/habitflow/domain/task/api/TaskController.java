@@ -12,9 +12,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -120,36 +117,33 @@ public class TaskController {
     @GetMapping("/inbox")
     @Operation(summary = "관리함 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "관리함 테스크 조회 성공")})
-    public ResponseEntity<Slice<TaskResponse.List>> getInboxTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
-                                                                          @PageableDefault(size=20) Pageable pageable) {
+    public ResponseEntity<List<TaskResponse.List>> getInboxTasks(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.INBOX
         );
 
-        return ResponseEntity.ok(taskService.getTasks(searchCondition, userPrincipal.getMemberId(),pageable));
+        return ResponseEntity.ok(taskService.getTasks(searchCondition, userPrincipal.getMemberId()));
     }
 
     @GetMapping("/today")
     @Operation(summary = "오늘 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "오늘 테스크 조회 성공")})
-    public ResponseEntity<Slice<TaskResponse.List>> getTodayTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
-                                                                 @PageableDefault(size=20) Pageable pageable) {
+    public ResponseEntity<List<TaskResponse.List>> getTodayTasks(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.TODAY
         );
-        return ResponseEntity.ok(taskService.getTasks(searchCondition,userPrincipal.getMemberId(), pageable));
+        return ResponseEntity.ok(taskService.getTasks(searchCondition,userPrincipal.getMemberId()));
     }
 
     @GetMapping("/upcoming")
     @Operation(summary = "다가오는 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "다가오는 테스크 조회 성공")})
-    public ResponseEntity<Slice<TaskResponse.List>> getUpcomingTasks(@AuthenticationPrincipal UserPrincipal userPrincipal,
-                                                                             @PageableDefault(size = 20) Pageable pageable) {
+    public ResponseEntity<List<TaskResponse.List>> getUpcomingTasks(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.UPCOMING
         );
 
-        return ResponseEntity.ok(taskService.getTasks(searchCondition,userPrincipal.getMemberId(), pageable));
+        return ResponseEntity.ok(taskService.getTasks(searchCondition,userPrincipal.getMemberId()));
     }
 
     @PatchMapping("/{taskId}/due-date")

@@ -205,21 +205,12 @@ public class TaskService {
         return new SliceImpl<>(taskListResponses,pageable,hasNext);
     }
 
-    public Slice<TaskResponse.List> getTasks(TaskRequest.SearchCondition searchCondition, Long memberId, Pageable pageable){
-        int pageSize = pageable.getPageSize();
-        List<TaskListQuery> tasks = taskRepository.searchTasksByCondition(searchCondition, memberId, pageable);
+    public List<TaskResponse.List> getTasks(TaskRequest.SearchCondition searchCondition, Long memberId){
+        List<TaskListQuery> tasks = taskRepository.searchTasksByCondition(searchCondition, memberId);
 
-        boolean hasNext = false;
-        if(tasks.size() > pageSize){
-            tasks.remove(pageSize);
-            hasNext = true;
-        }
-
-        List<TaskResponse.List> taskListResponses = tasks.stream()
+        return tasks.stream()
                 .map(task->TaskResponse.List.of(task,new ArrayList<>()))
                 .toList();
-
-        return new SliceImpl<>(taskListResponses,pageable,hasNext);
     }
 
     @Transactional
