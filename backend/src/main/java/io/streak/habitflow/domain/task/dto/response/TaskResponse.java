@@ -3,10 +3,12 @@ package io.streak.habitflow.domain.task.dto.response;
 import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.task.dto.query.TaskListQuery;
+import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import lombok.Builder;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -144,6 +146,31 @@ public final class TaskResponse{
             }
 
             return builder.build();
+        }
+    }
+
+    public record ListSlice(
+            java.util.List<List> content,
+            boolean hasNext,
+            boolean hasPrev,
+            TaskRequest.Cursor nextCursor,
+            TaskRequest.Cursor prevCursor
+    ){
+        public static ListSlice empty(){
+            return new ListSlice(java.util.List.of(),false,false,null,null);
+        }
+    }
+
+    @Builder
+    public record UpcomingDateCount(
+        LocalDate upcomingDate,
+        Long count
+    ){
+        public static UpcomingDateCount of(LocalDate upcomingDate, Long count){
+            return UpcomingDateCount.builder()
+                    .upcomingDate(upcomingDate)
+                    .count(count)
+                    .build();
         }
     }
 }

@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.task.dto.request;
 
+import io.streak.habitflow.domain.task.type.CursorDirection;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -59,8 +60,14 @@ public final class TaskRequest {
     }
 
     public record SearchCondition(
-            TaskFilterType taskFilterType
-    ){}
+            TaskFilterType taskFilterType,
+            LocalDateTime fromDate,
+            LocalDateTime toDate
+    ){
+        public SearchCondition(TaskFilterType taskFilterType){
+            this(taskFilterType, null, null);
+        }
+    }
 
     public record UpdateDueDate(
             LocalDateTime dueDate,
@@ -92,4 +99,26 @@ public final class TaskRequest {
             String name,
             String description
     ){}
+
+    public record Cursor(
+            LocalDateTime lastDueDate,
+            TaskPriorityType lastPriorityType,
+            Long lastSortOrder,
+            Long lastTaskId,
+            CursorDirection direction
+    ){
+        public Cursor{
+            if(direction == null){
+                direction =  CursorDirection.NEXT;
+            }
+        }
+
+        public static Cursor next(LocalDateTime dueDate, TaskPriorityType priorityType, Long sortOrder, Long taskId){
+            return new Cursor(dueDate,priorityType,sortOrder,taskId,CursorDirection.NEXT);
+        }
+
+        public static Cursor prev(LocalDateTime dueDate, TaskPriorityType priorityType, Long sortOrder, Long taskId){
+            return new Cursor(dueDate,priorityType,sortOrder,taskId,CursorDirection.PREV);
+        }
+    }
 }

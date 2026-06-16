@@ -14,6 +14,7 @@ public class TaskListQuery {
     private String description;
     private TaskPriorityType taskPriorityType;
     private LocalDateTime dueDate;
+    private long sortOrder;
     private String projectName;
     private long countSubTasks;
     private long countSubTasksCompleted;

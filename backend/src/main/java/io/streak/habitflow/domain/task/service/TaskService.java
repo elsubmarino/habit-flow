@@ -17,10 +17,7 @@ import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.entity.TaskLabel;
 import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
-import io.streak.habitflow.domain.task.type.ActivityType;
-import io.streak.habitflow.domain.task.type.TargetType;
-import io.streak.habitflow.domain.task.type.TaskFilterType;
-import io.streak.habitflow.domain.task.type.TaskPriorityType;
+import io.streak.habitflow.domain.task.type.*;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.DistributedLock;
 import io.streak.habitflow.global.infra.file.FileDto;
@@ -205,12 +202,58 @@ public class TaskService {
         return new SliceImpl<>(taskListResponses,pageable,hasNext);
     }
 
-    public List<TaskResponse.List> getTasks(TaskRequest.SearchCondition searchCondition, Long memberId){
-        List<TaskListQuery> tasks = taskRepository.searchTasksByCondition(searchCondition, memberId);
+    public TaskResponse.ListSlice getTasks(TaskRequest.SearchCondition searchCondition,
+                                             TaskRequest.Cursor cursor, Long memberId, Pageable pageable){
+        int pageSize = pageable.getPageSize();
+        List<TaskListQuery> tasks = taskRepository.searchTasksByCondition(searchCondition, cursor, memberId, pageable);
 
-        return tasks.stream()
+        boolean hasNext = false;
+        boolean hasPrev = false;
+
+        if(cursor != null && cursor.direction() == CursorDirection.PREV){
+            hasPrev = tasks.size() > pageSize;
+            if(hasPrev){
+                tasks = tasks.subList(tasks.size() - pageSize, tasks.size());
+            }
+            hasNext = cursor.lastTaskId() != null;
+        }else{
+            hasNext=  tasks.size() > pageSize;
+            if(hasNext){
+                tasks=tasks.subList(0, pageSize);
+            }
+            hasPrev = cursor != null && cursor.lastTaskId() != null;
+        }
+
+        List<TaskResponse.List> taskListResponses = tasks.stream()
                 .map(task->TaskResponse.List.of(task,new ArrayList<>()))
                 .toList();
+
+        TaskRequest.Cursor nextCursor = null;
+        TaskRequest.Cursor prevCursor = null;
+
+        if(!tasks.isEmpty()){
+            TaskListQuery first = tasks.get(0);
+            TaskListQuery last = tasks.get(tasks.size()-1);
+
+            if(hasNext){
+                nextCursor = TaskRequest.Cursor.next(
+                        last.getDueDate(),
+                        last.getTaskPriorityType(),
+                        last.getSortOrder(),
+                        last.getId()
+                );
+            }
+            if(hasPrev){
+                prevCursor = TaskRequest.Cursor.prev(
+                        first.getDueDate(),
+                        first.getTaskPriorityType(),
+                        first.getSortOrder(),
+                        first.getId()
+                );
+            }
+        }
+
+        return new TaskResponse.ListSlice(taskListResponses,hasNext,hasPrev,nextCursor,prevCursor);
     }
 
     @Transactional
@@ -425,6 +468,10 @@ public class TaskService {
                 "당신이 테스크 "+ task.getName()+"를 "+
                         ((task.getProject() != null) ? task.getProject().getName() : "관리함") +"으로 이동시켰습니다."
         ));
+    }
+
+    public List<TaskResponse.UpcomingDateCount> getUpcomingDateCounts(Long memberId, LocalDateTime fromDate, LocalDateTime toDate){
+        return taskRepository.countUpcomingTasksByDate(memberId, fromDate, toDate);
     }
 
 }
