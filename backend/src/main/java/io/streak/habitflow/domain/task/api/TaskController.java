@@ -194,4 +194,15 @@ public class TaskController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/upcoming/summary")
+    public ResponseEntity<List<TaskResponse.UpcomingDateCount>> getUpcomingSummary(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate
+    ) {
+        return ResponseEntity.ok(
+                taskService.getUpcomingDateCounts(userPrincipal.getMemberId(), fromDate, toDate)
+        );
+    }
+
 }

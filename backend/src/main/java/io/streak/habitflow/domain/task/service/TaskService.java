@@ -35,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -207,8 +208,8 @@ public class TaskService {
         int pageSize = pageable.getPageSize();
         List<TaskListQuery> tasks = taskRepository.searchTasksByCondition(searchCondition, cursor, memberId, pageable);
 
-        boolean hasNext = false;
-        boolean hasPrev = false;
+        boolean hasNext;
+        boolean hasPrev;
 
         if(cursor != null && cursor.direction() == CursorDirection.PREV){
             hasPrev = tasks.size() > pageSize;
@@ -224,8 +225,12 @@ public class TaskService {
             hasPrev = cursor != null && cursor.lastTaskId() != null;
         }
 
+        List<Long> taskIds = tasks.stream().map(TaskListQuery::getId).toList();
+        Map<Long, List<LabelResponse.List>> labelMap = labelRepository.findLabelsByTaskIds(taskIds);
+
         List<TaskResponse.List> taskListResponses = tasks.stream()
-                .map(task->TaskResponse.List.of(task,new ArrayList<>()))
+                .map(task->TaskResponse.List.of(task,
+                        labelMap.getOrDefault(task.getId(),new ArrayList<>())))
                 .toList();
 
         TaskRequest.Cursor nextCursor = null;

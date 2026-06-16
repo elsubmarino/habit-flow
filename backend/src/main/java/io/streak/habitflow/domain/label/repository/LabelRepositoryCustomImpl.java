@@ -1,16 +1,22 @@
 package io.streak.habitflow.domain.label.repository;
 
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.label.dto.query.LabelListQuery;
+import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.streak.habitflow.domain.label.entity.QLabel.label;
+import static io.streak.habitflow.domain.task.entity.QTaskLabel.taskLabel;
 
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
@@ -52,5 +58,34 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
     private BooleanExpression ltLabelId(Long labelId) {
         if(labelId == null) return null;
         return label.id.lt(labelId);
+    }
+
+    @Override
+    public Map<Long, List<LabelResponse.List>> findLabelsByTaskIds(List<Long> taskIds) {
+        if(taskIds == null || taskIds.isEmpty()){
+            return Collections.emptyMap();
+        }
+
+        List<Tuple> results = queryFactory
+                .select(taskLabel.task.id,
+                        label.id,
+                        label.name,
+                        label.color,
+                        label.sortOrder)
+                .from(taskLabel)
+                .join(taskLabel.label,label)
+                .where(taskLabel.task.id.in(taskIds))
+                .fetch();
+
+        return results.stream()
+                .collect(Collectors.groupingBy(row->row.get(taskLabel.task.id),
+                        Collectors.mapping(row->LabelResponse.List.builder()
+                                .id(row.get(label.id))
+                                .name(row.get(label.name))
+                                .color(row.get(label.color))
+                                .sortOrder(row.get(label.sortOrder))
+                                .build(),
+                        Collectors.toList())
+                ));
     }
 }
