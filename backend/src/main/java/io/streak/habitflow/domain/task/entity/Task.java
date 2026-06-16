@@ -11,6 +11,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -102,37 +103,46 @@ public class Task extends BaseTimeEntity {
         this.project = project;
     }
 
-    public void updateTaskLabels(List<TaskLabel> taskLabels){
-        this.taskLabels = taskLabels;
-    }
-
-    public void changeProject(Project project){
-        this.project = project;
-    }
-
-    public void updateRecurring(boolean recurring){
-        this.recurring = recurring;
-    }
-
-    public void updateRecurrenceRule(String recurrenceRule){
-        this.recurrenceRule = recurrenceRule;
-    }
-
-    public void updateRecurrenceInterval(Integer recurrenceInterval){
-        this.recurrenceInterval = recurrenceInterval;
-    }
-    public void updateRecurrenceDays(String recurrenceDays){
-        this.recurrenceDays = recurrenceDays;
-    }
-    public void updateRecurrenceDayOfMonth(Integer recurrenceDayOfMonth){
-        this.recurrenceDayOfMonth = recurrenceDayOfMonth;
-    }
-
     public void updateCompleted(boolean completed){
         this.completed = completed;
     }
 
     public void updateDueDate(LocalDateTime targetDate){this.dueDate =targetDate;}
-    public void updateHasTime(boolean hasTime){this.hasTime =hasTime;}
+
+    public boolean updateSchedule(LocalDateTime newDueDate,  boolean newRecurring,
+                                  String newRecurrenceRule, Integer newRecurrenceInterval,
+                                  String newRecurrenceDays, Integer newRecurrenceDayOfMonth,
+                                  boolean newHasTime){
+        boolean isChanged = false;
+        if(!Objects.equals(this.dueDate,newDueDate)){
+            this.dueDate = newDueDate;
+            isChanged = true;
+        }
+        if(this.recurring != newRecurring){
+            this.recurring = newRecurring;
+            isChanged = true;
+        }
+        if (!Objects.equals(this.recurrenceRule, newRecurrenceRule)) {
+            this.recurrenceRule = newRecurrenceRule;
+            isChanged = true;
+        }
+        if (!Objects.equals(this.recurrenceInterval, newRecurrenceInterval)) {
+            this.recurrenceInterval = newRecurrenceInterval;
+            isChanged = true;
+        }
+        if (!Objects.equals(this.recurrenceDays, newRecurrenceDays)) {
+            this.recurrenceDays = newRecurrenceDays;
+            isChanged = true;
+        }
+        if (!Objects.equals(this.recurrenceDayOfMonth, newRecurrenceDayOfMonth)) {
+            this.recurrenceDayOfMonth = newRecurrenceDayOfMonth;
+            isChanged = true;
+        }
+        if (this.hasTime != newHasTime) {
+            this.hasTime = newHasTime;
+            isChanged = true;
+        }
+        return isChanged;
+    }
 
 }

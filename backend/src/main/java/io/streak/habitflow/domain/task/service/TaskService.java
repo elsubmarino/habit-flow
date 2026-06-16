@@ -383,14 +383,19 @@ public class TaskService {
     public void updateTaskDueDate(Long taskId, TaskRequest.UpdateDueDate request, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
+        boolean isChanged = task.updateSchedule(
+                request.dueDate(),
+                request.recurring(),
+                request.recurrenceRule(),
+                request.recurrenceInterval(),
+                request.recurrenceDays(),
+                request.recurrenceDayOfMonth(),
+                request.hasTime()
+        );
 
-        task.updateDueDate(request.dueDate());
-        task.updateRecurring(request.recurring());
-        task.updateRecurrenceInterval(request.recurrenceInterval());
-        task.updateRecurrenceDays(request.recurrenceDays());
-        task.updateRecurrenceDayOfMonth(request.recurrenceDayOfMonth());
-        task.updateRecurrenceRule(request.recurrenceRule());
-        task.updateHasTime(request.hasTime());
+        if(!isChanged){
+            return;
+        }
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 task.getId(),
