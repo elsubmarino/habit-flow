@@ -12,7 +12,6 @@ import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.dto.query.TaskListQuery;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
-import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.entity.TaskLabel;
@@ -36,7 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -111,6 +110,7 @@ public class TaskService {
                 .subTasks(new ArrayList<>())
                 .taskLabels(new ArrayList<>())
                 .dueDate(request.dueDate())
+                .hasTime(request.hasTime())
                 .comments(new ArrayList<>())
                 .build();
 
@@ -189,7 +189,7 @@ public class TaskService {
     }
 
     @CheckOwnership(type="PROJECT")
-    public Slice<TaskListResponse> getTasksByProject(Long projectId, Long memberId, Pageable pageable){
+    public Slice<TaskResponse.List> getTasksByProject(Long projectId, Long memberId, Pageable pageable){
         int pageSize = pageable.getPageSize();
 
         List<TaskListQuery> tasks = taskRepository.findTasksByProject(projectId,memberId,pageable);
@@ -199,13 +199,13 @@ public class TaskService {
             tasks.remove(pageSize);
             hasNext = true;
         }
-        List<TaskListResponse> taskListResponses =  tasks.stream()
-                .map(task->TaskListResponse.of(task,new ArrayList<>()))
+        List<TaskResponse.List> taskListResponses =  tasks.stream()
+                .map(task->TaskResponse.List.of(task,new ArrayList<>()))
                 .toList();
         return new SliceImpl<>(taskListResponses,pageable,hasNext);
     }
 
-    public Slice<TaskListResponse> getTasks(TaskRequest.SearchCondition searchCondition, Long memberId, Pageable pageable){
+    public Slice<TaskResponse.List> getTasks(TaskRequest.SearchCondition searchCondition, Long memberId, Pageable pageable){
         int pageSize = pageable.getPageSize();
         List<TaskListQuery> tasks = taskRepository.searchTasksByCondition(searchCondition, memberId, pageable);
 
@@ -215,8 +215,8 @@ public class TaskService {
             hasNext = true;
         }
 
-        List<TaskListResponse> taskListResponses = tasks.stream()
-                .map(task->TaskListResponse.of(task,new ArrayList<>()))
+        List<TaskResponse.List> taskListResponses = tasks.stream()
+                .map(task->TaskResponse.List.of(task,new ArrayList<>()))
                 .toList();
 
         return new SliceImpl<>(taskListResponses,pageable,hasNext);
@@ -275,7 +275,7 @@ public class TaskService {
         task.updateCompleted(nextCompletion);
 
         if(task.isRecurring() && nextCompletion){
-            LocalDate nextDueDate = calculateNextInstanceDate(task.getDueDate(), task);
+            LocalDateTime nextDueDate = calculateNextInstanceDate(task.getDueDate(), task);
 
             task.updateDueDate(nextDueDate);
 
@@ -304,7 +304,7 @@ public class TaskService {
         return taskRepository.countTasksByCondition(taskFilterType, memberId);
     }
 
-    private LocalDate calculateNextInstanceDate(LocalDate currentDueDate, Task task){
+    private LocalDateTime calculateNextInstanceDate(LocalDateTime currentDueDate, Task task){
         int interval = task.getRecurrenceInterval() > 0 ? task.getRecurrenceInterval() : 1;
 
         switch(task.getRecurrenceRule()){
@@ -314,7 +314,7 @@ public class TaskService {
             case "WEEKLY":
                 // 매주 특정 요일 (예: MON, WED, FRI)
                if(task.getRecurrenceDays() != null && !task.getRecurrenceDays().isEmpty()){
-                   LocalDate nextDay = currentDueDate.plusDays(1);
+                   LocalDateTime nextDay = currentDueDate.plusDays(1);
                    for(int i=0;i<7;i++){
                        String dayName = nextDay.getDayOfWeek().name().substring(0,3);
                        if(task.getRecurrenceDays().contains(dayName)){
@@ -326,10 +326,10 @@ public class TaskService {
                return currentDueDate.plusWeeks(interval);
             case "MONTHLY":
                 //매월 특정 일(예: 매월 11일)
-                LocalDate nextMonth = currentDueDate.plusMonths(interval);
+                LocalDateTime nextMonth = currentDueDate.plusMonths(interval);
                 if(task.getRecurrenceDayOfMonth() != null){
                     int targetDay = task.getRecurrenceDayOfMonth();
-                    int maxDayInMonth = nextMonth.lengthOfMonth();
+                    int maxDayInMonth = nextMonth.toLocalDate().lengthOfMonth();
                     return nextMonth.withDayOfMonth(Math.min(targetDay, maxDayInMonth));
                 }
                 return nextMonth;

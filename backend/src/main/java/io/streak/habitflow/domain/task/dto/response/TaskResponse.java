@@ -7,7 +7,8 @@ import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import lombok.Builder;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 
 public final class TaskResponse{
@@ -18,7 +19,7 @@ public final class TaskResponse{
             String description,
             boolean completed,
             TaskPriorityType taskPriorityType,
-            LocalDate dueDate,
+            LocalDateTime dueDate,
             long sortOrder,
             Long userId,
             String userName,
@@ -29,7 +30,8 @@ public final class TaskResponse{
             boolean recurring,
             java.util.List<Detail> subTasks,
             java.util.List<LabelResponse.List> labels,
-            java.util.List<CommentResponse.Detail> comments
+            java.util.List<CommentResponse.Detail> comments,
+            LocalTime dueTime
     ) {
         @Builder
         public Detail{
@@ -54,6 +56,7 @@ public final class TaskResponse{
                     .sortOrder(task.getSortOrder())
                     .labels(labelListResponses)
                     .recurring(task.isRecurring())
+                    .dueTime(task.isHasTime()?task.getDueDate().toLocalTime():null)
                     .subTasks(task.getSubTasks().stream()
                             .map(Detail::fromSimpleSubTask)
                             .toList());
@@ -96,13 +99,14 @@ public final class TaskResponse{
             String name,
             String description,
             TaskPriorityType taskPriorityType,
-            LocalDate dueDate,
+            LocalDateTime dueDate,
             long sortOrder,
             String projectName,
             long countSubTasks,
             long countSubTasksCompleted,
             long countComments,
-            java.util.List<LabelResponse.List> labels
+            java.util.List<LabelResponse.List> labels,
+            LocalTime dueTime
     ){
         public List{
             if(labels== null){
@@ -122,6 +126,7 @@ public final class TaskResponse{
                     .countSubTasksCompleted(taskListQuery.getCountSubTasksCompleted())
                     .countComments(taskListQuery.getCountComments())
                     .labels(labelListResponses)
+                    .dueTime(taskListQuery.isHasTime()?taskListQuery.getDueDate().toLocalTime():null)
                     .build();
         }
 

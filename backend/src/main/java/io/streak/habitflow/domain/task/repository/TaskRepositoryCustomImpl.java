@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -112,6 +112,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                                 task.description,
                                 task.taskPriorityType,
                                 task.dueDate,
+                                task.hasTime,
                                 task.sortOrder,
                                 task.project.name.as("projectName"),
                                 ExpressionUtils.as(
@@ -177,6 +178,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                                 task.description,
                                 task.taskPriorityType,
                                 task.dueDate,
+                                task.hasTime,
                                 task.sortOrder,
                                 task.project.name.as("projectName"),
                                 ExpressionUtils.as(
@@ -210,7 +212,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
 
     private BooleanExpression filterTypeEq(TaskFilterType taskFilterType) {
         if (taskFilterType == null) return null;
-        LocalDate localDate = LocalDate.now();
+        LocalDateTime localDate = LocalDateTime.now();
         if (TaskFilterType.TODAY == taskFilterType) {
             return task.dueDate.loe(localDate);
         } else if (TaskFilterType.UPCOMING == taskFilterType) {
@@ -250,3 +252,4 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .fetchOne());
     }
 }
+

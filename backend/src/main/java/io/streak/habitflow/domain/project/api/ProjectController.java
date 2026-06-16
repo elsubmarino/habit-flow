@@ -3,7 +3,7 @@ package io.streak.habitflow.domain.project.api;
 import io.streak.habitflow.domain.project.dto.request.ProjectRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.service.ProjectService;
-import io.streak.habitflow.domain.task.dto.response.TaskListResponse;
+import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
@@ -71,9 +71,9 @@ public class ProjectController {
 
     @GetMapping("/{projectId}/tasks")
     @Operation(summary = "프로젝트에 딸린 테스크 조회")
-    public ResponseEntity<Slice<TaskListResponse>> getTasksByProject(@PathVariable Long projectId,
-                                                                     @AuthenticationPrincipal UserPrincipal userPrincipal,
-                                                                     @PageableDefault(size=20) Pageable pageable) {
+    public ResponseEntity<Slice<TaskResponse.List>> getTasksByProject(@PathVariable Long projectId,
+                                                                 @AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                                 @PageableDefault(size=20) Pageable pageable) {
         return ResponseEntity.ok(taskService.getTasksByProject(projectId, userPrincipal.getMemberId(), pageable));
     }
 

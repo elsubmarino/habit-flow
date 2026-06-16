@@ -8,7 +8,7 @@ import io.streak.habitflow.global.common.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,7 +65,7 @@ public class Task extends BaseTimeEntity {
     private List<TaskLabel> taskLabels = new ArrayList<>();
 
     private boolean completed;
-    private LocalDate dueDate;
+    private LocalDateTime dueDate;
 
     private boolean recurring;
 
@@ -73,6 +73,8 @@ public class Task extends BaseTimeEntity {
     private Integer recurrenceInterval;  //1(매일,매주) 2(이틀마다, 격주 등)
     private String recurrenceDays; //MON, WED, FRI (WEEKLY 일 때 사용)
     private Integer recurrenceDayOfMonth; //11 (MONTHLY 일 때 사용. NULL 허용을 위해 Integer
+
+    private boolean hasTime; //시간을 기록했느냐
 
     public void addTaskLabel(TaskLabel taskLabel){
         this.taskLabels.add(taskLabel);
@@ -130,6 +132,6 @@ public class Task extends BaseTimeEntity {
         this.completed = completed;
     }
 
-    public void updateDueDate(LocalDate targetDate){this.dueDate =targetDate;}
+    public void updateDueDate(LocalDateTime targetDate){this.dueDate =targetDate;}
 
 }

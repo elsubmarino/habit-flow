@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +21,7 @@ public final class TaskRequest {
             String description,
 
             @Schema(description = "마감 기한 일시")
-            LocalDate dueDate,
+            LocalDateTime dueDate,
 
             @Schema(description = "테스크 우선 순위 (P1~P4)")
             TaskPriorityType taskPriorityType,
@@ -48,7 +48,10 @@ public final class TaskRequest {
             String recurrenceDays,
 
             @Schema(description = "반복 요일 일자 (매월 몇 일)")
-            Integer recurrenceDayOfMonth
+            Integer recurrenceDayOfMonth,
+
+            @Schema(description = "시간 존재 여부")
+            boolean hasTime
     ) {
         public Create{
             labelIds = (labelIds == null) ? new ArrayList<>() : new ArrayList<>(labelIds);
@@ -60,12 +63,13 @@ public final class TaskRequest {
     ){}
 
     public record UpdateDueDate(
-            LocalDate dueDate,
+            LocalDateTime dueDate,
             boolean recurring,
             String recurrenceRule,
             Integer recurrenceInterval,
             String recurrenceDays,
-            Integer recurrenceDayOfMonth
+            Integer recurrenceDayOfMonth,
+            boolean hasTime
     ){}
 
     public record UpdateLabel(
