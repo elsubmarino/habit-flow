@@ -133,5 +133,6 @@ public class Task extends BaseTimeEntity {
     }
 
     public void updateDueDate(LocalDateTime targetDate){this.dueDate =targetDate;}
+    public void updateHasTime(boolean hasTime){this.hasTime =hasTime;}
 
 }

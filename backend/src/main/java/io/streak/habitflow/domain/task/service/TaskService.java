@@ -351,6 +351,7 @@ public class TaskService {
         task.updateRecurrenceDays(request.recurrenceDays());
         task.updateRecurrenceDayOfMonth(request.recurrenceDayOfMonth());
         task.updateRecurrenceRule(request.recurrenceRule());
+        task.updateHasTime(request.hasTime());
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 task.getId(),
