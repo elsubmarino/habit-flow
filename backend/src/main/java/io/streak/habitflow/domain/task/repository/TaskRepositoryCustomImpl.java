@@ -34,29 +34,6 @@ import static io.streak.habitflow.domain.task.entity.QTask.task;
 public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
-    @Override
-    public List<Task> searchTasks(TaskRequest.Update request, String email) {
-        return queryFactory
-                .selectFrom(task)
-                .where(
-                        nameContains(request.name()),
-                        descriptionContains(request.description()),
-                        task.member.email.eq(email)
-                )
-                .orderBy(task.createdAt.desc())
-                .fetch();
-    }
-
-    @Override
-    public Optional<Task> searchTaskInfo(Long taskId) {
-        Task result = queryFactory
-                .selectFrom(task)
-                .leftJoin(task.project, project).fetchJoin()
-                .where(task.id.eq(taskId))
-                .fetchOne();
-        return Optional.ofNullable(result);
-    }
-
     private BooleanExpression nameContains(String name) {
         return StringUtils.hasText(name) ? task.name.contains(name) : null;
     }
@@ -331,20 +308,6 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         }
         return expression;
     }
-    @Override
-    public long countTasksByCondition(TaskFilterType taskFilterType, Long memberId) {
-        Long totalCount = queryFactory
-                .select(task.count())
-                .from(task)
-                .where(
-                        task.member.id.eq(memberId),
-                        task.completed.eq(false),
-                        task.parent.isNull(),
-                        filterTypeEq(taskFilterType)
-                )
-                .fetchOne();
-        return totalCount != null ? totalCount : 0;
-    }
 
     @Override
     public Optional<Task> findByIdWithProject(Long taskId) {
@@ -396,6 +359,32 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                     }
                 )
                 .toList();
+    }
+
+    @Override
+    public TaskResponse.SidebarTasksCount countSidebarTasks(Long memberId) {
+        Long inboxTasksCount = queryFactory
+                .select(task.count())
+                .from(task)
+                .where(
+                        task.member.id.eq(memberId),
+                        task.completed.eq(false),
+                        task.parent.isNull(),
+                        filterTypeEq(TaskFilterType.INBOX)
+                )
+                .fetchOne();
+        Long todayTasksCount = queryFactory
+                .select(task.count())
+                .from(task)
+                .where(
+                        task.member.id.eq(memberId),
+                        task.completed.eq(false),
+                        task.parent.isNull(),
+                        filterTypeEq(TaskFilterType.TODAY)
+                )
+                .fetchOne();
+        return new TaskResponse.SidebarTasksCount(inboxTasksCount != null ? inboxTasksCount : 0L
+                , inboxTasksCount != null ? inboxTasksCount : 0L);
     }
 }
 

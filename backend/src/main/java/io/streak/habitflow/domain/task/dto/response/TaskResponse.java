@@ -155,11 +155,7 @@ public final class TaskResponse{
             boolean hasPrev,
             TaskRequest.Cursor nextCursor,
             TaskRequest.Cursor prevCursor
-    ){
-        public static ListSlice empty(){
-            return new ListSlice(java.util.List.of(),false,false,null,null);
-        }
-    }
+    ){}
 
     @Builder
     public record UpcomingDateCount(
@@ -172,6 +168,12 @@ public final class TaskResponse{
                     .count(count)
                     .build();
         }
+    }
+
+    public record SidebarTasksCount(
+            long inbox,
+            long today
+    ){
     }
 }
 

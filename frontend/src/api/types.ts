@@ -99,6 +99,12 @@ export interface TaskListDto {
 
 export type TaskFilterType = 'INBOX' | 'TODAY' | 'UPCOMING' | 'OVERDUE';
 
+/** GET /api/tasks/sidebar-count — 사이드바 관리함·오늘 건수 */
+export interface SidebarTasksCountDto {
+    inbox: number;
+    today: number;
+}
+
 export interface ProjectDto {
     id: number;
     name: string;

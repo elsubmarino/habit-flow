@@ -339,7 +339,6 @@ function App() {
         dispatch(setActiveView(nav));
         dispatch(setSelectedProject(null));
         dispatch(setSelectedLabel(null));
-        dispatch(fetchNavTaskCounts());
     };
 
     const handleNotificationsClick = () => {

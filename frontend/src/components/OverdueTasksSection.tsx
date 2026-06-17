@@ -24,11 +24,11 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
     onTaskDeleted,
 }) => {
     const dispatch = useAppDispatch();
-    const { overdueHasNext, overdueLoadMoreStatus, overdueCount } = useAppSelector(state => state.habits);
+    const { overdueHasNext, overdueLoadMoreStatus } = useAppSelector(state => state.habits);
     const [collapsed, setCollapsed] = useState(false);
     const [rescheduling, setRescheduling] = useState(false);
 
-    if (habits.length === 0 && overdueCount === 0) return null;
+    if (habits.length === 0) return null;
 
     const handleReschedule = async () => {
         setRescheduling(true);
@@ -51,8 +51,6 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
         }
     };
 
-    const titleCount = overdueCount > 0 ? overdueCount : habits.length;
-
     return (
         <section className="overdue-section">
             <div className="overdue-section-header">
@@ -66,7 +64,6 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
                         <ChevronDownIcon />
                     </span>
                     기한이 지난
-                    {titleCount > 0 && <span className="overdue-section-count">{titleCount}</span>}
                 </button>
                 <button
                     type="button"

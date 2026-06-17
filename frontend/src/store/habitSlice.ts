@@ -151,7 +151,6 @@ interface HabitState {
     overdueHasNext: boolean;
     overdueNextCursor: TaskCursor | null;
     overdueLoadMoreStatus: 'idle' | 'loading' | 'failed';
-    overdueCount: number;
     inboxTaskCount: number;
     todayTaskCount: number;
     upcomingAnchorDate: string | null;
@@ -204,7 +203,6 @@ const initialState: HabitState = {
     overdueHasNext: false,
     overdueNextCursor: null,
     overdueLoadMoreStatus: 'idle',
-    overdueCount: 0,
     inboxTaskCount: 0,
     todayTaskCount: 0,
     upcomingAnchorDate: null,
@@ -238,7 +236,6 @@ interface LoadedTasksPage {
     overdueTasks: TaskDto[];
     overdueHasNext: boolean;
     overdueNextCursor: TaskCursor | null;
-    overdueCount: number;
     upcomingAnchorDate?: string | null;
     upcomingWeekStartIso?: string | null;
     upcomingDays?: Record<string, UpcomingDayBundle>;
@@ -250,17 +247,12 @@ async function loadOverdueBundle(): Promise<{
     overdueTasks: TaskDto[];
     overdueHasNext: boolean;
     overdueNextCursor: TaskCursor | null;
-    overdueCount: number;
 }> {
-    const [overduePage, overdueCount] = await Promise.all([
-        taskApi.fetchOverdueTasks(),
-        taskApi.fetchTaskCount('OVERDUE'),
-    ]);
+    const overduePage = await taskApi.fetchOverdueTasks();
     return {
         overdueTasks: overduePage.content,
         overdueHasNext: overduePage.hasNext,
         overdueNextCursor: overduePage.nextCursor,
-        overdueCount,
     };
 }
 
@@ -323,7 +315,6 @@ async function loadTasksForView(params: {
             overdueTasks: [],
             overdueHasNext: false,
             overdueNextCursor: null,
-            overdueCount: 0,
         };
     }
 
@@ -368,7 +359,6 @@ async function loadTasksForView(params: {
                 overdueTasks: [],
                 overdueHasNext: false,
                 overdueNextCursor: null,
-                overdueCount: 0,
             };
         }
         case 'filters':
@@ -386,7 +376,6 @@ async function loadTasksForView(params: {
                 overdueTasks: [],
                 overdueHasNext: false,
                 overdueNextCursor: null,
-                overdueCount: 0,
             };
         }
     }
@@ -404,7 +393,6 @@ type FetchHabitsResult = {
     overdueHabits: Habit[];
     overdueHasNext: boolean;
     overdueNextCursor: TaskCursor | null;
-    overdueCount: number;
     upcomingAnchorDate?: string | null;
     upcomingWeekStartIso?: string | null;
     upcomingDays?: Record<string, UpcomingDayBundle>;
@@ -447,7 +435,6 @@ async function loadHabitsForView(params: FetchHabitsParams): Promise<FetchHabits
         overdueHabits: page.overdueTasks.map(t => mapTaskToHabit(t)),
         overdueHasNext: page.overdueHasNext,
         overdueNextCursor: page.overdueNextCursor,
-        overdueCount: page.overdueCount,
         upcomingAnchorDate: page.upcomingAnchorDate ?? null,
         upcomingWeekStartIso: page.upcomingWeekStartIso ?? null,
         upcomingDays: page.upcomingDays ?? {},
@@ -666,11 +653,7 @@ export const fetchMoreOverdue = createAsyncThunk(
 );
 
 export const fetchNavTaskCounts = createAsyncThunk('habits/fetchNavTaskCounts', async () => {
-    const [inbox, today] = await Promise.all([
-        taskApi.fetchTaskCount('INBOX'),
-        taskApi.fetchTaskCount('TODAY'),
-    ]);
-    return { inbox, today };
+    return taskApi.fetchSidebarTaskCounts();
 });
 
 export const fetchFavorites = createAsyncThunk('habits/fetchFavorites', async () => {
@@ -1187,7 +1170,6 @@ const habitSlice = createSlice({
                 state.overdueList = action.payload.overdueHabits;
                 state.overdueHasNext = action.payload.overdueHasNext;
                 state.overdueNextCursor = action.payload.overdueNextCursor;
-                state.overdueCount = action.payload.overdueCount;
                 if (action.payload.view === 'upcoming') {
                     state.upcomingAnchorDate = action.payload.upcomingAnchorDate ?? null;
                     state.upcomingWeekStartIso = action.payload.upcomingWeekStartIso ?? null;

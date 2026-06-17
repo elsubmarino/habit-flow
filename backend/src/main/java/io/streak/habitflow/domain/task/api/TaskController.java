@@ -101,13 +101,11 @@ public class TaskController {
         return ResponseEntity.ok(commentService.getComments(taskId));
     }
 
-    @GetMapping("/count")
-    @Operation(summary = "테스크 건수 조회")
-    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 건수 조회 성공")})
-    public ResponseEntity<Long> getTaskCount(@AuthenticationPrincipal UserPrincipal userPrincipal,
-                                             @RequestParam(required = false) TaskFilterType taskFilterType) {
-        long totalCount = taskService.getTaskCount(taskFilterType,userPrincipal.getMemberId());
-        return ResponseEntity.ok(totalCount);
+    @GetMapping("/sidebar-count")
+    @Operation(summary = "사이드바 오늘,다음에 해당하는 카운트 수 조회")
+    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "사이드바 오늘,다음에 해당하는 카운트 수 조회 성공")})
+    public ResponseEntity<TaskResponse.SidebarTasksCount> getSidebarCount(@LoginMemberId Long loginMemberId) {
+        return ResponseEntity.ok(taskService.getSidebarTaskCount(loginMemberId));
     }
 
     @GetMapping("/{taskId}")

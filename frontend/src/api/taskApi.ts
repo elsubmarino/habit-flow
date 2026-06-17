@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
-import type { PriorityType, TaskDto, TaskFilterType, TaskListDto, UpcomingDateCountDto } from './types';
+import type { PriorityType, TaskDto, TaskListDto, SidebarTasksCountDto, UpcomingDateCountDto } from './types';
 import { mapTaskListToDto, readCompleted, type RecurrenceApiPayload } from './mappers';
 import { buildPageParams, TASK_PAGE_SIZE } from './pagination';
 import { getUpcomingDayRange, getUpcomingSummaryDateRange, toLocalDateTime } from '../utils/date';
@@ -93,11 +93,9 @@ async function fetchTaskListSlice(
     });
 }
 
-export async function fetchTaskCount(taskFilterType: TaskFilterType): Promise<number> {
-    return dedupeInFlight(`task-count:${taskFilterType}`, async () => {
-        const { data } = await apiClient.get<number>('/api/tasks/count', {
-            params: { taskFilterType },
-        });
+export async function fetchSidebarTaskCounts(): Promise<SidebarTasksCountDto> {
+    return dedupeInFlight('task-count:sidebar', async () => {
+        const { data } = await apiClient.get<SidebarTasksCountDto>('/api/tasks/sidebar-count');
         return data;
     });
 }

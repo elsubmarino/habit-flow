@@ -17,7 +17,10 @@ import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.entity.TaskLabel;
 import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
-import io.streak.habitflow.domain.task.type.*;
+import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.domain.task.type.CursorDirection;
+import io.streak.habitflow.domain.task.type.TargetType;
+import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.DistributedLock;
 import io.streak.habitflow.global.infra.file.FileDto;
@@ -336,11 +339,11 @@ public class TaskService {
                     activityType,
                     "당신이 테스크 "+ task.getName()+"을(를) "+statusText
             ));
-        };
+        }
     }
 
-    public long getTaskCount(TaskFilterType taskFilterType, Long memberId){
-        return taskRepository.countTasksByCondition(taskFilterType, memberId);
+    public TaskResponse.SidebarTasksCount getSidebarTaskCount(Long memberId){
+        return taskRepository.countSidebarTasks(memberId);
     }
 
     private LocalDateTime calculateNextInstanceDate(LocalDateTime currentDueDate, Task task){
