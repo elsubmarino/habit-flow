@@ -21,7 +21,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -83,6 +82,10 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
             return new ArrayList<>();
         }
 
+        return getTaskListQueries(ids);
+    }
+
+    private List<TaskListQuery> getTaskListQueries(List<Long> ids) {
         QTask subTask = new QTask("subTask");
 
         return queryFactory
@@ -153,52 +156,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
             return new ArrayList<>();
         }
 
-
-        QTask subTask = new QTask("subTask");
-
-        List<TaskListQuery> rows = queryFactory
-                .select(
-                        Projections.fields(
-                                TaskListQuery.class,
-                                task.id,
-                                task.name,
-                                task.description,
-                                task.taskPriorityType,
-                                task.dueDate,
-                                task.timeSpecified,
-                                task.sortOrder,
-                                task.project.name.as("projectName"),
-                                ExpressionUtils.as(
-                                        JPAExpressions.select(subTask.count())
-                                                .from(subTask)
-                                                .where(subTask.parent.eq(task)), "countSubTasks"),
-                                ExpressionUtils.as(
-                                        JPAExpressions.select(subTask.count())
-                                                .from(subTask)
-                                                .where(subTask.parent.eq(task)
-                                                        .and(subTask.completed.eq(true))), "countSubTasksCompleted"),
-                                ExpressionUtils.as(
-                                        JPAExpressions.select(comment.count())
-                                                .from(comment)
-                                                .where(comment.task.eq(task)), "countComments")
-                        )
-                )
-                .from(task)
-                .leftJoin(task.project, project)
-                .where(
-                        task.id.in(ids)
-                )
-                .orderBy(
-                        task.dueDate.asc(),
-                        task.taskPriorityType.asc(),
-                        task.sortOrder.asc(),
-                        task.id.desc()
-                )
-                .fetch();
-        if(isPrev){
-            Collections.reverse(rows);
-        }
-        return rows;
+        return getTaskListQueries(ids);
     }
 
     private BooleanExpression cursorCondition(TaskRequest.Cursor cursor){
