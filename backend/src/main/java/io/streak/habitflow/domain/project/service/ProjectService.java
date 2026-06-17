@@ -5,14 +5,13 @@ import io.streak.habitflow.domain.favorite.repository.FavoriteRepository;
 import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.notification.dto.request.NotificationRequest;
 import io.streak.habitflow.domain.notification.service.NotificationService;
-import io.streak.habitflow.domain.notification.type.NotificationType;
 import io.streak.habitflow.domain.project.dto.query.ProjectListQuery;
 import io.streak.habitflow.domain.project.dto.request.ProjectRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
+import io.streak.habitflow.domain.project.event.ProjectInvitationEvent;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.event.TaskChangedEvent;
@@ -208,24 +207,19 @@ public class ProjectService {
 
         projectMemberRepository.saveAll(projectMembers);
 
-        for(Member targetMember: inviteMembers){
-            NotificationRequest.Create request = NotificationRequest.Create.builder()
-                    .targetId(project.getId())
-                    .notificationType(NotificationType.PROJECT)
-                    .activityType(ActivityType.INVITED)
-                    .customMessage(inviter.getName()+" 님이 ["+project.getName()+"] 프로젝트에 당신을 초대했습니다.")
-                    .build();
-            notificationService.createNotification(request, targetMember.getId(),memberId );
+        List<ProjectInvitationEvent.MemberInfo> inviteeInfos = inviteMembers.stream()
+                .map((Member m) ->new ProjectInvitationEvent.MemberInfo(m.getId(),m.getName()))
+                .toList();
+
+        applicationEventPublisher.publishEvent(new ProjectInvitationEvent(
+                project.getId(),
+                project.getName(),
+                inviter.getId(),
+                inviter.getName(),
+                inviteeInfos
+        ));;
 
 
-            NotificationRequest.Create joinedRequest = NotificationRequest.Create.builder()
-                    .targetId(project.getId())
-                    .notificationType(NotificationType.PROJECT)
-                    .activityType(ActivityType.JOINED)
-                    .customMessage(targetMember.getName()+" 님이 ["+project.getName()+"] 프로젝트에 합류했습니다")
-                    .build();
-            notificationService.createNotification(joinedRequest, memberId, targetMember.getId());
-        }
 
 
     }

@@ -7,7 +7,6 @@ import io.streak.habitflow.domain.notification.dto.response.NotificationResponse
 import io.streak.habitflow.domain.notification.entity.Notification;
 import io.streak.habitflow.domain.notification.repository.NotificationRepository;
 import io.streak.habitflow.global.aop.CheckOwnership;
-import io.streak.habitflow.global.infra.sse.SseEmitters;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,29 +18,7 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class NotificationService {
     private final NotificationRepository notificationRepository;
-    private final SseEmitters sseEmitters;
     private final MemberRepository memberRepository;
-
-    @Transactional
-    public void createNotification(NotificationRequest.Create request, Long receiverId, Long actorId) {
-        Member receiver = memberRepository.getReferenceById(receiverId);
-        Member actor = memberRepository.getReferenceById(actorId);
-
-        Notification notification = Notification.builder()
-                .receiver(receiver)
-                .actor(actor)
-                .targetId(request.targetId())
-                .notificationType(request.notificationType())
-                .activityType(request.activityType())
-                .customMessage(request.customMessage())
-                .isConfirmed(false)
-                .build();
-
-        Notification savedNotification = notificationRepository.save(notification);
-
-        NotificationResponse.List notificationListResponse = NotificationResponse.List.from(savedNotification);
-        sseEmitters.sendToMember(receiverId,notificationListResponse);
-    }
 
     public List<NotificationResponse.List> getNotifications(Long memberId) {
         Member receiver = memberRepository.getReferenceById(memberId);
