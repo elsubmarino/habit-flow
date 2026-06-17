@@ -175,22 +175,41 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
         return [...map.entries()].sort(([a], [b]) => b.localeCompare(a));
     }, [filtered]);
 
-    const exportCsv = () => {
-        const header = '날짜,사용자,활동,프로젝트,메시지\n';
-        const rows = filtered
-            .map(e => [
-                e.createdAt,
-                e.userName,
-                e.activityType,
-                e.projectName,
-                e.customMessage ?? '',
-            ].join(','))
-            .join('\n');
-        const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+    const exportMarkdown = () => {
+        const exportedAt = new Date().toLocaleString('ko-KR');
+        const lines = [
+            '# HabitFlow 활동 보고',
+            '',
+            `-보낸 시각: ${exportedAt}`,
+            `- 총 ${filtered.length}건`,
+            '',
+        ];
+
+        for (const [dateKey, entries] of grouped) {
+            lines.push(`## ${formatActivityDateHeader(dateKey, entries.length)}`);
+            lines.push('');
+            for (const entry of entries) {
+                const time = new Date(entry.createdAt).toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                });
+                if (entry.customMessage?.trim()) {
+                    lines.push(`- ${time} **${entry.userName}** — ${entry.customMessage}`);
+                } else {
+                    const project = entry.projectName ? ` · ${entry.projectName}` : '';
+                    lines.push(
+                        `- ${time} **${entry.userName}**님이 ${activityLabel(entry.activityType)}${project}`,
+                    );
+                }
+            }
+            lines.push('');
+        }
+
+        const blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'habitflow-activity.csv';
+        a.download = 'habitflow-activity.md';
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -200,7 +219,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
             <header className="activity-log-header">
                 <div className="activity-log-title-row">
                     <h1 className="activity-log-title">보고: 전체</h1>
-                    <button type="button" className="activity-export-btn" onClick={exportCsv}>
+                    <button type="button" className="activity-export-btn" onClick={exportMarkdown}>
                         보내기
                     </button>
                 </div>

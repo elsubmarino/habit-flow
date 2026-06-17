@@ -13,7 +13,6 @@ interface MenuItem {
     label: string;
     icon: string;
     shortcut?: string;
-    highlight?: boolean;
     action?: () => void;
 }
 
@@ -48,14 +47,6 @@ const UserMenuDropdown: React.FC<UserMenuDropdownProps> = ({
             shortcut: 'Ctrl P',
             action: () => window.print(),
         },
-        { id: 'updates', label: '새 업데이트', icon: '📣' },
-        { id: 'labs', label: '최신 시험 기능', icon: '🧪' },
-        {
-            id: 'pro',
-            label: '무료로 프로 플랜 시험해 보기',
-            icon: '★',
-            highlight: true,
-        },
     ];
 
     const handleItem = (item: MenuItem) => {
@@ -80,7 +71,7 @@ const UserMenuDropdown: React.FC<UserMenuDropdownProps> = ({
                     <li key={item.id}>
                         <button
                             type="button"
-                            className={`user-menu-item ${item.highlight ? 'highlight' : ''}`}
+                            className="user-menu-item"
                             role="menuitem"
                             onClick={() => handleItem(item)}
                         >
@@ -97,14 +88,6 @@ const UserMenuDropdown: React.FC<UserMenuDropdownProps> = ({
             </ul>
 
             <div className="user-menu-divider" />
-
-            <button type="button" className="user-menu-item" onClick={onClose}>
-                <span className="user-menu-item-icon" aria-hidden>
-                    ↻
-                </span>
-                <span className="user-menu-item-label">동기화</span>
-                <span className="user-menu-shortcut muted">5분 전에</span>
-            </button>
 
             <button
                 type="button"
@@ -123,9 +106,6 @@ const UserMenuDropdown: React.FC<UserMenuDropdownProps> = ({
 
             <footer className="user-menu-footer">
                 <span>v1.0 (베타)</span>
-                <button type="button" className="user-menu-footer-link" onClick={onClose}>
-                    체인지로그
-                </button>
             </footer>
         </div>
     );
