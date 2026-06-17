@@ -1,4 +1,4 @@
-package io.streak.habitflow.global.security;
+package io.streak.habitflow.global.security.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;

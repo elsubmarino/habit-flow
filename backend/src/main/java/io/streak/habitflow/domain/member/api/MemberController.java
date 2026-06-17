@@ -6,14 +6,13 @@ import io.streak.habitflow.domain.member.service.MemberService;
 import io.streak.habitflow.global.aop.LoginMemberId;
 import io.streak.habitflow.global.security.dto.TokenDto;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
+import io.streak.habitflow.global.security.jwt.TokenCookieManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
@@ -26,6 +25,7 @@ import java.util.Map;
 @RequestMapping("/api/members")
 public class MemberController {
     private final MemberService memberService;
+    private final TokenCookieManager tokenCookieManager;
 
     @PostMapping
     @Operation(summary = "회원 가입")
@@ -59,14 +59,7 @@ public class MemberController {
     public ResponseEntity<Map<String, String>> loginMember(@RequestBody MemberRequest.Login request,
                                                            HttpServletResponse httpServletResponse){
         TokenDto tokenDto = memberService.login(request);
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", tokenDto.refreshToken())
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("Lax")
-                .path("/")
-                .maxAge(60 * 60 * 24 *14)//14일
-                .build();
-        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        tokenCookieManager.addRefreshTokenCookie(httpServletResponse,tokenDto.refreshToken());
         return ResponseEntity.ok(Map.of("accessToken", tokenDto.accessToken()));
     }
 
@@ -82,15 +75,7 @@ public class MemberController {
             accessToken = bearerToken.substring(7);
         }
         memberService.logout(accessToken, refreshToken,userPrincipal.getUsername());
-
-        ResponseCookie deleteCookie = ResponseCookie.from("refreshToken","")
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("LAX")
-                .path("/")
-                .maxAge(0)
-                .build();
-        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
+        tokenCookieManager.deleteRefreshTokenCookie(httpServletResponse);
 
         return ResponseEntity.ok().build();
     }
@@ -101,15 +86,7 @@ public class MemberController {
             @CookieValue(value="refreshToken") String refreshToken,
             HttpServletResponse response){
         TokenDto tokenDto = memberService.reissue(refreshToken);
-
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", tokenDto.refreshToken())
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("Lax")
-                .path("/")
-                .maxAge(60 * 60 * 24 *14)//14일
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        tokenCookieManager.addRefreshTokenCookie(response,tokenDto.refreshToken());
 
         return ResponseEntity.ok(Map.of("accessToken",tokenDto.accessToken()));
     }
