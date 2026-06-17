@@ -7,6 +7,7 @@ import lombok.Builder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public final class IntegratedResponse {
     @Builder
@@ -16,15 +17,9 @@ public final class IntegratedResponse {
             List<LabelResponse.List> labels
     ){
         public Search{
-            if(projects == null){
-                projects = new ArrayList<>();
-            }
-            if(tasks == null){
-                tasks = new ArrayList<>();
-            }
-            if(labels == null){
-                labels = new ArrayList<>();
-            }
+            projects = Objects.requireNonNullElse(projects, new ArrayList<>());
+            tasks = Objects.requireNonNullElse(tasks, new ArrayList<>());
+            labels = Objects.requireNonNullElse(labels, new ArrayList<>());
         }
     }
 }

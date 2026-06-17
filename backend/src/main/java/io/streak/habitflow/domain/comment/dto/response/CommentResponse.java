@@ -6,6 +6,7 @@ import lombok.Builder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public final class CommentResponse{
     @Builder
@@ -14,9 +15,7 @@ public final class CommentResponse{
             List<AttachmentResponse.Detail> attachments
     ) {
         public Detail{
-            if(attachments == null){
-                attachments = new ArrayList<>();
-            }
+            attachments = Objects.requireNonNullElse(attachments, new ArrayList<>());
         }
 
         public static Detail from(Comment comment) {

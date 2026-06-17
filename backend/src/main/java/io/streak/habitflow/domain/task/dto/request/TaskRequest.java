@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public final class TaskRequest {
     public record Create(
@@ -108,9 +109,7 @@ public final class TaskRequest {
             CursorDirection direction
     ){
         public Cursor{
-            if(direction == null){
-                direction =  CursorDirection.NEXT;
-            }
+            direction = Objects.requireNonNullElse(direction,CursorDirection.NEXT);
         }
 
         public static Cursor next(LocalDateTime dueDate, TaskPriorityType priorityType, Long sortOrder, Long taskId){

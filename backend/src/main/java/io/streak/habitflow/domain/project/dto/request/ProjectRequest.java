@@ -5,6 +5,7 @@ import io.streak.habitflow.domain.project.type.LayoutType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public final class ProjectRequest {
     public record Create(
@@ -21,9 +22,7 @@ public final class ProjectRequest {
             List<String>emails
     ){
         public Invite{
-            if(emails() == null){
-                emails = new ArrayList<>();
-            }
+            emails = Objects.requireNonNullElse(emails, new ArrayList<>());
         }
     }
 }

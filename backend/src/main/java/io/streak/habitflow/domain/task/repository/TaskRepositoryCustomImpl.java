@@ -128,6 +128,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
 
     @Override
     public List<TaskListQuery> searchTasksByCondition(TaskRequest.SearchCondition searchCondition, TaskRequest.Cursor cursor, Long memberId, Pageable pageable) {
+
         boolean isPrev = cursor != null && cursor.direction() == CursorDirection.PREV;
         List<Long> ids = queryFactory
                 .select(task.id)
@@ -209,6 +210,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         TaskPriorityType lastPriority = cursor.lastPriorityType();
         Long lastSortOrder = cursor.lastSortOrder();
         Long lastTaskId = cursor.lastTaskId();
+
         if (cursor.direction() == CursorDirection.PREV) {
             // asc 정렬 기준으로 "커서 이전" 행
             BooleanExpression before = task.dueDate.lt(lastDue);

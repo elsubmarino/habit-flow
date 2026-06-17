@@ -75,14 +75,7 @@ public class TaskService {
         Member member = memberRepository.getReferenceById(memberId);
 
         Task parentTask = null;
-        if(request.parentId() != null){
-            parentTask = taskRepository.findById(request.parentId())
-                    .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 테스크입니다."));
-
-            if(parentTask.getSubTasks().size() >= 4){
-                throw new IllegalStateException("하위 테스크는 최대 4개 까지만 생성할 수 있습니다.");
-            }
-        }
+        parentTask = getTask(request, parentTask);
 
         Project project = null;
         if(request.projectId() != null){
@@ -172,6 +165,18 @@ public class TaskService {
                 .toList();
 
         return TaskResponse.Detail.of(savedTask, labelListResponses);
+    }
+
+    private Task getTask(TaskRequest.Create request, Task parentTask) {
+        if(request.parentId() != null){
+            parentTask = taskRepository.findById(request.parentId())
+                    .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 테스크입니다."));
+
+            if(parentTask.getSubTasks().size() >= 4){
+                throw new IllegalStateException("하위 테스크는 최대 4개 까지만 생성할 수 있습니다.");
+            }
+        }
+        return parentTask;
     }
 
     public TaskResponse.Detail getTaskById(Long taskId, Long memberId){

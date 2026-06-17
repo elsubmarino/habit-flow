@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public final class TaskResponse{
     @Builder
@@ -37,15 +38,9 @@ public final class TaskResponse{
     ) {
         @Builder
         public Detail{
-            if(subTasks == null){
-                subTasks = new ArrayList<>();
-            }
-            if(labels == null){
-                labels = new ArrayList<>();
-            }
-            if(comments == null){
-                comments = new ArrayList<>();
-            }
+            subTasks = Objects.requireNonNullElse(subTasks, new ArrayList<>());
+            labels =  Objects.requireNonNullElse(labels, new ArrayList<>());
+            comments =  Objects.requireNonNullElse(comments, new ArrayList<>());
         }
         public static Detail of(Task task, java.util.List<LabelResponse.List> labelListResponses) {
             DetailBuilder builder = Detail.builder()
@@ -111,9 +106,7 @@ public final class TaskResponse{
             LocalTime dueTime
     ){
         public List{
-            if(labels== null){
-                labels = new ArrayList<>();
-            }
+            labels = Objects.requireNonNullElse(labels, new ArrayList<>());
         }
 
         public static List of(TaskListQuery taskListQuery, java.util.List<LabelResponse.List> labelListResponses) {
