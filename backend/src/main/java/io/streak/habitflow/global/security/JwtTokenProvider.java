@@ -1,6 +1,7 @@
 package io.streak.habitflow.global.security;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import jakarta.annotation.PostConstruct;
@@ -11,7 +12,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Clock;
 import java.time.Instant;
@@ -32,7 +32,7 @@ public class JwtTokenProvider {
     @PostConstruct
     public void init() {
         //TODO BASE64로?
-        byte[] keyBytes = secretKeyString.getBytes(StandardCharsets.UTF_8);
+        byte[] keyBytes = Decoders.BASE64.decode(secretKeyString);
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
