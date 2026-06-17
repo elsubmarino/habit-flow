@@ -5,7 +5,6 @@ import io.streak.habitflow.domain.favorite.repository.FavoriteRepository;
 import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.notification.service.NotificationService;
 import io.streak.habitflow.domain.project.dto.query.ProjectSummaryQuery;
 import io.streak.habitflow.domain.project.dto.request.ProjectRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
@@ -35,7 +34,6 @@ public class ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final MemberRepository memberRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final NotificationService notificationService;
 
     @Transactional
     public ProjectResponse.Detail createProject(ProjectRequest.Create request,
@@ -217,11 +215,7 @@ public class ProjectService {
                 inviter.getId(),
                 inviter.getName(),
                 inviteeInfos
-        ));;
-
-
-
-
+        ));
     }
 
     @CheckOwnership(type="PROJECT")
