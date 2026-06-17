@@ -1,6 +1,7 @@
 package io.streak.habitflow.domain.comment.repository;
 
 import io.streak.habitflow.domain.comment.entity.Comment;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +13,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByTaskIdWithAttachments(@Param("taskId") Long taskId);
 
     default Comment getOrThrow(Long commentId){
-        return findById(commentId).orElseThrow(()->new IllegalArgumentException("코멘트가 존재하지 않습니다."));
+        return findById(commentId).orElseThrow(()->new EntityNotFoundException("코멘트가 존재하지 않습니다."));
     }
 }

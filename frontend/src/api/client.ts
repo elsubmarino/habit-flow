@@ -14,6 +14,7 @@ function migrateLegacyToken() {
         localStorage.setItem(ACCESS_TOKEN_KEY, legacy);
         localStorage.removeItem(LEGACY_TOKEN_KEY);
     }
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
 migrateLegacyToken();
@@ -21,6 +22,7 @@ migrateLegacyToken();
 export const apiClient = axios.create({
     baseURL: '',
     headers: { Accept: 'application/json' },
+    withCredentials: true,
 });
 
 type RefreshQueueEntry = {
@@ -65,16 +67,13 @@ function isAccessTokenExpired(token: string, skewMs = ACCESS_TOKEN_SKEW_MS): boo
     }
 }
 
-/** 인터셉터 없이 호출 — refresh 루프 방지 */
-async function reissueTokensRequest(
-    refreshToken: string,
-): Promise<{ accessToken: string; refreshToken: string }> {
+/** 인터셉터 없이 호출 — refresh 루프 방지. refreshToken은 httpOnly 쿠키로 전송 */
+async function reissueTokensRequest(): Promise<string> {
     const response = await fetch('/api/members/reissue', {
         method: 'POST',
         credentials: 'include',
         headers: {
             Accept: 'application/json',
-            'X-Refresh-Token': refreshToken,
         },
     });
 
@@ -82,38 +81,21 @@ async function reissueTokensRequest(
         throw new Error(`토큰 재발급 실패 (${response.status})`);
     }
 
-    const data = (await response.json()) as {
-        accessToken?: string;
-        refreshToken?: string;
-    };
+    const data = (await response.json()) as { accessToken?: string };
 
     if (!data.accessToken) {
         throw new Error('재발급 응답에 accessToken이 없습니다.');
     }
-    if (!data.refreshToken && import.meta.env.DEV) {
-        console.warn(
-            '[auth] reissue 응답에 refreshToken이 없습니다. RTR 적용 시 두 번째 재발급부터 실패할 수 있습니다.',
-        );
-    }
 
-    return {
-        accessToken: data.accessToken,
-        refreshToken: data.refreshToken ?? refreshToken,
-    };
+    return data.accessToken;
 }
 
 async function refreshAccessToken(): Promise<string | null> {
-    const refreshToken = getStoredRefreshToken();
-    if (!refreshToken) {
-        clearStoredTokens();
-        return null;
-    }
-
     if (!inFlightRefresh) {
-        inFlightRefresh = reissueTokensRequest(refreshToken)
-            .then(tokens => {
-                setStoredTokens(tokens.accessToken, tokens.refreshToken);
-                return tokens.accessToken;
+        inFlightRefresh = reissueTokensRequest()
+            .then(accessToken => {
+                setStoredTokens(accessToken);
+                return accessToken;
             })
             .catch(error => {
                 clearStoredTokens();
@@ -131,7 +113,7 @@ async function refreshAccessToken(): Promise<string | null> {
     }
 }
 
-/** access 만료 시 refreshToken으로 선(reissue) 갱신 */
+/** access 만료 시 쿠키 refreshToken으로 선(reissue) 갱신 */
 export async function ensureAccessToken(): Promise<string | null> {
     const accessToken = getStoredAccessToken();
     if (accessToken && !isAccessTokenExpired(accessToken)) {
@@ -172,12 +154,6 @@ apiClient.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        const refreshToken = getStoredRefreshToken();
-        if (!refreshToken) {
-            clearStoredTokens();
-            return Promise.reject(error);
-        }
-
         if (isRefreshing) {
             return new Promise<string>((resolve, reject) => {
                 refreshQueue.push({ resolve, reject });
@@ -212,8 +188,9 @@ export function getStoredAccessToken(): string | null {
     return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
-export function getStoredRefreshToken(): string | null {
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
+/** @deprecated refreshToken은 httpOnly 쿠키로 관리됩니다 */
+export function getStoredRefreshToken(): null {
+    return null;
 }
 
 /** @deprecated getStoredAccessToken 사용 */
@@ -221,16 +198,14 @@ export function getStoredToken(): string | null {
     return getStoredAccessToken();
 }
 
-export function setStoredTokens(accessToken: string, refreshToken?: string | null) {
+export function setStoredTokens(accessToken: string) {
     localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-    if (refreshToken) {
-        localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    }
     localStorage.setItem(AUTH_FLAG_KEY, 'true');
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(LEGACY_TOKEN_KEY);
 }
 
-/** accessToken만 있는 경우 (OAuth 레거시 콜백 등) */
+/** accessToken만 있는 경우 (OAuth 콜백 등) */
 export function setStoredToken(token: string) {
     setStoredTokens(token);
 }
@@ -249,7 +224,11 @@ export function clearStoredToken() {
 }
 
 export function isAuthenticated(): boolean {
-    return !!(getStoredAccessToken() || getStoredRefreshToken());
+    if (localStorage.getItem(AUTH_FLAG_KEY) === 'true') {
+        return true;
+    }
+    const accessToken = getStoredAccessToken();
+    return !!accessToken && !isAccessTokenExpired(accessToken);
 }
 
 export function onAuthLogout(listener: () => void): () => void {

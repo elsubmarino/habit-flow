@@ -7,13 +7,13 @@ import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.member.type.Role;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.security.JwtTokenProvider;
+import io.streak.habitflow.global.security.dto.TokenDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -52,7 +52,7 @@ public class MemberService {
     }
 
     @Transactional
-    public Map<String, String> login(MemberRequest.Login request){
+    public TokenDto login(MemberRequest.Login request){
         Member member = memberRepository.findByEmail(request.email())
                 .orElseThrow(()->new IllegalArgumentException("가입되지 않은 이메일입니다."));
         if(!passwordEncoder.matches(request.password(),member.getPassword())){
@@ -69,23 +69,30 @@ public class MemberService {
                 TimeUnit.DAYS
         );
 
-        return Map.of("accessToken",accessToken,"refreshToken",refreshToken);
+        return new TokenDto(accessToken, refreshToken);
     }
 
     @Transactional
-    public void logout(String accessToken, String email){
-        redisTemplate.delete("REFRESH_TOKEN:"+email);
-        Long expiration = jwtTokenProvider.getRemainingExpiration(accessToken);
-        redisTemplate.opsForValue().set(
-                "BLACKLIST:"+accessToken,
-                "logout",
-                expiration,
-                TimeUnit.MILLISECONDS
-        );
+    public void logout(String accessToken, String refreshToken, String email){
+        String redisRefreshKey = "REFRESH_TOKEN:"+email;
+        redisTemplate.delete(redisRefreshKey);
+        if(accessToken != null){
+            long remainingExpiration = jwtTokenProvider.getRemainingExpiration(accessToken);
+            if(remainingExpiration>0){
+                redisTemplate.opsForValue().set(
+                        "BLACKLIST:"+accessToken,
+                        "logout",
+                        remainingExpiration,
+                        TimeUnit.MILLISECONDS
+                );
+            }
+
+        }
+
     }
 
     @Transactional
-    public Map<String, String> reissue(String refreshToken) {
+    public TokenDto reissue(String refreshToken) {
         if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw new IllegalArgumentException("만료되거나 올바르지 않은 Refresh Token 입니다.");
         }
@@ -109,6 +116,6 @@ public class MemberService {
                 14,
                 TimeUnit.DAYS
         );
-        return Map.of("accessToken",newAccessToken,"refreshToken",newRefreshToken);
+        return new TokenDto(newAccessToken,newRefreshToken);
     }
 }

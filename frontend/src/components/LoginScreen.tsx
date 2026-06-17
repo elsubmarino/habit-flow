@@ -86,11 +86,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
         setLoading(true);
         setStatus(null);
         try {
-            const { accessToken, refreshToken } = await loginMember({
+            const { accessToken } = await loginMember({
                 email: trimmedEmail,
                 password: trimmedPassword,
             });
-            setStoredTokens(accessToken, refreshToken);
+            setStoredTokens(accessToken);
             onLoginSuccess();
         } catch (err) {
             setStatus({

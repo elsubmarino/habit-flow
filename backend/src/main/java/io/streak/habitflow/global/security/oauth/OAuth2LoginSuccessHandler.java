@@ -8,6 +8,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -41,11 +43,18 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                 14,
                 TimeUnit.DAYS
         );
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(60 * 60 * 24 *14)//14일
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         String targetUrl = UriComponentsBuilder
                 .fromUriString("http://localhost:3000/oauth2/redirect")
                 .queryParam("token",accessToken)
-                .queryParam("refreshToken",refreshToken)
                 .build()
                 .toString();
 

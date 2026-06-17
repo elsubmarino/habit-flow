@@ -15,7 +15,6 @@ export interface MemberLoginPayload {
 
 export interface AuthTokenResponse {
     accessToken: string;
-    refreshToken: string;
 }
 
 export async function fetchMember(): Promise<MemberDto> {

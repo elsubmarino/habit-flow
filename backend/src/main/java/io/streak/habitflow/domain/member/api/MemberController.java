@@ -3,13 +3,16 @@ package io.streak.habitflow.domain.member.api;
 import io.streak.habitflow.domain.member.dto.request.MemberRequest;
 import io.streak.habitflow.domain.member.dto.response.MemberResponse;
 import io.streak.habitflow.domain.member.service.MemberService;
+import io.streak.habitflow.global.security.dto.TokenDto;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
@@ -52,42 +55,61 @@ public class MemberController {
     @PostMapping("/login")
     @Operation(summary = "회원 로그인")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 로그인 성공")})
-    public ResponseEntity<Map<String, String>> loginMember(@RequestBody MemberRequest.Login request){
-        Map<String, String> result = memberService.login(request);
-        return ResponseEntity.ok(result);
+    public ResponseEntity<Map<String, String>> loginMember(@RequestBody MemberRequest.Login request,
+                                                           HttpServletResponse httpServletResponse){
+        TokenDto tokenDto = memberService.login(request);
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", tokenDto.refreshToken())
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(60 * 60 * 24 *14)//14일
+                .build();
+        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return ResponseEntity.ok(Map.of("accessToken", tokenDto.accessToken()));
     }
 
     @PostMapping("/logout")
     @Operation(summary = "회원 로그아웃")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "로그아웃 성공")})
     public ResponseEntity<Void> logout(@RequestHeader("Authorization") String bearerToken,
-                                       @AuthenticationPrincipal UserPrincipal userPrincipal){
+                                       @CookieValue(value="refreshToken",required = false)String refreshToken,
+                                       @AuthenticationPrincipal UserPrincipal userPrincipal,
+                                       HttpServletResponse httpServletResponse){
         String accessToken = null;
         if(StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")){
             accessToken = bearerToken.substring(7);
         }
-        memberService.logout(accessToken, userPrincipal.getUsername());
+        memberService.logout(accessToken, refreshToken,userPrincipal.getUsername());
+
+        ResponseCookie deleteCookie = ResponseCookie.from("refreshToken","")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("LAX")
+                .path("/")
+                .maxAge(0)
+                .build();
+        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
+
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/reissue")
     @Operation(summary = "토큰 재발급")
     public ResponseEntity<Map<String, String>> reissue(
-            @RequestHeader("X-Refresh-Token") String refreshToken,
+            @CookieValue(value="refreshToken",required=true) String refreshToken,
             HttpServletResponse response){
-        Map<String, String> tokens = memberService.reissue(refreshToken);
+        TokenDto tokenDto = memberService.reissue(refreshToken);
 
-        //TODO 추후 HTTPS 적용시에 손댐
-//        ResponseCookie cookie = ResponseCookie.from("refreshToken", tokens.get("refreshToken"))
-//                .httpOnly(true)
-//                .secure(true)
-//                .sameSite("Strict")
-//                .path("/")
-//                .maxAge(60 * 60 * 24 *14)//14일
-//                .build();
-//        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", tokenDto.refreshToken())
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(60 * 60 * 24 *14)//14일
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-        return ResponseEntity.ok(Map.of("accessToken",tokens.get("accessToken"),
-                "refreshToken",tokens.get("refreshToken")));
+        return ResponseEntity.ok(Map.of("accessToken",tokenDto.accessToken()));
     }
 }

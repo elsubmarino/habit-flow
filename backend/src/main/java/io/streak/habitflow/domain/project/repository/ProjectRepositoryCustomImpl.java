@@ -49,9 +49,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                 ))
                 .from(project)
                 .leftJoin(task).on(task.project.eq(project)
-                        //TODO
-                        //.and(task.completed.eq(false))
-                )
+                        .and(task.completed.eq(false)))
                 .innerJoin(projectMember).on(projectMember.project.eq(project).and(projectMember.member.id.eq(memberId)))
                 .groupBy(project.id)
                 .fetch();
