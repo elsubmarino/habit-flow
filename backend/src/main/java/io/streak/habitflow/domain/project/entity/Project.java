@@ -2,7 +2,7 @@ package io.streak.habitflow.domain.project.entity;
 
 import io.streak.habitflow.domain.project.type.AccessType;
 import io.streak.habitflow.domain.project.type.LayoutType;
-import io.streak.habitflow.global.common.BaseTimeEntity;
+import io.streak.habitflow.global.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -3,6 +3,7 @@ package io.streak.habitflow.domain.activitylog.api;
 import io.streak.habitflow.domain.activitylog.dto.response.ActivityLogResponse;
 import io.streak.habitflow.domain.activitylog.service.ActivityLogService;
 import io.streak.habitflow.global.aop.LoginMemberId;
+import io.streak.habitflow.global.common.constant.PageSizeConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -27,7 +28,7 @@ public class ActivityLogController {
     @ApiResponses({@ApiResponse(responseCode = "200", description = "액티비티 로그 조회 성공")})
     public ResponseEntity<Slice<ActivityLogResponse.Summary>> getActivityLogs(@LoginMemberId Long loginMemberId,
                                                                               @RequestParam(value = "lastActivityLogId",required = false) Long lastActivityLogId,
-                                                                              @PageableDefault(size=20)Pageable pageable) {
+                                                                              @PageableDefault(size= PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
         return ResponseEntity.ok(activityLogService.getActivityLogs(lastActivityLogId,loginMemberId,pageable));
     }
 }

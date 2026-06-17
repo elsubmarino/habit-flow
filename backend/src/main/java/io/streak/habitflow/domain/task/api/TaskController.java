@@ -7,6 +7,7 @@ import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.global.aop.LoginMemberId;
+import io.streak.habitflow.global.common.constant.PageSizeConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -120,7 +121,7 @@ public class TaskController {
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "관리함 테스크 조회 성공")})
     public ResponseEntity<TaskResponse.SummarySlice> getInboxTasks(@LoginMemberId Long loginMemberId,
                                                                    @ModelAttribute TaskRequest.Cursor cursor,
-                                                                   @PageableDefault(size=20) Pageable pageable) {
+                                                                   @PageableDefault(size= PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.INBOX
         );
@@ -133,7 +134,7 @@ public class TaskController {
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "오늘 테스크 조회 성공")})
     public ResponseEntity<TaskResponse.SummarySlice> getTodayTasks(@LoginMemberId Long memberId,
                                                                    @ModelAttribute TaskRequest.Cursor cursor,
-                                                                   @PageableDefault(size=20) Pageable pageable) {
+                                                                   @PageableDefault(size=PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.TODAY
         );
@@ -145,7 +146,7 @@ public class TaskController {
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "과거 테스크 조회 성공")})
     public ResponseEntity<TaskResponse.SummarySlice> getOverdueTasks(@LoginMemberId Long loginMemberId,
                                                                      @ModelAttribute TaskRequest.Cursor cursor,
-                                                                     @PageableDefault(size = 20) Pageable pageable) {
+                                                                     @PageableDefault(size = PageSizeConstants.CURSOR_PAGING_SMALL) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.OVERDUE
         );
@@ -161,7 +162,7 @@ public class TaskController {
                                                                       @ModelAttribute TaskRequest.Cursor cursor,
                                                                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
                                                                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
-                                                                      @PageableDefault(size = 20) Pageable pageable) {
+                                                                      @PageableDefault(size = PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.UPCOMING,
                 fromDate,

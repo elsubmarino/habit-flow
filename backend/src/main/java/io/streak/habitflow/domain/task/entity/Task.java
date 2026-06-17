@@ -4,7 +4,7 @@ import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
-import io.streak.habitflow.global.common.BaseTimeEntity;
+import io.streak.habitflow.global.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

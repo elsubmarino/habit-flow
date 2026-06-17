@@ -3,7 +3,7 @@ package io.streak.habitflow.domain.activitylog.entity;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.domain.task.type.TargetType;
-import io.streak.habitflow.global.common.BaseCreatedTimeEntity;
+import io.streak.habitflow.global.common.entity.BaseCreatedTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 

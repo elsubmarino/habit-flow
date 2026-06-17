@@ -4,6 +4,7 @@ import io.streak.habitflow.domain.label.dto.request.LabelRequest;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.service.LabelService;
 import io.streak.habitflow.global.aop.LoginMemberId;
+import io.streak.habitflow.global.common.constant.PageSizeConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -39,7 +40,7 @@ public class LabelController {
     public ResponseEntity<Slice<LabelResponse.Summary>> getLabels(
             @LoginMemberId Long loginMemberId,
             @RequestParam(value = "lastLabelId",required = false) Long lastLabelId,
-            @PageableDefault(size=20) Pageable pageable) {
+            @PageableDefault(size= PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
         return ResponseEntity.ok(labelService.getLabels(lastLabelId,loginMemberId,pageable));
     }
 

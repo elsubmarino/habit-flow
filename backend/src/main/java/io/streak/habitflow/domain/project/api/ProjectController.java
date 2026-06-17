@@ -6,6 +6,7 @@ import io.streak.habitflow.domain.project.service.ProjectService;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
 import io.streak.habitflow.global.aop.LoginMemberId;
+import io.streak.habitflow.global.common.constant.PageSizeConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -72,7 +73,7 @@ public class ProjectController {
     @Operation(summary = "프로젝트에 딸린 테스크 조회")
     public ResponseEntity<Slice<TaskResponse.Summary>> getTasksByProject(@PathVariable Long projectId,
                                                                          @LoginMemberId Long loginMemberId,
-                                                                         @PageableDefault(size=20) Pageable pageable) {
+                                                                         @PageableDefault(size= PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
         return ResponseEntity.ok(taskService.getTasksByProject(projectId, loginMemberId, pageable));
     }
 
@@ -80,7 +81,7 @@ public class ProjectController {
     @Operation(summary = "프로젝트 검색")
     public ResponseEntity<List<ProjectResponse.Summary>> searchProjects(@LoginMemberId Long loginMemberId,
                                                                         @RequestParam("keyword") String keyword,
-                                                                        @PageableDefault(size=20) Pageable pageable){
+                                                                        @PageableDefault(size=PageSizeConstants.CURSOR_PAGING_SMALL) Pageable pageable){
         return ResponseEntity.ok(projectService.searchProjects(keyword,loginMemberId,pageable));
     }
 
