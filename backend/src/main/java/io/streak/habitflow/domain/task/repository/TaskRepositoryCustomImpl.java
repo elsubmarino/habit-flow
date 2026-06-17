@@ -94,7 +94,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                                 task.description,
                                 task.taskPriorityType,
                                 task.dueDate,
-                                task.hasTime,
+                                task.timeSpecified,
                                 task.sortOrder,
                                 task.project.name.as("projectName"),
                                 ExpressionUtils.as(
@@ -164,7 +164,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                                 task.description,
                                 task.taskPriorityType,
                                 task.dueDate,
-                                task.hasTime,
+                                task.timeSpecified,
                                 task.sortOrder,
                                 task.project.name.as("projectName"),
                                 ExpressionUtils.as(

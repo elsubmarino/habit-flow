@@ -58,7 +58,7 @@ public final class TaskResponse{
                     .sortOrder(task.getSortOrder())
                     .labels(labelListResponses)
                     .recurring(task.isRecurring())
-                    .dueTime(task.isHasTime()?task.getDueDate().toLocalTime():null)
+                    .dueTime(task.isTimeSpecified()?task.getDueDate().toLocalTime():null)
                     .subTasks(task.getSubTasks().stream()
                             .map(Detail::fromSimpleSubTask)
                             .toList());
@@ -128,7 +128,7 @@ public final class TaskResponse{
                     .countSubTasksCompleted(taskListQuery.getCountSubTasksCompleted())
                     .countComments(taskListQuery.getCountComments())
                     .labels(labelListResponses)
-                    .dueTime(taskListQuery.isHasTime()?taskListQuery.getDueDate().toLocalTime():null)
+                    .dueTime(taskListQuery.isTimeSpecified()?taskListQuery.getDueDate().toLocalTime():null)
                     .build();
         }
 

@@ -111,7 +111,7 @@ public class TaskService {
                 .subTasks(new ArrayList<>())
                 .taskLabels(new ArrayList<>())
                 .dueDate(request.dueDate())
-                .hasTime(request.hasTime())
+                .timeSpecified(request.timeSpecified())
                 .comments(new ArrayList<>())
                 .build();
 
@@ -393,7 +393,7 @@ public class TaskService {
                 request.recurrenceInterval(),
                 request.recurrenceDays(),
                 request.recurrenceDayOfMonth(),
-                request.hasTime()
+                request.timeSpecified()
         );
 
         if(!isChanged){

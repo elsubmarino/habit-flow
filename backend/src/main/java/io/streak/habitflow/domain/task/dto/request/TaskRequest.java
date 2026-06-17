@@ -52,7 +52,7 @@ public final class TaskRequest {
             Integer recurrenceDayOfMonth,
 
             @Schema(description = "시간 존재 여부")
-            boolean hasTime
+            boolean timeSpecified
     ) {
         public Create{
             labelIds = (labelIds == null) ? new ArrayList<>() : new ArrayList<>(labelIds);
@@ -76,7 +76,7 @@ public final class TaskRequest {
             Integer recurrenceInterval,
             String recurrenceDays,
             Integer recurrenceDayOfMonth,
-            boolean hasTime
+            boolean timeSpecified
     ){}
 
     public record UpdateLabel(

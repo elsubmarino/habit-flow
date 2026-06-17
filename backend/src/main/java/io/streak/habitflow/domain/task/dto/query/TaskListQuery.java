@@ -19,5 +19,5 @@ public class TaskListQuery {
     private long countSubTasks;
     private long countSubTasksCompleted;
     private long countComments;
-    private boolean hasTime;
+    private boolean timeSpecified;
 }

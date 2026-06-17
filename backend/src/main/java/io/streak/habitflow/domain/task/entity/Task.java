@@ -75,7 +75,7 @@ public class Task extends BaseTimeEntity {
     private String recurrenceDays; //MON, WED, FRI (WEEKLY 일 때 사용)
     private Integer recurrenceDayOfMonth; //11 (MONTHLY 일 때 사용. NULL 허용을 위해 Integer
 
-    private boolean hasTime; //시간을 기록했느냐
+    private boolean timeSpecified; //시간을 기록했느냐
 
     public void addTaskLabel(TaskLabel taskLabel){
         this.taskLabels.add(taskLabel);
@@ -112,7 +112,7 @@ public class Task extends BaseTimeEntity {
     public boolean updateSchedule(LocalDateTime newDueDate,  boolean newRecurring,
                                   String newRecurrenceRule, Integer newRecurrenceInterval,
                                   String newRecurrenceDays, Integer newRecurrenceDayOfMonth,
-                                  boolean newHasTime){
+                                  boolean newTimeSpecified){
         boolean isChanged = false;
         if(!Objects.equals(this.dueDate,newDueDate)){
             this.dueDate = newDueDate;
@@ -138,8 +138,8 @@ public class Task extends BaseTimeEntity {
             this.recurrenceDayOfMonth = newRecurrenceDayOfMonth;
             isChanged = true;
         }
-        if (this.hasTime != newHasTime) {
-            this.hasTime = newHasTime;
+        if (this.timeSpecified != newTimeSpecified) {
+            this.timeSpecified = newTimeSpecified;
             isChanged = true;
         }
         return isChanged;
