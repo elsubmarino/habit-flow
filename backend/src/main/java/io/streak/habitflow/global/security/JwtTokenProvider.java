@@ -31,7 +31,6 @@ public class JwtTokenProvider {
 
     @PostConstruct
     public void init() {
-        //TODO BASE64로?
         byte[] keyBytes = Decoders.BASE64.decode(secretKeyString);
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
