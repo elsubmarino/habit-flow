@@ -28,7 +28,7 @@ public class Project  extends BaseTimeEntity {
     private LayoutType layoutType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id")
+    @JoinColumn(name = "parent_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Project parent;
 
     public void updateProject(String name,

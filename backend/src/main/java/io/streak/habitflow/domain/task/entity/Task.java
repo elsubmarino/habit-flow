@@ -42,15 +42,15 @@ public class Task extends BaseTimeEntity {
     private long sortOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="member_id", nullable = false)
+    @JoinColumn(name="member_id", nullable = false,foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="project_id")
+    @JoinColumn(name="project_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="parent_id")
+    @JoinColumn(name="parent_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Task parent;
 
     @OneToMany(mappedBy = "parent",cascade = CascadeType.ALL)

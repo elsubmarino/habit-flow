@@ -19,7 +19,7 @@ public class Attachment extends BaseTimeEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="comment_id")
+    @JoinColumn(name="comment_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Comment comment;
 
     @Column(nullable = false)

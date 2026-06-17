@@ -17,11 +17,11 @@ public class TaskLabel {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_master_id")
+    @JoinColumn(name = "task_master_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Task task;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "label_id")
+    @JoinColumn(name = "label_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Label label;
 
     public void assignTask(Task task){

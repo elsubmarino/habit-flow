@@ -20,11 +20,11 @@ public class Notification extends BaseCreatedTimeEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="receiver_member_id", nullable = false)
+    @JoinColumn(name="receiver_member_id", nullable = false,foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Member receiver;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="actor_member_id",nullable = false)
+    @JoinColumn(name="actor_member_id",nullable = false,foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Member actor;
 
     @Column(name="target_id",nullable = false)
