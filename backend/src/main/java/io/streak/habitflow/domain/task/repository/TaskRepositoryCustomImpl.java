@@ -90,14 +90,13 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
 
         return queryFactory
                 .select(
-                        Projections.fields(
+                        Projections.constructor(
                                 TaskSummaryQuery.class,
                                 task.id,
                                 task.name,
                                 task.description,
                                 task.taskPriorityType,
                                 task.dueDate,
-                                task.timeSpecified,
                                 task.sortOrder,
                                 task.project.name.as("projectName"),
                                 ExpressionUtils.as(
@@ -112,7 +111,8 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                                 ExpressionUtils.as(
                                         JPAExpressions.select(comment.count())
                                                 .from(comment)
-                                                .where(comment.task.eq(task)), "countComments")
+                                                .where(comment.task.eq(task)), "countComments"),
+                                task.timeSpecified
                         )
                 )
                 .from(task)
