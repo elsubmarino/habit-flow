@@ -58,6 +58,7 @@ export interface TaskDto {
     dueDate?: string | null;
     dueTime?: string | null;
     hasTime?: boolean;
+    timeSpecified?: boolean;
     sortOrder?: number;
     userId?: number | null;
     userName?: string | null;
@@ -89,6 +90,7 @@ export interface TaskListDto {
     dueDate?: string | null;
     dueTime?: string | null;
     hasTime?: boolean;
+    timeSpecified?: boolean;
     sortOrder?: number;
     projectName?: string | null;
     countSubTasks?: number;

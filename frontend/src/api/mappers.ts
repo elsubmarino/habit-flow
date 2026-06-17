@@ -251,7 +251,7 @@ function mapSubtasks(subTasks?: TaskDto[]): Subtask[] {
     }));
 }
 
-function parseDueFromApi(task: Pick<TaskDto, 'dueDate' | 'dueTime'>): {
+function parseDueFromApi(task: Pick<TaskDto, 'dueDate' | 'dueTime' | 'hasTime' | 'timeSpecified'>): {
     dueDate: string | null;
     dueTime24: string | null;
     hasTime: boolean;
@@ -267,7 +267,8 @@ function parseDueFromApi(task: Pick<TaskDto, 'dueDate' | 'dueTime'>): {
         return { dueDate: date, dueTime24: embedded, hasTime: true };
     }
 
-    return { dueDate: date, dueTime24: null, hasTime: false };
+    const timeSpecified = task.timeSpecified ?? task.hasTime ?? false;
+    return { dueDate: date, dueTime24: null, hasTime: timeSpecified };
 }
 
 function resolveTaskCounts(task: TaskDto): {
@@ -303,7 +304,7 @@ export function mapTaskListToDto(task: TaskListDto, projectId?: number): TaskDto
         taskPriorityType: task.taskPriorityType,
         dueDate: task.dueDate ?? null,
         dueTime: task.dueTime ?? null,
-        hasTime: Boolean(task.dueTime),
+        hasTime: task.timeSpecified ?? task.hasTime ?? Boolean(task.dueTime),
         sortOrder: task.sortOrder,
         projectId: projectId ?? null,
         projectName: task.projectName ?? null,

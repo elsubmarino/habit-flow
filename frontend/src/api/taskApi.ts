@@ -20,6 +20,7 @@ export interface CreateTaskPayload extends RecurrenceApiPayload {
     dueDate?: string | null;
     dueTime24?: string | null;
     hasTime?: boolean;
+    timeSpecified?: boolean;
     priorityType?: PriorityType;
     projectId?: number | null;
     parentId?: number | null;
@@ -222,13 +223,14 @@ export async function fetchTaskById(taskId: number): Promise<TaskDto> {
 }
 
 export async function createTask(payload: CreateTaskPayload): Promise<TaskDto> {
+    const timeSpecified = payload.timeSpecified ?? payload.hasTime ?? false;
     const body = {
         name: payload.name,
         description: payload.description ?? '',
         dueDate: payload.dueDate
-            ? toLocalDateTime(payload.dueDate, payload.dueTime24, payload.hasTime ?? false)
+            ? toLocalDateTime(payload.dueDate, payload.dueTime24, timeSpecified)
             : undefined,
-        hasTime: payload.hasTime ?? false,
+        timeSpecified,
         taskPriorityType: payload.priorityType ?? 'P4',
         projectId: payload.projectId ?? null,
         parentId: payload.parentId ?? null,
@@ -258,6 +260,7 @@ export interface PatchTaskDueDatePayload {
     dueDate: string | null;
     dueTime24?: string | null;
     hasTime: boolean;
+    timeSpecified?: boolean;
     recurrence?: RecurrenceApiPayload;
 }
 
@@ -265,12 +268,13 @@ export async function patchTaskDueDate(
     taskId: number,
     payload: PatchTaskDueDatePayload,
 ): Promise<TaskDto> {
+    const timeSpecified = payload.timeSpecified ?? payload.hasTime;
     const recurrence = payload.recurrence;
     const body: Record<string, unknown> = {
         dueDate: payload.dueDate == null
             ? null
-            : toLocalDateTime(payload.dueDate, payload.dueTime24, payload.hasTime),
-        hasTime: payload.hasTime,
+            : toLocalDateTime(payload.dueDate, payload.dueTime24, timeSpecified),
+        timeSpecified,
         recurring: recurrence?.isRecurring ?? false,
         recurrenceInterval: recurrence?.recurrenceInterval ?? 0,
         recurrenceRule: recurrence?.recurrenceRule ?? null,
