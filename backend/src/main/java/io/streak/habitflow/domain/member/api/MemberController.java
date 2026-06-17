@@ -3,6 +3,7 @@ package io.streak.habitflow.domain.member.api;
 import io.streak.habitflow.domain.member.dto.request.MemberRequest;
 import io.streak.habitflow.domain.member.dto.response.MemberResponse;
 import io.streak.habitflow.domain.member.service.MemberService;
+import io.streak.habitflow.global.aop.LoginMemberId;
 import io.streak.habitflow.global.security.dto.TokenDto;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,8 +38,8 @@ public class MemberController {
     @GetMapping
     @Operation(summary="회원 정보 조회")
     @ApiResponses({@ApiResponse(responseCode = "200",description = "회원 정보 조회 성공")})
-    public ResponseEntity<MemberResponse.Detail> getMember(@AuthenticationPrincipal UserPrincipal userPrincipal){
-        MemberResponse.Detail memberResponse = memberService.getMember(userPrincipal.getMemberId());
+    public ResponseEntity<MemberResponse.Detail> getMember(@LoginMemberId Long loginMemberId){
+        MemberResponse.Detail memberResponse = memberService.getMember(loginMemberId);
         return ResponseEntity.ok(memberResponse);
     }
 
@@ -47,8 +48,8 @@ public class MemberController {
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 정보 업데이트 성공")})
     public ResponseEntity<Void> updateMember(@PathVariable Long memberId,
                                                        @RequestBody MemberRequest.Update request,
-                                                       @AuthenticationPrincipal UserPrincipal userPrincipal){
-        memberService.updateMember(memberId,request,userPrincipal.getMemberId());
+                                                       @LoginMemberId Long loginMemberId){
+        memberService.updateMember(memberId,request,loginMemberId);
         return ResponseEntity.noContent().build();
     }
 
@@ -97,7 +98,7 @@ public class MemberController {
     @PostMapping("/reissue")
     @Operation(summary = "토큰 재발급")
     public ResponseEntity<Map<String, String>> reissue(
-            @CookieValue(value="refreshToken",required=true) String refreshToken,
+            @CookieValue(value="refreshToken") String refreshToken,
             HttpServletResponse response){
         TokenDto tokenDto = memberService.reissue(refreshToken);
 
