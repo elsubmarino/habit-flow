@@ -159,7 +159,11 @@ export function formatUpcomingSectionTitle(iso: string): string {
     const date = new Date(iso + 'T00:00:00');
     const today = toISODate(new Date());
     const tomorrow = toISODate(addDays(new Date(), 1));
-    const dateLabel = date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+    const currentYear = new Date().getFullYear();
+    const showYear = date.getFullYear() !== currentYear;
+    const dateLabel = showYear
+        ? date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
+        : date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
     const weekday = date.toLocaleDateString('ko-KR', { weekday: 'long' });
     if (iso === today) return `${dateLabel} · 오늘 · ${weekday}`;
     if (iso === tomorrow) return `${dateLabel} · 내일 · ${weekday}`;
@@ -187,6 +191,83 @@ export function getWeekStrip(start = new Date(), days = 7): Array<{
             isToday: iso === today,
         };
     });
+}
+
+export function getWeekDateKeys(weekStart: Date, days = 7): string[] {
+    return Array.from({ length: days }, (_, i) => toISODate(addDays(weekStart, i)));
+}
+
+export function isDateInWeek(iso: string, weekStartIso: string): boolean {
+    const start = new Date(`${weekStartIso}T00:00:00`);
+    const end = addDays(start, 6);
+    const day = new Date(`${iso}T00:00:00`);
+    return day >= start && day <= end;
+}
+
+export function isAfterToday(iso: string, todayIso = toISODate(new Date())): boolean {
+    return iso > todayIso;
+}
+
+export function getUpcomingWeekRange(anchorIso: string): {
+    weekStartIso: string;
+    fromDate: string;
+    toDate: string;
+} {
+    const anchor = new Date(`${anchorIso}T00:00:00`);
+    const weekStart = startOfWeekMonday(anchor);
+    const weekEnd = addDays(weekStart, 6);
+    return {
+        weekStartIso: toISODate(weekStart),
+        fromDate: `${toISODate(weekStart)}T00:00:00`,
+        toDate: `${toISODate(weekEnd)}T23:59:59`,
+    };
+}
+
+/** upcoming 날짜별 API용 하루 범위 (LocalDateTime) */
+export function getUpcomingDayRange(dateKey: string): { fromDate: string; toDate: string } {
+    return {
+        fromDate: `${dateKey}T00:00:00`,
+        toDate: `${dateKey}T23:59:59`,
+    };
+}
+
+/** /upcoming/summary 요청 범위: 오늘 ~ 달력 최대일 */
+export function getUpcomingSummaryDateRange(from = new Date()): { fromDate: string; toDate: string } {
+    const todayIso = toISODate(from);
+    const maxIso = toISODate(getUpcomingCalendarMaxDate(from));
+    return {
+        fromDate: `${todayIso}T00:00:00`,
+        toDate: `${maxIso}T23:59:59`,
+    };
+}
+
+export function isTodayDateKey(dateKey: string, todayIso = toISODate(new Date())): boolean {
+    return dateKey === todayIso;
+}
+
+let cachedTimelineKeys: string[] | null = null;
+let cachedTimelineAnchorDay: string | null = null;
+
+/** 오늘 ~ 달력 최대일(2년)까지 모든 날짜 키. upcoming 목록 빈 섹션용 */
+export function getUpcomingTimelineDateKeys(from = new Date()): string[] {
+    const anchorDay = toISODate(from);
+    if (cachedTimelineKeys && cachedTimelineAnchorDay === anchorDay) {
+        return cachedTimelineKeys;
+    }
+
+    const keys: string[] = [];
+    const maxDate = getUpcomingCalendarMaxDate(from);
+    let cursor = new Date(from);
+    cursor.setHours(0, 0, 0, 0);
+
+    while (cursor <= maxDate) {
+        keys.push(toISODate(cursor));
+        cursor = addDays(cursor, 1);
+    }
+
+    cachedTimelineKeys = keys;
+    cachedTimelineAnchorDay = anchorDay;
+    return keys;
 }
 
 export function startOfWeekMonday(date = new Date()): Date {

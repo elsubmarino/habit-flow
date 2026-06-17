@@ -10,6 +10,7 @@ import * as favoriteApi from '../api/favoriteApi';
 import * as labelApi from '../api/labelApi';
 import * as projectApi from '../api/projectApi';
 import * as taskApi from '../api/taskApi';
+import type { TaskCursor } from '../api/taskApi';
 import * as commentApi from '../api/commentApi';
 import {
     mapLabel,
@@ -22,6 +23,10 @@ import {
 import type { FavoriteDto, ProjectDetailDto, TaskDto } from '../api/types';
 import { parseProjectAccessType, parseProjectLayoutType } from '../api/projectMappers';
 import { habitRouteStateFromPath } from '../utils/appRoutes';
+import {
+    getUpcomingWeekRange,
+    toISODate,
+} from '../utils/date';
 
 export interface Label {
     id: number;
@@ -139,10 +144,30 @@ interface HabitState {
     selectedProjectDetail: ProjectDetail | null;
     selectedProjectDetailStatus: 'idle' | 'loading' | 'failed';
     tasksHasNext: boolean;
-    /** 다음 요청에 사용할 0-based page 번호 (첫 페이지 로드 후 hasNext면 1) */
+    /** 프로젝트 목록 offset page (cursor 미사용) */
     tasksNextPage: number;
+    tasksNextCursor: TaskCursor | null;
+    overdueList: Habit[];
+    overdueHasNext: boolean;
+    overdueNextCursor: TaskCursor | null;
+    overdueLoadMoreStatus: 'idle' | 'loading' | 'failed';
+    overdueCount: number;
     inboxTaskCount: number;
     todayTaskCount: number;
+    upcomingAnchorDate: string | null;
+    upcomingWeekStartIso: string | null;
+    upcomingJumpStatus: 'idle' | 'loading' | 'failed';
+    upcomingDays: Record<string, UpcomingDayBundle>;
+    upcomingDayCounts: Record<string, number> | null;
+    upcomingSummaryStatus: 'idle' | 'loading' | 'loaded' | 'failed';
+}
+
+export interface UpcomingDayBundle {
+    dateKey: string;
+    hasNext: boolean;
+    nextCursor: TaskCursor | null;
+    status: 'idle' | 'loading' | 'loadingMore' | 'failed';
+    loaded: boolean;
 }
 
 function readInitialRouteState(): Pick<
@@ -174,8 +199,20 @@ const initialState: HabitState = {
     selectedProjectDetailStatus: 'idle',
     tasksHasNext: false,
     tasksNextPage: 0,
+    tasksNextCursor: null,
+    overdueList: [],
+    overdueHasNext: false,
+    overdueNextCursor: null,
+    overdueLoadMoreStatus: 'idle',
+    overdueCount: 0,
     inboxTaskCount: 0,
     todayTaskCount: 0,
+    upcomingAnchorDate: null,
+    upcomingWeekStartIso: null,
+    upcomingJumpStatus: 'idle',
+    upcomingDays: {},
+    upcomingDayCounts: null,
+    upcomingSummaryStatus: 'idle',
 };
 
 export type ApiView = NavItem | 'all';
@@ -197,7 +234,73 @@ function countTasksForLabel(habits: Habit[], labelId: number) {
 interface LoadedTasksPage {
     tasks: TaskDto[];
     hasNext: boolean;
-    nextPage: number;
+    nextCursor: TaskCursor | null;
+    overdueTasks: TaskDto[];
+    overdueHasNext: boolean;
+    overdueNextCursor: TaskCursor | null;
+    overdueCount: number;
+    upcomingAnchorDate?: string | null;
+    upcomingWeekStartIso?: string | null;
+    upcomingDays?: Record<string, UpcomingDayBundle>;
+    upcomingDayCounts?: Record<string, number> | null;
+    upcomingSummaryStatus?: 'idle' | 'loading' | 'loaded' | 'failed';
+}
+
+async function loadOverdueBundle(): Promise<{
+    overdueTasks: TaskDto[];
+    overdueHasNext: boolean;
+    overdueNextCursor: TaskCursor | null;
+    overdueCount: number;
+}> {
+    const [overduePage, overdueCount] = await Promise.all([
+        taskApi.fetchOverdueTasks(),
+        taskApi.fetchTaskCount('OVERDUE'),
+    ]);
+    return {
+        overdueTasks: overduePage.content,
+        overdueHasNext: overduePage.hasNext,
+        overdueNextCursor: overduePage.nextCursor,
+        overdueCount,
+    };
+}
+
+async function loadUpcomingDayFirstPage(dateKey: string): Promise<{
+    tasks: TaskDto[];
+    bundle: UpcomingDayBundle;
+}> {
+    const page = await taskApi.fetchTasksForUpcomingDay(dateKey);
+    return {
+        tasks: page.content,
+        bundle: {
+            dateKey,
+            hasNext: page.hasNext,
+            nextCursor: page.nextCursor,
+            status: 'idle',
+            loaded: true,
+        },
+    };
+}
+
+function createEmptyUpcomingDayBundle(dateKey: string): UpcomingDayBundle {
+    return {
+        dateKey,
+        hasNext: false,
+        nextCursor: null,
+        status: 'idle',
+        loaded: true,
+    };
+}
+
+function shouldFetchUpcomingDay(
+    dateKey: string,
+    upcomingDayCounts: Record<string, number> | null,
+    upcomingSummaryStatus: HabitState['upcomingSummaryStatus'],
+): boolean {
+    if (upcomingSummaryStatus === 'failed') return true;
+    if (upcomingSummaryStatus !== 'loaded' || upcomingDayCounts === null) {
+        return false;
+    }
+    return (upcomingDayCounts[dateKey] ?? 0) > 0;
 }
 
 async function loadTasksForView(params: {
@@ -207,38 +310,65 @@ async function loadTasksForView(params: {
 }): Promise<LoadedTasksPage> {
     if (params.labelId != null) {
         const [today, upcoming] = await Promise.all([
-            taskApi.fetchAllTaskPages(taskApi.fetchTodayTasks),
-            taskApi.fetchAllTaskPages(taskApi.fetchUpcomingTasks),
+            taskApi.fetchAllTaskPages(cursor => taskApi.fetchTodayTasks(cursor)),
+            taskApi.fetchAllTaskPages(cursor => taskApi.fetchUpcomingTasks({ cursor })),
         ]);
         const tasks = dedupeTasks([...today, ...upcoming]).filter(t =>
             (t.labels ?? []).some(l => l.id === params.labelId),
         );
-        return { tasks, hasNext: false, nextPage: 0 };
+        return {
+            tasks,
+            hasNext: false,
+            nextCursor: null,
+            overdueTasks: [],
+            overdueHasNext: false,
+            overdueNextCursor: null,
+            overdueCount: 0,
+        };
     }
 
     switch (params.view) {
         case 'today': {
-            const page = await taskApi.fetchTodayTasks(0);
+            const [overdueBundle, todayPage] = await Promise.all([
+                loadOverdueBundle(),
+                taskApi.fetchTodayTasks(),
+            ]);
             return {
-                tasks: page.content,
-                hasNext: page.hasNext,
-                nextPage: page.hasNext ? 1 : 0,
+                tasks: todayPage.content,
+                hasNext: todayPage.hasNext,
+                nextCursor: todayPage.nextCursor,
+                ...overdueBundle,
             };
         }
         case 'upcoming': {
-            const page = await taskApi.fetchUpcomingTasks(0);
+            const todayIso = toISODate(new Date());
+            const [overdueBundle, summaryRows, dayPage] = await Promise.all([
+                loadOverdueBundle(),
+                taskApi.fetchUpcomingSummary(),
+                loadUpcomingDayFirstPage(todayIso),
+            ]);
             return {
-                tasks: page.content,
-                hasNext: page.hasNext,
-                nextPage: page.hasNext ? 1 : 0,
+                tasks: dayPage.tasks,
+                hasNext: false,
+                nextCursor: null,
+                upcomingAnchorDate: todayIso,
+                upcomingWeekStartIso: getUpcomingWeekRange(todayIso).weekStartIso,
+                upcomingDays: { [todayIso]: dayPage.bundle },
+                upcomingDayCounts: taskApi.mapUpcomingSummaryToCounts(summaryRows),
+                upcomingSummaryStatus: 'loaded',
+                ...overdueBundle,
             };
         }
         case 'inbox': {
-            const page = await taskApi.fetchInboxTasks(0);
+            const page = await taskApi.fetchInboxTasks();
             return {
                 tasks: page.content,
                 hasNext: page.hasNext,
-                nextPage: page.hasNext ? 1 : 0,
+                nextCursor: page.nextCursor,
+                overdueTasks: [],
+                overdueHasNext: false,
+                overdueNextCursor: null,
+                overdueCount: 0,
             };
         }
         case 'filters':
@@ -246,13 +376,17 @@ async function loadTasksForView(params: {
         case 'all':
         default: {
             const [today, upcoming] = await Promise.all([
-                taskApi.fetchAllTaskPages(taskApi.fetchTodayTasks),
-                taskApi.fetchAllTaskPages(taskApi.fetchUpcomingTasks),
+                taskApi.fetchAllTaskPages(cursor => taskApi.fetchTodayTasks(cursor)),
+                taskApi.fetchAllTaskPages(cursor => taskApi.fetchUpcomingTasks({ cursor })),
             ]);
             return {
                 tasks: dedupeTasks([...today, ...upcoming]),
                 hasNext: false,
-                nextPage: 0,
+                nextCursor: null,
+                overdueTasks: [],
+                overdueHasNext: false,
+                overdueNextCursor: null,
+                overdueCount: 0,
             };
         }
     }
@@ -266,7 +400,16 @@ type FetchHabitsResult = {
     projectId: number | null;
     labelId: number | null;
     hasNext: boolean;
-    nextPage: number;
+    nextCursor: TaskCursor | null;
+    overdueHabits: Habit[];
+    overdueHasNext: boolean;
+    overdueNextCursor: TaskCursor | null;
+    overdueCount: number;
+    upcomingAnchorDate?: string | null;
+    upcomingWeekStartIso?: string | null;
+    upcomingDays?: Record<string, UpcomingDayBundle>;
+    upcomingDayCounts?: Record<string, number> | null;
+    upcomingSummaryStatus?: 'idle' | 'loading' | 'loaded' | 'failed';
 };
 
 function fetchHabitsKey(params: FetchHabitsParams): string {
@@ -300,7 +443,16 @@ async function loadHabitsForView(params: FetchHabitsParams): Promise<FetchHabits
         projectId: params.projectId ?? null,
         labelId: params.labelId ?? null,
         hasNext: page.hasNext,
-        nextPage: page.nextPage,
+        nextCursor: page.nextCursor,
+        overdueHabits: page.overdueTasks.map(t => mapTaskToHabit(t)),
+        overdueHasNext: page.overdueHasNext,
+        overdueNextCursor: page.overdueNextCursor,
+        overdueCount: page.overdueCount,
+        upcomingAnchorDate: page.upcomingAnchorDate ?? null,
+        upcomingWeekStartIso: page.upcomingWeekStartIso ?? null,
+        upcomingDays: page.upcomingDays ?? {},
+        upcomingDayCounts: page.upcomingDayCounts ?? null,
+        upcomingSummaryStatus: page.upcomingSummaryStatus ?? 'idle',
     };
 }
 
@@ -351,11 +503,11 @@ export const fetchMoreHabits = createAsyncThunk(
     'habits/fetchMore',
     async (viewOverride: ApiView | undefined, { getState }) => {
         const state = getState() as { habits: HabitState };
-        const { activeView, selectedProjectId, selectedLabelId, tasksNextPage } = state.habits;
+        const { activeView, selectedProjectId, selectedLabelId, tasksNextPage, tasksNextCursor } = state.habits;
         const view = viewOverride ?? activeView;
 
         if (selectedLabelId != null) {
-            return { habits: [], hasNext: false };
+            return { habits: [], hasNext: false, nextCursor: null };
         }
 
         if (selectedProjectId != null) {
@@ -363,28 +515,152 @@ export const fetchMoreHabits = createAsyncThunk(
             return {
                 habits: page.content.map(t => mapTaskToHabit(t)),
                 hasNext: page.hasNext,
+                nextCursor: null,
             };
         }
 
         if (view !== 'today' && view !== 'upcoming' && view !== 'inbox') {
-            return { habits: [], hasNext: false };
+            return { habits: [], hasNext: false, nextCursor: null };
         }
 
+        const cursor = tasksNextCursor ? { ...tasksNextCursor, direction: 'NEXT' as const } : null;
         const page = view === 'today'
-            ? await taskApi.fetchTodayTasks(tasksNextPage)
+            ? await taskApi.fetchTodayTasks(cursor)
             : view === 'upcoming'
-                ? await taskApi.fetchUpcomingTasks(tasksNextPage)
-                : await taskApi.fetchInboxTasks(tasksNextPage);
+                ? await taskApi.fetchUpcomingTasks({ cursor })
+                : await taskApi.fetchInboxTasks(cursor);
 
         return {
             habits: page.content.map(t => mapTaskToHabit(t)),
             hasNext: page.hasNext,
+            nextCursor: page.nextCursor,
         };
     },
     {
         condition: (_, { getState }) => {
             const { loadMoreStatus, tasksHasNext } = (getState() as { habits: HabitState }).habits;
             return loadMoreStatus !== 'loading' && tasksHasNext;
+        },
+    },
+);
+
+const inFlightUpcomingDays = new Map<string, Promise<{
+    dateKey: string;
+    habits: Habit[];
+    bundle: UpcomingDayBundle;
+    skipped: boolean;
+}>>();
+
+function mergeHabitsById(existing: Habit[], incoming: Habit[]): Habit[] {
+    const map = new Map(existing.map(h => [String(h.id), h]));
+    for (const habit of incoming) {
+        map.set(String(habit.id), habit);
+    }
+    return [...map.values()];
+}
+
+export const ensureUpcomingDay = createAsyncThunk(
+    'habits/ensureUpcomingDay',
+    async (dateKey: string, { getState }) => {
+        const habitsState = (getState() as { habits: HabitState }).habits;
+        const bundle = habitsState.upcomingDays[dateKey];
+        if (bundle?.loaded) {
+            return { dateKey, habits: [], bundle, skipped: true as const };
+        }
+
+        if (!shouldFetchUpcomingDay(
+            dateKey,
+            habitsState.upcomingDayCounts,
+            habitsState.upcomingSummaryStatus,
+        )) {
+            if (habitsState.upcomingSummaryStatus === 'loaded') {
+                const emptyBundle = createEmptyUpcomingDayBundle(dateKey);
+                return { dateKey, habits: [], bundle: emptyBundle, skipped: false as const };
+            }
+            return { dateKey, habits: [], bundle: bundle ?? createEmptyUpcomingDayBundle(dateKey), skipped: true as const };
+        }
+
+        const existing = inFlightUpcomingDays.get(dateKey);
+        if (existing) return existing;
+
+        const promise = loadUpcomingDayFirstPage(dateKey)
+            .then(result => ({
+                dateKey,
+                habits: result.tasks.map(t => mapTaskToHabit(t)),
+                bundle: result.bundle,
+                skipped: false as const,
+            }))
+            .finally(() => {
+                if (inFlightUpcomingDays.get(dateKey) === promise) {
+                    inFlightUpcomingDays.delete(dateKey);
+                }
+            });
+
+        inFlightUpcomingDays.set(dateKey, promise);
+        return promise;
+    },
+);
+
+export const fetchMoreUpcomingDay = createAsyncThunk(
+    'habits/fetchMoreUpcomingDay',
+    async (dateKey: string, { getState }) => {
+        const bundle = (getState() as { habits: HabitState }).habits.upcomingDays[dateKey];
+        if (!bundle?.loaded || !bundle.hasNext) {
+            return { dateKey, habits: [], hasNext: false, nextCursor: null };
+        }
+
+        const cursor = bundle.nextCursor
+            ? { ...bundle.nextCursor, direction: 'NEXT' as const }
+            : null;
+        const page = await taskApi.fetchTasksForUpcomingDay(dateKey, cursor);
+
+        return {
+            dateKey,
+            habits: page.content.map(t => mapTaskToHabit(t)),
+            hasNext: page.hasNext,
+            nextCursor: page.nextCursor,
+        };
+    },
+    {
+        condition: (dateKey, { getState }) => {
+            const bundle = (getState() as { habits: HabitState }).habits.upcomingDays[dateKey];
+            return Boolean(bundle?.loaded && bundle.hasNext && bundle.status === 'idle');
+        },
+    },
+);
+
+export const jumpToUpcomingWeek = createAsyncThunk(
+    'habits/jumpToUpcomingWeek',
+    async (anchorIso: string, { dispatch, getState }) => {
+        const bundle = (getState() as { habits: HabitState }).habits.upcomingDays[anchorIso];
+        if (!bundle?.loaded && bundle?.status !== 'loading') {
+            await dispatch(ensureUpcomingDay(anchorIso));
+        }
+        return {
+            anchorIso,
+            weekStartIso: getUpcomingWeekRange(anchorIso).weekStartIso,
+        };
+    },
+);
+
+export const fetchMoreOverdue = createAsyncThunk(
+    'habits/fetchMoreOverdue',
+    async (_, { getState }) => {
+        const { overdueNextCursor } = (getState() as { habits: HabitState }).habits;
+        const cursor = overdueNextCursor
+            ? { ...overdueNextCursor, direction: 'NEXT' as const }
+            : null;
+        const page = await taskApi.fetchOverdueTasks(cursor);
+        return {
+            habits: page.content.map(t => mapTaskToHabit(t)),
+            hasNext: page.hasNext,
+            nextCursor: page.nextCursor,
+        };
+    },
+    {
+        condition: (_, { getState }) => {
+            const { overdueLoadMoreStatus, overdueHasNext } = (getState() as { habits: HabitState }).habits;
+            return overdueLoadMoreStatus !== 'loading' && overdueHasNext;
         },
     },
 );
@@ -884,14 +1160,22 @@ const habitSlice = createSlice({
         clearHabitError(state) {
             state.error = null;
         },
+        setUpcomingAnchorDate(state, action: { payload: string }) {
+            state.upcomingAnchorDate = action.payload;
+        },
     },
     extraReducers: builder => {
         builder
-            .addCase(fetchHabits.pending, state => {
+            .addCase(fetchHabits.pending, (state, action) => {
                 state.status = 'loading';
                 state.loadMoreStatus = 'idle';
+                state.overdueLoadMoreStatus = 'idle';
                 state.tasksNextPage = 0;
+                state.tasksNextCursor = null;
                 state.error = null;
+                if (action.meta.arg.view === 'upcoming') {
+                    state.upcomingSummaryStatus = 'loading';
+                }
             })
             .addCase(fetchHabits.fulfilled, (state, action) => {
                 if (!isFetchHabitsResultCurrent(state, action.meta.arg)) return;
@@ -899,7 +1183,19 @@ const habitSlice = createSlice({
                 state.list = action.payload.habits;
                 state.activeView = action.payload.view;
                 state.tasksHasNext = action.payload.hasNext;
-                state.tasksNextPage = action.payload.hasNext ? action.payload.nextPage : 0;
+                state.tasksNextCursor = action.payload.nextCursor;
+                state.overdueList = action.payload.overdueHabits;
+                state.overdueHasNext = action.payload.overdueHasNext;
+                state.overdueNextCursor = action.payload.overdueNextCursor;
+                state.overdueCount = action.payload.overdueCount;
+                if (action.payload.view === 'upcoming') {
+                    state.upcomingAnchorDate = action.payload.upcomingAnchorDate ?? null;
+                    state.upcomingWeekStartIso = action.payload.upcomingWeekStartIso ?? null;
+                    state.upcomingDays = action.payload.upcomingDays ?? {};
+                    state.upcomingDayCounts = action.payload.upcomingDayCounts ?? null;
+                    state.upcomingSummaryStatus = action.payload.upcomingSummaryStatus ?? 'idle';
+                    state.upcomingJumpStatus = 'idle';
+                }
                 state.labels = state.labels.map(l => ({
                     ...l,
                     taskCount: countTasksForLabel(action.payload.habits, l.id),
@@ -909,11 +1205,15 @@ const habitSlice = createSlice({
                 if (!isFetchHabitsResultCurrent(state, action.meta.arg)) return;
                 state.status = 'failed';
                 state.error = action.error.message ?? '작업 목록을 불러오지 못했습니다.';
+                if (action.meta.arg.view === 'upcoming') {
+                    state.upcomingSummaryStatus = 'failed';
+                }
             })
             .addCase(fetchProjectHabits.pending, state => {
                 state.status = 'loading';
                 state.loadMoreStatus = 'idle';
                 state.tasksNextPage = 0;
+                state.tasksNextCursor = null;
                 state.error = null;
             })
             .addCase(fetchProjectHabits.fulfilled, (state, action) => {
@@ -942,13 +1242,98 @@ const habitSlice = createSlice({
                     }
                 }
                 state.tasksHasNext = action.payload.hasNext;
-                if (action.payload.hasNext) {
+                state.tasksNextCursor = action.payload.nextCursor;
+                if (state.selectedProjectId != null && action.payload.hasNext) {
                     state.tasksNextPage += 1;
                 }
             })
             .addCase(fetchMoreHabits.rejected, (state, action) => {
                 state.loadMoreStatus = 'failed';
                 state.error = action.error.message ?? '작업을 더 불러오지 못했습니다.';
+            })
+            .addCase(jumpToUpcomingWeek.pending, (state, action) => {
+                state.upcomingJumpStatus = 'loading';
+                state.upcomingAnchorDate = action.meta.arg;
+                state.upcomingWeekStartIso = getUpcomingWeekRange(action.meta.arg).weekStartIso;
+            })
+            .addCase(jumpToUpcomingWeek.fulfilled, (state, action) => {
+                state.upcomingJumpStatus = 'idle';
+                state.upcomingAnchorDate = action.payload.anchorIso;
+                state.upcomingWeekStartIso = action.payload.weekStartIso;
+            })
+            .addCase(jumpToUpcomingWeek.rejected, (state, action) => {
+                state.upcomingJumpStatus = 'failed';
+                state.error = action.error.message ?? '일정을 불러오지 못했습니다.';
+            })
+            .addCase(ensureUpcomingDay.pending, (state, action) => {
+                const dateKey = action.meta.arg;
+                const prev = state.upcomingDays[dateKey];
+                if (prev?.loaded) return;
+                state.upcomingDays[dateKey] = {
+                    dateKey,
+                    hasNext: prev?.hasNext ?? false,
+                    nextCursor: prev?.nextCursor ?? null,
+                    status: 'loading',
+                    loaded: false,
+                };
+            })
+            .addCase(ensureUpcomingDay.fulfilled, (state, action) => {
+                const { dateKey, habits, bundle, skipped } = action.payload;
+                if (skipped) return;
+                state.list = mergeHabitsById(state.list, habits);
+                state.upcomingDays[dateKey] = bundle;
+            })
+            .addCase(ensureUpcomingDay.rejected, (state, action) => {
+                const dateKey = action.meta.arg;
+                const prev = state.upcomingDays[dateKey];
+                if (prev) {
+                    state.upcomingDays[dateKey] = { ...prev, status: 'failed', loaded: false };
+                }
+            })
+            .addCase(fetchMoreUpcomingDay.pending, (state, action) => {
+                const bundle = state.upcomingDays[action.meta.arg];
+                if (bundle) {
+                    state.upcomingDays[action.meta.arg] = { ...bundle, status: 'loadingMore' };
+                }
+            })
+            .addCase(fetchMoreUpcomingDay.fulfilled, (state, action) => {
+                const { dateKey, habits, hasNext, nextCursor } = action.payload;
+                state.list = mergeHabitsById(state.list, habits);
+                const prev = state.upcomingDays[dateKey];
+                if (prev) {
+                    state.upcomingDays[dateKey] = {
+                        ...prev,
+                        hasNext,
+                        nextCursor,
+                        status: 'idle',
+                    };
+                }
+            })
+            .addCase(fetchMoreUpcomingDay.rejected, (state, action) => {
+                const bundle = state.upcomingDays[action.meta.arg];
+                if (bundle) {
+                    state.upcomingDays[action.meta.arg] = { ...bundle, status: 'idle' };
+                }
+            })
+            .addCase(fetchMoreOverdue.pending, state => {
+                state.overdueLoadMoreStatus = 'loading';
+            })
+            .addCase(fetchMoreOverdue.fulfilled, (state, action) => {
+                state.overdueLoadMoreStatus = 'idle';
+                const existingKeys = new Set(state.overdueList.map(h => String(h.id)));
+                for (const habit of action.payload.habits) {
+                    const key = String(habit.id);
+                    if (!existingKeys.has(key)) {
+                        state.overdueList.push(habit);
+                        existingKeys.add(key);
+                    }
+                }
+                state.overdueHasNext = action.payload.hasNext;
+                state.overdueNextCursor = action.payload.nextCursor;
+            })
+            .addCase(fetchMoreOverdue.rejected, (state, action) => {
+                state.overdueLoadMoreStatus = 'failed';
+                state.error = action.error.message ?? '기한이 지난 작업을 더 불러오지 못했습니다.';
             })
             .addCase(fetchFavorites.pending, state => {
                 state.favoritesStatus = 'loading';
@@ -1200,6 +1585,6 @@ const habitSlice = createSlice({
     },
 });
 
-export const { setActiveView, setSelectedProject, setSelectedLabel, clearHabitError } =
+export const { setActiveView, setSelectedProject, setSelectedLabel, clearHabitError, setUpcomingAnchorDate } =
     habitSlice.actions;
 export default habitSlice.reducer;

@@ -175,8 +175,12 @@ const HabitItem: React.FC<HabitItemProps> = ({
                             {dueLabel}
                         </span>
                     )}
-                    {layout === 'project' && habit.labels.map(label => (
-                        <span key={label.id} className="task-meta-chip label-chip" style={{ color: label.color }}>
+                    {habit.labels.map(label => (
+                        <span
+                            key={label.id}
+                            className="task-meta-chip label-chip"
+                            style={{ color: label.color, borderColor: label.color }}
+                        >
                             {displayLabelName(label.name)}
                         </span>
                     ))}

@@ -9,6 +9,10 @@ import {
     fetchProjectHabits,
     fetchMoreHabits,
     fetchFavorites,
+    jumpToUpcomingWeek,
+    setUpcomingAnchorDate,
+    ensureUpcomingDay,
+    fetchMoreUpcomingDay,
     fetchLabels,
     fetchMoreLabels,
     fetchNavTaskCounts,
@@ -60,8 +64,7 @@ import { clearHabitError } from './store/habitSlice';
 import { useAppUrlSync } from './hooks/useAppUrlSync';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll';
 import { parseAppPath } from './utils/appRoutes';
-import { formatSectionDate, formatTodayHeader } from './utils/date';
-import { splitOverdueTasks } from './utils/overdueTasks';
+import { formatSectionDate, formatTodayHeader, toISODate } from './utils/date';
 import {
     filterHabits,
     groupHabits,
@@ -103,6 +106,13 @@ function App() {
         status,
         loadMoreStatus,
         tasksHasNext,
+        overdueList,
+        upcomingAnchorDate,
+        upcomingWeekStartIso,
+        upcomingJumpStatus,
+        upcomingDays,
+        upcomingDayCounts,
+        upcomingSummaryStatus,
         labelsLoadMoreStatus,
         labelsHasNext,
         labelsStatus,
@@ -150,6 +160,8 @@ function App() {
 
     const addFormRef = useRef<AddHabitFormHandle>(null);
     const mainPanelRef = useRef<HTMLElement>(null);
+    const upcomingScrollTopRef = useRef<number | null>(null);
+    const prevHabitsLengthRef = useRef(0);
     const prevShowLabelsBrowseRef = useRef(false);
     const prevShowProjectsBrowseRef = useRef(false);
 
@@ -448,7 +460,7 @@ function App() {
     };
 
     const paginatedTaskView =
-        (activeNav === 'today' || activeNav === 'upcoming' || activeNav === 'inbox')
+        (activeNav === 'today' || activeNav === 'inbox')
         && selectedProjectId == null
         && selectedLabelId == null;
 
@@ -485,7 +497,7 @@ function App() {
     const showUpcomingGrouped = activeNav === 'upcoming' && !selectedProjectId && !selectedLabelId;
     const showInboxList = activeNav === 'inbox' && !selectedProjectId && !selectedLabelId;
     const showTaskPagination =
-        showTodaySections || showUpcomingGrouped || showInboxList || selectedProjectId != null;
+        showTodaySections || showInboxList || selectedProjectId != null;
     const showLabelsPagination = showLabelsPanel && labelsHasNext;
 
     const headerTaskCount = showTodaySections
@@ -495,7 +507,11 @@ function App() {
             : null;
 
     const handleLoadMoreTasks = useCallback(() => {
-        if (!tasksHasNext || loadMoreStatus === 'loading') return;
+        if (!tasksHasNext || loadMoreStatus === 'loading' || upcomingJumpStatus === 'loading') return;
+
+        if (showUpcomingGrouped && mainPanelRef.current) {
+            upcomingScrollTopRef.current = mainPanelRef.current.scrollTop;
+        }
 
         if (selectedProjectId != null) {
             dispatch(fetchMoreHabits('all'));
@@ -507,7 +523,26 @@ function App() {
             : toApiView(activeNav);
         if (view !== 'today' && view !== 'upcoming' && view !== 'inbox') return;
         dispatch(fetchMoreHabits(view));
-    }, [dispatch, activeNav, selectedProjectId, selectedLabelId, tasksHasNext, loadMoreStatus]);
+    }, [dispatch, activeNav, selectedProjectId, selectedLabelId, tasksHasNext, loadMoreStatus, upcomingJumpStatus, showUpcomingGrouped]);
+
+    useLayoutEffect(() => {
+        if (!showUpcomingGrouped || !mainPanelRef.current) return;
+        if (upcomingScrollTopRef.current != null && habits.length > prevHabitsLengthRef.current) {
+            mainPanelRef.current.scrollTop = upcomingScrollTopRef.current;
+            upcomingScrollTopRef.current = null;
+        }
+        prevHabitsLengthRef.current = habits.length;
+    }, [habits.length, showUpcomingGrouped]);
+
+    const upcomingSelectedDate = upcomingAnchorDate ?? toISODate(new Date());
+
+    const handleEnsureUpcomingDay = useCallback((dateKey: string) => {
+        dispatch(ensureUpcomingDay(dateKey));
+    }, [dispatch]);
+
+    const handleLoadMoreUpcomingDay = useCallback((dateKey: string) => {
+        dispatch(fetchMoreUpcomingDay(dateKey));
+    }, [dispatch]);
 
     const handleLoadMoreLabels = useCallback(() => {
         if (!labelsHasNext || labelsLoadMoreStatus === 'loading') return;
@@ -515,7 +550,10 @@ function App() {
     }, [dispatch, labelsHasNext, labelsLoadMoreStatus]);
 
     const loadMoreSentinelRef = useInfiniteScroll(
-        status !== 'loading' && (paginatedTaskView || selectedProjectId != null) && tasksHasNext,
+        status !== 'loading'
+            && upcomingJumpStatus !== 'loading'
+            && (paginatedTaskView || selectedProjectId != null)
+            && tasksHasNext,
         tasksHasNext,
         loadMoreStatus === 'loading',
         handleLoadMoreTasks,
@@ -584,12 +622,11 @@ function App() {
         }
 
         if (showTodaySections && viewPrefs.grouping === 'none') {
-            const { overdue: overdueHabits, rest: todayHabits } = splitOverdueTasks(displayHabits);
             return (
                 <>
-                    {overdueHabits.length > 0 && (
+                    {overdueList.length > 0 && (
                         <OverdueTasksSection
-                            habits={overdueHabits}
+                            habits={overdueList}
                             layout="list"
                             onOpenDetails={handleOpenHabit}
                             onOpenProject={handleProjectSelect}
@@ -597,7 +634,7 @@ function App() {
                             onTaskDeleted={handleTaskDeleted}
                         />
                     )}
-                    {renderTaskList(todayHabits)}
+                    {renderTaskList(displayHabits)}
                     <InlineAddTaskButton onClick={() => addFormRef.current?.open()} />
                 </>
             );
@@ -626,6 +663,18 @@ function App() {
             return (
                 <UpcomingTaskList
                     habits={displayHabits}
+                    overdueHabits={overdueList}
+                    upcomingDays={upcomingDays}
+                    upcomingDayCounts={upcomingDayCounts}
+                    upcomingSummaryStatus={upcomingSummaryStatus}
+                    selectedDate={upcomingSelectedDate}
+                    weekStartIso={upcomingWeekStartIso}
+                    jumpStatus={upcomingJumpStatus}
+                    scrollContainerRef={mainPanelRef}
+                    onJumpToDate={iso => dispatch(jumpToUpcomingWeek(iso))}
+                    onSelectDate={iso => dispatch(setUpcomingAnchorDate(iso))}
+                    onEnsureDay={handleEnsureUpcomingDay}
+                    onLoadMoreDay={handleLoadMoreUpcomingDay}
                     onOpenDetails={handleOpenHabit}
                     onOpenProject={handleProjectSelect}
                     onAddTask={() => addFormRef.current?.open()}
@@ -816,7 +865,7 @@ function App() {
                 <section className={`task-section ${showUpcomingGrouped ? 'task-section-upcoming' : ''} ${selectedProjectId ? 'task-section-project' : ''}`}>
                     {status === 'loading' && <p className="status-message">불러오는 중…</p>}
 
-                    {status !== 'loading' && displayHabits.length === 0 && !showLabelsPanel && !showReport && !showProjectsPanel && (
+                    {status !== 'loading' && displayHabits.length === 0 && overdueList.length === 0 && !showLabelsPanel && !showReport && !showProjectsPanel && (
                         <div className="empty-state">
                             <p className="empty-title">할 일이 없습니다</p>
                             <p className="empty-desc">

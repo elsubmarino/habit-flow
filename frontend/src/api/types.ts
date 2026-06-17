@@ -41,6 +41,11 @@ export interface CommentDto {
 /** @deprecated PaginatedResult 사용 */
 export type ScrollResponse<T> = import('./slice').PaginatedResult<T>;
 
+export interface UpcomingDateCountDto {
+    upcomingDate: string;
+    count: number;
+}
+
 /** Task ID */
 export interface TaskDto {
     id: number;
@@ -92,7 +97,7 @@ export interface TaskListDto {
     labels?: LabelDto[];
 }
 
-export type TaskFilterType = 'INBOX' | 'TODAY' | 'UPCOMING';
+export type TaskFilterType = 'INBOX' | 'TODAY' | 'UPCOMING' | 'OVERDUE';
 
 export interface ProjectDto {
     id: number;
