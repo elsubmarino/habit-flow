@@ -10,7 +10,7 @@ import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.domain.task.dto.query.TaskListQuery;
+import io.streak.habitflow.domain.task.dto.query.TaskSummaryQuery;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
@@ -156,15 +156,15 @@ public class TaskService {
                 "당신이 테스크 "+ savedTask.getName()+"을(를) 추가했습니다"
         ));
 
-        List<LabelResponse.List> labelListResponses = savedTask.getTaskLabels()
+        List<LabelResponse.Summary> labelSummaryRespons = savedTask.getTaskLabels()
                 .stream()
                 .map(taskLabel -> {
                     Label realLabel = taskLabel.getLabel();
-                    return LabelResponse.List.from(realLabel);
+                    return LabelResponse.Summary.from(realLabel);
                 })
                 .toList();
 
-        return TaskResponse.Detail.of(savedTask, labelListResponses);
+        return TaskResponse.Detail.of(savedTask, labelSummaryRespons);
     }
 
     private Task getTask(TaskRequest.Create request, Task parentTask) {
@@ -187,34 +187,34 @@ public class TaskService {
             throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
         }
 
-        List<LabelResponse.List> labelListResponses = task.getTaskLabels().stream()
-                .map(taskLabel -> LabelResponse.List.from(taskLabel.getLabel()))
+        List<LabelResponse.Summary> labelSummaryRespons = task.getTaskLabels().stream()
+                .map(taskLabel -> LabelResponse.Summary.from(taskLabel.getLabel()))
                 .toList();
 
-        return TaskResponse.Detail.of(task, labelListResponses);
+        return TaskResponse.Detail.of(task, labelSummaryRespons);
     }
 
     @CheckOwnership(type="PROJECT")
-    public Slice<TaskResponse.List> getTasksByProject(Long projectId, Long memberId, Pageable pageable){
+    public Slice<TaskResponse.Summary> getTasksByProject(Long projectId, Long memberId, Pageable pageable){
         int pageSize = pageable.getPageSize();
 
-        List<TaskListQuery> tasks = taskRepository.findTasksByProject(projectId,memberId,pageable);
+        List<TaskSummaryQuery> tasks = taskRepository.findTasksByProject(projectId,memberId,pageable);
 
         boolean hasNext = false;
         if(tasks.size() > pageSize){
             tasks.remove(pageSize);
             hasNext = true;
         }
-        List<TaskResponse.List> taskListResponses =  tasks.stream()
-                .map(task->TaskResponse.List.of(task,new ArrayList<>()))
+        List<TaskResponse.Summary> taskSummaryRespons =  tasks.stream()
+                .map(task-> TaskResponse.Summary.of(task,new ArrayList<>()))
                 .toList();
-        return new SliceImpl<>(taskListResponses,pageable,hasNext);
+        return new SliceImpl<>(taskSummaryRespons,pageable,hasNext);
     }
 
-    public TaskResponse.ListSlice getTasks(TaskRequest.SearchCondition searchCondition,
-                                             TaskRequest.Cursor cursor, Long memberId, Pageable pageable){
+    public TaskResponse.SummarySlice getTasks(TaskRequest.SearchCondition searchCondition,
+                                              TaskRequest.Cursor cursor, Long memberId, Pageable pageable){
         int pageSize = pageable.getPageSize();
-        List<TaskListQuery> tasks = taskRepository.searchTasksByCondition(searchCondition, cursor, memberId, pageable);
+        List<TaskSummaryQuery> tasks = taskRepository.searchTasksByCondition(searchCondition, cursor, memberId, pageable);
 
         boolean hasNext;
         boolean hasPrev;
@@ -233,11 +233,11 @@ public class TaskService {
             hasPrev = cursor != null && cursor.lastTaskId() != null;
         }
 
-        List<Long> taskIds = tasks.stream().map(TaskListQuery::id).toList();
-        Map<Long, List<LabelResponse.List>> labelMap = labelRepository.findLabelsByTaskIds(taskIds);
+        List<Long> taskIds = tasks.stream().map(TaskSummaryQuery::id).toList();
+        Map<Long, List<LabelResponse.Summary>> labelMap = labelRepository.findLabelsByTaskIds(taskIds);
 
-        List<TaskResponse.List> taskListResponses = tasks.stream()
-                .map(task->TaskResponse.List.of(task,
+        List<TaskResponse.Summary> taskSummaryRespons = tasks.stream()
+                .map(task-> TaskResponse.Summary.of(task,
                         labelMap.getOrDefault(task.id(),new ArrayList<>())))
                 .toList();
 
@@ -245,8 +245,8 @@ public class TaskService {
         TaskRequest.Cursor prevCursor = null;
 
         if(!tasks.isEmpty()){
-            TaskListQuery first = tasks.get(0);
-            TaskListQuery last = tasks.get(tasks.size()-1);
+            TaskSummaryQuery first = tasks.get(0);
+            TaskSummaryQuery last = tasks.get(tasks.size()-1);
 
             if(hasNext){
                 nextCursor = TaskRequest.Cursor.next(
@@ -266,7 +266,7 @@ public class TaskService {
             }
         }
 
-        return new TaskResponse.ListSlice(taskListResponses,hasNext,hasPrev,nextCursor,prevCursor);
+        return new TaskResponse.SummarySlice(taskSummaryRespons,hasNext,hasPrev,nextCursor,prevCursor);
     }
 
     @Transactional

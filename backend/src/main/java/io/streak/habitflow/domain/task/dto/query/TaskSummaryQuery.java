@@ -4,7 +4,7 @@ import io.streak.habitflow.domain.task.type.TaskPriorityType;
 
 import java.time.LocalDateTime;
 
-public record TaskListQuery (
+public record TaskSummaryQuery(
     Long id,
     String name,
     String description,

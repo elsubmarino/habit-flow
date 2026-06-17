@@ -24,7 +24,7 @@ public class NotificationController {
 
     @GetMapping
     @Operation(summary = "알림 다건 조회")
-    public ResponseEntity<List<NotificationResponse.List>> getNotifications(@LoginMemberId Long loginMemberId
+    public ResponseEntity<List<NotificationResponse.Summary>> getNotifications(@LoginMemberId Long loginMemberId
                                                                        ) {
         return ResponseEntity.ok(notificationService.getNotifications(loginMemberId));
     }

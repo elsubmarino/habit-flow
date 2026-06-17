@@ -1,9 +1,9 @@
 package io.streak.habitflow.domain.favorite.repository;
 
-import io.streak.habitflow.domain.favorite.dto.query.FavoriteListQuery;
+import io.streak.habitflow.domain.favorite.dto.query.FavoriteSummaryQuery;
 
 import java.util.List;
 
 public interface FavoriteRepositoryCustom {
-    List<FavoriteListQuery> findByMemberId(Long memberId);
+    List<FavoriteSummaryQuery> findByMemberId(Long memberId);
 }

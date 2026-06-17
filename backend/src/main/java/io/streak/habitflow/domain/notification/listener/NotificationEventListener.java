@@ -63,7 +63,7 @@ public class NotificationEventListener {
         for(Notification notification: notifications){
             if(notification.getActivityType() == ActivityType.INVITED){
                 sseEmitters.sendToMember(notification.getReceiver().getId()
-                        , NotificationResponse.List.from(notification));
+                        , NotificationResponse.Summary.from(notification));
             }
         }
 

@@ -6,7 +6,7 @@ import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.notification.service.NotificationService;
-import io.streak.habitflow.domain.project.dto.query.ProjectListQuery;
+import io.streak.habitflow.domain.project.dto.query.ProjectSummaryQuery;
 import io.streak.habitflow.domain.project.dto.request.ProjectRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.entity.Project;
@@ -146,10 +146,10 @@ public class ProjectService {
        return ProjectResponse.Detail.of(project,isFavorite);
     }
 
-    public List<ProjectResponse.List> getProjectsByMember(Long memberId) {
-        List<ProjectListQuery> projectListQueries = projectRepository.findByMemberId(memberId);
+    public List<ProjectResponse.Summary> getProjectsByMember(Long memberId) {
+        List<ProjectSummaryQuery> projectListQueries = projectRepository.findByMemberId(memberId);
         return projectListQueries.stream()
-                .map(ProjectResponse.List::from)
+                .map(ProjectResponse.Summary::from)
                 .toList();
     }
 
@@ -174,10 +174,10 @@ public class ProjectService {
 
     }
 
-    public List<ProjectResponse.List> searchProjects(String keyword, Long memberId, Pageable pageable) {
-        List<ProjectListQuery> projectListQueries = projectRepository.searchKeyword(keyword,memberId, pageable);
+    public List<ProjectResponse.Summary> searchProjects(String keyword, Long memberId, Pageable pageable) {
+        List<ProjectSummaryQuery> projectListQueries = projectRepository.searchKeyword(keyword,memberId, pageable);
         return projectListQueries.stream()
-                .map(ProjectResponse.List::from)
+                .map(ProjectResponse.Summary::from)
                 .toList();
     }
 

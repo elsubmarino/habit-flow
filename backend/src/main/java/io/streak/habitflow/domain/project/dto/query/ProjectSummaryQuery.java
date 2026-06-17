@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.project.dto.query;
 
-public record ProjectListQuery(
+public record ProjectSummaryQuery(
         Long id,
         String name,
         String color,

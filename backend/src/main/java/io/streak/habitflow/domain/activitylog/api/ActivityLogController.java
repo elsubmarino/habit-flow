@@ -25,9 +25,9 @@ public class ActivityLogController {
     @GetMapping
     @Operation(summary = "액티비티 로그 조회")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "액티비티 로그 조회 성공")})
-    public ResponseEntity<Slice<ActivityLogResponse.List>> getActivityLogs(@LoginMemberId Long loginMemberId,
-                                                                           @RequestParam(value = "lastActivityLogId",required = false) Long lastActivityLogId,
-                                                                           @PageableDefault(size=20)Pageable pageable) {
+    public ResponseEntity<Slice<ActivityLogResponse.Summary>> getActivityLogs(@LoginMemberId Long loginMemberId,
+                                                                              @RequestParam(value = "lastActivityLogId",required = false) Long lastActivityLogId,
+                                                                              @PageableDefault(size=20)Pageable pageable) {
         return ResponseEntity.ok(activityLogService.getActivityLogs(lastActivityLogId,loginMemberId,pageable));
     }
 }

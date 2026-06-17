@@ -118,9 +118,9 @@ public class TaskController {
     @GetMapping("/inbox")
     @Operation(summary = "관리함 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "관리함 테스크 조회 성공")})
-    public ResponseEntity<TaskResponse.ListSlice> getInboxTasks(@LoginMemberId Long loginMemberId,
-                                                                  @ModelAttribute TaskRequest.Cursor cursor,
-                                                                  @PageableDefault(size=20) Pageable pageable) {
+    public ResponseEntity<TaskResponse.SummarySlice> getInboxTasks(@LoginMemberId Long loginMemberId,
+                                                                   @ModelAttribute TaskRequest.Cursor cursor,
+                                                                   @PageableDefault(size=20) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.INBOX
         );
@@ -131,9 +131,9 @@ public class TaskController {
     @GetMapping("/today")
     @Operation(summary = "오늘 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "오늘 테스크 조회 성공")})
-    public ResponseEntity<TaskResponse.ListSlice> getTodayTasks(@LoginMemberId Long memberId,
-                                                                  @ModelAttribute TaskRequest.Cursor cursor,
-                                                                  @PageableDefault(size=20) Pageable pageable) {
+    public ResponseEntity<TaskResponse.SummarySlice> getTodayTasks(@LoginMemberId Long memberId,
+                                                                   @ModelAttribute TaskRequest.Cursor cursor,
+                                                                   @PageableDefault(size=20) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.TODAY
         );
@@ -143,7 +143,7 @@ public class TaskController {
     @GetMapping("/overdue")
     @Operation(summary = "과거 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "과거 테스크 조회 성공")})
-    public ResponseEntity<TaskResponse.ListSlice> getOverdueTasks(@LoginMemberId Long loginMemberId,
+    public ResponseEntity<TaskResponse.SummarySlice> getOverdueTasks(@LoginMemberId Long loginMemberId,
                                                                      @ModelAttribute TaskRequest.Cursor cursor,
                                                                      @PageableDefault(size = 20) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
@@ -157,11 +157,11 @@ public class TaskController {
     @GetMapping("/upcoming")
     @Operation(summary = "다가오는 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "다가오는 테스크 조회 성공")})
-    public ResponseEntity<TaskResponse.ListSlice> getUpcomingTasks(@LoginMemberId Long loginMemberId,
-                                                                     @ModelAttribute TaskRequest.Cursor cursor,
-                                                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
-                                                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
-                                                                     @PageableDefault(size = 20) Pageable pageable) {
+    public ResponseEntity<TaskResponse.SummarySlice> getUpcomingTasks(@LoginMemberId Long loginMemberId,
+                                                                      @ModelAttribute TaskRequest.Cursor cursor,
+                                                                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
+                                                                      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
+                                                                      @PageableDefault(size = 20) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.UPCOMING,
                 fromDate,

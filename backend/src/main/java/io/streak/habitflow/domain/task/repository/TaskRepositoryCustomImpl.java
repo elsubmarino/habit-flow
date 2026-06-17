@@ -5,7 +5,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.streak.habitflow.domain.task.dto.query.TaskListQuery;
+import io.streak.habitflow.domain.task.dto.query.TaskSummaryQuery;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.QTask;
@@ -60,7 +60,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskListQuery> findTasksByProject(Long projectId, Long memberId, Pageable pageable) {
+    public List<TaskSummaryQuery> findTasksByProject(Long projectId, Long memberId, Pageable pageable) {
         List<Long> ids = queryFactory
                 .select(task.id)
                 .from(task)
@@ -85,13 +85,13 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         return getTaskListQueries(ids);
     }
 
-    private List<TaskListQuery> getTaskListQueries(List<Long> ids) {
+    private List<TaskSummaryQuery> getTaskListQueries(List<Long> ids) {
         QTask subTask = new QTask("subTask");
 
         return queryFactory
                 .select(
                         Projections.fields(
-                                TaskListQuery.class,
+                                TaskSummaryQuery.class,
                                 task.id,
                                 task.name,
                                 task.description,
@@ -130,7 +130,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskListQuery> searchTasksByCondition(TaskRequest.SearchCondition searchCondition, TaskRequest.Cursor cursor, Long memberId, Pageable pageable) {
+    public List<TaskSummaryQuery> searchTasksByCondition(TaskRequest.SearchCondition searchCondition, TaskRequest.Cursor cursor, Long memberId, Pageable pageable) {
 
         boolean isPrev = cursor != null && cursor.direction() == CursorDirection.PREV;
         List<Long> ids = queryFactory

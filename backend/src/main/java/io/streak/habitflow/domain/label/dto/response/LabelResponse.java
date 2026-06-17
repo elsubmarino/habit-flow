@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.label.dto.response;
 
-import io.streak.habitflow.domain.label.dto.query.LabelListQuery;
+import io.streak.habitflow.domain.label.dto.query.LabelSummaryQuery;
 import io.streak.habitflow.domain.label.entity.Label;
 import lombok.Builder;
 
@@ -25,14 +25,14 @@ public final class LabelResponse{
     }
 
     @Builder
-    public record List(
+    public record Summary(
             Long id,
             String name,
             String color,
             long sortOrder
     ){
-        public static List from(Label label){
-            return List.builder()
+        public static Summary from(Label label){
+            return Summary.builder()
                     .id(label.getId())
                     .name(label.getName())
                     .sortOrder(label.getSortOrder())
@@ -40,12 +40,12 @@ public final class LabelResponse{
                     .build();
         }
 
-        public static List from(LabelListQuery  labelListQuery){
-            return List.builder()
-                    .id(labelListQuery.id())
-                    .name(labelListQuery.name())
-                    .sortOrder(labelListQuery.sortOrder())
-                    .color(labelListQuery.color())
+        public static Summary from(LabelSummaryQuery labelSummaryQuery){
+            return Summary.builder()
+                    .id(labelSummaryQuery.id())
+                    .name(labelSummaryQuery.name())
+                    .sortOrder(labelSummaryQuery.sortOrder())
+                    .color(labelSummaryQuery.color())
                     .build();
         }
     }

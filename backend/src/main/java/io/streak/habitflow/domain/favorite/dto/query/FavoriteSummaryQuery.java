@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class FavoriteListQuery {
+public class FavoriteSummaryQuery {
     private String targetName;
     private Long targetId;
     private TargetType targetType;

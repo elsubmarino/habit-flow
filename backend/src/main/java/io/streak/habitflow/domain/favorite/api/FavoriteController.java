@@ -23,7 +23,7 @@ public class FavoriteController {
     @Operation(summary = "즐겨찾기 목록 조회")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "즐겨찾기 조회 성공")})
     @GetMapping
-    public ResponseEntity<List<FavoriteResponse.List>> getFavorites(@LoginMemberId Long loginMemberId) {
+    public ResponseEntity<List<FavoriteResponse.Summary>> getFavorites(@LoginMemberId Long loginMemberId) {
         return ResponseEntity.ok(favoriteService.getFavoriteListByMemberId(loginMemberId));
     }
 }

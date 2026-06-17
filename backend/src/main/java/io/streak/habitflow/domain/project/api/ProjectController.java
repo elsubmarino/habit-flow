@@ -47,7 +47,7 @@ public class ProjectController {
 
     @GetMapping
     @Operation(summary = "프로젝트 다건 조회")
-    public ResponseEntity<List<ProjectResponse.List>> getProjectsByMember(@LoginMemberId Long loginMemberId) {
+    public ResponseEntity<List<ProjectResponse.Summary>> getProjectsByMember(@LoginMemberId Long loginMemberId) {
         return ResponseEntity.ok(projectService.getProjectsByMember(loginMemberId));
     }
 
@@ -70,17 +70,17 @@ public class ProjectController {
 
     @GetMapping("/{projectId}/tasks")
     @Operation(summary = "프로젝트에 딸린 테스크 조회")
-    public ResponseEntity<Slice<TaskResponse.List>> getTasksByProject(@PathVariable Long projectId,
-                                                                 @LoginMemberId Long loginMemberId,
-                                                                 @PageableDefault(size=20) Pageable pageable) {
+    public ResponseEntity<Slice<TaskResponse.Summary>> getTasksByProject(@PathVariable Long projectId,
+                                                                         @LoginMemberId Long loginMemberId,
+                                                                         @PageableDefault(size=20) Pageable pageable) {
         return ResponseEntity.ok(taskService.getTasksByProject(projectId, loginMemberId, pageable));
     }
 
     @GetMapping("/search")
     @Operation(summary = "프로젝트 검색")
-    public ResponseEntity<List<ProjectResponse.List>> searchProjects(@LoginMemberId Long loginMemberId,
-                                                                    @RequestParam("keyword") String keyword,
-                                                                    @PageableDefault(size=20) Pageable pageable){
+    public ResponseEntity<List<ProjectResponse.Summary>> searchProjects(@LoginMemberId Long loginMemberId,
+                                                                        @RequestParam("keyword") String keyword,
+                                                                        @PageableDefault(size=20) Pageable pageable){
         return ResponseEntity.ok(projectService.searchProjects(keyword,loginMemberId,pageable));
     }
 

@@ -20,11 +20,11 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final MemberRepository memberRepository;
 
-    public List<NotificationResponse.List> getNotifications(Long memberId) {
+    public List<NotificationResponse.Summary> getNotifications(Long memberId) {
         Member receiver = memberRepository.getReferenceById(memberId);
         List<Notification> notifications = notificationRepository.findByReceiver(receiver);
         return notifications.stream()
-                .map(NotificationResponse.List::from)
+                .map(NotificationResponse.Summary::from)
                 .toList();
     }
 

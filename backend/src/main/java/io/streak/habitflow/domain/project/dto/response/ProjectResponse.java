@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.project.dto.response;
 
-import io.streak.habitflow.domain.project.dto.query.ProjectListQuery;
+import io.streak.habitflow.domain.project.dto.query.ProjectSummaryQuery;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
 import io.streak.habitflow.domain.project.type.AccessType;
@@ -36,25 +36,25 @@ public final class ProjectResponse {
     }
 
     @Builder
-    public record List(
+    public record Summary(
             Long id,
             String name,
             String color,
             long taskCount
     ){
-        public static List from(Project project) {
-            return List.builder()
+        public static Summary from(Project project) {
+            return Summary.builder()
                     .id(project.getId())
                     .name(project.getName())
                     .color(project.getColor())
                     .build();
         }
 
-        public static List from(ProjectListQuery projectListQuery) {
-            return List.builder()
-                    .id(projectListQuery.id())
-                    .name(projectListQuery.name())
-                    .color(projectListQuery.color())
+        public static Summary from(ProjectSummaryQuery projectSummaryQuery) {
+            return Summary.builder()
+                    .id(projectSummaryQuery.id())
+                    .name(projectSummaryQuery.name())
+                    .color(projectSummaryQuery.color())
                     .build();
         }
     }

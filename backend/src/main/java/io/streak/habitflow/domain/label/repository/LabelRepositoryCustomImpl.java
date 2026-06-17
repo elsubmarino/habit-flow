@@ -4,7 +4,7 @@ import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.streak.habitflow.domain.label.dto.query.LabelListQuery;
+import io.streak.habitflow.domain.label.dto.query.LabelSummaryQuery;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +24,10 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
     @Override
-    public List<LabelListQuery> searchKeyword(String name, Long memberId, Pageable pageable) {
+    public List<LabelSummaryQuery> searchKeyword(String name, Long memberId, Pageable pageable) {
         return queryFactory
                 .select(Projections.fields(
-                        LabelListQuery.class,
+                        LabelSummaryQuery.class,
                         label.id,
                         label.name,
                         label.color,
@@ -61,7 +61,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
     }
 
     @Override
-    public Map<Long, List<LabelResponse.List>> findLabelsByTaskIds(List<Long> taskIds) {
+    public Map<Long, List<LabelResponse.Summary>> findLabelsByTaskIds(List<Long> taskIds) {
         if(taskIds == null || taskIds.isEmpty()){
             return Collections.emptyMap();
         }
@@ -79,7 +79,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
 
         return results.stream()
                 .collect(Collectors.groupingBy(row->row.get(taskLabel.task.id),
-                        Collectors.mapping(row->LabelResponse.List.builder()
+                        Collectors.mapping(row-> LabelResponse.Summary.builder()
                                 .id(row.get(label.id))
                                 .name(row.get(label.name))
                                 .color(row.get(label.color))

@@ -36,7 +36,7 @@ public class LabelController {
     @GetMapping
     @Operation(summary = "라벨 다건 조회")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "라벨 다건 조회 성공")})
-    public ResponseEntity<Slice<LabelResponse.List>> getLabels(
+    public ResponseEntity<Slice<LabelResponse.Summary>> getLabels(
             @LoginMemberId Long loginMemberId,
             @RequestParam(value = "lastLabelId",required = false) Long lastLabelId,
             @PageableDefault(size=20) Pageable pageable) {
@@ -73,7 +73,7 @@ public class LabelController {
     @GetMapping("/search")
     @Operation(summary = "라벨 검색")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "라벨 검색 성공")})
-    public ResponseEntity<List<LabelResponse.List>> searchLabels(@RequestParam("keyword") String keyword) {
+    public ResponseEntity<List<LabelResponse.Summary>> searchLabels(@RequestParam("keyword") String keyword) {
         return ResponseEntity.ok(labelService.searchLabels(keyword));
     }
 }

@@ -93,7 +93,7 @@ public class LabelService {
                 request.color());
     }
 
-    public Slice<LabelResponse.List> getLabels(Long labelId, Long memberId, Pageable pageable) {
+    public Slice<LabelResponse.Summary> getLabels(Long labelId, Long memberId, Pageable pageable) {
         int pageSize = pageable.getPageSize();
 
         List<Label> labels = labelRepository.searchLabelsByCondition(labelId,memberId,pageable);
@@ -104,8 +104,8 @@ public class LabelService {
             hasNext = true;
         }
 
-        List<LabelResponse.List> labelResponses =  labels.stream()
-                .map(LabelResponse.List::from)
+        List<LabelResponse.Summary> labelResponses =  labels.stream()
+                .map(LabelResponse.Summary::from)
                 .toList();
 
         return new SliceImpl<>(labelResponses, pageable, hasNext);
@@ -121,9 +121,9 @@ public class LabelService {
         labelRepository.deleteById(labelId);
     }
 
-    public List<LabelResponse.List> searchLabels(String keyword){
+    public List<LabelResponse.Summary> searchLabels(String keyword){
         return labelRepository.findByNameContaining(keyword)
-                .stream().map(LabelResponse.List::from)
+                .stream().map(LabelResponse.Summary::from)
                 .toList();
     }
 }

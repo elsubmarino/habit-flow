@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.label.dto.query;
 
-public record LabelListQuery(
+public record LabelSummaryQuery(
         Long id,
         String name,
         long sortOrder,

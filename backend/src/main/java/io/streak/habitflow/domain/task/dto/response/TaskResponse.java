@@ -2,7 +2,7 @@ package io.streak.habitflow.domain.task.dto.response;
 
 import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
-import io.streak.habitflow.domain.task.dto.query.TaskListQuery;
+import io.streak.habitflow.domain.task.dto.query.TaskSummaryQuery;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
@@ -32,7 +32,7 @@ public final class TaskResponse{
             Long parentId,
             boolean recurring,
             java.util.List<Detail> subTasks,
-            java.util.List<LabelResponse.List> labels,
+            java.util.List<LabelResponse.Summary> labels,
             java.util.List<CommentResponse.Detail> comments,
             LocalTime dueTime
     ) {
@@ -42,7 +42,7 @@ public final class TaskResponse{
             labels =  Objects.requireNonNullElse(labels, new ArrayList<>());
             comments =  Objects.requireNonNullElse(comments, new ArrayList<>());
         }
-        public static Detail of(Task task, java.util.List<LabelResponse.List> labelListResponses) {
+        public static Detail of(Task task, java.util.List<LabelResponse.Summary> labelSummaryRespons) {
             DetailBuilder builder = Detail.builder()
                     .id(task.getId())
                     .name(task.getName())
@@ -51,7 +51,7 @@ public final class TaskResponse{
                     .taskPriorityType(task.getTaskPriorityType())
                     .dueDate(task.getDueDate())
                     .sortOrder(task.getSortOrder())
-                    .labels(labelListResponses)
+                    .labels(labelSummaryRespons)
                     .recurring(task.isRecurring())
                     .dueTime(task.isTimeSpecified()?task.getDueDate().toLocalTime():null)
                     .subTasks(task.getSubTasks().stream()
@@ -91,7 +91,7 @@ public final class TaskResponse{
     }
 
     @Builder
-    public record List(
+    public record Summary(
             Long id,
             String name,
             String description,
@@ -102,36 +102,36 @@ public final class TaskResponse{
             long countSubTasks,
             long countSubTasksCompleted,
             long countComments,
-            java.util.List<LabelResponse.List> labels,
+            java.util.List<LabelResponse.Summary> labels,
             LocalTime dueTime
     ){
-        public List{
+        public Summary {
             labels = Objects.requireNonNullElse(labels, new ArrayList<>());
         }
 
-        public static List of(TaskListQuery taskListQuery, java.util.List<LabelResponse.List> labelListResponses) {
-            return List.builder()
-                    .id(taskListQuery.id())
-                    .name(taskListQuery.name())
-                    .description(taskListQuery.description())
-                    .taskPriorityType(taskListQuery.taskPriorityType())
-                    .dueDate(taskListQuery.dueDate())
-                    .projectName(taskListQuery.projectName())
-                    .countSubTasks(taskListQuery.countSubTasks())
-                    .countSubTasksCompleted(taskListQuery.countSubTasksCompleted())
-                    .countComments(taskListQuery.countComments())
-                    .labels(labelListResponses)
-                    .dueTime(taskListQuery.timeSpecified()?taskListQuery.dueDate().toLocalTime():null)
+        public static Summary of(TaskSummaryQuery taskSummaryQuery, java.util.List<LabelResponse.Summary> labelSummaryRespons) {
+            return TaskResponse.Summary.builder()
+                    .id(taskSummaryQuery.id())
+                    .name(taskSummaryQuery.name())
+                    .description(taskSummaryQuery.description())
+                    .taskPriorityType(taskSummaryQuery.taskPriorityType())
+                    .dueDate(taskSummaryQuery.dueDate())
+                    .projectName(taskSummaryQuery.projectName())
+                    .countSubTasks(taskSummaryQuery.countSubTasks())
+                    .countSubTasksCompleted(taskSummaryQuery.countSubTasksCompleted())
+                    .countComments(taskSummaryQuery.countComments())
+                    .labels(labelSummaryRespons)
+                    .dueTime(taskSummaryQuery.timeSpecified()? taskSummaryQuery.dueDate().toLocalTime():null)
                     .build();
         }
 
-        public static List of(Task task, java.util.List<LabelResponse.List> labelListResponses) {
-            ListBuilder builder = List.builder()
+        public static Summary of(Task task, java.util.List<LabelResponse.Summary> labelSummaryRespons) {
+            SummaryBuilder builder = TaskResponse.Summary.builder()
                     .id(task.getId())
                     .name(task.getName())
                     .taskPriorityType(task.getTaskPriorityType())
                     .sortOrder(task.getSortOrder())
-                    .labels(labelListResponses);
+                    .labels(labelSummaryRespons);
             if(task.getProject() != null){
                 builder.projectName(task.getProject().getName());
             }else{
@@ -142,8 +142,8 @@ public final class TaskResponse{
         }
     }
 
-    public record ListSlice(
-            java.util.List<List> content,
+    public record SummarySlice(
+            java.util.List<Summary> content,
             boolean hasNext,
             boolean hasPrev,
             TaskRequest.Cursor nextCursor,

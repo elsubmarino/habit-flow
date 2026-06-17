@@ -12,9 +12,9 @@ import java.util.Objects;
 public final class IntegratedResponse {
     @Builder
     public record Search(
-            List<ProjectResponse.List> projects,
+            List<ProjectResponse.Summary> projects,
             List<TaskResponse> tasks,
-            List<LabelResponse.List> labels
+            List<LabelResponse.Summary> labels
     ){
         public Search{
             projects = Objects.requireNonNullElse(projects, new ArrayList<>());

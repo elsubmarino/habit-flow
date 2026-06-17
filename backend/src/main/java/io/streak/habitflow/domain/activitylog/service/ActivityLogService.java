@@ -37,7 +37,7 @@ public class ActivityLogService {
         activityLogRepository.save(activityLog);
     }
 
-    public Slice<ActivityLogResponse.List> getActivityLogs(Long lastActivityLogId, Long memberId, Pageable pageable) {
+    public Slice<ActivityLogResponse.Summary> getActivityLogs(Long lastActivityLogId, Long memberId, Pageable pageable) {
         int pageSize = pageable.getPageSize();
 
         List<ActivityLog> activityLogs = activityLogRepository.searchActivityLogsByCondition(lastActivityLogId, memberId, pageable);
@@ -48,8 +48,8 @@ public class ActivityLogService {
             hasNext = true;
         }
 
-        List<ActivityLogResponse.List> activityLogResponses = activityLogs.stream()
-                .map(ActivityLogResponse.List::from)
+        List<ActivityLogResponse.Summary> activityLogResponses = activityLogs.stream()
+                .map(ActivityLogResponse.Summary::from)
                 .toList();
 
         return new SliceImpl<>(activityLogResponses, pageable ,hasNext);

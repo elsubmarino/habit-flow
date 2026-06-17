@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 public final class NotificationResponse {
     @Builder
-    public record List(
+    public record Summary(
             Long id,
             Long receiverId,
             Long actorId,
@@ -21,8 +21,8 @@ public final class NotificationResponse {
             boolean isConfirmed,
             LocalDateTime createdAt
     ){
-        public static List from(Notification notification) {
-            return List
+        public static Summary from(Notification notification) {
+            return Summary
                     .builder()
                     .id(notification.getId())
                     .receiverId(notification.getReceiver().getId())

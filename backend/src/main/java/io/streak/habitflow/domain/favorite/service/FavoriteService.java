@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.favorite.service;
 
-import io.streak.habitflow.domain.favorite.dto.query.FavoriteListQuery;
+import io.streak.habitflow.domain.favorite.dto.query.FavoriteSummaryQuery;
 import io.streak.habitflow.domain.favorite.dto.response.FavoriteResponse;
 import io.streak.habitflow.domain.favorite.repository.FavoriteRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,11 +13,11 @@ import java.util.List;
 public class FavoriteService {
     private final FavoriteRepository favoriteRepository;
 
-    public List<FavoriteResponse.List> getFavoriteListByMemberId(Long memberId){
+    public List<FavoriteResponse.Summary> getFavoriteListByMemberId(Long memberId){
 
-        List<FavoriteListQuery> favoriteListQueries = favoriteRepository.findByMemberId(memberId);
+        List<FavoriteSummaryQuery> favoriteListQueries = favoriteRepository.findByMemberId(memberId);
         return favoriteListQueries.stream()
-                .map(FavoriteResponse.List::from)
+                .map(FavoriteResponse.Summary::from)
                 .toList();
     }
 }

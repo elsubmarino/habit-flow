@@ -4,7 +4,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import io.streak.habitflow.domain.favorite.dto.query.FavoriteListQuery;
+import io.streak.habitflow.domain.favorite.dto.query.FavoriteSummaryQuery;
 import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.task.entity.QTask;
 import lombok.RequiredArgsConstructor;
@@ -22,11 +22,11 @@ import static io.streak.habitflow.domain.task.entity.QTaskLabel.taskLabel;
 public class FavoriteRepositoryCustomImpl implements FavoriteRepositoryCustom {
     private final JPAQueryFactory queryFactory;
     @Override
-    public List<FavoriteListQuery> findByMemberId(Long memberId) {
+    public List<FavoriteSummaryQuery> findByMemberId(Long memberId) {
         QTask subTask = new QTask("subTask");
 
         return queryFactory
-                .select(Projections.fields(FavoriteListQuery.class,
+                .select(Projections.fields(FavoriteSummaryQuery.class,
                         favorite.id,
                         favorite.targetType,
                         favorite.targetId,
