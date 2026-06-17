@@ -118,17 +118,17 @@ public final class TaskResponse{
 
         public static List of(TaskListQuery taskListQuery, java.util.List<LabelResponse.List> labelListResponses) {
             return List.builder()
-                    .id(taskListQuery.getId())
-                    .name(taskListQuery.getName())
-                    .description(taskListQuery.getDescription())
-                    .taskPriorityType(taskListQuery.getTaskPriorityType())
-                    .dueDate(taskListQuery.getDueDate())
-                    .projectName(taskListQuery.getProjectName())
-                    .countSubTasks(taskListQuery.getCountSubTasks())
-                    .countSubTasksCompleted(taskListQuery.getCountSubTasksCompleted())
-                    .countComments(taskListQuery.getCountComments())
+                    .id(taskListQuery.id())
+                    .name(taskListQuery.name())
+                    .description(taskListQuery.description())
+                    .taskPriorityType(taskListQuery.taskPriorityType())
+                    .dueDate(taskListQuery.dueDate())
+                    .projectName(taskListQuery.projectName())
+                    .countSubTasks(taskListQuery.countSubTasks())
+                    .countSubTasksCompleted(taskListQuery.countSubTasksCompleted())
+                    .countComments(taskListQuery.countComments())
                     .labels(labelListResponses)
-                    .dueTime(taskListQuery.isTimeSpecified()?taskListQuery.getDueDate().toLocalTime():null)
+                    .dueTime(taskListQuery.timeSpecified()?taskListQuery.dueDate().toLocalTime():null)
                     .build();
         }
 

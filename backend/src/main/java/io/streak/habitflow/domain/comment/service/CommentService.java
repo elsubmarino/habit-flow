@@ -44,9 +44,9 @@ public class CommentService {
             FileDto fileDto = fileStorageService.upload(file);
 
             Attachment attachment = Attachment.builder()
-                    .originalFileName(fileDto.getOriginalFileName())
-                    .savedFileName((fileDto.getSavedFileName()))
-                    .fileUrl(fileDto.getFileUrl())
+                    .originalFileName(fileDto.originalFileName())
+                    .savedFileName((fileDto.savedFileName()))
+                    .fileUrl(fileDto.fileUrl())
                     .build();
             comment.addAttachment(attachment);
         }

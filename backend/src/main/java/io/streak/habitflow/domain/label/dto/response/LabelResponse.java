@@ -42,10 +42,10 @@ public final class LabelResponse{
 
         public static List from(LabelListQuery  labelListQuery){
             return List.builder()
-                    .id(labelListQuery.getId())
-                    .name(labelListQuery.getName())
-                    .sortOrder(labelListQuery.getSortOrder())
-                    .color(labelListQuery.getColor())
+                    .id(labelListQuery.id())
+                    .name(labelListQuery.name())
+                    .sortOrder(labelListQuery.sortOrder())
+                    .color(labelListQuery.color())
                     .build();
         }
     }

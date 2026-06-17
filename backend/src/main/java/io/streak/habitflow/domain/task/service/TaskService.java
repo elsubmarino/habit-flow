@@ -144,9 +144,9 @@ public class TaskService {
                     .build();
 
             Attachment attachment = Attachment.builder()
-                    .originalFileName(fileDto.getOriginalFileName())
-                    .savedFileName(fileDto.getSavedFileName())
-                    .fileUrl(fileDto.getFileUrl())
+                    .originalFileName(fileDto.originalFileName())
+                    .savedFileName(fileDto.savedFileName())
+                    .fileUrl(fileDto.fileUrl())
                     .build();
 
             comment.addAttachment(attachment);
@@ -228,12 +228,12 @@ public class TaskService {
             hasPrev = cursor != null && cursor.lastTaskId() != null;
         }
 
-        List<Long> taskIds = tasks.stream().map(TaskListQuery::getId).toList();
+        List<Long> taskIds = tasks.stream().map(TaskListQuery::id).toList();
         Map<Long, List<LabelResponse.List>> labelMap = labelRepository.findLabelsByTaskIds(taskIds);
 
         List<TaskResponse.List> taskListResponses = tasks.stream()
                 .map(task->TaskResponse.List.of(task,
-                        labelMap.getOrDefault(task.getId(),new ArrayList<>())))
+                        labelMap.getOrDefault(task.id(),new ArrayList<>())))
                 .toList();
 
         TaskRequest.Cursor nextCursor = null;
@@ -245,18 +245,18 @@ public class TaskService {
 
             if(hasNext){
                 nextCursor = TaskRequest.Cursor.next(
-                        last.getDueDate(),
-                        last.getTaskPriorityType(),
-                        last.getSortOrder(),
-                        last.getId()
+                        last.dueDate(),
+                        last.taskPriorityType(),
+                        last.sortOrder(),
+                        last.id()
                 );
             }
             if(hasPrev){
                 prevCursor = TaskRequest.Cursor.prev(
-                        first.getDueDate(),
-                        first.getTaskPriorityType(),
-                        first.getSortOrder(),
-                        first.getId()
+                        first.dueDate(),
+                        first.taskPriorityType(),
+                        first.sortOrder(),
+                        first.id()
                 );
             }
         }

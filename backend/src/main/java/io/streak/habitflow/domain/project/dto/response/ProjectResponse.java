@@ -52,9 +52,9 @@ public final class ProjectResponse {
 
         public static List from(ProjectListQuery projectListQuery) {
             return List.builder()
-                    .id(projectListQuery.getId())
-                    .name(projectListQuery.getName())
-                    .color(projectListQuery.getColor())
+                    .id(projectListQuery.id())
+                    .name(projectListQuery.name())
+                    .color(projectListQuery.color())
                     .build();
         }
     }
