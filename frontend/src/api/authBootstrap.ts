@@ -1,4 +1,4 @@
-import { isAuthenticated, setStoredTokens } from './client';
+import { ensureAccessToken, isAuthenticated, setStoredTokens } from './client';
 import { defaultAppPath } from '../utils/appRoutes';
 
 /** 백엔드 OAuth2LoginSuccessHandler 와 동일한 경로 */
@@ -30,4 +30,13 @@ export function bootstrapAuthFromCallback(): boolean {
     }
 
     return isAuthenticated();
+}
+
+/** accessToken이 없어도 httpOnly refresh 쿠키로 세션 복구 시도 */
+export async function restoreAuthSession(): Promise<boolean> {
+    if (isAuthenticated()) {
+        return true;
+    }
+    const accessToken = await ensureAccessToken();
+    return !!accessToken;
 }

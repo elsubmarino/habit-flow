@@ -56,7 +56,7 @@ import ViewMenuButton from './components/ViewMenuButton';
 import { fetchNotifications, selectUnreadCount } from './store/notificationsSlice';
 import { BellIcon, PanelToggleIcon } from './components/icons';
 import { saveUserProfile } from './utils/userProfile';
-import { bootstrapAuthFromCallback } from './api/authBootstrap';
+import { bootstrapAuthFromCallback, restoreAuthSession } from './api/authBootstrap';
 import { clearStoredTokens, onAuthLogout } from './api/client';
 import { fetchMember, logoutMember } from './api/memberApi';
 import OAuthRedirectHandler from './components/OAuthRedirectHandler';
@@ -152,6 +152,26 @@ function App() {
     const [showSearchModal, setShowSearchModal] = useState(false);
     const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => bootstrapAuthFromCallback());
+    const [sessionRestorePending, setSessionRestorePending] = useState(
+        () => !bootstrapAuthFromCallback(),
+    );
+
+    useEffect(() => {
+        if (!sessionRestorePending) return;
+
+        let cancelled = false;
+        void restoreAuthSession().then(restored => {
+            if (cancelled) return;
+            if (restored) {
+                setIsAuthenticated(true);
+            }
+            setSessionRestorePending(false);
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [sessionRestorePending]);
 
     useEffect(() => onAuthLogout(() => {
         setIsAuthenticated(false);
@@ -714,6 +734,10 @@ function App() {
             </button>
         </div>
     ) : null;
+
+    if (sessionRestorePending) {
+        return null;
+    }
 
     if (!isAuthenticated) {
         return (
