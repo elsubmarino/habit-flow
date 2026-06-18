@@ -79,7 +79,7 @@ public final class TaskResponse{
             labels =  Objects.requireNonNullElse(labels, new ArrayList<>());
             comments =  Objects.requireNonNullElse(comments, new ArrayList<>());
         }
-        public static Detail of(Task task, java.util.List<LabelResponse.Summary> labelSummaryRespons) {
+        public static Detail of(Task task, java.util.List<LabelResponse.Summary> labelSummaryResponses) {
             DetailBuilder builder = Detail.builder()
                     .id(task.getId())
                     .name(task.getName())
@@ -88,7 +88,7 @@ public final class TaskResponse{
                     .taskPriorityType(task.getTaskPriorityType())
                     .dueDate(task.getDueDate())
                     .sortOrder(task.getSortOrder())
-                    .labels(labelSummaryRespons)
+                    .labels(labelSummaryResponses)
                     .recurring(task.isRecurring())
                     .dueTime(task.isTimeSpecified()?task.getDueDate().toLocalTime():null)
                     .subTasks(task.getSubTasks().stream()

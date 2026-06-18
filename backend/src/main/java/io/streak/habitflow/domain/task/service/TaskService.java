@@ -166,7 +166,7 @@ public class TaskService {
                 Collections.emptyList()
         ));
 
-        List<LabelResponse.Summary> labelSummaryRespons = savedTask.getTaskLabels()
+        List<LabelResponse.Summary> labelSummaryResponses = savedTask.getTaskLabels()
                 .stream()
                 .map(taskLabel -> {
                     Label realLabel = taskLabel.getLabel();
@@ -174,7 +174,7 @@ public class TaskService {
                 })
                 .toList();
 
-        return TaskResponse.Detail.of(savedTask, labelSummaryRespons);
+        return TaskResponse.Detail.of(savedTask, labelSummaryResponses);
     }
 
     private Task getTask(TaskRequest.Create request, Task parentTask) {
@@ -197,11 +197,11 @@ public class TaskService {
             throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
         }
 
-        List<LabelResponse.Summary> labelSummaryRespons = task.getTaskLabels().stream()
+        List<LabelResponse.Summary> labelSummaryResponses = task.getTaskLabels().stream()
                 .map(taskLabel -> LabelResponse.Summary.from(taskLabel.getLabel()))
                 .toList();
 
-        return TaskResponse.Detail.of(task, labelSummaryRespons);
+        return TaskResponse.Detail.of(task, labelSummaryResponses);
     }
 
     @CheckOwnership(type="PROJECT")
