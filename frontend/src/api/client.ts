@@ -54,17 +54,21 @@ function isPublicAuthRequest(url: string, method?: string): boolean {
     return false;
 }
 
-function isAccessTokenExpired(token: string, skewMs = ACCESS_TOKEN_SKEW_MS): boolean {
+function parseAccessTokenPayload(token: string): Record<string, unknown> | null {
     try {
         const payloadPart = token.split('.')[1];
-        if (!payloadPart) return true;
+        if (!payloadPart) return null;
         const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
-        const payload = JSON.parse(atob(normalized)) as { exp?: number };
-        if (typeof payload.exp !== 'number') return false;
-        return payload.exp * 1000 <= Date.now() + skewMs;
+        return JSON.parse(atob(normalized)) as Record<string, unknown>;
     } catch {
-        return true;
+        return null;
     }
+}
+
+function isAccessTokenExpired(token: string, skewMs = ACCESS_TOKEN_SKEW_MS): boolean {
+    const payload = parseAccessTokenPayload(token);
+    if (!payload || typeof payload.exp !== 'number') return true;
+    return payload.exp * 1000 <= Date.now() + skewMs;
 }
 
 /** 인터셉터 없이 호출 — refresh 루프 방지. refreshToken은 httpOnly 쿠키로 전송 */
@@ -186,6 +190,23 @@ apiClient.interceptors.response.use(
 
 export function getStoredAccessToken(): string | null {
     return localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+/** accessToken JWT의 memberId 클레임 (회원 API에 id가 없을 때 사용) */
+export function getLoggedInMemberId(): number | null {
+    const token = getStoredAccessToken();
+    if (!token) return null;
+
+    const payload = parseAccessTokenPayload(token);
+    const memberId = payload?.memberId;
+    if (typeof memberId === 'number' && Number.isFinite(memberId)) {
+        return memberId;
+    }
+    if (typeof memberId === 'string' && memberId.trim() !== '') {
+        const parsed = Number(memberId);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
 }
 
 /** @deprecated refreshToken은 httpOnly 쿠키로 관리됩니다 */

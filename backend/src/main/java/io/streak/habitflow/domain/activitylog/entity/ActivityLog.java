@@ -1,11 +1,15 @@
 package io.streak.habitflow.domain.activitylog.entity;
 
+import io.streak.habitflow.domain.activitylog.dto.ChangeSet;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.domain.task.type.TargetType;
 import io.streak.habitflow.global.common.entity.BaseCreatedTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -25,6 +29,10 @@ public class ActivityLog extends BaseCreatedTimeEntity {
     @JoinColumn(name = "member_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Member member;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="actor_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private Member actor;
+
     private Long targetId;
 
     @Enumerated(EnumType.STRING)
@@ -36,6 +44,11 @@ public class ActivityLog extends BaseCreatedTimeEntity {
     @Column(nullable = false,length = 50)
     private ActivityType activityType;
 
-    private String customMessage;
+    private String targetName;
+
+    @Convert(converter = ChangeSetListConverter.class)
+    @Column(columnDefinition = "TEXT")
+    @Builder.Default
+    private List<ChangeSet> changes = new ArrayList<>();
 
 }

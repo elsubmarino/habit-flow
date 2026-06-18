@@ -1,10 +1,12 @@
 package io.streak.habitflow.domain.task.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.streak.habitflow.domain.task.type.CursorDirection;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
@@ -19,12 +21,15 @@ public final class TaskRequest {
             @Schema(description = "테스크 제목 (최대 100자)", requiredMode = Schema.RequiredMode.REQUIRED)
             String name,
 
+            @Size(max=2000,message = "설명은 2000자를 초과할 수 없습니다.")
             @Schema(description = "테스크 상세 설명")
             String description,
 
+            @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd'T'HH:mm:ss")
             @Schema(description = "마감 기한 일시")
             LocalDateTime dueDate,
 
+            @NotNull
             @Schema(description = "테스크 우선 순위 (P1~P4)")
             TaskPriorityType taskPriorityType,
 
@@ -34,6 +39,7 @@ public final class TaskRequest {
             @Schema(description = "부모 테스크 ID (하위 테스크 생성 시에 필수 채움)")
             Long parentId,
 
+            @Size(max=10,message = "라벨은 최대 10개까지만 매핑할 수 있습니다.")
             @Schema(description = "매핑할 라벨 ID 리스트")
             List<Long> labelIds,
 
@@ -57,12 +63,21 @@ public final class TaskRequest {
     ) {
         public Create{
             labelIds = (labelIds == null) ? new ArrayList<>() : new ArrayList<>(labelIds);
+
+            if(recurring && (recurrenceRule == null || recurrenceRule.isBlank())) {
+                throw new IllegalArgumentException("반복 일정을 설정할 경우 반복 규칙이 필수입니다.");
+            }
         }
     }
 
     public record SearchCondition(
+            @NotNull
             TaskFilterType taskFilterType,
+
+            @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd'T'HH:mm:ss")
             LocalDateTime fromDate,
+
+            @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd'T'HH:mm:ss")
             LocalDateTime toDate
     ){
         public SearchCondition(TaskFilterType taskFilterType){
@@ -71,6 +86,7 @@ public final class TaskRequest {
     }
 
     public record UpdateDueDate(
+            @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd'T'HH:mm:ss")
             LocalDateTime dueDate,
             boolean recurring,
             String recurrenceRule,
@@ -78,9 +94,16 @@ public final class TaskRequest {
             String recurrenceDays,
             Integer recurrenceDayOfMonth,
             boolean timeSpecified
-    ){}
+    ){
+        public UpdateDueDate{
+            if(recurring && (recurrenceRule == null || recurrenceRule.isBlank())) {
+                throw new IllegalArgumentException("반복 일정을 설정할 경우 반복 규칙이 필수입니다.");
+            }
+        }
+    }
 
     public record UpdateLabel(
+            @Size(max=10)
             List<Long> labelIds
     ){
         public UpdateLabel{
@@ -89,6 +112,7 @@ public final class TaskRequest {
     }
 
     public record UpdatePriority(
+            @NotNull
             TaskPriorityType taskPriorityType
     ){}
 
@@ -97,11 +121,16 @@ public final class TaskRequest {
     ){}
 
     public record Update(
+            @NotBlank(message = "제목은 필수 입력 항목입니다.")
+            @Size(max = 100, message = "제목은 100자를 초과할 수 없습니다.")
             String name,
+
+            @Size(max=2000,message = "설명은 2000자를 초과할 수 없습니다.")
             String description
     ){}
 
     public record Cursor(
+            @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd'T'HH:mm:ss")
             LocalDateTime lastDueDate,
             TaskPriorityType lastPriorityType,
             Long lastSortOrder,

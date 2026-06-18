@@ -55,7 +55,7 @@ import ActivityLogView from './components/ActivityLogView';
 import ViewMenuButton from './components/ViewMenuButton';
 import { fetchNotifications, selectUnreadCount } from './store/notificationsSlice';
 import { BellIcon, PanelToggleIcon } from './components/icons';
-import { saveUserProfile } from './utils/userProfile';
+import { applyMemberProfile } from './utils/userProfile';
 import { bootstrapAuthFromCallback, restoreAuthSession } from './api/authBootstrap';
 import { clearStoredTokens, onAuthLogout } from './api/client';
 import { fetchMember, logoutMember } from './api/memberApi';
@@ -271,13 +271,7 @@ function App() {
     const handleAuthSuccess = () => {
         setIsAuthenticated(true);
         void fetchMember()
-            .then(member => {
-                saveUserProfile({
-                    displayName: member.name ?? '사용자',
-                    fullName: member.name ?? '사용자',
-                    email: member.email ?? '',
-                });
-            })
+            .then(applyMemberProfile)
             .catch(() => undefined);
     };
 
@@ -291,13 +285,7 @@ function App() {
             dispatch(fetchProjects());
         }
         void fetchMember()
-            .then(member => {
-                saveUserProfile({
-                    displayName: member.name ?? '사용자',
-                    fullName: member.name ?? '사용자',
-                    email: member.email ?? '',
-                });
-            })
+            .then(applyMemberProfile)
             .catch(() => undefined);
     }, [dispatch, isAuthenticated]);
 

@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -63,7 +64,8 @@ public class CommentService {
                 memberId,
                 TargetType.COMMENT,
                 ActivityType.ADDED,
-                "당신이 "+task.getName()+"에 댓글을 추가했습니다"
+                task.getName(),
+                Collections.emptyList()
         ));
 
         return CommentResponse.Detail.from(result);
@@ -97,8 +99,9 @@ public class CommentService {
                 task.getId(),
                 memberId,
                 TargetType.COMMENT,
-                ActivityType.ADDED,
-                "당신이 "+task.getName()+"에서 댓글을 삭제했습니다"
+                ActivityType.DELETED,
+                task.getName(),
+                Collections.emptyList()
         ));
     }
 

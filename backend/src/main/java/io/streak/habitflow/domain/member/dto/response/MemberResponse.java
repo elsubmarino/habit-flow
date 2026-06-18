@@ -6,13 +6,14 @@ import lombok.Builder;
 public final class MemberResponse{
     @Builder
     public record Detail(
-            String userId,
+            Long id,
             String name,
             String email,
             String role
     ){
         public static Detail from(Member member) {
             return Detail.builder()
+                    .id(member.getId())
                     .name(member.getName())
                     .email(member.getEmail())
                     .role(member.getRole().name())

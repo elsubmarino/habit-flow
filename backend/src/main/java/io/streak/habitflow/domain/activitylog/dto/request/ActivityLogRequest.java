@@ -10,5 +10,5 @@ public final class ActivityLogRequest{
             Long targetId,
             TargetType targetType,
             ActivityType activityType,
-            String customMessage){}
+            String targetName){}
 }

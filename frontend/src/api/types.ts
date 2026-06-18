@@ -10,7 +10,34 @@ export interface FavoriteDto {
     targetCount: number;
 }
 
-export type ActivityType = 'ADDED' | 'COMPLETED' | 'UPDATED' | 'DELETED' | 'MOVED' | 'INVITED';
+export type ActivityType =
+    | 'ADDED'
+    | 'COMPLETED'
+    | 'UPDATED'
+    | 'DELETED'
+    | 'MOVED'
+    | 'INVITED'
+    | 'UNCOMPLETED'
+    | 'JOINED';
+
+export type ActivityTargetType = 'PROJECT' | 'TASK' | 'COMMENT';
+
+export interface ActivityLogActorDto {
+    id: number;
+    name: string;
+}
+
+export interface ActivityLogTargetDto {
+    type: ActivityTargetType;
+    id: number;
+    name: string | null;
+}
+
+export interface ActivityLogChangeSetDto {
+    field: string;
+    from: string | null;
+    to: string | null;
+}
 
 export type NotificationType = 'PROJECT' | 'TASK';
 
@@ -162,10 +189,10 @@ export interface NotificationDto {
 export interface ActivityLogDto {
     id: number;
     activityType: ActivityType;
-    userName: string;
-    projectName: string;
+    actor: ActivityLogActorDto;
+    target: ActivityLogTargetDto;
     createdAt: string;
-    customMessage?: string | null;
+    changes?: ActivityLogChangeSetDto[] | null;
 }
 
 export interface IntegratedSearchDto {

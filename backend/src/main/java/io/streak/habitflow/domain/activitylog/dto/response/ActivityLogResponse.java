@@ -1,29 +1,34 @@
 package io.streak.habitflow.domain.activitylog.dto.response;
 
-import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
+import io.streak.habitflow.domain.activitylog.dto.ChangeSet;
 import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.domain.task.type.TargetType;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public final class ActivityLogResponse {
     @Builder
     public record Summary(
             Long id,
             ActivityType activityType,
-            String userName,
-            String projectName,
+            ActorInfo actor,
+            TargetInfo target,
             LocalDateTime createdAt,
-            String customMessage
-    ){
-        public static Summary from(ActivityLog activityLog){
-            return Summary.builder()
-                    .id(activityLog.getId())
-                    .activityType(activityLog.getActivityType())
-                    .userName(activityLog.getMember() != null ? activityLog.getMember().getName() : "사용자")
-                    .createdAt(activityLog.getCreatedAt())
-                    .customMessage(activityLog.getCustomMessage())
-                    .build();
-        }
-    }
+            List<ChangeSet> changes
+    ){}
+
+    @Builder
+    public record ActorInfo(
+       Long id,
+       String name
+    ){}
+
+    @Builder
+    public record TargetInfo(
+       TargetType type,
+       Long id,
+       String name
+    ){}
 }

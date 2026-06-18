@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.task.service;
 
+import io.streak.habitflow.domain.activitylog.dto.ChangeSet;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
@@ -36,10 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -64,7 +62,8 @@ public class TaskService {
                 memberId,
                 TargetType.TASK,
                 ActivityType.DELETED,
-                "당신이 테스크 "+ task.getName()+"을(를) 삭제했습니다"
+                task.getName(),
+                Collections.emptyList()
         ));
     }
 
@@ -153,7 +152,8 @@ public class TaskService {
                 memberId,
                 TargetType.TASK,
                 ActivityType.ADDED,
-                "당신이 테스크 "+ savedTask.getName()+"을(를) 추가했습니다"
+                savedTask.getName(),
+                Collections.emptyList()
         ));
 
         List<LabelResponse.Summary> labelSummaryRespons = savedTask.getTaskLabels()
@@ -274,39 +274,26 @@ public class TaskService {
     public void updateTask(Long taskId, TaskRequest.Update request, Long memberId){
         Task task = taskRepository.getOrThrow(taskId);
 
-        boolean isNameChanged = false;
-        boolean isDescriptionChanged = false;
+        List<ChangeSet> changes = new ArrayList<>();
 
-        if(request.name()!=null){
-            if(!task.getName().equals(request.name())){
-                task.updateName(request.name());
-                isNameChanged = true;
-            }
+        if(request.name() != null && !task.getName().equals(request.name())){
+            changes.add(new ChangeSet("name",task.getName(),request.name()));
+            task.updateName(request.name());
         }
 
-        if(request.description()!=null){
-            if(!task.getDescription().equals(request.description())){
-                task.updateDescription(request.description());
-                isDescriptionChanged = true;
-            }
+        if(request.description() != null && !task.getDescription().equals(request.description())){
+            changes.add(new ChangeSet("description",null,null));
+            task.updateDescription(request.description());
         }
 
-
-        if(isNameChanged || isDescriptionChanged){
-            StringBuilder sb = new StringBuilder();
-            sb.append("당신이").append(" 테스크 ").append(task.getName()).append("의");
-            if(isNameChanged && isDescriptionChanged) sb.append("이름과 설명을");
-            else if(isNameChanged) sb.append("이름을");
-            else sb.append("설명을");
-
-            sb.append(" 변경했습니다.");
-
+        if(!changes.isEmpty()) {
             applicationEventPublisher.publishEvent(new TaskChangedEvent(
                     task.getId(),
                     memberId,
                     TargetType.TASK,
                     ActivityType.UPDATED,
-                    sb.toString()
+                    task.getName(),
+                    changes
             ));
         }
     }
@@ -331,18 +318,18 @@ public class TaskService {
                     memberId,
                     TargetType.TASK,
                     ActivityType.COMPLETED,
-                    "당신이 테스크 "+ task.getName()+"을(를) 완료했습니다"
-            ));
+                    task.getName(),
+                    Collections.emptyList()));
         }else{
             ActivityType activityType = nextCompletion ? ActivityType.COMPLETED : ActivityType.UNCOMPLETED;
-            String statusText = nextCompletion ? "완료했습니다":"미완료했습니다";
 
             applicationEventPublisher.publishEvent(new TaskChangedEvent(
                     task.getId(),
                     memberId,
                     TargetType.TASK,
                     activityType,
-                    "당신이 테스크 "+ task.getName()+"을(를) "+statusText
+                    task.getName(),
+                    Collections.emptyList()
             ));
         }
     }
@@ -391,6 +378,7 @@ public class TaskService {
     public void updateTaskDueDate(Long taskId, TaskRequest.UpdateDueDate request, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
+        LocalDateTime oldDueDate = task.getDueDate();
         boolean isChanged = task.updateSchedule(
                 request.dueDate(),
                 request.recurring(),
@@ -404,14 +392,21 @@ public class TaskService {
         if(!isChanged){
             return;
         }
+        if(!Objects.equals(oldDueDate, request.dueDate())){
+            List<ChangeSet> changeSets = new ArrayList<>();
+            String fromDate = (oldDueDate != null)? oldDueDate.toString():null;
+            String toDate = (request.dueDate() != null)? request.dueDate().toString():null;
+            changeSets.add(new ChangeSet("dueDate",fromDate,toDate));
+            applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                    task.getId(),
+                    memberId,
+                    TargetType.TASK,
+                    ActivityType.UPDATED,
+                    task.getName(),
+                    changeSets
+            ));
+        }
 
-        applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                task.getId(),
-                memberId,
-                TargetType.TASK,
-                ActivityType.UPDATED,
-                "당신이 테스크 "+ task.getName()+"의 날짜를 "+ task.getDueDate()+"으로 변경했습니다."
-        ));
     }
 
     @Transactional
@@ -420,14 +415,19 @@ public class TaskService {
     public void updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
+        TaskPriorityType oldTaskPriorityType = task.getTaskPriorityType();
         task.updatePriorityType(taskPriorityType);
+
+        List<ChangeSet>  changeSets = new ArrayList<>();
+        changeSets.add(new ChangeSet("priority",oldTaskPriorityType.name(), taskPriorityType.name()));
 
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 task.getId(),
                 memberId,
                 TargetType.TASK,
                 ActivityType.UPDATED,
-                "당신이 테스크 "+ task.getName()+"의 우선순위를 "+ task.getTaskPriorityType().name()+"으로 변경했습니다."
+                task.getName(),
+                changeSets
         ));
     }
 
@@ -452,15 +452,6 @@ public class TaskService {
         task.getTaskLabels().clear();
 
         realLabels.forEach(label-> task.addTaskLabel(TaskLabel.builder().label(label).build()));
-
-        applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                task.getId(),
-                memberId,
-                TargetType.TASK,
-                ActivityType.UPDATED,
-                "당신이 테스크 "+ task.getName()+"의 라벨을 "+realLabels.stream().map(Label::getName)
-                        .collect(Collectors.joining(", "))+"으로 변경했습니다."
-        ));
     }
 
     @Transactional
@@ -475,17 +466,22 @@ public class TaskService {
         if(projectId != null) {
             project = projectRepository.findById(projectId)
                     .orElseThrow();
-        }
-        task.updateProject(project);
+            String oldProjectName = project.getName();
+            task.updateProject(project);
 
-        applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                task.getId(),
-                memberId,
-                TargetType.TASK,
-                ActivityType.MOVED,
-                "당신이 테스크 "+ task.getName()+"를 "+
-                        ((task.getProject() != null) ? task.getProject().getName() : "관리함") +"으로 이동시켰습니다."
-        ));
+            List<ChangeSet>  changeSets = new ArrayList<>();
+            changeSets.add(new ChangeSet("projectName",oldProjectName,project.getName()));
+
+            applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                    task.getId(),
+                    memberId,
+                    TargetType.TASK,
+                    ActivityType.MOVED,
+                    task.getName(),
+                    changeSets
+            ));
+        }
+
     }
 
     public List<TaskResponse.UpcomingDateCount> getUpcomingDateCounts(Long memberId, LocalDateTime fromDate, LocalDateTime toDate){

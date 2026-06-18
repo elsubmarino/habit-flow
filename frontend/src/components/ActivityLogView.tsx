@@ -1,9 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Project } from '../store/habitSlice';
 import { fetchActivityLogs } from '../api/activityApi';
-import type { ActivityLogDto, ActivityType } from '../api/types';
+import { fetchMember } from '../api/memberApi';
+import type { ActivityType } from '../api/types';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { formatActivityDateHeader, formatActivityRelativeTime } from '../utils/activityLog';
+import {
+    activityBadge,
+    formatActivityLogMessage,
+    formatActivityLogMessageSuffix,
+    getActivityActorLabel,
+    isSelfActivityActor,
+    matchesActivityProjectFilter,
+    resolveCurrentMemberId,
+    type ActivityLogEntry,
+} from '../utils/activityLogMessages';
+import { applyMemberProfile } from '../utils/userProfile';
 
 type ProjectFilter = 'all' | number;
 type ActivityFilter = 'all' | ActivityType;
@@ -18,68 +30,30 @@ const ACTIVITY_FILTER_OPTIONS: { value: ActivityFilter; label: string }[] = [
     { value: 'all', label: '모든 활동' },
     { value: 'ADDED', label: '추가' },
     { value: 'COMPLETED', label: '완료' },
+    { value: 'UNCOMPLETED', label: '완료 취소' },
     { value: 'INVITED', label: '초대' },
+    { value: 'JOINED', label: '합류' },
     { value: 'MOVED', label: '이동' },
     { value: 'UPDATED', label: '수정' },
     { value: 'DELETED', label: '삭제' },
 ];
 
-function activityLabel(type: ActivityType): string {
-    switch (type) {
-        case 'ADDED':
-            return '추가했습니다';
-        case 'COMPLETED':
-            return '완료했습니다';
-        case 'INVITED':
-            return '초대했습니다';
-        case 'MOVED':
-            return '이동시켰습니다';
-        case 'DELETED':
-            return '삭제했습니다';
-        case 'UPDATED':
-        default:
-            return '수정했습니다';
-    }
-}
-
-function activityBadge(type: ActivityType): string {
-    switch (type) {
-        case 'ADDED':
-            return '+';
-        case 'COMPLETED':
-            return '✓';
-        case 'INVITED':
-            return '@';
-        case 'DELETED':
-            return '−';
-        case 'MOVED':
-        case 'UPDATED':
-        default:
-            return '↻';
-    }
-}
-
-function renderActivityText(entry: ActivityLogDto): React.ReactNode {
-    if (entry.customMessage?.trim()) {
-        return entry.customMessage;
-    }
-
+function renderActivityText(
+    entry: ActivityLogEntry,
+    currentMemberId: number | null,
+): React.ReactNode {
     return (
         <>
-            <strong>{entry.userName}</strong>님이 활동을 {activityLabel(entry.activityType)}
-            {entry.projectName && (
-                <span className="activity-project">
-                    {' '}
-                    · {entry.projectName} #
-                </span>
-            )}
+            <strong>{getActivityActorLabel(entry, currentMemberId)}</strong>
+            {formatActivityLogMessageSuffix(entry, currentMemberId)}
         </>
     );
 }
 
 const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
+    const [currentMemberId, setCurrentMemberId] = useState<number | null>(() => resolveCurrentMemberId());
     const scrollBodyRef = useRef<HTMLDivElement>(null);
-    const [items, setItems] = useState<ActivityLogDto[]>([]);
+    const [items, setItems] = useState<ActivityLogEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadMoreStatus, setLoadMoreStatus] = useState<'idle' | 'loading' | 'failed'>('idle');
     const [hasNext, setHasNext] = useState(false);
@@ -88,6 +62,21 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
     const [projectFilter, setProjectFilter] = useState<ProjectFilter>('all');
     const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
     const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+
+    useEffect(() => {
+        let active = true;
+        void fetchMember()
+            .then(member => {
+                if (!active) return;
+                applyMemberProfile(member);
+                setCurrentMemberId(member.id ?? resolveCurrentMemberId());
+            })
+            .catch(() => undefined);
+
+        return () => {
+            active = false;
+        };
+    }, []);
 
     useEffect(() => {
         let active = true;
@@ -153,9 +142,8 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
         return items.filter(entry => {
-            if (projectFilter !== 'all') {
-                const project = projects.find(p => p.id === projectFilter);
-                if (project && entry.projectName !== project.name) return false;
+            if (projectFilter !== 'all' && !matchesActivityProjectFilter(entry, projectFilter)) {
+                return false;
             }
             if (activityFilter !== 'all' && entry.activityType !== activityFilter) return false;
             const created = new Date(entry.createdAt);
@@ -163,10 +151,10 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
             if (dateFilter === 'week' && created < weekAgo) return false;
             return true;
         });
-    }, [items, projectFilter, activityFilter, dateFilter, projects]);
+    }, [items, projectFilter, activityFilter, dateFilter]);
 
     const grouped = useMemo(() => {
-        const map = new Map<string, ActivityLogDto[]>();
+        const map = new Map<string, ActivityLogEntry[]>();
         for (const entry of filtered) {
             const key = entry.createdAt.slice(0, 10);
             if (!map.has(key)) map.set(key, []);
@@ -193,14 +181,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
                     hour: '2-digit',
                     minute: '2-digit',
                 });
-                if (entry.customMessage?.trim()) {
-                    lines.push(`- ${time} **${entry.userName}** — ${entry.customMessage}`);
-                } else {
-                    const project = entry.projectName ? ` · ${entry.projectName}` : '';
-                    lines.push(
-                        `- ${time} **${entry.userName}**님이 ${activityLabel(entry.activityType)}${project}`,
-                    );
-                }
+                lines.push(`- ${time} ${formatActivityLogMessage(entry, currentMemberId)}`);
             }
             lines.push('');
         }
@@ -287,11 +268,17 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
                                 {formatActivityDateHeader(dateKey, entries.length)}
                             </h2>
                             <ul className="activity-list">
-                                {entries.map(entry => (
+                                {entries.map(entry => {
+                                    const isSelf = isSelfActivityActor(entry, currentMemberId);
+                                    const actorInitial = isSelf
+                                        ? '당'
+                                        : entry.actor.name.charAt(0).toUpperCase();
+
+                                    return (
                                     <li key={entry.id} className="activity-row">
                                         <span className="activity-avatar-wrap">
                                             <span className="activity-avatar">
-                                                {entry.userName.charAt(0).toUpperCase()}
+                                                {actorInitial}
                                             </span>
                                             <span
                                                 className={`activity-badge badge-${entry.activityType.toLowerCase()}`}
@@ -302,14 +289,15 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
                                         </span>
                                         <div className="activity-content">
                                             <p className="activity-text">
-                                                {renderActivityText(entry)}
+                                                {renderActivityText(entry, currentMemberId)}
                                             </p>
                                         </div>
                                         <time className="activity-time" dateTime={entry.createdAt}>
                                             {formatActivityRelativeTime(entry.createdAt)}
                                         </time>
                                     </li>
-                                ))}
+                                    );
+                                })}
                             </ul>
                         </section>
                     ))

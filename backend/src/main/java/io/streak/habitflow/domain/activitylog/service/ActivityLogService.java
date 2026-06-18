@@ -1,12 +1,12 @@
 package io.streak.habitflow.domain.activitylog.service;
 
-import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogRequest;
 import io.streak.habitflow.domain.activitylog.dto.response.ActivityLogResponse;
 import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
+import io.streak.habitflow.domain.activitylog.mapper.ActivityLogMapper;
 import io.streak.habitflow.domain.activitylog.repository.ActivityLogRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.task.repository.TaskRepository;
+import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -22,18 +22,22 @@ import java.util.List;
 public class ActivityLogService {
     private final ActivityLogRepository activityLogRepository;
     private final MemberRepository memberRepository;
-    private final TaskRepository taskRepository;
+    private final ActivityLogMapper activityLogMapper;
 
     @Transactional
-    public void create(ActivityLogRequest.Create request, Long memberId) {
-        Member member = memberRepository.getReferenceById(memberId);
+    public void create(TaskChangedEvent taskChangedEvent) {
+        Member owner = memberRepository.getReferenceById(taskChangedEvent.memberId());
 
         ActivityLog activityLog = ActivityLog.builder()
-                .member(member)
-                .activityType(request.activityType())
-                .targetId(request.targetId())
-                .customMessage(request.customMessage())
+                .member(owner)
+                .actor(owner)
+                .targetId(taskChangedEvent.targetId())
+                .targetType(taskChangedEvent.targetType())
+                .activityType(taskChangedEvent.activityType())
+                .targetName(taskChangedEvent.targetName())
+                .changes(taskChangedEvent.changes())
                 .build();
+
         activityLogRepository.save(activityLog);
     }
 
@@ -49,7 +53,7 @@ public class ActivityLogService {
         }
 
         List<ActivityLogResponse.Summary> activityLogResponses = activityLogs.stream()
-                .map(ActivityLogResponse.Summary::from)
+                .map(activityLogMapper::toSummary)
                 .toList();
 
         return new SliceImpl<>(activityLogResponses, pageable ,hasNext);

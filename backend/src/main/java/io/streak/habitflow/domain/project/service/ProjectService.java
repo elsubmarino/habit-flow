@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.project.service;
 
+import io.streak.habitflow.domain.activitylog.dto.ChangeSet;
 import io.streak.habitflow.domain.favorite.entity.Favorite;
 import io.streak.habitflow.domain.favorite.repository.FavoriteRepository;
 import io.streak.habitflow.domain.favorite.type.TargetType;
@@ -22,6 +23,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -82,7 +85,8 @@ public class ProjectService {
                 memberId,
                 io.streak.habitflow.domain.task.type.TargetType.PROJECT,
                 ActivityType.ADDED,
-                "당신이 프로젝트 "+project.getName()+"을(를) 추가했습니다"
+                project.getName(),
+                Collections.emptyList()
         ));
 
         return ProjectResponse.Detail.of(savedProject, request.favorite());
@@ -92,6 +96,7 @@ public class ProjectService {
     @CheckOwnership(type="PROJECT")
     public void updateProject(ProjectRequest.Create request, Long projectId, Long memberId) {
         Project project =  projectRepository.getOrThrow(projectId);
+        String oldProjectName = project.getName();
 
         Member member = memberRepository.getReferenceById(memberId);
 
@@ -123,13 +128,20 @@ public class ProjectService {
             favoriteRepository.deleteByMemberIdAndTargetTypeAndTargetId(member.getId(),TargetType.PROJECT,project.getId());
         }
 
-        applicationEventPublisher.publishEvent(new TaskChangedEvent(
-                project.getId(),
-                memberId,
-                io.streak.habitflow.domain.task.type.TargetType.PROJECT,
-                ActivityType.UPDATED,
-                "당신이 프로젝트 "+project.getName()+"을(를) 변경했습니다"
-        ));
+        if(request.name() != null && !request.name().equals(oldProjectName)){
+            List<ChangeSet> changeSets = new ArrayList<>();
+            changeSets.add(new ChangeSet("name",oldProjectName,request.name()));
+            applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                    project.getId(),
+                    memberId,
+                    io.streak.habitflow.domain.task.type.TargetType.PROJECT,
+                    ActivityType.UPDATED,
+                    request.name(),
+                    changeSets
+            ));
+        }
+
+
 
     }
 
@@ -167,7 +179,8 @@ public class ProjectService {
                 memberId,
                 io.streak.habitflow.domain.task.type.TargetType.PROJECT,
                 ActivityType.DELETED,
-                "당신이 프로젝트 "+project.getName()+"을(를)삭제했습니다"
+                project.getName(),
+                Collections.emptyList()
         ));
 
     }

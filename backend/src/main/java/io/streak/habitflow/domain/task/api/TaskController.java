@@ -48,7 +48,7 @@ public class TaskController {
     @Operation(summary = "테스크 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 업데이트 성공")})
     public ResponseEntity<Void> updateTask(@PathVariable Long taskId,
-                                                   @RequestBody TaskRequest.Update request,
+                                                   @RequestBody @Valid TaskRequest.Update request,
                                                    @LoginMemberId Long loginMemberId) {
         taskService.updateTask(taskId, request,loginMemberId);
         return ResponseEntity.noContent().build();
@@ -58,7 +58,7 @@ public class TaskController {
     @Operation(summary = "우선순위 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "우선순위 업데이트 성공")})
     public ResponseEntity<Void> updatePriority(@PathVariable Long taskId,
-                                                          @RequestBody TaskRequest.UpdatePriority request,
+                                                          @RequestBody @Valid TaskRequest.UpdatePriority request,
                                                           @LoginMemberId Long loginMemberId) {
         taskService.updatePriority(taskId, request.taskPriorityType(), loginMemberId);
         return ResponseEntity.noContent().build();
@@ -68,7 +68,7 @@ public class TaskController {
     @Operation(summary = "라벨 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "라벨 업데이트 성공")})
     public ResponseEntity<Void> updateLabels(@PathVariable Long taskId,
-                                                       @RequestBody TaskRequest.UpdateLabel request,
+                                                       @RequestBody @Valid TaskRequest.UpdateLabel request,
                                                        @LoginMemberId Long loginMemberId) {
         taskService.updateTaskLabels(taskId, request.labelIds(), loginMemberId);
         return ResponseEntity.noContent().build();
@@ -78,7 +78,7 @@ public class TaskController {
     @Operation(summary = "테스크가 속한 프로젝트 이동")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크가 속한 프로젝트 이동 성공")})
     public ResponseEntity<Void> updateProject(@PathVariable Long taskId,
-                                                      @RequestBody TaskRequest.UpdateProject request,
+                                                      @RequestBody @Valid TaskRequest.UpdateProject request,
                                                       @LoginMemberId Long loginMemberId) {
         taskService.updateProject(taskId, request.projectId(), loginMemberId);
         return ResponseEntity.noContent().build();
@@ -120,7 +120,7 @@ public class TaskController {
     @Operation(summary = "관리함 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "관리함 테스크 조회 성공")})
     public ResponseEntity<TaskResponse.SummarySlice> getInboxTasks(@LoginMemberId Long loginMemberId,
-                                                                   @ModelAttribute TaskRequest.Cursor cursor,
+                                                                   @ModelAttribute @Valid TaskRequest.Cursor cursor,
                                                                    @PageableDefault(size= PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.INBOX
@@ -133,7 +133,7 @@ public class TaskController {
     @Operation(summary = "오늘 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "오늘 테스크 조회 성공")})
     public ResponseEntity<TaskResponse.SummarySlice> getTodayTasks(@LoginMemberId Long memberId,
-                                                                   @ModelAttribute TaskRequest.Cursor cursor,
+                                                                   @ModelAttribute @Valid TaskRequest.Cursor cursor,
                                                                    @PageableDefault(size=PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.TODAY
@@ -145,7 +145,7 @@ public class TaskController {
     @Operation(summary = "과거 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "과거 테스크 조회 성공")})
     public ResponseEntity<TaskResponse.SummarySlice> getOverdueTasks(@LoginMemberId Long loginMemberId,
-                                                                     @ModelAttribute TaskRequest.Cursor cursor,
+                                                                     @ModelAttribute @Valid TaskRequest.Cursor cursor,
                                                                      @PageableDefault(size = PageSizeConstants.CURSOR_PAGING_SMALL) Pageable pageable) {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.OVERDUE
@@ -159,7 +159,7 @@ public class TaskController {
     @Operation(summary = "다가오는 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "다가오는 테스크 조회 성공")})
     public ResponseEntity<TaskResponse.SummarySlice> getUpcomingTasks(@LoginMemberId Long loginMemberId,
-                                                                      @ModelAttribute TaskRequest.Cursor cursor,
+                                                                      @ModelAttribute @Valid TaskRequest.Cursor cursor,
                                                                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
                                                                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate,
                                                                       @PageableDefault(size = PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
@@ -176,7 +176,7 @@ public class TaskController {
     @Operation(summary = "만료일 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "만료일 업데이트 성공")})
     public ResponseEntity<Void> updateTaskDueDate(@PathVariable Long taskId,
-                                                          @RequestBody TaskRequest.UpdateDueDate request,
+                                                          @RequestBody @Valid TaskRequest.UpdateDueDate request,
                                                           @LoginMemberId Long loginMemberId) {
         taskService.updateTaskDueDate(taskId, request, loginMemberId);
         return ResponseEntity.noContent().build();

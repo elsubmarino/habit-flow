@@ -1,4 +1,8 @@
+import type { MemberDto } from '../api/types';
+import { getLoggedInMemberId } from '../api/client';
+
 export interface UserProfile {
+    id?: number;
     displayName: string;
     fullName: string;
     email: string;
@@ -26,4 +30,13 @@ export function getUserProfile(): UserProfile {
 
 export function saveUserProfile(profile: Partial<UserProfile>) {
     localStorage.setItem('habitflow.user', JSON.stringify({ ...getUserProfile(), ...profile }));
+}
+
+export function applyMemberProfile(member: MemberDto) {
+    saveUserProfile({
+        id: member.id ?? getLoggedInMemberId() ?? undefined,
+        displayName: member.name ?? '사용자',
+        fullName: member.name ?? '사용자',
+        email: member.email ?? '',
+    });
 }
