@@ -9,6 +9,7 @@ import {
 import * as favoriteApi from '../api/favoriteApi';
 import * as labelApi from '../api/labelApi';
 import * as projectApi from '../api/projectApi';
+import { getApiErrorMessage } from '../api/apiError';
 import * as taskApi from '../api/taskApi';
 import type { TaskCursor } from '../api/taskApi';
 import * as commentApi from '../api/commentApi';
@@ -27,6 +28,11 @@ import {
     getUpcomingWeekRange,
     toISODate,
 } from '../utils/date';
+import {
+    mergeVisibleOrder,
+    reorderList,
+} from '../utils/taskSortOrder';
+import type { ReorderHabitRequest } from '../utils/taskSortOrder';
 
 export interface Label {
     id: number;
@@ -89,6 +95,7 @@ export interface Habit {
     subtaskCount: number;
     subtaskCompletedCount: number;
     commentCount: number;
+    sortOrder: number;
     isRecurring: boolean;
     recurrenceLabel: string | null;
 }
@@ -124,7 +131,16 @@ function mapProjectDetail(dto: ProjectDetailDto): ProjectDetail {
     };
 }
 
-interface HabitState {
+function applyHabitReorder(state: HabitState, request: ReorderHabitRequest) {
+    const reorderedVisible = reorderList(request.contextList, request.fromIndex, request.toIndex).map(
+        (habit, index) =>
+            index === request.toIndex ? { ...habit, sortOrder: request.sortOrder } : habit,
+    );
+    state.list = mergeVisibleOrder(state.list, reorderedVisible);
+    state.overdueList = mergeVisibleOrder(state.overdueList, reorderedVisible);
+}
+
+export interface HabitState {
     list: Habit[];
     projects: Project[];
     labels: Label[];
@@ -1039,6 +1055,21 @@ export const deleteHabit = createAsyncThunk(
     },
 );
 
+export const reorderHabit = createAsyncThunk(
+    'habits/reorderHabit',
+    async (request: ReorderHabitRequest, { dispatch, rejectWithValue }) => {
+        try {
+            await taskApi.patchTaskSortOrder(request.habitId, request.sortOrder);
+            return request;
+        } catch (error) {
+            void dispatch(refetchCurrentTaskList());
+            return rejectWithValue(
+                getApiErrorMessage(error, '작업 순서를 변경하지 못했습니다.'),
+            );
+        }
+    },
+);
+
 export const addSubtask = createAsyncThunk(
     'habits/addSubtask',
     async ({
@@ -1526,6 +1557,14 @@ const habitSlice = createSlice({
             })
             .addCase(deleteHabit.rejected, (state, action) => {
                 state.error = action.error.message ?? '작업을 삭제하지 못했습니다.';
+            })
+            .addCase(reorderHabit.pending, (state, action) => {
+                applyHabitReorder(state, action.meta.arg);
+            })
+            .addCase(reorderHabit.rejected, (state, action) => {
+                state.error = typeof action.payload === 'string'
+                    ? action.payload
+                    : action.error.message ?? '작업 순서를 변경하지 못했습니다.';
             })
             .addCase(fetchHabitDetail.fulfilled, (state, action) => {
                 const index = state.list.findIndex(h => h.id === action.payload.id);

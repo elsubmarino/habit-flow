@@ -24,14 +24,14 @@ import {
     updateLabel,
     updateProject,
     checkHabit,
+    reorderHabit,
     type ApiView,
     type Habit,
     type Label,
     type Project,
-    habitRowKey,
 } from './store/habitSlice';
-import HabitItem from './components/HabitItem';
 import AddHabitForm, { type AddHabitFormHandle } from './components/AddHabitForm';
+import SortableTaskList from './components/SortableTaskList';
 import Sidebar, { type NavItem } from './components/Sidebar';
 import LabelsBrowseView from './components/LabelsBrowseView';
 import AddLabelModal from './components/AddLabelModal';
@@ -64,6 +64,7 @@ import { clearHabitError } from './store/habitSlice';
 import { useAppUrlSync } from './hooks/useAppUrlSync';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll';
 import { parseAppPath } from './utils/appRoutes';
+import type { ReorderHabitRequest } from './utils/taskSortOrder';
 import { formatSectionDate, formatTodayHeader, toISODate } from './utils/date';
 import {
     filterHabits,
@@ -580,20 +581,27 @@ function App() {
             ? 'upcoming'
             : 'list';
 
+    const canReorderTasks =
+        viewPrefs.layout === 'list'
+        && viewPrefs.sorting === 'smart'
+        && (paginatedTaskView || selectedProjectId != null);
+
+    const handleReorderHabits = useCallback((request: ReorderHabitRequest) => {
+        void dispatch(reorderHabit(request));
+    }, [dispatch]);
+
+    const taskListProps = {
+        layout: taskRowLayout,
+        sortable: canReorderTasks,
+        onReorder: canReorderTasks ? handleReorderHabits : undefined,
+        onOpenDetails: handleOpenHabit,
+        onOpenProject: handleProjectSelect,
+        onTaskCompleted: handleTaskCompleted,
+        onTaskDeleted: handleTaskDeleted,
+    };
+
     const renderTaskList = (list: typeof displayHabits) => (
-        <ul className="task-list">
-            {list.map(habit => (
-                <HabitItem
-                    key={habitRowKey(habit)}
-                    habit={habit}
-                    layout={taskRowLayout}
-                    onOpenDetails={handleOpenHabit}
-                    onOpenProject={handleProjectSelect}
-                    onTaskCompleted={handleTaskCompleted}
-                    onTaskDeleted={handleTaskDeleted}
-                />
-            ))}
-        </ul>
+        <SortableTaskList habits={list} {...taskListProps} />
     );
 
     const renderGroupedTasks = (list: typeof displayHabits) => {
@@ -635,6 +643,8 @@ function App() {
                         <OverdueTasksSection
                             habits={overdueList}
                             layout="list"
+                            sortable={canReorderTasks}
+                            onReorder={canReorderTasks ? handleReorderHabits : undefined}
                             onOpenDetails={handleOpenHabit}
                             onOpenProject={handleProjectSelect}
                             onTaskCompleted={handleTaskCompleted}
@@ -687,6 +697,7 @@ function App() {
                     onAddTask={() => addFormRef.current?.open()}
                     onTaskCompleted={handleTaskCompleted}
                     onTaskDeleted={handleTaskDeleted}
+                    onReorder={viewPrefs.sorting === 'smart' ? handleReorderHabits : undefined}
                 />
             );
         }

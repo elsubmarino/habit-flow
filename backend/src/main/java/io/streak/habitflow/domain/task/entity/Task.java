@@ -6,6 +6,7 @@ import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -39,7 +40,8 @@ public class Task extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private TaskPriorityType taskPriorityType;
 
-    private long sortOrder;
+    @NotNull
+    private Long sortOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="member_id", nullable = false,foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
@@ -101,6 +103,10 @@ public class Task extends BaseTimeEntity {
 
     public void updateProject(Project project){
         this.project = project;
+    }
+
+    public void updateSortOrder(Long sortOrder){
+        this.sortOrder = sortOrder;
     }
 
     public void updateCompleted(boolean completed){

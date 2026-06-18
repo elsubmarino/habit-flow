@@ -26,6 +26,7 @@ import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.DistributedLock;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
@@ -79,7 +80,7 @@ public class TaskService {
         Project project = null;
         if(request.projectId() != null){
             project = projectRepository.findById(request.projectId())
-                    .orElseThrow(()->new IllegalArgumentException("존재하지 않는 프로젝트입니다."));
+                    .orElseThrow(()->new EntityNotFoundException("존재하지 않는 프로젝트입니다."));
             boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
             if(!isMember){
                 throw new IllegalStateException("해당 프로젝트에 대한 접근 권한이 없습니다.");
@@ -115,7 +116,7 @@ public class TaskService {
         if(request.labelIds() != null && !request.labelIds().isEmpty()){
             List<Label> labels = labelRepository.findAllById(request.labelIds());
             if(labels.size() != request.labelIds().size()){
-                throw new IllegalArgumentException("존재하지 않는 라벨이 있습니다.");
+                throw new EntityNotFoundException("존재하지 않는 라벨이 있습니다.");
             }
             List<TaskLabel> taskLabels = labels.stream()
                     .map(label -> TaskLabel.builder()
@@ -170,7 +171,7 @@ public class TaskService {
     private Task getTask(TaskRequest.Create request, Task parentTask) {
         if(request.parentId() != null){
             parentTask = taskRepository.findById(request.parentId())
-                    .orElseThrow(()-> new IllegalArgumentException("존재하지 않는 테스크입니다."));
+                    .orElseThrow(()-> new EntityNotFoundException("존재하지 않는 테스크입니다."));
 
             if(parentTask.getSubTasks().size() >= 4){
                 throw new IllegalStateException("하위 테스크는 최대 4개 까지만 생성할 수 있습니다.");
@@ -181,7 +182,7 @@ public class TaskService {
 
     public TaskResponse.Detail getTaskById(Long taskId, Long memberId){
         Task task = taskRepository.findByIdWithProject(taskId)
-                .orElseThrow(()->new IllegalArgumentException("존재하지 않는 테스크입니다."));
+                .orElseThrow(()->new EntityNotFoundException("존재하지 않는 테스크입니다."));
 
         if(!task.getMember().getId().equals(memberId)){
             throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
@@ -446,7 +447,7 @@ public class TaskService {
         List<Label> realLabels  =labelRepository.findAllById(labelIds);
 
         if(realLabels.size() != labelIds.size()){
-            throw new IllegalArgumentException("존재하지 않는 라벨이 포함되어 있습니다.");
+            throw new EntityNotFoundException("존재하지 않는 라벨이 포함되어 있습니다.");
         }
 
         task.getTaskLabels().clear();
@@ -488,4 +489,9 @@ public class TaskService {
         return taskRepository.countUpcomingTasksByDate(memberId, fromDate, toDate);
     }
 
+    @Transactional
+    public void updateSortOrder(Long taskId, TaskRequest.UpdateSortOrder updateSortOrder, Long memberId){
+        Task task = taskRepository.getReferenceById(taskId);
+        task.updateSortOrder(updateSortOrder.sortOrder());
+    }
 }

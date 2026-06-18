@@ -306,6 +306,10 @@ export async function patchTaskProject(taskId: number, projectId: number | null)
     return data;
 }
 
+export async function patchTaskSortOrder(taskId: number, sortOrder: number): Promise<void> {
+    await apiClient.patch(`/api/tasks/${taskId}/sort-order`, { sortOrder });
+}
+
 export async function deleteTask(taskId: number): Promise<void> {
     await apiClient.delete(`/api/tasks/${taskId}`);
 }

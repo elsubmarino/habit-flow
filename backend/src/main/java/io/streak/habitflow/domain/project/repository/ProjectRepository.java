@@ -1,6 +1,7 @@
 package io.streak.habitflow.domain.project.repository;
 
 import io.streak.habitflow.domain.project.entity.Project;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +15,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
     List<Project> findByNameContaining(String name);
 
     default Project getOrThrow(Long projectId){
-        return findById(projectId).orElseThrow(()->new IllegalArgumentException("프로젝트가 존재하지 않습니다."));
+        return findById(projectId).orElseThrow(()->new EntityNotFoundException("프로젝트가 존재하지 않습니다."));
     }
 }

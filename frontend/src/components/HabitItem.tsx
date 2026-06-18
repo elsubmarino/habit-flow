@@ -13,6 +13,14 @@ interface HabitItemProps {
     habit: Habit;
     layout?: TaskRowLayout;
     variant?: 'default' | 'overdue';
+    showDragHandle?: boolean;
+    isDragging?: boolean;
+    isDragOver?: boolean;
+    onDragHandleStart?: (event: React.DragEvent<HTMLButtonElement>) => void;
+    onDragEnter?: (event: React.DragEvent<HTMLLIElement>) => void;
+    onDragOver?: (event: React.DragEvent<HTMLLIElement>) => void;
+    onDragEnd?: (event: React.DragEvent<HTMLLIElement>) => void;
+    onDrop?: (event: React.DragEvent<HTMLLIElement>) => void;
     onOpenDetails?: (habit: Habit) => void;
     onOpenProject?: (projectId: number) => void;
     onTaskCompleted?: (habit: Habit) => void;
@@ -30,6 +38,14 @@ const HabitItem: React.FC<HabitItemProps> = ({
     habit,
     layout = 'list',
     variant = 'default',
+    showDragHandle = false,
+    isDragging = false,
+    isDragOver = false,
+    onDragHandleStart,
+    onDragEnter,
+    onDragOver,
+    onDragEnd,
+    onDrop,
     onOpenDetails,
     onOpenProject,
     onTaskCompleted,
@@ -101,9 +117,31 @@ const HabitItem: React.FC<HabitItemProps> = ({
 
     return (
         <li
-            className={`task-item task-item-todoist ${completed ? 'completed' : ''}`}
+            className={[
+                'task-item',
+                'task-item-todoist',
+                completed ? 'completed' : '',
+                isDragging ? 'is-dragging' : '',
+                isDragOver ? 'is-drag-over' : '',
+            ].filter(Boolean).join(' ')}
             onMouseLeave={() => setMenuOpen(false)}
+            onDragEnter={onDragEnter}
+            onDragOver={onDragOver}
+            onDragEnd={onDragEnd}
+            onDrop={onDrop}
         >
+            {showDragHandle && (
+                <button
+                    type="button"
+                    className="task-drag-handle"
+                    draggable
+                    onDragStart={onDragHandleStart}
+                    onClick={event => event.stopPropagation()}
+                    aria-label="순서 변경"
+                >
+                    <span aria-hidden>⋮⋮</span>
+                </button>
+            )}
             <button
                 type="button"
                 className="task-check"

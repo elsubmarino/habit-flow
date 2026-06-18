@@ -344,6 +344,7 @@ export function mapTaskToHabit(task: TaskDto): Habit {
         subtaskCount: counts.subtaskCount,
         subtaskCompletedCount: counts.subtaskCompletedCount,
         commentCount: counts.commentCount,
+        sortOrder: task.sortOrder ?? 0,
         isRecurring: readRecurring(task),
         recurrenceLabel: recurrenceToLabel(task),
     };

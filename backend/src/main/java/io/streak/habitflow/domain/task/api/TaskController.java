@@ -182,6 +182,16 @@ public class TaskController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{taskId}/sort-order")
+    @Operation(summary = "정렬순서 변경")
+    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "정렬순서 변경 성공")})
+    public ResponseEntity<Void> updateSortOrder(@PathVariable Long taskId,
+                                                  @RequestBody @Valid TaskRequest.UpdateSortOrder request,
+                                                  @LoginMemberId Long loginMemberId) {
+        taskService.updateSortOrder(taskId, request, loginMemberId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{taskId}/toggle")
     @Operation(summary = "테스크 토글(완료/미완료)")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 토글(완료/미완료) 성공")})

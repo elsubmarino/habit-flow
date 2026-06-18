@@ -997,6 +997,39 @@
   background: #fafafa;
 }
 
+.task-item.is-dragging {
+  opacity: 0.55;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.task-item.is-drag-over {
+  background: #f3f6ff;
+}
+
+.task-drag-handle {
+  flex-shrink: 0;
+  margin-top: 3px;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  color: #bdbdbd;
+  cursor: grab;
+  font-size: 12px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.1s, color 0.1s;
+}
+
+.task-item:hover .task-drag-handle,
+.task-item.is-dragging .task-drag-handle {
+  opacity: 1;
+}
+
+.task-drag-handle:active {
+  cursor: grabbing;
+}
+
 .task-item:last-child {
   border-bottom: none;
 }

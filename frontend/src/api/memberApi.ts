@@ -26,7 +26,7 @@ export async function fetchMember(): Promise<MemberDto> {
 
 export async function loginMember(payload: MemberLoginPayload): Promise<AuthTokenResponse> {
     const { data } = await apiClient.post<AuthTokenResponse>(
-        '/api/members/login',
+        '/api/auth/login',
         {
             email: payload.email,
             password: payload.password,
@@ -37,12 +37,12 @@ export async function loginMember(payload: MemberLoginPayload): Promise<AuthToke
 }
 
 export async function logoutMember(): Promise<void> {
-    await apiClient.post('/api/members/logout');
+    await apiClient.post('/api/auth/logout');
 }
 
 export async function signUpMember(payload: MemberSignUpPayload): Promise<MemberDto> {
     const { data } = await apiClient.post<MemberDto>(
-        '/api/members',
+        '/api/auth/signup',
         {
             email: payload.email,
             password: payload.password,

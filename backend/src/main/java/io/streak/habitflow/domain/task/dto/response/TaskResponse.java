@@ -158,8 +158,8 @@ public final class TaskResponse{
             labels = Objects.requireNonNullElse(labels, new ArrayList<>());
         }
 
-        public static Summary of(TaskSummaryQuery taskSummaryQuery, java.util.List<LabelResponse.Summary> labelSummaryRespons) {
-            return TaskResponse.Summary.builder()
+        public static Summary of(TaskSummaryQuery taskSummaryQuery, List<LabelResponse.Summary> labelSummaryResponses) {
+            return Summary.builder()
                     .id(taskSummaryQuery.id())
                     .name(taskSummaryQuery.name())
                     .description(taskSummaryQuery.description())
@@ -169,18 +169,19 @@ public final class TaskResponse{
                     .countSubTasks(taskSummaryQuery.countSubTasks())
                     .countSubTasksCompleted(taskSummaryQuery.countSubTasksCompleted())
                     .countComments(taskSummaryQuery.countComments())
-                    .labels(labelSummaryRespons)
+                    .labels(labelSummaryResponses)
+                    .sortOrder(taskSummaryQuery.sortOrder())
                     .dueTime(taskSummaryQuery.timeSpecified()? taskSummaryQuery.dueDate().toLocalTime():null)
                     .build();
         }
 
-        public static Summary of(Task task, java.util.List<LabelResponse.Summary> labelSummaryRespons) {
+        public static Summary of(Task task, List<LabelResponse.Summary> labelSummaryResponses) {
             SummaryBuilder builder = TaskResponse.Summary.builder()
                     .id(task.getId())
                     .name(task.getName())
                     .taskPriorityType(task.getTaskPriorityType())
                     .sortOrder(task.getSortOrder())
-                    .labels(labelSummaryRespons);
+                    .labels(labelSummaryResponses);
             if(task.getProject() != null){
                 builder.projectName(task.getProject().getName());
             }else{

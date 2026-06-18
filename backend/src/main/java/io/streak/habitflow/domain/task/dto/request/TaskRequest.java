@@ -176,4 +176,11 @@ public final class TaskRequest {
             return new Cursor(dueDate,priorityType,sortOrder,taskId,CursorDirection.PREV);
         }
     }
+
+    public record UpdateSortOrder(
+            @Schema(description = "정렬순서")
+            Long sortOrder
+    ){
+
+    }
 }

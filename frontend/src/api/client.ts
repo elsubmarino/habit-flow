@@ -46,12 +46,13 @@ function isOAuthCallbackPath(): boolean {
     return window.location.pathname.includes('/oauth2/redirect');
 }
 
-function isPublicAuthRequest(url: string, method?: string): boolean {
+function isPublicAuthRequest(url: string): boolean {
     const path = url.split('?')[0];
-    if (path.includes('/api/members/login')) return true;
-    if (path.includes('/api/members/reissue')) return true;
-    if (method?.toUpperCase() === 'POST' && /\/api\/members\/?$/.test(path)) return true;
-    return false;
+    return (
+        path.includes('/api/auth/login')
+        || path.includes('/api/auth/reissue')
+        || path.includes('/api/auth/signup')
+    );
 }
 
 function parseAccessTokenPayload(token: string): Record<string, unknown> | null {
@@ -73,7 +74,7 @@ function isAccessTokenExpired(token: string, skewMs = ACCESS_TOKEN_SKEW_MS): boo
 
 /** 인터셉터 없이 호출 — refresh 루프 방지. refreshToken은 httpOnly 쿠키로 전송 */
 async function reissueTokensRequest(): Promise<string> {
-    const response = await fetch('/api/members/reissue', {
+    const response = await fetch('/api/auth/reissue', {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -128,7 +129,7 @@ export async function ensureAccessToken(): Promise<string | null> {
 
 apiClient.interceptors.request.use(async config => {
     const url = config.url ?? '';
-    if (isPublicAuthRequest(url, config.method)) {
+    if (isPublicAuthRequest(url)) {
         delete config.headers.Authorization;
         return config;
     }
@@ -152,7 +153,7 @@ apiClient.interceptors.response.use(
             (status !== 401 && status !== 403) ||
             !originalRequest ||
             originalRequest._retry ||
-            isPublicAuthRequest(originalRequest.url ?? '', originalRequest.method) ||
+            isPublicAuthRequest(originalRequest.url ?? '') ||
             isOAuthCallbackPath()
         ) {
             return Promise.reject(error);

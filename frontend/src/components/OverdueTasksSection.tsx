@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchMoreOverdue, patchTaskDueDate } from '../store/habitSlice';
-import { habitRowKey, type Habit } from '../store/habitSlice';
+import type { Habit } from '../store/habitSlice';
 import { rescheduleHabitToToday } from '../utils/overdueTasks';
-import HabitItem, { type TaskRowLayout } from './HabitItem';
+import type { ReorderHabitRequest } from '../utils/taskSortOrder';
+import SortableTaskList from './SortableTaskList';
+import type { TaskRowLayout } from './HabitItem';
 import { ChevronDownIcon } from './icons';
 
 interface OverdueTasksSectionProps {
     habits: Habit[];
     layout?: TaskRowLayout;
+    sortable?: boolean;
+    onReorder?: (request: ReorderHabitRequest) => void;
     onOpenDetails?: (habit: Habit) => void;
     onOpenProject?: (projectId: number) => void;
     onTaskCompleted?: (habit: Habit) => void;
@@ -18,6 +22,8 @@ interface OverdueTasksSectionProps {
 const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
     habits,
     layout = 'list',
+    sortable = false,
+    onReorder,
     onOpenDetails,
     onOpenProject,
     onTaskCompleted,
@@ -76,20 +82,17 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
             </div>
             {!collapsed && (
                 <>
-                    <ul className="task-list">
-                        {habits.map(habit => (
-                            <HabitItem
-                                key={habitRowKey(habit)}
-                                habit={habit}
-                                layout={layout}
-                                variant="overdue"
-                                onOpenDetails={onOpenDetails}
-                                onOpenProject={onOpenProject}
-                                onTaskCompleted={onTaskCompleted}
-                                onTaskDeleted={onTaskDeleted}
-                            />
-                        ))}
-                    </ul>
+                    <SortableTaskList
+                        habits={habits}
+                        layout={layout}
+                        variant="overdue"
+                        sortable={sortable}
+                        onReorder={onReorder}
+                        onOpenDetails={onOpenDetails}
+                        onOpenProject={onOpenProject}
+                        onTaskCompleted={onTaskCompleted}
+                        onTaskDeleted={onTaskDeleted}
+                    />
                     {overdueHasNext && (
                         <button
                             type="button"

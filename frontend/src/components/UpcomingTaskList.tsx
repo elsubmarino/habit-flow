@@ -1,6 +1,7 @@
 import { useVirtualizer, type VirtualItem } from '@tanstack/react-virtual';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { habitRowKey, type Habit, type UpcomingDayBundle } from '../store/habitSlice';
+import type { ReorderHabitRequest } from '../utils/taskSortOrder';
 import {
     addDays,
     formatMonthYear,
@@ -13,7 +14,7 @@ import {
     startOfWeekMonday,
     toISODate,
 } from '../utils/date';
-import HabitItem from './HabitItem';
+import SortableTaskList from './SortableTaskList';
 import InlineAddTaskButton from './InlineAddTaskButton';
 import OverdueTasksSection from './OverdueTasksSection';
 
@@ -47,6 +48,7 @@ interface UpcomingTaskListProps {
     onAddTask?: () => void;
     onTaskCompleted?: (habit: Habit) => void;
     onTaskDeleted?: (habitId: number) => void;
+    onReorder?: (request: ReorderHabitRequest) => void;
 }
 
 interface UpcomingDaySectionProps {
@@ -61,6 +63,7 @@ interface UpcomingDaySectionProps {
     onAddTask?: () => void;
     onTaskCompleted?: (habit: Habit) => void;
     onTaskDeleted?: (habitId: number) => void;
+    onReorder?: (request: ReorderHabitRequest) => void;
 }
 
 const UpcomingDaySection = memo(function UpcomingDaySection({
@@ -75,6 +78,7 @@ const UpcomingDaySection = memo(function UpcomingDaySection({
     onAddTask,
     onTaskCompleted,
     onTaskDeleted,
+    onReorder,
 }: UpcomingDaySectionProps) {
     const isEmpty = habits.length === 0;
     const showDayLoadMore = dayBundle?.hasNext;
@@ -92,19 +96,16 @@ const UpcomingDaySection = memo(function UpcomingDaySection({
                 {formatUpcomingSectionTitle(dateKey)}
             </h2>
             {!isEmpty && (
-                <ul className="task-list">
-                    {habits.map(habit => (
-                        <HabitItem
-                            key={habitRowKey(habit)}
-                            habit={habit}
-                            layout="upcoming"
-                            onOpenDetails={onOpenDetails}
-                            onOpenProject={onOpenProject}
-                            onTaskCompleted={onTaskCompleted}
-                            onTaskDeleted={onTaskDeleted}
-                        />
-                    ))}
-                </ul>
+                <SortableTaskList
+                    habits={habits}
+                    layout="upcoming"
+                    sortable={!!onReorder}
+                    onReorder={onReorder}
+                    onOpenDetails={onOpenDetails}
+                    onOpenProject={onOpenProject}
+                    onTaskCompleted={onTaskCompleted}
+                    onTaskDeleted={onTaskDeleted}
+                />
             )}
             {isSelected && isEmpty && !dayBundle?.loaded && mayHaveTasks && (
                 <p className="upcoming-date-loading">불러오는 중…</p>
@@ -155,6 +156,7 @@ interface UpcomingVirtualRowProps {
     onAddTask?: () => void;
     onTaskCompleted?: (habit: Habit) => void;
     onTaskDeleted?: (habitId: number) => void;
+    onReorder?: (request: ReorderHabitRequest) => void;
 }
 
 const UpcomingVirtualRow = memo(function UpcomingVirtualRow({
@@ -175,6 +177,7 @@ const UpcomingVirtualRow = memo(function UpcomingVirtualRow({
     onAddTask,
     onTaskCompleted,
     onTaskDeleted,
+    onReorder,
 }: UpcomingVirtualRowProps) {
     const rowRef = useRef<HTMLDivElement | null>(null);
 
@@ -232,6 +235,7 @@ const UpcomingVirtualRow = memo(function UpcomingVirtualRow({
                 onAddTask={onAddTask}
                 onTaskCompleted={onTaskCompleted}
                 onTaskDeleted={onTaskDeleted}
+                onReorder={onReorder}
             />
         </div>
     );
@@ -324,6 +328,7 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
     onAddTask,
     onTaskCompleted,
     onTaskDeleted,
+    onReorder,
 }) => {
     const [monthOpen, setMonthOpen] = useState(false);
     const [viewYear, setViewYear] = useState(() => parseISO(selectedDate).getFullYear());
@@ -666,6 +671,8 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                 <OverdueTasksSection
                     habits={overdueHabits}
                     layout="upcoming"
+                    sortable={!!onReorder}
+                    onReorder={onReorder}
                     onOpenDetails={onOpenDetails}
                     onOpenProject={onOpenProject}
                     onTaskCompleted={onTaskCompleted}
@@ -712,6 +719,7 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                                 onAddTask={onAddTask}
                                 onTaskCompleted={onTaskCompleted}
                                 onTaskDeleted={onTaskDeleted}
+                                onReorder={onReorder}
                             />
                         );
                     })}

@@ -17,6 +17,7 @@ import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
@@ -49,7 +50,7 @@ public class ProjectService {
 
         if(request.parentId() != null){
             Project parentProject = projectRepository.findById(request.parentId())
-                    .orElseThrow(()->new IllegalArgumentException("부모 프로젝트가 존재하지 않습니다."));
+                    .orElseThrow(()->new EntityNotFoundException("부모 프로젝트가 존재하지 않습니다."));
             projectBuilder.parent(parentProject);
         }
 
@@ -103,7 +104,7 @@ public class ProjectService {
         Project parentProject = null;
         if(request.parentId() != null){
             parentProject = projectRepository.findById(request.parentId())
-                    .orElseThrow(()->new IllegalArgumentException("부모 프로젝트가 존재하지 않습니다."));
+                    .orElseThrow(()->new EntityNotFoundException("부모 프로젝트가 존재하지 않습니다."));
         }
 
 
@@ -198,7 +199,7 @@ public class ProjectService {
         Project project = projectRepository.getOrThrow(inviteRequest.id());
 
         Member inviter = memberRepository.findById(memberId)
-                .orElseThrow(()->new IllegalArgumentException("초대자 정보가 올바르지 않습니다."));
+                .orElseThrow(()->new EntityNotFoundException("초대자 정보가 올바르지 않습니다."));
 
         List<String> inviteEmails  = inviteRequest.emails();
         if(inviteEmails == null || inviteEmails.isEmpty()) return;
@@ -206,7 +207,7 @@ public class ProjectService {
         List<Member> inviteMembers = memberRepository.findByEmailIn(inviteEmails);
 
         if(inviteMembers.size() != inviteEmails.size()){
-            throw new IllegalArgumentException("존재하지 않는 이메일이 포함되어 있습니다.");
+            throw new EntityNotFoundException("존재하지 않는 이메일이 포함되어 있습니다.");
         }
 
         List<ProjectMember> projectMembers = inviteMembers.stream()
