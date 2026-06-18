@@ -79,7 +79,7 @@ public final class TaskResponse{
             labels =  Objects.requireNonNullElse(labels, new ArrayList<>());
             comments =  Objects.requireNonNullElse(comments, new ArrayList<>());
         }
-        public static Detail of(Task task, java.util.List<LabelResponse.Summary> labelSummaryResponses) {
+        public static Detail of(Task task, List<LabelResponse.Summary> labelSummaryResponses) {
             DetailBuilder builder = Detail.builder()
                     .id(task.getId())
                     .name(task.getName())
