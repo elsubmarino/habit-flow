@@ -97,53 +97,71 @@ const SearchModal: React.FC<SearchModalProps> = ({
 
                 <div className="search-section">
                     <p className="search-section-title">할 일</p>
-                    {filtered.habits.map(habit => (
-                        <button
-                            key={habit.id}
-                            type="button"
-                            className="search-result"
-                            onClick={() => {
-                                onSelectHabit(habit);
-                                onClose();
-                            }}
-                        >
-                            {habit.name}
-                        </button>
-                    ))}
+                    <div className="search-results search-results-list">
+                        {filtered.habits.length === 0 ? (
+                            <p className="search-empty">표시할 작업이 없습니다.</p>
+                        ) : filtered.habits.map(habit => (
+                            <button
+                                key={habit.id}
+                                type="button"
+                                className="search-result"
+                                onClick={() => {
+                                    onSelectHabit(habit);
+                                    onClose();
+                                }}
+                            >
+                                {habit.name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="search-section">
                     <p className="search-section-title">프로젝트</p>
-                    {filtered.projects.map(project => (
-                        <button
-                            key={project.id}
-                            type="button"
-                            className="search-result"
-                            onClick={() => {
-                                onSelectProject(project.id);
-                                onClose();
-                            }}
-                        >
-                            {project.name}
-                        </button>
-                    ))}
+                    <div className="search-results search-results-chips">
+                        {filtered.projects.length === 0 ? (
+                            <p className="search-empty">표시할 프로젝트가 없습니다.</p>
+                        ) : filtered.projects.map(project => (
+                            <button
+                                key={project.id}
+                                type="button"
+                                className="search-result search-result-chip"
+                                onClick={() => {
+                                    onSelectProject(project.id);
+                                    onClose();
+                                }}
+                            >
+                                <span
+                                    className="search-project-dot"
+                                    style={{ backgroundColor: project.color ?? '#808080' }}
+                                    aria-hidden
+                                />
+                                {project.name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="search-section">
                     <p className="search-section-title">라벨</p>
-                    {filtered.labels.map(label => (
-                        <button
-                            key={label.id}
-                            type="button"
-                            className="search-result"
-                            onClick={() => {
-                                onSelectLabel(label.id);
-                                onClose();
-                            }}
-                        >
-                            {label.name}
-                        </button>
-                    ))}
+                    <div className="search-results search-results-chips">
+                        {filtered.labels.length === 0 ? (
+                            <p className="search-empty">표시할 라벨이 없습니다.</p>
+                        ) : filtered.labels.map(label => (
+                            <button
+                                key={label.id}
+                                type="button"
+                                className="search-result search-result-chip"
+                                style={{ borderColor: label.color, color: label.color }}
+                                onClick={() => {
+                                    onSelectLabel(label.id);
+                                    onClose();
+                                }}
+                            >
+                                @{label.name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
