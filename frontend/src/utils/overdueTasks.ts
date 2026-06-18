@@ -1,5 +1,5 @@
 import type { Habit } from '../store/habitSlice';
-import { formatTime12From24, toISODate } from './date';
+import { datePartFromDue, formatTime12From24, getRelativeDueDayLabel } from './date';
 
 function dateOnly(iso: string): string {
     return iso.slice(0, 10);
@@ -26,7 +26,8 @@ export function isOverdueHabit(habit: Habit, now = new Date()): boolean {
 export function formatOverdueDueLabel(habit: Habit): string {
     if (!habit.dueDate) return '';
     const day = dateOnly(habit.dueDate);
-    const dateLabel = new Date(`${day}T00:00:00`).toLocaleDateString('ko-KR', {
+    const relative = getRelativeDueDayLabel(day);
+    const dateLabel = relative ?? new Date(`${day}T00:00:00`).toLocaleDateString('ko-KR', {
         month: 'long',
         day: 'numeric',
     });

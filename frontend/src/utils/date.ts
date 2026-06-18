@@ -55,18 +55,37 @@ export function datePartFromDue(value?: string | null): string | null {
     return value.slice(0, 10);
 }
 
+/** 오늘·내일·어제이면 해당 라벨, 아니면 null */
+export function getRelativeDueDayLabel(day: string): '오늘' | '내일' | '어제' | null {
+    const iso = day.slice(0, 10);
+    const today = toISODate(new Date());
+    const tomorrow = toISODate(addDays(new Date(), 1));
+    const yesterday = toISODate(addDays(new Date(), -1));
+    if (iso === today) return '오늘';
+    if (iso === tomorrow) return '내일';
+    if (iso === yesterday) return '어제';
+    return null;
+}
+
+function formatDueDateBase(day: string): string {
+    const date = new Date(`${day}T00:00:00`);
+    return date.toLocaleDateString('ko-KR', {
+        month: 'long',
+        day: 'numeric',
+        weekday: 'short',
+    });
+}
+
 export function formatTaskDetailDue(
     date: string | null,
     hasTime: boolean,
     time24?: string | null,
 ): string {
     if (!date) return '';
-    const d = new Date(`${date.slice(0, 10)}T00:00:00`);
-    const base = d.toLocaleDateString('ko-KR', {
-        month: 'long',
-        day: 'numeric',
-        weekday: 'short',
-    });
+    const day = datePartFromDue(date);
+    if (!day) return '';
+    const relative = getRelativeDueDayLabel(day);
+    const base = relative ?? formatDueDateBase(day);
     if (!hasTime || !time24) return base;
     return `${base} ${formatTime12From24(time24)}`;
 }
@@ -122,22 +141,18 @@ export function isWithinUpcomingCalendarRange(iso: string, from = new Date()): b
 }
 
 export function formatDueLabel(iso: string): string {
-    const date = new Date(iso + 'T00:00:00');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const diff = Math.round((date.getTime() - today.getTime()) / 86_400_000);
-    if (diff === 0) return '오늘';
-    if (diff === 1) return '내일';
-    if (diff === -1) return '어제';
+    const day = datePartFromDue(iso) ?? iso.slice(0, 10);
+    const relative = getRelativeDueDayLabel(day);
+    if (relative) return relative;
+    const date = new Date(`${day}T00:00:00`);
     return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' });
 }
 
 export function formatSectionDate(iso: string): string {
-    const date = new Date(iso + 'T00:00:00');
-    const today = toISODate(new Date());
-    const tomorrow = toISODate(addDays(new Date(), 1));
-    if (iso === today) return '오늘';
-    if (iso === tomorrow) return '내일';
+    const day = iso.slice(0, 10);
+    const relative = getRelativeDueDayLabel(day);
+    if (relative) return relative;
+    const date = new Date(`${day}T00:00:00`);
     return date.toLocaleDateString('ko-KR', {
         month: 'long',
         day: 'numeric',

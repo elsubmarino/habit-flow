@@ -42,6 +42,13 @@ public class ProjectService {
     @Transactional
     public ProjectResponse.Detail createProject(ProjectRequest.Create request,
                                          Long memberId) {
+        Member member = memberRepository.getReferenceById(memberId);
+
+        long projectCount = projectMemberRepository.countByMember(member);
+        if (projectCount > 500) {
+            throw new IllegalArgumentException("보유하고 있는 프로젝트가 500개 이상이므로 더 이상 생성할 수 없습니다.");
+        }
+
         Project.ProjectBuilder projectBuilder = Project.builder()
                 .name(request.name())
                 .color(request.color())
@@ -58,7 +65,6 @@ public class ProjectService {
 
         Project savedProject = projectRepository.save(project);
 
-        Member member = memberRepository.getReferenceById(memberId);
 
 
         ProjectMember projectMember = ProjectMember.builder()

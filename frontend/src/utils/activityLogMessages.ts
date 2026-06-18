@@ -200,14 +200,16 @@ export function getActivityActorLabel(
     return isSelfActivityActor(entry, currentMemberId) ? '당신' : entry.actor.name;
 }
 
+const SELF_ACTOR_PARTICLE = '님이';
+
 /** actor 라벨을 제외한 나머지 문장 (본인이면 '님이' → '이') */
 export function formatActivityLogMessageSuffix(
     entry: ActivityLogEntry,
     currentMemberId: number | null | undefined,
 ): string {
     const rest = formatActivityLogMessageRest(entry);
-    if (isSelfActivityActor(entry, currentMemberId) && rest.startsWith('님이')) {
-        return rest.slice(2);
+    if (isSelfActivityActor(entry, currentMemberId) && rest.startsWith(SELF_ACTOR_PARTICLE)) {
+        return `이${rest.slice(SELF_ACTOR_PARTICLE.length)}`;
     }
     return rest;
 }

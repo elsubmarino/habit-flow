@@ -1,4 +1,5 @@
 import type { Habit } from '../store/habitSlice';
+import { datePartFromDue, formatDueLabel } from './date';
 
 export type ViewLayout = 'list' | 'board' | 'calendar';
 export type ViewGrouping = 'none' | 'date' | 'project' | 'priority' | 'label';
@@ -105,10 +106,14 @@ export function groupHabits(
         let key: string;
         let title: string;
         switch (grouping) {
-            case 'date':
-                key = habit.dueDate ?? 'none';
-                title = key === 'none' ? '날짜 없음' : key;
+            case 'date': {
+                const dayKey = habit.dueDate
+                    ? (datePartFromDue(habit.dueDate) ?? habit.dueDate.slice(0, 10))
+                    : 'none';
+                key = dayKey;
+                title = dayKey === 'none' ? '날짜 없음' : formatDueLabel(dayKey);
                 break;
+            }
             case 'project':
                 key = habit.projectId != null ? String(habit.projectId) : 'none';
                 title = habit.projectName ?? '관리함';

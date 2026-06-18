@@ -79,6 +79,10 @@ public class TaskService {
 
         Project project = null;
         if(request.projectId() != null){
+            long projectCount = taskRepository.countByProject(project);
+            if (projectCount > 500) {
+                throw new IllegalArgumentException("해당 프로젝트에 테스크를 500개까지 보유할 수 있습니다.");
+            }
             project = projectRepository.findById(request.projectId())
                     .orElseThrow(()->new EntityNotFoundException("존재하지 않는 프로젝트입니다."));
             boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
@@ -86,6 +90,11 @@ public class TaskService {
                 throw new IllegalStateException("해당 프로젝트에 대한 접근 권한이 없습니다.");
             }
         }else if(parentTask != null){
+            //관리함인 경우 유저별 500개까지
+            long projectCount = taskRepository.countByProjectAndMember(project);
+            if (projectCount > 500) {
+                throw new IllegalArgumentException("해당 프로젝트에 테스크를 500개까지 보유할 수 있습니다.");
+            }
             project = parentTask.getProject();
         }
 
