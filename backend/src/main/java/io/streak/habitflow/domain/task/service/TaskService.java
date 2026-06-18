@@ -91,7 +91,7 @@ public class TaskService {
             }
         }else if(parentTask != null){
             //관리함인 경우 유저별 500개까지
-            long projectCount = taskRepository.countByProjectAndMember(project);
+            long projectCount = taskRepository.countByProjectAndMember(project,member);
             if (projectCount > 500) {
                 throw new IllegalArgumentException("해당 프로젝트에 테스크를 500개까지 보유할 수 있습니다.");
             }
