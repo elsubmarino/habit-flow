@@ -175,6 +175,7 @@ export interface HabitState {
     upcomingDays: Record<string, UpcomingDayBundle>;
     upcomingDayCounts: Record<string, number> | null;
     upcomingSummaryStatus: 'idle' | 'loading' | 'loaded' | 'failed';
+    taskViewCache: Partial<Record<CacheableTaskView, TaskViewCacheSlice>>;
 }
 
 export interface UpcomingDayBundle {
@@ -183,6 +184,58 @@ export interface UpcomingDayBundle {
     nextCursor: TaskCursor | null;
     status: 'idle' | 'loading' | 'loadingMore' | 'failed';
     loaded: boolean;
+}
+
+type CacheableTaskView = 'today' | 'inbox';
+
+interface TaskViewCacheSlice {
+    list: Habit[];
+    tasksHasNext: boolean;
+    tasksNextCursor: TaskCursor | null;
+    overdueList: Habit[];
+    overdueHasNext: boolean;
+    overdueNextCursor: TaskCursor | null;
+}
+
+function isCacheableTaskView(view: ApiView): view is CacheableTaskView {
+    return view === 'today' || view === 'inbox';
+}
+
+function snapshotTaskView(state: HabitState): TaskViewCacheSlice {
+    return {
+        list: state.list,
+        tasksHasNext: state.tasksHasNext,
+        tasksNextCursor: state.tasksNextCursor,
+        overdueList: state.overdueList,
+        overdueHasNext: state.overdueHasNext,
+        overdueNextCursor: state.overdueNextCursor,
+    };
+}
+
+function applyTaskViewSnapshot(state: HabitState, snapshot: TaskViewCacheSlice) {
+    state.list = snapshot.list;
+    state.tasksHasNext = snapshot.tasksHasNext;
+    state.tasksNextCursor = snapshot.tasksNextCursor;
+    state.overdueList = snapshot.overdueList;
+    state.overdueHasNext = snapshot.overdueHasNext;
+    state.overdueNextCursor = snapshot.overdueNextCursor;
+}
+
+function clearOverdueList(state: HabitState) {
+    state.overdueList = [];
+    state.overdueHasNext = false;
+    state.overdueNextCursor = null;
+}
+
+function dedupeLabels(labels: Label[]): Label[] {
+    const seen = new Set<number>();
+    const result: Label[] = [];
+    for (const label of labels) {
+        if (seen.has(label.id)) continue;
+        seen.add(label.id);
+        result.push(label);
+    }
+    return result;
 }
 
 function readInitialRouteState(): Pick<
@@ -227,6 +280,7 @@ const initialState: HabitState = {
     upcomingDays: {},
     upcomingDayCounts: null,
     upcomingSummaryStatus: 'idle',
+    taskViewCache: {},
 };
 
 export type ApiView = NavItem | 'all';
@@ -826,27 +880,33 @@ export const addHabit = createAsyncThunk(
         labelIds?: number[];
         file?: File | null;
         priority?: 1 | 2 | 3 | 4;
-    }, { dispatch }) => {
-        const recurrence = repeatLabelToRecurrence(payload.recurrenceLabel, payload.dueDate);
-        const task = await taskApi.createTask({
-            name: payload.name,
-            description: payload.description,
-            dueDate: payload.dueDate,
-            dueTime24: payload.dueTime24,
-            hasTime: payload.hasTime,
-            projectId: payload.projectId,
-            labelIds: payload.labelIds,
-            file: payload.file,
-            priorityType: priorityToApi(payload.priority),
-            ...recurrence,
-        });
-        void dispatch(invalidateSidebarAggregates({
-            projects: true,
-            labels: true,
-            nav: true,
-        }));
-        void dispatch(refetchCurrentTaskList());
-        return mapTaskToHabit(task);
+    }, { dispatch, rejectWithValue }) => {
+        try {
+            const recurrence = repeatLabelToRecurrence(payload.recurrenceLabel, payload.dueDate);
+            const task = await taskApi.createTask({
+                name: payload.name,
+                description: payload.description,
+                dueDate: payload.dueDate,
+                dueTime24: payload.dueTime24,
+                hasTime: payload.hasTime,
+                projectId: payload.projectId,
+                labelIds: payload.labelIds,
+                file: payload.file,
+                priorityType: priorityToApi(payload.priority),
+                ...recurrence,
+            });
+            void dispatch(invalidateSidebarAggregates({
+                projects: true,
+                labels: true,
+                nav: true,
+            }));
+            void dispatch(refetchCurrentTaskList());
+            return mapTaskToHabit(task);
+        } catch (error) {
+            return rejectWithValue(
+                getApiErrorMessage(error, '작업을 추가하지 못했습니다.'),
+            );
+        }
     },
 );
 
@@ -1149,7 +1209,28 @@ const habitSlice = createSlice({
     initialState,
     reducers: {
         setActiveView(state, action: { payload: ApiView }) {
-            state.activeView = action.payload;
+            const next = action.payload;
+            const prev = state.activeView;
+
+            if (next !== prev) {
+                if (isCacheableTaskView(prev)) {
+                    state.taskViewCache[prev] = snapshotTaskView(state);
+                }
+
+                const cached = isCacheableTaskView(next) ? state.taskViewCache[next] : undefined;
+                if (cached) {
+                    applyTaskViewSnapshot(state, cached);
+                } else if (next === 'inbox' || prev === 'inbox') {
+                    state.list = [];
+                    if (next === 'inbox' || (next === 'today' && prev === 'inbox')) {
+                        clearOverdueList(state);
+                    }
+                } else if (next !== 'today' && next !== 'upcoming') {
+                    clearOverdueList(state);
+                }
+            }
+
+            state.activeView = next;
             state.selectedProjectId = null;
             state.selectedLabelId = null;
             state.selectedProjectDetail = null;
@@ -1176,18 +1257,27 @@ const habitSlice = createSlice({
         },
         setUpcomingAnchorDate(state, action: { payload: string }) {
             state.upcomingAnchorDate = action.payload;
+            state.upcomingWeekStartIso = getUpcomingWeekRange(action.payload).weekStartIso;
         },
     },
     extraReducers: builder => {
         builder
             .addCase(fetchHabits.pending, (state, action) => {
-                state.status = 'loading';
+                const view = action.meta.arg.view;
+                if (view !== 'upcoming' && view !== 'today' && view !== 'inbox') {
+                    state.status = 'loading';
+                }
                 state.loadMoreStatus = 'idle';
                 state.overdueLoadMoreStatus = 'idle';
                 state.tasksNextPage = 0;
                 state.tasksNextCursor = null;
                 state.error = null;
-                if (action.meta.arg.view === 'upcoming') {
+                if (view === 'inbox') {
+                    state.overdueList = [];
+                    state.overdueHasNext = false;
+                    state.overdueNextCursor = null;
+                }
+                if (view === 'upcoming') {
                     state.upcomingSummaryStatus = 'loading';
                 }
             })
@@ -1213,6 +1303,9 @@ const habitSlice = createSlice({
                     ...l,
                     taskCount: countTasksForLabel(action.payload.habits, l.id),
                 }));
+                if (isCacheableTaskView(action.payload.view)) {
+                    state.taskViewCache[action.payload.view] = snapshotTaskView(state);
+                }
             })
             .addCase(fetchHabits.rejected, (state, action) => {
                 if (!isFetchHabitsResultCurrent(state, action.meta.arg)) return;
@@ -1402,10 +1495,10 @@ const habitSlice = createSlice({
             })
             .addCase(fetchLabels.fulfilled, (state, action) => {
                 state.labelsStatus = 'idle';
-                const withCounts = action.payload.labels.map(l => ({
+                const withCounts = dedupeLabels(action.payload.labels.map(l => ({
                     ...l,
                     taskCount: countTasksForLabel(state.list, l.id),
-                }));
+                })));
                 state.labels = applyFavoriteFlags(withCounts, state.favorites, 'LABEL');
                 state.labelsHasNext = action.payload.hasNext;
                 state.labelsNextCursor = action.payload.nextCursor;
@@ -1470,7 +1563,12 @@ const habitSlice = createSlice({
                 }
             })
             .addCase(addLabel.fulfilled, (state, action) => {
-                state.labels.push(action.payload);
+                if (!state.labels.some(l => l.id === action.payload.id)) {
+                    state.labels.push({
+                        ...action.payload,
+                        taskCount: countTasksForLabel(state.list, action.payload.id),
+                    });
+                }
                 state.favorites = upsertFavoriteFromLabel(state.favorites, action.payload);
             })
             .addCase(updateLabel.fulfilled, (state, action) => {

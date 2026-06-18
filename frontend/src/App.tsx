@@ -123,6 +123,7 @@ function App() {
         selectedProjectDetail,
         inboxTaskCount,
         todayTaskCount,
+        activeView,
     } = useAppSelector(state => state.habits);
 
     const initialLocation = parseAppPath(window.location.pathname);
@@ -291,6 +292,15 @@ function App() {
     }, [dispatch, isAuthenticated]);
 
     const showLabelsBrowse = activeNav === 'filters' && !selectedLabelId && !selectedProjectId && !showProjectsBrowse;
+
+    const isMainTaskNav =
+        !showNotifications
+        && !showProjectsBrowse
+        && activeNav !== 'report'
+        && activeNav !== 'filters'
+        && selectedProjectId == null
+        && selectedLabelId == null;
+    const taskListView: ApiView | null = isMainTaskNav ? activeView : null;
 
     /** 화면(라우트) 진입 시 해당 뷰 데이터 재조회 */
     useEffect(() => {
@@ -468,7 +478,7 @@ function App() {
     };
 
     const paginatedTaskView =
-        (activeNav === 'today' || activeNav === 'inbox')
+        (taskListView === 'today' || taskListView === 'inbox')
         && selectedProjectId == null
         && selectedLabelId == null;
 
@@ -501,9 +511,24 @@ function App() {
     const showReport = activeNav === 'report' && !selectedProjectId && !selectedLabelId && !showProjectsBrowse;
     const showProjectsPanel = showProjectsBrowse && !selectedProjectId && !selectedLabelId;
     const showLabelsPanel = showLabelsBrowse;
-    const showTodaySections = activeNav === 'today' && !selectedProjectId && !selectedLabelId;
-    const showUpcomingGrouped = activeNav === 'upcoming' && !selectedProjectId && !selectedLabelId;
-    const showInboxList = activeNav === 'inbox' && !selectedProjectId && !selectedLabelId;
+    const showTodaySections = taskListView === 'today';
+    const showUpcomingGrouped = taskListView === 'upcoming';
+    const showInboxList = taskListView === 'inbox';
+    const showGlobalTaskLoading =
+        status === 'loading'
+        && !showUpcomingGrouped
+        && !showTodaySections
+        && !showInboxList;
+
+    const showEmptyTaskState =
+        status !== 'loading'
+        && !showUpcomingGrouped
+        && !showTodaySections
+        && displayHabits.length === 0
+        && overdueList.length === 0
+        && !showLabelsPanel
+        && !showReport
+        && !showProjectsPanel;
     const showTaskPagination =
         showTodaySections || showInboxList || selectedProjectId != null;
     const showLabelsPagination = showLabelsPanel && labelsHasNext;
@@ -528,10 +553,10 @@ function App() {
 
         const view = selectedLabelId != null
             ? 'all'
-            : toApiView(activeNav);
+            : taskListView ?? toApiView(activeNav);
         if (view !== 'today' && view !== 'upcoming' && view !== 'inbox') return;
         dispatch(fetchMoreHabits(view));
-    }, [dispatch, activeNav, selectedProjectId, selectedLabelId, tasksHasNext, loadMoreStatus, upcomingJumpStatus, showUpcomingGrouped]);
+    }, [dispatch, activeNav, taskListView, selectedProjectId, selectedLabelId, tasksHasNext, loadMoreStatus, upcomingJumpStatus, showUpcomingGrouped]);
 
     useLayoutEffect(() => {
         if (!showUpcomingGrouped || !mainPanelRef.current) return;
@@ -577,7 +602,7 @@ function App() {
     );
     const taskRowLayout: TaskRowLayout = selectedProjectId
         ? 'project'
-        : activeNav === 'upcoming'
+        : taskListView === 'upcoming'
             ? 'upcoming'
             : 'list';
 
@@ -657,25 +682,6 @@ function App() {
             );
         }
 
-        if (displayHabits.length === 0) {
-            if (selectedProjectId != null && status !== 'loading') {
-                return (
-                    <div className="empty-state">
-                        <p className="empty-title">이 프로젝트에 작업이 없습니다</p>
-                        <p className="empty-desc">아래에서 작업을 추가해 보세요.</p>
-                    </div>
-                );
-            }
-            return null;
-        }
-
-        if (selectedProjectId != null) {
-            if (viewPrefs.grouping !== 'none') {
-                return <>{renderGroupedTasks(displayHabits)}</>;
-            }
-            return renderTaskList(displayHabits);
-        }
-
         if (showUpcomingGrouped && viewPrefs.grouping === 'none') {
             return (
                 <UpcomingTaskList
@@ -700,6 +706,25 @@ function App() {
                     onReorder={viewPrefs.sorting === 'smart' ? handleReorderHabits : undefined}
                 />
             );
+        }
+
+        if (displayHabits.length === 0) {
+            if (selectedProjectId != null && status !== 'loading') {
+                return (
+                    <div className="empty-state">
+                        <p className="empty-title">이 프로젝트에 작업이 없습니다</p>
+                        <p className="empty-desc">아래에서 작업을 추가해 보세요.</p>
+                    </div>
+                );
+            }
+            return null;
+        }
+
+        if (selectedProjectId != null) {
+            if (viewPrefs.grouping !== 'none') {
+                return <>{renderGroupedTasks(displayHabits)}</>;
+            }
+            return renderTaskList(displayHabits);
         }
 
         if (viewPrefs.grouping !== 'none') {
@@ -885,9 +910,9 @@ function App() {
                 </header>
 
                 <section className={`task-section ${showUpcomingGrouped ? 'task-section-upcoming' : ''} ${selectedProjectId ? 'task-section-project' : ''}`}>
-                    {status === 'loading' && <p className="status-message">불러오는 중…</p>}
+                    {showGlobalTaskLoading && <p className="status-message">불러오는 중…</p>}
 
-                    {status !== 'loading' && displayHabits.length === 0 && overdueList.length === 0 && !showLabelsPanel && !showReport && !showProjectsPanel && (
+                    {showEmptyTaskState && (
                         <div className="empty-state">
                             <p className="empty-title">할 일이 없습니다</p>
                             <p className="empty-desc">

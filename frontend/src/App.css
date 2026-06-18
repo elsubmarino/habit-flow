@@ -1447,6 +1447,10 @@
   color: var(--text-muted);
 }
 
+.upcoming-date-status-spacer {
+  min-height: 22px;
+}
+
 .upcoming-date-section.is-empty:not(.is-selected) .upcoming-date-title {
   font-size: 13px;
 }
@@ -5372,6 +5376,54 @@
 
 .task-complete-toast-close:hover {
   background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* App toast (errors, notices) */
+.app-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 350;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 280px;
+  max-width: min(480px, calc(100vw - 48px));
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #202020;
+  color: #fff;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  transform: translateX(-50%);
+  animation: task-complete-toast-in 0.2s ease;
+}
+
+.app-toast-error {
+  background: #4a1515;
+  border: 1px solid #c62828;
+}
+
+.app-toast-message {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.app-toast-close {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.app-toast-close:hover {
   color: #fff;
 }
 
