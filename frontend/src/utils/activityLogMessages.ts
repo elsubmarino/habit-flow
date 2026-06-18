@@ -193,6 +193,29 @@ export function isSelfActivityActor(
     return Number(entry.actor.id) === Number(memberId);
 }
 
+const ACTOR_PARTICLE = '님이';
+
+function stripActorParticle(rest: string): string {
+    return rest.startsWith(ACTOR_PARTICLE) ? rest.slice(ACTOR_PARTICLE.length) : rest;
+}
+
+export function formatActivityLogMessageParts(
+    entry: ActivityLogEntry,
+    currentMemberId?: number | null,
+): { actorLabel: string; body: string } {
+    const rest = formatActivityLogMessageRest(entry);
+    if (isSelfActivityActor(entry, currentMemberId)) {
+        return {
+            actorLabel: '당신이',
+            body: stripActorParticle(rest),
+        };
+    }
+    return {
+        actorLabel: entry.actor.name,
+        body: rest,
+    };
+}
+
 export function getActivityActorLabel(
     entry: ActivityLogEntry,
     currentMemberId: number | null | undefined,
@@ -200,25 +223,20 @@ export function getActivityActorLabel(
     return isSelfActivityActor(entry, currentMemberId) ? '당신' : entry.actor.name;
 }
 
-const SELF_ACTOR_PARTICLE = '님이';
-
-/** actor 라벨을 제외한 나머지 문장 (본인이면 '님이' → '이') */
+/** actor 라벨을 제외한 나머지 문장 */
 export function formatActivityLogMessageSuffix(
     entry: ActivityLogEntry,
     currentMemberId: number | null | undefined,
 ): string {
-    const rest = formatActivityLogMessageRest(entry);
-    if (isSelfActivityActor(entry, currentMemberId) && rest.startsWith(SELF_ACTOR_PARTICLE)) {
-        return `이${rest.slice(SELF_ACTOR_PARTICLE.length)}`;
-    }
-    return rest;
+    return formatActivityLogMessageParts(entry, currentMemberId).body;
 }
 
 export function formatActivityLogMessage(
     entry: ActivityLogEntry,
     currentMemberId?: number | null,
 ): string {
-    return `${getActivityActorLabel(entry, currentMemberId)}${formatActivityLogMessageSuffix(entry, currentMemberId)}`;
+    const { actorLabel, body } = formatActivityLogMessageParts(entry, currentMemberId);
+    return `${actorLabel}${body}`;
 }
 
 export function normalizeActivityLog(dto: ActivityLogDto): ActivityLogEntry {

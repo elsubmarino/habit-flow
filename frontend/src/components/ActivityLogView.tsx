@@ -8,14 +8,18 @@ import { formatActivityDateHeader, formatActivityRelativeTime } from '../utils/a
 import {
     activityBadge,
     formatActivityLogMessage,
-    formatActivityLogMessageSuffix,
-    getActivityActorLabel,
     isSelfActivityActor,
     matchesActivityProjectFilter,
     resolveCurrentMemberId,
     type ActivityLogEntry,
 } from '../utils/activityLogMessages';
 import { applyMemberProfile } from '../utils/userProfile';
+
+const ACTOR_AVATAR_COLORS = ['#4073ff', '#299438', '#db4c3f', '#eb8909', '#8b5cf6'];
+
+function actorAvatarColor(actorId: number): string {
+    return ACTOR_AVATAR_COLORS[Math.abs(actorId) % ACTOR_AVATAR_COLORS.length]!;
+}
 
 type ProjectFilter = 'all' | number;
 type ActivityFilter = 'all' | ActivityType;
@@ -38,20 +42,9 @@ const ACTIVITY_FILTER_OPTIONS: { value: ActivityFilter; label: string }[] = [
     { value: 'DELETED', label: '삭제' },
 ];
 
-function renderActivityText(
-    entry: ActivityLogEntry,
-    currentMemberId: number | null,
-): React.ReactNode {
-    return (
-        <>
-            <strong>{getActivityActorLabel(entry, currentMemberId)}</strong>
-            {formatActivityLogMessageSuffix(entry, currentMemberId)}
-        </>
-    );
-}
-
 const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
-    const [currentMemberId, setCurrentMemberId] = useState<number | null>(() => resolveCurrentMemberId());
+    const [profileVersion, setProfileVersion] = useState(0);
+    const memberId = useMemo(() => resolveCurrentMemberId(), [profileVersion]);
     const scrollBodyRef = useRef<HTMLDivElement>(null);
     const [items, setItems] = useState<ActivityLogEntry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -69,7 +62,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
             .then(member => {
                 if (!active) return;
                 applyMemberProfile(member);
-                setCurrentMemberId(member.id ?? resolveCurrentMemberId());
+                setProfileVersion(version => version + 1);
             })
             .catch(() => undefined);
 
@@ -181,7 +174,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
                     hour: '2-digit',
                     minute: '2-digit',
                 });
-                lines.push(`- ${time} ${formatActivityLogMessage(entry, currentMemberId)}`);
+                lines.push(`- ${time} ${formatActivityLogMessage(entry, memberId)}`);
             }
             lines.push('');
         }
@@ -267,9 +260,9 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
                             <h2 className="activity-day-title">
                                 {formatActivityDateHeader(dateKey, entries.length)}
                             </h2>
-                            <ul className="activity-list">
+                            <ul className="activity-list" key={memberId ?? 'guest'}>
                                 {entries.map(entry => {
-                                    const isSelf = isSelfActivityActor(entry, currentMemberId);
+                                    const isSelf = isSelfActivityActor(entry, memberId);
                                     const actorInitial = isSelf
                                         ? '당'
                                         : entry.actor.name.charAt(0).toUpperCase();
@@ -277,7 +270,10 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
                                     return (
                                     <li key={entry.id} className="activity-row">
                                         <span className="activity-avatar-wrap">
-                                            <span className="activity-avatar">
+                                            <span
+                                                className="activity-avatar"
+                                                style={{ backgroundColor: actorAvatarColor(entry.actor.id) }}
+                                            >
                                                 {actorInitial}
                                             </span>
                                             <span
@@ -287,11 +283,9 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
                                                 {activityBadge(entry.activityType)}
                                             </span>
                                         </span>
-                                        <div className="activity-content">
-                                            <p className="activity-text">
-                                                {renderActivityText(entry, currentMemberId)}
-                                            </p>
-                                        </div>
+                                        <p className="activity-text">
+                                            {formatActivityLogMessage(entry, memberId)}
+                                        </p>
                                         <time className="activity-time" dateTime={entry.createdAt}>
                                             {formatActivityRelativeTime(entry.createdAt)}
                                         </time>
