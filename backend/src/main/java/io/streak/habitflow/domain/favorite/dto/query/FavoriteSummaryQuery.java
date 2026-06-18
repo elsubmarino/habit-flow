@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class FavoriteSummaryQuery {
-    private String targetName;
-    private Long targetId;
-    private TargetType targetType;
     private Long id;
+    private Long targetId;
+    private String targetName;
+    private TargetType targetType;
     private long targetCount;
 }

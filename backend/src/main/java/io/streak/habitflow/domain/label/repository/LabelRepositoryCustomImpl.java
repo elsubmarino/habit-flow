@@ -26,7 +26,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
     @Override
     public List<LabelSummaryQuery> searchKeyword(String name, Long memberId, Pageable pageable) {
         return queryFactory
-                .select(Projections.fields(
+                .select(Projections.constructor(
                         LabelSummaryQuery.class,
                         label.id,
                         label.name,

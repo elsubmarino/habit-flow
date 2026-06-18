@@ -26,10 +26,14 @@ public class FavoriteRepositoryCustomImpl implements FavoriteRepositoryCustom {
         QTask subTask = new QTask("subTask");
 
         return queryFactory
-                .select(Projections.fields(FavoriteSummaryQuery.class,
+                .select(Projections.constructor(FavoriteSummaryQuery.class,
                         favorite.id,
-                        favorite.targetType,
                         favorite.targetId,
+                        new CaseBuilder()
+                                .when(favorite.targetType.eq(TargetType.PROJECT)).then(project.name)
+                                .when(favorite.targetType.eq(TargetType.LABEL)).then(label.name)
+                                .otherwise("알 수 없는 즐겨찾기").as("targetName"),
+                        favorite.targetType,
                         new CaseBuilder()
                                 .when(favorite.targetType.eq(TargetType.PROJECT)).then(
                                         JPAExpressions.select(task.count())
@@ -46,11 +50,7 @@ public class FavoriteRepositoryCustomImpl implements FavoriteRepositoryCustom {
                                                         subTask.completed.eq(false)
                                                 )
                                 )
-                                .otherwise(0L).as("targetCount"),
-                        new CaseBuilder()
-                                .when(favorite.targetType.eq(TargetType.PROJECT)).then(project.name)
-                                .when(favorite.targetType.eq(TargetType.LABEL)).then(label.name)
-                                .otherwise("알 수 없는 즐겨찾기").as("targetName")
+                                .otherwise(0L).as("targetCount")
                         ))
                 .from(favorite)
                 .leftJoin(favorite.member,member)
