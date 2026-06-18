@@ -31,10 +31,11 @@ public final class TaskResponse{
             @Schema(description = "완료/미완료 여부")
             boolean completed,
 
-            @Schema(description = "테스크 우선 순위 (P1~P4)")
+            @Schema(description = "테스크 우선 순위 (P1~P4)",examples={"P1","P2","P3","P4"})
             TaskPriorityType taskPriorityType,
 
-            @Schema(description = "마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss")
+            @Schema(description = "마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss)" ,pattern = "yyyy-MM-dd'T'HH:mm:ss"
+            ,example="2026-06-19T23:59:59")
             LocalDateTime dueDate,
 
             @Schema(description = "정렬 순서")
@@ -70,7 +71,7 @@ public final class TaskResponse{
             @Schema(description = "테스크가 속한 라벨들")
             List<CommentResponse.Detail> comments,
 
-            @Schema(description = "만료일")
+            @Schema(description = "만료일",example = "2026-06-19")
             LocalTime dueTime
     ) {
         @Builder
@@ -129,15 +130,15 @@ public final class TaskResponse{
 
     @Builder
     public record Summary(
-            @Schema(name = "테스크 ID")
+            @Schema(description = "테스크 ID")
             Long id,
-            @Schema(name = "테스크명")
+            @Schema(description = "테스크명")
             String name,
-            @Schema(name = "테스크 설명")
+            @Schema(description = "테스크 설명")
             String description,
-            @Schema(description = "테스크 우선 순위 (P1~P4)")
+            @Schema(description = "테스크 우선 순위 (P1~P4)",examples = {"P1","P2","P3","P4"})
             TaskPriorityType taskPriorityType,
-            @Schema(description = "마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss")
+            @Schema(description = "마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss)",example = "2026-06-19T23:59:59")
             LocalDateTime dueDate,
             @Schema(description = "정렬 순서")
             long sortOrder,
@@ -151,7 +152,7 @@ public final class TaskResponse{
             long countComments,
             @Schema(description = "테스크에 속한 라벨 리스트")
             List<LabelResponse.Summary> labels,
-            @Schema(description = "테스크 시간")
+            @Schema(description = "테스크 시간",example = "23:59:59")
             LocalTime dueTime
     ){
         public Summary {

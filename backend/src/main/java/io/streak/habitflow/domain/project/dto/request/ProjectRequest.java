@@ -19,7 +19,7 @@ public final class ProjectRequest {
             String name,
 
             @NotBlank(message = "색상을 입력하세요")
-            @Schema(description = "적용할 색상(hexacode로 입력)", requiredMode = Schema.RequiredMode.REQUIRED)
+            @Schema(description = "적용할 색상(hexacode로 입력)", requiredMode = Schema.RequiredMode.REQUIRED, example = "#123456")
             String color,
 
             @Schema(description = "상위 프로젝트 지정")

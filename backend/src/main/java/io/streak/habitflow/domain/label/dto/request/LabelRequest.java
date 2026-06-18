@@ -14,8 +14,8 @@ public final class LabelRequest {
             String name,
 
             @NotBlank(message = "색상을 선택하세요.")
-            @Schema(description = "라벨 색상", requiredMode = Schema.RequiredMode.REQUIRED)
             @HexColor(message = "잘못된 색상입니다.")
+            @Schema(description = "라벨 색상 (헥사코드)", requiredMode = Schema.RequiredMode.REQUIRED, examples ={"#123456"})
             String color,
             boolean favorite
     ){}

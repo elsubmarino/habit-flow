@@ -120,10 +120,4 @@ public class LabelService {
         }
         labelRepository.deleteById(labelId);
     }
-
-    public List<LabelResponse.Summary> searchLabels(String keyword){
-        return labelRepository.findByNameContaining(keyword)
-                .stream().map(LabelResponse.Summary::from)
-                .toList();
-    }
 }

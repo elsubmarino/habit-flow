@@ -16,8 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/labels")
@@ -69,12 +67,5 @@ public class LabelController {
                                             @LoginMemberId Long loginMemberId) {
         labelService.deleteLabel(labelId, loginMemberId);
         return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/search")
-    @Operation(summary = "라벨 검색")
-    @ApiResponses({@ApiResponse(responseCode = "200", description = "라벨 검색 성공")})
-    public ResponseEntity<List<LabelResponse.Summary>> searchLabels(@RequestParam("keyword") String keyword) {
-        return ResponseEntity.ok(labelService.searchLabels(keyword));
     }
 }

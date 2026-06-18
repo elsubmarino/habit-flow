@@ -22,7 +22,7 @@ public final class ActivityLogResponse {
                         MOVED,
                         INVITED,
                         UNCOMPLETED,
-                        JOINED)""")
+                        JOINED)""",examples = {"ADDED","COMPLETED","UPDATED","DELETED","MOVED","INVITED","UNCOMPLETED","JOINED"})
             ActivityType activityType,
 
             @Schema(description = "액트비티 로그를 발동한 자의 정보 (ID,이름으로 구성)")
@@ -57,7 +57,7 @@ public final class ActivityLogResponse {
        @Schema(description = """
                대상의 유형
                PROJECT,TASK,COMMENT
-               """)
+               """,examples = {"PROJECT","TASK","COMMENT"})
        TargetType type,
        @Schema(description = "대상자의 member id")
        Long id,

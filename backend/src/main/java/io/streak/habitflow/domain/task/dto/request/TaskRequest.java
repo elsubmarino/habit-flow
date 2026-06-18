@@ -26,11 +26,11 @@ public final class TaskRequest {
             String description,
 
             @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd'T'HH:mm:ss")
-            @Schema(description = "마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss")
+            @Schema(description = "마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss)", pattern = "yyyy-MM-dd'T'HH:mm:ss",example = "2026-06-26T23:59:59")
             LocalDateTime dueDate,
 
             @NotNull
-            @Schema(description = "테스크 우선 순위 (P1~P4)")
+            @Schema(description = "테스크 우선 순위 (P1~P4)",examples = {"P1","P2","P3","P4"})
             TaskPriorityType taskPriorityType,
 
             @Schema(description = "소속 프로젝트 ID (소속 없을 시에 null 넘기면 인박스로 진입)")
@@ -46,16 +46,16 @@ public final class TaskRequest {
             @Schema(description = "반복 일졍 여부")
             boolean recurring,
 
-            @Schema(description = "반복 규칙 (DAILY, WEEKLY, MONTHLY 등)")
+            @Schema(description = "반복 규칙 (DAILY, WEEKLY, MONTHLY 등)",examples = {"DAILY","WEEKLY","MONTHLY"})
             String recurrenceRule,
 
             @Schema(description = "반복 간격")
             Integer recurrenceInterval,
 
-            @Schema(description = "반복 요일 (MON,TUE,WED) 등 문자열 파싱용)")
+            @Schema(description = "반복 요일 (MON,TUE,WED) 등 문자열 파싱용)",examples = {"MON","TUE","WED"})
             String recurrenceDays,
 
-            @Schema(description = "반복 요일 일자 (매월 몇 일)")
+            @Schema(description = "반복 요일 일자 (매월 몇 일)",example = "13")
             Integer recurrenceDayOfMonth,
 
             @Schema(description = "시간 존재 여부")
@@ -87,19 +87,20 @@ public final class TaskRequest {
 
     public record UpdateDueDate(
             @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd'T'HH:mm:ss")
-            @Schema(description = "마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss")
+            @Schema(description = "마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss)",pattern="yyyy-MM-dd'T'HH:mm:ss",examples = "2026-06-19T23:59:59")
             LocalDateTime dueDate,
 
             @Schema(description = "반복 일졍 여부")
             boolean recurring,
 
-            @Schema(description = "반복 규칙 (DAILY, WEEKLY, MONTHLY 등), 반복일정을 설정할 경우 필수",requiredMode = Schema.RequiredMode.AUTO)
+            @Schema(description = "반복 규칙 (DAILY, WEEKLY, MONTHLY 등), 반복일정을 설정할 경우 필수",requiredMode = Schema.RequiredMode.AUTO,
+            examples = {"DAILY","WEEKLY","MONTHLY"})
             String recurrenceRule,
 
             @Schema(description = "반복 간격")
             Integer recurrenceInterval,
 
-            @Schema(description = "반복 요일 (MON,TUE,WED) 등 문자열 파싱용)")
+            @Schema(description = "반복 요일 (MON,TUE,WED) 등 문자열 파싱용)",examples = {"MON","TUE","WED"})
             String recurrenceDays,
 
             @Schema(description = "반복 요일 일자 (매월 몇 일)")
@@ -127,7 +128,8 @@ public final class TaskRequest {
 
     public record UpdatePriority(
             @NotNull
-            @Schema(description = "테스크 우선 순위 (P1~P4)",requiredMode =  Schema.RequiredMode.REQUIRED)
+            @Schema(description = "테스크 우선 순위 (P1~P4)",requiredMode =  Schema.RequiredMode.REQUIRED
+            ,examples = {"P1","P2","P3","P4"})
             TaskPriorityType taskPriorityType
     ){}
 
@@ -149,7 +151,8 @@ public final class TaskRequest {
 
     public record Cursor(
             @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd'T'HH:mm:ss")
-            @Schema(description = "이전 마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss")
+            @Schema(description = "이전 마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss)",pattern="yyyy-MM-dd'T'HH:mm:ss",
+            example = "2026-06-19T23:59:59")
             LocalDateTime lastDueDate,
 
             @Schema(description = "이전 테스크 우선 순위 (P1~P4)")
@@ -161,7 +164,7 @@ public final class TaskRequest {
             @Schema(description = "이전 테스크 ID")
             Long lastTaskId,
 
-            @Schema(description = "이전 방향 여부(NEXT/PREV)")
+            @Schema(description = "이전 방향 여부(NEXT/PREV)",examples = {"NEXT","PREV"})
             CursorDirection direction
     ){
         public Cursor{

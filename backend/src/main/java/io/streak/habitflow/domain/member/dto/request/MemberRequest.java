@@ -6,13 +6,13 @@ import jakarta.validation.constraints.*;
 public final class MemberRequest {
     public record Login(
             @NotBlank(message = "이메일을 입력하세요.")
-            @Schema(description = "로그인할 이메일 주소", requiredMode = Schema.RequiredMode.REQUIRED)
             @Email
             @Pattern(
                     regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$",
                     message = "올바른 이메일 형식이 아닙니다."
             )
             @Size(max = 100, message = "이메일은 100자를 초과할 수 없습니다.")
+            @Schema(description = "로그인할 이메일 주소", requiredMode = Schema.RequiredMode.REQUIRED,example = "asdf@asdf.com")
             String email,
 
             @Size(max = 100, message = "패스워드는 100자를 초과할 수 없습니다.")
@@ -36,8 +36,8 @@ public final class MemberRequest {
             String name,
 
             @NotBlank(message="이메일은 필수입니다.")
-            @Schema(description = "회원가입 시 필요한 이메일", requiredMode = Schema.RequiredMode.REQUIRED)
             @Size(max = 100, message = "이메일은 100자를 초과할 수 없습니다.")
+            @Schema(description = "회원가입 시 필요한 이메일", requiredMode = Schema.RequiredMode.REQUIRED,examples = {"asdf@asdf.com"})
             String email
     ){}
 

@@ -28,6 +28,7 @@ const ADD_BUTTON_HEIGHT = 36;
 const SELECTED_EMPTY_EXTRA = 22;
 const DAY_LOAD_MORE_HEIGHT = 40;
 const COMPACT_EMPTY_DAY_HEIGHT = DAY_HEADER_HEIGHT + 4 + ADD_BUTTON_HEIGHT;
+const UPCOMING_CHROME_HEIGHT_ESTIMATE = 120;
 
 interface UpcomingTaskListProps {
     habits: Habit[];
@@ -113,6 +114,7 @@ const UpcomingDaySection = memo(function UpcomingDaySection({
             {isSelected && isEmpty && dayBundle?.loaded && (
                 <p className="upcoming-date-empty">이 날짜에 예정된 작업이 없습니다.</p>
             )}
+            {!isSelected && isEmpty && <div className="upcoming-date-status-spacer" aria-hidden="true" />}
             {onAddTask && <InlineAddTaskButton onClick={onAddTask} />}
             {showDayLoadMore && dayBundle && onLoadMoreDay && (
                 <button
@@ -202,7 +204,6 @@ const UpcomingVirtualRow = memo(function UpcomingVirtualRow({
         dayBundle?.loaded,
         dayBundle?.hasNext,
         dayBundle?.status,
-        isSelected,
         mayHaveTasks,
         measureRow,
     ]);
@@ -269,9 +270,6 @@ function estimateTaskRowHeight(habit: Habit): number {
 
 function estimateDayHeight(
     dayHabits: Habit[],
-    bundle: UpcomingDayBundle | undefined,
-    isSelected: boolean,
-    mayHaveTasks: boolean,
     hasMore: boolean,
     measuredHeight?: number,
 ): number {
@@ -280,12 +278,7 @@ function estimateDayHeight(
     }
 
     if (dayHabits.length === 0) {
-        let height = COMPACT_EMPTY_DAY_HEIGHT;
-        if (isSelected && bundle?.loaded) {
-            height += SELECTED_EMPTY_EXTRA + 8;
-        } else if (isSelected && !bundle?.loaded && mayHaveTasks) {
-            height += SELECTED_EMPTY_EXTRA;
-        }
+        let height = COMPACT_EMPTY_DAY_HEIGHT + SELECTED_EMPTY_EXTRA + 8;
         if (hasMore) {
             height += DAY_LOAD_MORE_HEIGHT;
         }
@@ -338,13 +331,16 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
     const stickyChromeRef = useRef<HTMLDivElement>(null);
     const timelineAnchorRef = useRef<HTMLDivElement>(null);
     const pendingScrollIndexRef = useRef<number | null>(null);
+    const suppressScrollSyncRef = useRef(false);
+    const scrollSyncFrameRef = useRef<number | null>(null);
     const measuredHeightsRef = useRef<Map<string, number>>(new Map());
+    const prevScrollMarginRef = useRef<number | null>(null);
     const [timelineLayout, setTimelineLayout] = useState({
-        ready: false,
+        ready: true,
         scrollMargin: 0,
-        scrollPaddingStart: 0,
+        scrollPaddingStart: UPCOMING_CHROME_HEIGHT_ESTIMATE,
     });
-    const { ready: timelineLayoutReady, scrollMargin, scrollPaddingStart } = timelineLayout;
+    const { scrollMargin, scrollPaddingStart } = timelineLayout;
 
     const todayIso = toISODate(new Date());
     const timelineDateKeys = useMemo(() => getUpcomingTimelineDateKeys(), []);
@@ -376,10 +372,6 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
 
     const getDayBundle = useCallback((dateKey: string) => upcomingDays[dateKey], [upcomingDays]);
 
-    const dayMayHaveTasksForKey = useCallback((dateKey: string) => (
-        dayMayHaveTasks(dateKey, upcomingDayCounts, upcomingSummaryStatus)
-    ), [upcomingDayCounts, upcomingSummaryStatus]);
-
     const groupedSizeSignature = useMemo(() => {
         const parts: string[] = [];
         for (const [dateKey, dayHabits] of grouped) {
@@ -399,15 +391,13 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
 
     const virtualizer = useVirtualizer({
         count: timelineDateKeys.length,
-        enabled: timelineLayoutReady,
         getScrollElement: () => scrollContainerRef?.current ?? null,
         getItemKey: index => {
             const dateKey = timelineDateKeys[index];
             const count = grouped.get(dateKey)?.length ?? 0;
             const hasMore = upcomingDays[dateKey]?.hasNext ? 1 : 0;
             const loaded = upcomingDays[dateKey]?.loaded ? 1 : 0;
-            const selected = dateKey === selectedDate ? 1 : 0;
-            return `${dateKey}#${count}#${hasMore}#${loaded}#${selected}`;
+            return `${dateKey}#${count}#${hasMore}#${loaded}`;
         },
         estimateSize: index => {
             const dateKey = timelineDateKeys[index];
@@ -415,9 +405,6 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
             const bundle = getDayBundle(dateKey);
             return estimateDayHeight(
                 dayHabits,
-                bundle,
-                dateKey === selectedDate,
-                dayMayHaveTasksForKey(dateKey),
                 Boolean(bundle?.hasNext),
                 measuredHeightsRef.current.get(dateKey),
             );
@@ -444,10 +431,23 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
         const anchor = timelineAnchorRef.current;
         const chrome = stickyChromeRef.current;
         if (!scrollEl || !anchor) return;
-        setTimelineLayout({
-            ready: true,
-            scrollMargin: getOffsetWithinScrollContainer(anchor, scrollEl),
-            scrollPaddingStart: chrome?.offsetHeight ?? 0,
+        const nextMargin = getOffsetWithinScrollContainer(anchor, scrollEl);
+        const chromeHeight = chrome?.offsetHeight ?? UPCOMING_CHROME_HEIGHT_ESTIMATE;
+
+        if (prevScrollMarginRef.current != null && nextMargin !== prevScrollMarginRef.current) {
+            scrollEl.scrollTop += nextMargin - prevScrollMarginRef.current;
+        }
+        prevScrollMarginRef.current = nextMargin;
+
+        setTimelineLayout(prev => {
+            if (prev.scrollMargin === nextMargin && prev.scrollPaddingStart === chromeHeight) {
+                return prev;
+            }
+            return {
+                ready: true,
+                scrollMargin: nextMargin,
+                scrollPaddingStart: chromeHeight,
+            };
         });
     }, [scrollContainerRef]);
 
@@ -464,7 +464,6 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
     }, [scrollContainerRef, updateScrollOffsets, overdueHabits.length, jumpStatus]);
 
     useEffect(() => {
-        if (!timelineLayoutReady) return;
         const frame = requestAnimationFrame(() => {
             for (const virtualRow of virtualizer.getVirtualItems()) {
                 const el = document.querySelector(
@@ -477,8 +476,6 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
     }, [
         groupedSizeSignature,
         dayBundleSignature,
-        selectedDate,
-        timelineLayoutReady,
         virtualizer,
         measureRow,
     ]);
@@ -488,10 +485,74 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
         if (index < 0) return;
         pendingScrollIndexRef.current = index;
         virtualizer.scrollToIndex(index, { align: 'start', behavior: 'auto' });
+        window.setTimeout(() => {
+            if (pendingScrollIndexRef.current === index) {
+                pendingScrollIndexRef.current = null;
+            }
+            suppressScrollSyncRef.current = false;
+        }, 200);
     }, [timelineDateKeys, virtualizer]);
+
+    const syncCalendarToScroll = useCallback(() => {
+        if (suppressScrollSyncRef.current || pendingScrollIndexRef.current != null) return;
+
+        const scrollEl = scrollContainerRef?.current;
+        const chrome = stickyChromeRef.current;
+        const timelineEl = timelineAnchorRef.current;
+        if (!scrollEl || !chrome || !timelineEl) return;
+
+        const timelineTop = getOffsetWithinScrollContainer(timelineEl, scrollEl);
+        if (scrollEl.scrollTop + chrome.offsetHeight < timelineTop - 4) return;
+
+        const anchorY = chrome.getBoundingClientRect().bottom + 1;
+        const sections = scrollEl.querySelectorAll<HTMLElement>('.upcoming-date-section[data-date-key]');
+        if (sections.length === 0) return;
+
+        let activeDateKey: string | null = null;
+        for (const section of sections) {
+            if (section.getBoundingClientRect().top <= anchorY) {
+                activeDateKey = section.dataset.dateKey ?? null;
+            } else {
+                break;
+            }
+        }
+
+        if (activeDateKey && activeDateKey !== selectedDate) {
+            onSelectDate(activeDateKey);
+        }
+    }, [
+        scrollContainerRef,
+        selectedDate,
+        onSelectDate,
+    ]);
+
+    useEffect(() => {
+        const scrollEl = scrollContainerRef?.current;
+        if (!scrollEl) return;
+
+        const onScroll = () => {
+            if (suppressScrollSyncRef.current || pendingScrollIndexRef.current != null) return;
+            if (scrollSyncFrameRef.current != null) {
+                cancelAnimationFrame(scrollSyncFrameRef.current);
+            }
+            scrollSyncFrameRef.current = requestAnimationFrame(() => {
+                scrollSyncFrameRef.current = null;
+                syncCalendarToScroll();
+            });
+        };
+
+        scrollEl.addEventListener('scroll', onScroll, { passive: true });
+        return () => {
+            scrollEl.removeEventListener('scroll', onScroll);
+            if (scrollSyncFrameRef.current != null) {
+                cancelAnimationFrame(scrollSyncFrameRef.current);
+            }
+        };
+    }, [scrollContainerRef, syncCalendarToScroll]);
 
     const selectDate = useCallback((iso: string) => {
         if (!isWithinUpcomingCalendarRange(iso)) return;
+        suppressScrollSyncRef.current = true;
         onSelectDate(iso);
         onJumpToDate(iso);
         requestAnimationFrame(() => scrollToDate(iso));
@@ -507,7 +568,6 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
         if (jumpStatus === 'loading') return;
         if (pendingScrollIndexRef.current == null) return;
         const index = pendingScrollIndexRef.current;
-        pendingScrollIndexRef.current = null;
         virtualizer.scrollToIndex(index, { align: 'start', behavior: 'auto' });
     }, [jumpStatus, virtualizer, habits]);
 
@@ -678,10 +738,6 @@ const UpcomingTaskList: React.FC<UpcomingTaskListProps> = ({
                     onTaskCompleted={onTaskCompleted}
                     onTaskDeleted={onTaskDeleted}
                 />
-            )}
-
-            {jumpStatus === 'loading' && (
-                <p className="upcoming-jump-loading" aria-live="polite">일정을 불러오는 중…</p>
             )}
 
             <div className="upcoming-timeline" ref={timelineAnchorRef}>
