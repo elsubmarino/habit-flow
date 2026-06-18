@@ -12,7 +12,8 @@ public final class CommentResponse{
     @Builder
     public record Detail(
             String content,
-            List<AttachmentResponse.Detail> attachments
+            List<AttachmentResponse.Detail> attachments,
+            Long id
     ) {
         public Detail{
             attachments = Objects.requireNonNullElse(attachments, new ArrayList<>());
@@ -21,6 +22,7 @@ public final class CommentResponse{
         public static Detail from(Comment comment) {
             return Detail.builder()
                     .content(comment.getContent())
+                    .id(comment.getId())
                     .attachments(comment.getAttachments().stream()
                             .map(AttachmentResponse.Detail::from)
                             .toList())

@@ -8,11 +8,15 @@ import io.streak.habitflow.domain.comment.repository.CommentRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.task.entity.Task;
+import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
+import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.domain.task.type.TargetType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,6 +31,7 @@ public class CommentService {
     private final MemberRepository memberRepository;
     private final TaskRepository taskRepository;
     private final FileStorageService fileStorageService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public CommentResponse.Detail createComment(CommentRequest.Create request, MultipartFile file, Long memberId) {
@@ -52,6 +57,15 @@ public class CommentService {
         }
 
         Comment result = commentRepository.save(comment);
+
+        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                task.getId(),
+                memberId,
+                TargetType.COMMENT,
+                ActivityType.ADDED,
+                "당신이 "+task.getName()+"에 댓글을 추가했습니다"
+        ));
+
         return CommentResponse.Detail.from(result);
     }
 
@@ -76,7 +90,16 @@ public class CommentService {
     @CheckOwnership(type="COMMENT")
     @SuppressWarnings("unused")
     public void deleteComment(Long commentId, Long memberId){
+        Comment comment  =commentRepository.getReferenceById(commentId);
         commentRepository.deleteById(commentId);
+        Task task = comment.getTask();
+        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                task.getId(),
+                memberId,
+                TargetType.COMMENT,
+                ActivityType.ADDED,
+                "당신이 "+task.getName()+"에서 댓글을 삭제했습니다"
+        ));
     }
 
 }
