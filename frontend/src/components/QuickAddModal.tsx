@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addHabit, fetchHabits, fetchNavTaskCounts, fetchProjects, type ApiView } from '../store/habitSlice';
+import { getApiErrorMessage } from '../api/apiError';
+import { useToast } from '../context/ToastContext';
 import { formatFileSize, validateFile } from '../utils/file';
 import type { NavItem } from './Sidebar';
 import { defaultDueDateForView, formatDueLabel, formatTaskDetailDue } from '../utils/date';
@@ -36,6 +38,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
     labelId,
 }) => {
     const dispatch = useAppDispatch();
+    const { showErrorToast } = useToast();
     const { projects, labels } = useAppSelector(state => state.habits);
 
     const nameRef = useRef<HTMLInputElement>(null);
@@ -136,6 +139,11 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
             dispatch(fetchProjects());
             reset();
             onClose();
+        } catch (err) {
+            const message = typeof err === 'string'
+                ? err
+                : getApiErrorMessage(err, '작업을 추가하지 못했습니다.');
+            showErrorToast(message);
         } finally {
             setSubmitting(false);
         }
