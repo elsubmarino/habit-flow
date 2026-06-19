@@ -32,6 +32,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +52,7 @@ public class TaskService {
     private final LabelRepository labelRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Transactional
     @CheckOwnership(type="TASK")
@@ -87,16 +89,20 @@ public class TaskService {
                     .orElseThrow(()->new EntityNotFoundException("존재하지 않는 프로젝트입니다."));
             boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
             if(!isMember){
-                throw new IllegalStateException("해당 프로젝트에 대한 접근 권한이 없습니다.");
+                throw new AccessDeniedException("해당 프로젝트에 대한 접근 권한이 없습니다.");
             }
         }else if(parentTask != null){
+            project = parentTask.getProject();
+        }else {
             //관리함인 경우 유저별 500개까지
             long projectCount = taskRepository.countByProjectAndMember(project,member);
             if (projectCount > 500) {
                 throw new IllegalArgumentException("해당 프로젝트에 테스크를 500개까지 보유할 수 있습니다.");
             }
-            project = parentTask.getProject();
         }
+
+        String redisKey="TASK_MAX_SORT:"+request.projectId();
+        Long nextSortOrder = redisTemplate.opsForValue().increment(redisKey, 1024L);
 
         Task task = Task.builder()
                 .name(request.name())
@@ -115,6 +121,7 @@ public class TaskService {
                 .dueDate(request.dueDate())
                 .timeSpecified(request.timeSpecified())
                 .comments(new ArrayList<>())
+                .sortOrder(nextSortOrder)
                 .build();
 
 
@@ -183,7 +190,7 @@ public class TaskService {
                     .orElseThrow(()-> new EntityNotFoundException("존재하지 않는 테스크입니다."));
 
             if(parentTask.getSubTasks().size() >= 4){
-                throw new IllegalStateException("하위 테스크는 최대 4개 까지만 생성할 수 있습니다.");
+                throw new AccessDeniedException("하위 테스크는 최대 4개 까지만 생성할 수 있습니다.");
             }
         }
         return parentTask;

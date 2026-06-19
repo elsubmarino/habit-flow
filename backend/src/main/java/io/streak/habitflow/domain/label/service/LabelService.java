@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,7 +72,7 @@ public class LabelService {
         Member member = memberRepository.getReferenceById(memberId);
 
         if(!label.getMember().getId().equals(memberId)) {
-            throw new IllegalStateException("수정 권한이 없습니다.");
+            throw new AccessDeniedException("수정 권한이 없습니다.");
         }
 
         if(request.favorite()) {
@@ -116,7 +117,7 @@ public class LabelService {
         Label label = labelRepository.getOrThrow(labelId);
 
         if(!label.getMember().getId().equals(memberId)) {
-            throw new IllegalStateException("삭제 권한이 없습니다.");
+            throw new AccessDeniedException("삭제 권한이 없습니다.");
         }
         labelRepository.deleteById(labelId);
     }
