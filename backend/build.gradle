@@ -30,6 +30,7 @@ dependencies {
     implementation 'org.springframework.retry:spring-retry'
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'org.redisson:redisson-spring-boot-starter:3.31.0'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 
     // JWT 처리 라이브러리 (jjwt)
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'

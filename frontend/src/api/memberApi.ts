@@ -52,3 +52,19 @@ export async function signUpMember(payload: MemberSignUpPayload): Promise<Member
     );
     return data;
 }
+
+export async function sendAuthCode(email: string): Promise<void> {
+    await apiClient.post(
+        '/api/auth/email/send-code',
+        { email },
+        { headers: { 'Content-Type': 'application/json' } },
+    );
+}
+
+export async function verifyAuthCode(email: string, code: string): Promise<void> {
+    await apiClient.post(
+        '/api/auth/email/verify-code',
+        { email, code },
+        { headers: { 'Content-Type': 'application/json' } },
+    );
+}

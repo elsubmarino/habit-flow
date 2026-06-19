@@ -25,9 +25,18 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, String> redisTemplate;
+    private final MailService mailService;
 
     @Transactional
     public MemberResponse.Detail createMember(MemberRequest.SignUp request){
+        if(!mailService.isVerifiedEmail(request.email())){
+            throw new IllegalStateException("이메일 본인 인증이 완료되지 않았습니다.");
+        }
+
+        if(memberRepository.findByEmail(request.email()).isPresent()){
+            throw new IllegalArgumentException("이미 가입된 이메일입니다.");
+        }
+
         Member member = Member.builder()
                 .email(request.email())
                 .name(request.name())
@@ -35,6 +44,9 @@ public class MemberService {
                 .role(Role.USER)
                 .build();
         Member result = memberRepository.save(member);
+
+        mailService.removeVerifiedStatus(request.email());
+
         return MemberResponse.Detail.from(result);
     }
 

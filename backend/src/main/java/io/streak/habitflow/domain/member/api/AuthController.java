@@ -2,6 +2,7 @@ package io.streak.habitflow.domain.member.api;
 
 import io.streak.habitflow.domain.member.dto.request.MemberRequest;
 import io.streak.habitflow.domain.member.dto.response.MemberResponse;
+import io.streak.habitflow.domain.member.service.MailService;
 import io.streak.habitflow.domain.member.service.MemberService;
 import io.streak.habitflow.global.security.dto.TokenDto;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +27,23 @@ import java.util.Map;
 public class AuthController {
     private final MemberService memberService;
     private final TokenCookieManager tokenCookieManager;
+    private final MailService mailService;
+
+    @PostMapping("/email/send-code")
+    @Operation(summary = "이메일 인증번호 발송")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "이메일 인증번호 발송 성공")})
+    public ResponseEntity<Void> sendAuthCode(@RequestBody @Valid MemberRequest.SendAuthCode request){
+        mailService.sendAuthCode(request.email());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/email/verify-code")
+    @Operation(summary = "이메일 인증번호 확인")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "이메일 인증번호 확인 성공")})
+    public ResponseEntity<Void> verifyAuthCode(@RequestBody @Valid MemberRequest.VerifyAuthCode request){
+        mailService.verifyAuthCode(request.email(), request.code());
+        return ResponseEntity.ok().build();
+    }
 
     @PostMapping("/signup")
     @Operation(summary = "회원 가입")
