@@ -6,6 +6,7 @@ import io.streak.habitflow.domain.favorite.repository.FavoriteRepository;
 import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
+import io.streak.habitflow.domain.member.service.MailService;
 import io.streak.habitflow.domain.project.dto.query.ProjectSummaryQuery;
 import io.streak.habitflow.domain.project.dto.request.ProjectRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
@@ -21,13 +22,13 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +39,11 @@ public class ProjectService {
     private final ProjectMemberRepository projectMemberRepository;
     private final MemberRepository memberRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final MailService mailService;
+
+    private static final String INVITE_TOKEN_PREFIX = "PROJECT_INVITE:";
+    private static final long INVITE_EXPIRATION_HOURS = 24L;
 
     @Transactional
     public ProjectResponse.Detail createProject(ProjectRequest.Create request,
@@ -203,27 +209,31 @@ public class ProjectService {
     @CheckOwnership(type="PROJECT")
     public void invite(ProjectRequest.Invite inviteRequest, Long memberId){
         Project project = projectRepository.getOrThrow(inviteRequest.id());
-
-        Member inviter = memberRepository.findById(memberId)
-                .orElseThrow(()->new EntityNotFoundException("초대자 정보가 올바르지 않습니다."));
+        Member inviter = memberRepository.getOrThrow(memberId);
 
         List<String> inviteEmails  = inviteRequest.emails();
         if(inviteEmails == null || inviteEmails.isEmpty()) return;
 
-        List<Member> inviteMembers = memberRepository.findByEmailIn(inviteEmails);
+        for(String email: inviteEmails){
+            memberRepository.findByEmail(email).ifPresent(targetMember->{
+                if(projectMemberRepository.existsByProjectAndMember(project,targetMember)){
+                    throw new IllegalArgumentException(email+" 님은 이미 프로젝트 멤버입니다.");
+                }
+            });
 
-        if(inviteMembers.size() != inviteEmails.size()){
-            throw new EntityNotFoundException("존재하지 않는 이메일이 포함되어 있습니다.");
+            String InvitationToken = UUID.randomUUID().toString();
+            String redisValue = project.getId()+":"+email;
+            redisTemplate.opsForValue().set(
+                    INVITE_TOKEN_PREFIX + InvitationToken,
+                    redisValue,
+                    INVITE_EXPIRATION_HOURS,
+                    TimeUnit.HOURS
+            );
+
+            mailService.sendProjectInvitationMail(email, project.getName(), inviter.getName(), InvitationToken);
         }
 
-        List<ProjectMember> projectMembers = inviteMembers.stream()
-                .map(member->ProjectMember.builder()
-                        .project(project)
-                        .member(member)
-                        .build())
-                .toList();
-
-        projectMemberRepository.saveAll(projectMembers);
+        List<Member> inviteMembers = memberRepository.findByEmailIn(inviteEmails);
 
         List<ProjectInvitationEvent.MemberInfo> inviteeInfos = inviteMembers.stream()
                 .map((Member m) ->new ProjectInvitationEvent.MemberInfo(m.getId(),m.getName()))
@@ -236,6 +246,42 @@ public class ProjectService {
                 inviter.getName(),
                 inviteeInfos
         ));
+    }
+
+    @Transactional
+    public void acceptInvitation(String token, Long loginMemberId){
+        String redisKey = INVITE_TOKEN_PREFIX+token;
+        String redisValue = redisTemplate.opsForValue().get(redisKey);
+        if(redisValue == null){
+            throw new IllegalArgumentException("만료되었거나 유효하지 않은 초대 링크입니다.");
+        }
+
+        String[]parts = redisValue.split(":");
+        Long projectId = Long.parseLong(parts[0]);
+        String targetEmail = parts[1];
+
+        Member loginMember = memberRepository.getOrThrow(loginMemberId);
+        if(!loginMember.getEmail().equals(targetEmail)){
+            throw new AccessDeniedException("본인에게 온 초대장만 수락할 수 있습니다.");
+        }
+
+        Project project = projectRepository.getOrThrow(projectId);
+
+        if(!projectMemberRepository.existsByProjectAndMember(project, loginMember)){
+            ProjectMember projectMember = ProjectMember.builder()
+                    .project(project)
+                    .member(loginMember)
+                    .build();
+            projectMemberRepository.save(projectMember);
+        }
+
+        redisTemplate.delete(redisKey);
+
+//        applicationEventPublisher.publishEvent(new ProjectAcceptEvent(
+//                project.getId(),
+//                project.getName(),
+//                loginMember.getId(),loginMember.getName()
+//        ));
     }
 
     @CheckOwnership(type="PROJECT")

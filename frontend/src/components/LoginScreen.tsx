@@ -7,6 +7,10 @@ import {
     signUpMember,
     verifyAuthCode,
 } from '../api/memberApi';
+import {
+    isProjectInvitePath,
+    peekPendingInviteToken,
+} from '../utils/projectInvite';
 
 interface LoginScreenProps {
     onLoginSuccess: () => void;
@@ -195,6 +199,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
     };
 
     const formBusy = loading || sendingCode || verifyingCode;
+    const pendingProjectInvite =
+        isProjectInvitePath(window.location.pathname) || peekPendingInviteToken() != null;
 
     return (
         <div className="login-page">
@@ -205,8 +211,18 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 </div>
 
                 <h1 className="login-title">
-                    {mode === 'signup' ? '회원가입' : '다시 오신 걸 환영합니다!'}
+                    {pendingProjectInvite
+                        ? '프로젝트 초대'
+                        : mode === 'signup'
+                            ? '회원가입'
+                            : '다시 오신 걸 환영합니다!'}
                 </h1>
+
+                {pendingProjectInvite && (
+                    <p className="login-invite-notice">
+                        로그인 또는 가입을 완료하면 프로젝트 초대가 수락됩니다.
+                    </p>
+                )}
 
                 <button type="button" className="oauth-btn" onClick={startGoogleLogin}>
                     G 구글로 계속 진행

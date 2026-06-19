@@ -56,7 +56,13 @@ export async function inviteToProject(projectId: number, emails: string[]): Prom
         id: projectId,
         emails,
     };
-    await apiClient.post('/api/projects/invitation/', body, {
+    await apiClient.post(`/api/projects/${projectId}/invitation`, body, {
         headers: { 'Content-Type': 'application/json' },
+    });
+}
+
+export async function acceptProjectInvitation(token: string): Promise<void> {
+    await apiClient.post('/api/projects/invitation/accept', null, {
+        params: { token },
     });
 }

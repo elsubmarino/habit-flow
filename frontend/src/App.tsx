@@ -60,6 +60,7 @@ import { bootstrapAuthFromCallback, restoreAuthSession } from './api/authBootstr
 import { clearStoredTokens, onAuthLogout } from './api/client';
 import { fetchMember, logoutMember } from './api/memberApi';
 import OAuthRedirectHandler from './components/OAuthRedirectHandler';
+import ProjectInviteHandler from './components/ProjectInviteHandler';
 import { clearHabitError } from './store/habitSlice';
 import { useAppUrlSync } from './hooks/useAppUrlSync';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll';
@@ -276,6 +277,13 @@ function App() {
             .then(applyMemberProfile)
             .catch(() => undefined);
     };
+
+    const handleInviteAccepted = useCallback(() => {
+        setShowNotifications(false);
+        setShowProjectsBrowse(true);
+        dispatch(setSelectedProject(null));
+        dispatch(setSelectedLabel(null));
+    }, [dispatch]);
 
     useEffect(() => {
         if (!isAuthenticated) return;
@@ -767,6 +775,10 @@ function App() {
         return (
             <>
                 <OAuthRedirectHandler onSuccess={handleAuthSuccess} />
+                <ProjectInviteHandler
+                    isAuthenticated={false}
+                    onAccepted={handleInviteAccepted}
+                />
                 <LoginScreen onLoginSuccess={handleAuthSuccess} />
             </>
         );
@@ -775,6 +787,10 @@ function App() {
     return (
         <>
         <OAuthRedirectHandler onSuccess={handleAuthSuccess} />
+        <ProjectInviteHandler
+            isAuthenticated
+            onAccepted={handleInviteAccepted}
+        />
         <div className={`app-shell ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
             {habitError && (
                 <div className="api-error-banner" role="alert">

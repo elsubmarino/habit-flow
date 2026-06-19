@@ -184,6 +184,16 @@
   font: inherit;
 }
 
+.login-invite-notice {
+  margin: -8px 0 18px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f5f8ff;
+  color: #246fe0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .api-error-banner {
   position: fixed;
   top: 12px;
@@ -5060,6 +5070,13 @@
 
 .project-share-invite-wrap {
   padding: 0 16px 12px;
+}
+
+.project-share-invite-hint {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
 .project-share-invite-input {

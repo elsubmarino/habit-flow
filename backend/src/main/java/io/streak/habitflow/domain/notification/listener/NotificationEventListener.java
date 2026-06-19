@@ -6,6 +6,7 @@ import io.streak.habitflow.domain.notification.dto.response.NotificationResponse
 import io.streak.habitflow.domain.notification.entity.Notification;
 import io.streak.habitflow.domain.notification.repository.NotificationRepository;
 import io.streak.habitflow.domain.notification.type.NotificationType;
+import io.streak.habitflow.domain.project.event.ProjectAcceptEvent;
 import io.streak.habitflow.domain.project.event.ProjectInvitationEvent;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.infra.sse.SseEmitters;
@@ -44,17 +45,6 @@ public class NotificationEventListener {
                     .isConfirmed(false)
                     .build()
             );
-
-            notificationBatch.add(Notification.builder()
-                    .receiver(inviter)
-                    .actor(receiver)
-                    .targetId(projectInvitationEvent.ProjectId())
-                    .notificationType(NotificationType.PROJECT)
-                    .activityType(ActivityType.JOINED)
-                    .customMessage(memberInfo.name()+" 님이 ["+projectInvitationEvent.projectName()+"] 프로젝트에 합류했습니다")
-                    .isConfirmed(false)
-                    .build()
-            );
         }
 
         List<Notification> notifications = notificationRepository.saveAll(notificationBatch);
@@ -65,6 +55,32 @@ public class NotificationEventListener {
                 sseEmitters.sendToMember(notification.getReceiver().getId()
                         , NotificationResponse.Summary.from(notification));
             }
+        }
+
+    }
+
+    @Async("activityLogExecutor")
+    @Transactional
+    @EventListener
+    public void handleProjectAccept(ProjectAcceptEvent projectAcceptEvent){
+        Member inviter = memberRepository.getReferenceById(projectAcceptEvent.InviterId());
+        Member invitee = memberRepository.getReferenceById(projectAcceptEvent.InviteeId());
+
+        Notification notification = Notification.builder()
+                .receiver(inviter)
+                .actor(invitee)
+                .targetId(projectAcceptEvent.ProjectId())
+                .notificationType(NotificationType.PROJECT)
+                .activityType(ActivityType.JOINED)
+                .customMessage(projectAcceptEvent.InviteeName()+" 님이 ["+projectAcceptEvent.projectName()+"] 프로젝트에 합류했습니다")
+                .isConfirmed(false)
+                .build();
+
+        notificationRepository.save(notification);
+
+        if(notification.getActivityType() == ActivityType.JOINED){
+            sseEmitters.sendToMember(notification.getReceiver().getId()
+                    , NotificationResponse.Summary.from(notification));
         }
 
     }

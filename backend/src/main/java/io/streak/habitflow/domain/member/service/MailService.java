@@ -20,7 +20,23 @@ public class MailService {
     private static final String AUTH_CODE_PREFIX = "AUTH_CODE:";
     private static final String VERIFIED_PREFIX ="VERIFIED:";
     private static final long AUTH_CODE_EXPIRATION_MINUTES = 3L; //인증 코드 유효시간 3분
-    private static final long VERIFIED_EXPIRATION_MINUTES = 30L; //가입 유효 ㅅ기간 30분
+    private static final long VERIFIED_EXPIRATION_MINUTES = 30L;
+
+    private static final String INVITATION_CODE_PREFIX = "INVITATION_CODE:";
+    private static final long INVITATION_CODE_EXPIRATION_DAYS = 7L;
+
+
+    public void sendProjectInvitationMail(String email, String projectName, String inviterName, String invitationToken){
+        String acceptLink = "http://localhost:3000/projects/invite?token="+invitationToken;
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject("[HabitFlow] "+inviterName+"님이 "+projectName+"' 프로젝트에 초대했습니다.");
+        message.setText(inviterName+"님이 귀하를 '"+ projectName+"' 프로젝트에 초대했습니다.\n"+
+                "아래 링크를 클릭하여 초대를 수락해주세요. (링크는 24시간 동안 유효합니다.)\n\n"+
+                acceptLink);
+        javaMailSender.send(message);
+        log.info("프로젝트 초대 이메일 발송 완료: {}",email);
+    }
 
     public void sendAuthCode(String email){
         String authCode = generateRandomCode();

@@ -85,10 +85,20 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.searchProjects(keyword,loginMemberId,pageable));
     }
 
-    @PostMapping("/invitation")
+    @PostMapping("/{projectId}/invitation")
+    @Operation(summary = "프로젝트 초대 이메일 발송")
     public ResponseEntity<Void> invite(@LoginMemberId Long loginMemberId,
-                                       @RequestBody ProjectRequest.Invite request){
+                                       @RequestBody ProjectRequest.Invite request,
+                                       @PathVariable Long projectId){
         projectService.invite(request, loginMemberId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/invitation/accept")
+    @Operation(summary = "프로젝트 초대 링크 수락")
+    public ResponseEntity<Void> acceptInvitation(@LoginMemberId Long loginMemberId,
+                                       @RequestParam("token") String token){
+        projectService.acceptInvitation(token, loginMemberId);
         return ResponseEntity.noContent().build();
     }
 
