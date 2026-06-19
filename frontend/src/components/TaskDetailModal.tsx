@@ -11,6 +11,7 @@ import {
     patchTaskLabels,
     patchTaskPriority,
     patchTaskProject,
+    syncHabitCommentCount,
     toggleSubtask,
     updateHabit,
     type CommentItem,
@@ -339,8 +340,10 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
             throw new Error('댓글 ID가 없어 삭제할 수 없습니다.');
         }
         if (!window.confirm('이 댓글을 삭제할까요?')) return;
+        if (!habit) return;
         await commentApi.deleteComment(item.backendId);
         await refreshCurrent();
+        await dispatch(syncHabitCommentCount(habit.id));
     };
 
     const handleDatePickerChange = (change: DatePickerChange) => {

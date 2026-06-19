@@ -616,6 +616,29 @@ function mergeHabitsById(existing: Habit[], incoming: Habit[]): Habit[] {
     return [...map.values()];
 }
 
+function patchHabitInLists(
+    state: HabitState,
+    habitId: number,
+    patch: Partial<Habit> | ((habit: Habit) => Habit),
+) {
+    const apply = (habits: Habit[]) => {
+        const index = habits.findIndex(h => h.id === habitId);
+        if (index === -1) return;
+        const prev = habits[index];
+        habits[index] = typeof patch === 'function' ? patch(prev) : { ...prev, ...patch };
+    };
+
+    apply(state.list);
+    apply(state.overdueList);
+
+    for (const view of ['today', 'inbox'] as const) {
+        const cached = state.taskViewCache[view];
+        if (!cached) continue;
+        apply(cached.list);
+        apply(cached.overdueList);
+    }
+}
+
 export const ensureUpcomingDay = createAsyncThunk(
     'habits/ensureUpcomingDay',
     async (dateKey: string, { getState }) => {
@@ -1188,8 +1211,16 @@ export const addComment = createAsyncThunk(
     'habits/addComment',
     async ({ habitId, text }: { habitId: number; text: string }) => {
         await commentApi.createComment(habitId, text);
-        const task = await taskApi.fetchTaskById(habitId);
-        return { habitId, habit: mapTaskToHabit(task) };
+        const commentDtos = await commentApi.fetchTaskComments(habitId);
+        return { habitId, commentCount: commentDtos.length };
+    },
+);
+
+export const syncHabitCommentCount = createAsyncThunk(
+    'habits/syncHabitCommentCount',
+    async (habitId: number) => {
+        const commentDtos = await commentApi.fetchTaskComments(habitId);
+        return { habitId, commentCount: commentDtos.length };
     },
 );
 
@@ -1199,8 +1230,8 @@ export const uploadAttachments = createAsyncThunk(
         for (const file of files) {
             await commentApi.createComment(habitId, '첨부파일이 등록되었습니다.', file);
         }
-        const task = await taskApi.fetchTaskById(habitId);
-        return { habitId, habit: mapTaskToHabit(task) };
+        const commentDtos = await commentApi.fetchTaskComments(habitId);
+        return { habitId, commentCount: commentDtos.length };
     },
 );
 
@@ -1694,12 +1725,16 @@ const habitSlice = createSlice({
                 state.error = action.error.message ?? '하위 작업 상태 변경에 실패했습니다.';
             })
             .addCase(addComment.fulfilled, (state, action) => {
-                const index = state.list.findIndex(h => h.id === action.payload.habitId);
-                if (index !== -1) state.list[index] = action.payload.habit;
+                const { habitId, commentCount } = action.payload;
+                patchHabitInLists(state, habitId, habit => ({ ...habit, commentCount }));
+            })
+            .addCase(syncHabitCommentCount.fulfilled, (state, action) => {
+                const { habitId, commentCount } = action.payload;
+                patchHabitInLists(state, habitId, habit => ({ ...habit, commentCount }));
             })
             .addCase(uploadAttachments.fulfilled, (state, action) => {
-                const index = state.list.findIndex(h => h.id === action.payload.habitId);
-                if (index !== -1) state.list[index] = action.payload.habit;
+                const { habitId, commentCount } = action.payload;
+                patchHabitInLists(state, habitId, habit => ({ ...habit, commentCount }));
             });
     },
 });

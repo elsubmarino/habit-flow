@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static io.streak.habitflow.domain.label.entity.QLabel.label;
@@ -78,14 +79,22 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
                 .fetch();
 
         return results.stream()
-                .collect(Collectors.groupingBy(row->row.get(taskLabel.task.id),
-                        Collectors.mapping(row-> LabelResponse.Summary.builder()
-                                .id(row.get(label.id))
-                                .name(row.get(label.name))
-                                .color(row.get(label.color))
-                                .sortOrder(row.get(label.sortOrder))
-                                .build(),
-                        Collectors.toList())
-                ));
+                .collect(Collectors.groupingBy(row -> row.get(taskLabel.task.id),
+                        Collectors.mapping(row -> {
+                                    if (row.get(label.id) == null) return null;
+                                    Long dbSortOrder = row.get(label.sortOrder);
+                                    long safeSortOrder = (dbSortOrder != null) ? dbSortOrder : 0L;
+
+                                    return LabelResponse.Summary.builder()
+                                            .id(row.get(label.id))
+                                            .name(row.get(label.name))
+                                            .color(row.get(label.color))
+                                            .sortOrder(safeSortOrder)
+                                            .build();
+                                },
+                                Collectors.filtering(Objects::nonNull, Collectors.toList()))
+                        )
+                );
+
     }
 }

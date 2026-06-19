@@ -344,7 +344,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 )
                 .fetchOne();
         return new TaskResponse.SidebarTasksCount(inboxTasksCount != null ? inboxTasksCount : 0L
-                , inboxTasksCount != null ? inboxTasksCount : 0L);
+                , todayTasksCount != null ? todayTasksCount : 0L);
     }
 }
 
