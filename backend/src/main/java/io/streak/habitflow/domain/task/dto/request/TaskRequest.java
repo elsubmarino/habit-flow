@@ -90,7 +90,7 @@ public final class TaskRequest {
             @Schema(description = "마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss)",pattern="yyyy-MM-dd'T'HH:mm:ss",examples = "2026-06-19T23:59:59")
             LocalDateTime dueDate,
 
-            @Schema(description = "반복 일졍 여부")
+            @Schema(description = "반복 일정 여부")
             boolean recurring,
 
             @Schema(description = "반복 규칙 (DAILY, WEEKLY, MONTHLY 등), 반복일정을 설정할 경우 필수",requiredMode = Schema.RequiredMode.AUTO,

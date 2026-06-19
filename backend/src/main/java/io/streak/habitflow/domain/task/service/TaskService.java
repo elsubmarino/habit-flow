@@ -412,7 +412,8 @@ public class TaskService {
         if(!Objects.equals(oldDueDate, request.dueDate())){
             List<ChangeSet> changeSets = new ArrayList<>();
             String fromDate = (oldDueDate != null)? oldDueDate.toString():null;
-            String toDate = (request.dueDate() != null)? request.dueDate().toString():null;
+            String toDate = (request.dueDate() != null)? request.timeSpecified() ? request.dueDate().toString()
+                    :request.dueDate().toLocalDate().toString():null;
             changeSets.add(new ChangeSet("dueDate",fromDate,toDate));
             applicationEventPublisher.publishEvent(new TaskChangedEvent(
                     task.getId(),
