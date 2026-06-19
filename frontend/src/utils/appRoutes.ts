@@ -1,5 +1,9 @@
 import type { NavItem } from '../components/Sidebar';
 import { OAUTH_CALLBACK_PATH } from '../api/authBootstrap';
+import {
+    getProjectInviteTokenFromLocation,
+    isProjectInvitePath,
+} from './projectInvite';
 
 /** 브라우저 주소창용 SPA 경로 (백엔드 API와 분리) */
 export const APP_ROUTES = {
@@ -8,6 +12,7 @@ export const APP_ROUTES = {
     upcoming: '/upcoming',
     labels: '/labels',
     projects: '/projects',
+    projectInvite: '/projects/invite',
     report: '/report',
     notifications: '/notifications',
 } as const;
@@ -29,6 +34,7 @@ const LEGACY_NOTIFICATIONS = new Set(['/api/notifications']);
 
 export type AppLocation =
     | { kind: 'oauth' }
+    | { kind: 'projectInvite'; token: string | null }
     | { kind: 'nav'; nav: NavItem }
     | { kind: 'labelsBrowse' }
     | { kind: 'label'; labelId: number }
@@ -40,6 +46,8 @@ export type AppLocation =
 export function isOAuthCallbackPath(pathname: string): boolean {
     return pathname === OAUTH_CALLBACK_PATH || pathname.endsWith(OAUTH_CALLBACK_PATH);
 }
+
+export { isProjectInvitePath };
 
 function parseLabelId(pathname: string): number | null {
     const match = pathname.match(/^\/labels\/(\d+)$/);
@@ -60,6 +68,13 @@ function parseProjectId(pathname: string): number | null {
 export function parseAppPath(pathname: string): AppLocation {
     if (isOAuthCallbackPath(pathname)) {
         return { kind: 'oauth' };
+    }
+
+    if (isProjectInvitePath(pathname)) {
+        return {
+            kind: 'projectInvite',
+            token: getProjectInviteTokenFromLocation(window.location.search),
+        };
     }
 
     if (pathname === APP_ROUTES.inbox) return { kind: 'nav', nav: 'inbox' };

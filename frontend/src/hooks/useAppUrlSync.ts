@@ -6,6 +6,7 @@ import {
     buildAppPath,
     defaultAppPath,
     isOAuthCallbackPath,
+    isProjectInvitePath,
     parseAppPath,
 } from '../utils/appRoutes';
 
@@ -37,7 +38,7 @@ export function useAppUrlSync({
 
     const applyLocationFromUrl = useCallback(() => {
         const pathname = window.location.pathname;
-        if (isOAuthCallbackPath(pathname)) return;
+        if (isOAuthCallbackPath(pathname) || isProjectInvitePath(pathname)) return;
 
         const location = parseAppPath(pathname);
         applyingFromUrl.current = true;
@@ -105,7 +106,7 @@ export function useAppUrlSync({
 
     useLayoutEffect(() => {
         const pathname = window.location.pathname;
-        if (isOAuthCallbackPath(pathname)) return;
+        if (isOAuthCallbackPath(pathname) || isProjectInvitePath(pathname)) return;
 
         if (pathname === '/' || pathname === '') {
             window.history.replaceState(null, '', defaultAppPath());

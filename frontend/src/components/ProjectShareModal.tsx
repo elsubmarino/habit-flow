@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getApiErrorMessage } from '../api/apiError';
 import { fetchProjectMembers, inviteToProject } from '../api/projectApi';
 import type { ProjectMemberListDto } from '../api/types';
+import { useToast } from '../context/ToastContext';
 import type { Project } from '../store/habitSlice';
 import { getUserProfile } from '../utils/userProfile';
 import { ChevronDownIcon, CloseIcon, HelpCircleIcon, LockIcon } from './icons';
@@ -15,7 +16,7 @@ interface ShareMember {
     id: string;
     name: string;
     email: string;
-    role: 'owner' | 'collaborator' | 'pending';
+    role: 'owner' | 'collaborator';
     isSelf?: boolean;
 }
 
@@ -42,6 +43,7 @@ function toShareMember(dto: ProjectMemberListDto, selfEmail: string): ShareMembe
 }
 
 const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose }) => {
+    const { showToast, showErrorToast } = useToast();
     const profile = getUserProfile();
     const selfEmail = profile.email;
     const [draft, setDraft] = useState('');
@@ -50,7 +52,6 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
     const [membersLoading, setMembersLoading] = useState(true);
     const [membersError, setMembersError] = useState<string | null>(null);
     const [accessOpen, setAccessOpen] = useState(false);
-    const [linkCopied, setLinkCopied] = useState(false);
     const [inviteSubmitting, setInviteSubmitting] = useState(false);
 
     const loadMembers = useCallback(async () => {
@@ -99,11 +100,11 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
         const normalized = email.trim().toLowerCase();
         if (!isValidEmail(normalized)) return;
         if (normalized === selfEmail.toLowerCase()) {
-            window.alert('본인은 초대할 수 없습니다.');
+            showErrorToast('본인은 초대할 수 없습니다.');
             return;
         }
         if (memberEmails.has(normalized)) {
-            window.alert('이미 프로젝트에 참여 중인 이메일입니다.');
+            showErrorToast('이미 프로젝트에 참여 중인 이메일입니다.');
             resetInviteInput();
             return;
         }
@@ -112,9 +113,9 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
         try {
             await inviteToProject(project.id, [normalized]);
             resetInviteInput();
-            await loadMembers();
+            showToast('초대 메일을 발송했습니다. 수신자가 메일에서 수락하면 프로젝트에 합류합니다.');
         } catch (err) {
-            window.alert(getApiErrorMessage(err, '초대에 실패했습니다.'));
+            showErrorToast(getApiErrorMessage(err, '초대에 실패했습니다.'));
         } finally {
             setInviteSubmitting(false);
         }
@@ -138,17 +139,6 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
         }
         if (showInlineInvite) {
             void sendInvite(draftTrimmed);
-        }
-    };
-
-    const handleCopyLink = async () => {
-        const url = `${window.location.origin}/projects/${project.id}`;
-        try {
-            await navigator.clipboard.writeText(url);
-            setLinkCopied(true);
-            window.setTimeout(() => setLinkCopied(false), 2000);
-        } catch {
-            window.alert('링크를 복사하지 못했습니다.');
         }
     };
 
@@ -176,6 +166,9 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
                 </div>
 
                 <div className="project-share-invite-wrap">
+                    <p className="project-share-invite-hint">
+                        이메일로 초대장을 보냅니다. 수신자가 메일의 링크를 눌러 수락해야 합류합니다.
+                    </p>
                     <div className="project-share-invite-input">
                         {chipEmail && (
                             <span className="project-share-chip">
@@ -196,9 +189,9 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
                         )}
                         {!chipEmail && (
                             <input
-                                type="text"
+                                type="email"
                                 className="project-share-input"
-                                placeholder="이름 또는 이메일로 사람 초대"
+                                placeholder="이메일 주소로 초대"
                                 value={draft}
                                 onChange={e => setDraft(e.target.value)}
                                 onKeyDown={e => {
@@ -235,7 +228,7 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
                             <span className="project-share-access-icon"><LockIcon /></span>
                             <span className="project-share-access-text">
                                 <strong>비공개</strong>
-                                <small>초대된 사람만 편집할 수 있습니다</small>
+                                <small>초대를 수락한 사람만 편집할 수 있습니다</small>
                             </span>
                             <span className="project-share-access-chevron">
                                 <ChevronDownIcon />
@@ -279,13 +272,9 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
                                         <p className="project-share-member-email">{member.email}</p>
                                     </div>
                                     {member.isSelf ? (
-                                        <button type="button" className="project-share-member-action muted">
-                                            나가기
-                                        </button>
+                                        <span className="project-share-member-action muted">소유자</span>
                                     ) : (
-                                        <button type="button" className="project-share-role-btn">
-                                            공동 작업자 <ChevronDownIcon />
-                                        </button>
+                                        <span className="project-share-member-action muted">공동 작업자</span>
                                     )}
                                 </li>
                             ))}
@@ -299,7 +288,7 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
                         공유에 대해 알아보기
                     </button>
                     <div className="project-share-footer-actions">
-                        {showFooterInvite && (
+                        {showFooterInvite ? (
                             <>
                                 <button
                                     type="button"
@@ -315,17 +304,16 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
                                     onClick={handleFooterInvite}
                                     disabled={inviteSubmitting}
                                 >
-                                    {inviteSubmitting ? '초대 중…' : '초대'}
+                                    {inviteSubmitting ? '발송 중…' : '초대 메일 발송'}
                                 </button>
                             </>
-                        )}
-                        {!showFooterInvite && (
+                        ) : (
                             <button
                                 type="button"
-                                className="project-share-copy-btn"
-                                onClick={() => void handleCopyLink()}
+                                className="project-share-cancel-btn"
+                                onClick={onClose}
                             >
-                                {linkCopied ? '복사됨' : '링크 복사'}
+                                닫기
                             </button>
                         )}
                     </div>

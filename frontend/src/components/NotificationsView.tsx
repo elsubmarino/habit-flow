@@ -48,7 +48,8 @@ const NotificationsView: React.FC<NotificationsViewProps> = ({ onOpenTask, onOpe
         if (n.action === 'invited') {
             return (
                 <>
-                    <strong>{n.actor}</strong>님이 {projectLink ?? projectName}에 초대했습니다
+                    <strong>{n.actor}</strong>님이 {projectLink ?? projectName}에 초대했습니다.
+                    {' '}이메일의 초대 링크를 확인해 주세요.
                 </>
             );
         }
