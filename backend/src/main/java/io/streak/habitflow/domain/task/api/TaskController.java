@@ -47,41 +47,37 @@ public class TaskController {
     @PutMapping("/{taskId}")
     @Operation(summary = "테스크 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 업데이트 성공")})
-    public ResponseEntity<Void> updateTask(@PathVariable Long taskId,
-                                                   @RequestBody @Valid TaskRequest.Update request,
-                                                   @LoginMemberId Long loginMemberId) {
-        taskService.updateTask(taskId, request,loginMemberId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<TaskResponse.Detail> updateTask(@PathVariable Long taskId,
+                                           @RequestBody @Valid TaskRequest.Update request,
+                                           @LoginMemberId Long loginMemberId) {
+        return ResponseEntity.ok(taskService.updateTask(taskId, request,loginMemberId));
     }
 
     @PatchMapping("/{taskId}/priority")
     @Operation(summary = "우선순위 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "우선순위 업데이트 성공")})
-    public ResponseEntity<Void> updatePriority(@PathVariable Long taskId,
+    public ResponseEntity<TaskResponse.Detail> updatePriority(@PathVariable Long taskId,
                                                           @RequestBody @Valid TaskRequest.UpdatePriority request,
                                                           @LoginMemberId Long loginMemberId) {
-        taskService.updatePriority(taskId, request.taskPriorityType(), loginMemberId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(taskService.updatePriority(taskId, request.taskPriorityType(), loginMemberId));
     }
 
     @PatchMapping("/{taskId}/labels")
     @Operation(summary = "라벨 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "라벨 업데이트 성공")})
-    public ResponseEntity<Void> updateLabels(@PathVariable Long taskId,
+    public ResponseEntity<TaskResponse.Detail> updateLabels(@PathVariable Long taskId,
                                                        @RequestBody @Valid TaskRequest.UpdateLabel request,
                                                        @LoginMemberId Long loginMemberId) {
-        taskService.updateTaskLabels(taskId, request.labelIds(), loginMemberId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(taskService.updateTaskLabels(taskId, request.labelIds(), loginMemberId));
     }
 
     @PatchMapping("/{taskId}/project")
     @Operation(summary = "테스크가 속한 프로젝트 이동")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크가 속한 프로젝트 이동 성공")})
-    public ResponseEntity<Void> updateProject(@PathVariable Long taskId,
+    public ResponseEntity<TaskResponse.Detail> updateProject(@PathVariable Long taskId,
                                                       @RequestBody @Valid TaskRequest.UpdateProject request,
                                                       @LoginMemberId Long loginMemberId) {
-        taskService.updateProject(taskId, request.projectId(), loginMemberId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(taskService.updateProject(taskId, request.projectId(), loginMemberId));
     }
 
     @DeleteMapping("/{taskId}")
@@ -175,30 +171,27 @@ public class TaskController {
     @PatchMapping("/{taskId}/due-date")
     @Operation(summary = "만료일 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "만료일 업데이트 성공")})
-    public ResponseEntity<Void> updateTaskDueDate(@PathVariable Long taskId,
+    public ResponseEntity<TaskResponse.Detail> updateTaskDueDate(@PathVariable Long taskId,
                                                           @RequestBody @Valid TaskRequest.UpdateDueDate request,
                                                           @LoginMemberId Long loginMemberId) {
-        taskService.updateTaskDueDate(taskId, request, loginMemberId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(taskService.updateTaskDueDate(taskId, request, loginMemberId));
     }
 
     @PatchMapping("/{taskId}/sort-order")
     @Operation(summary = "정렬순서 변경")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "정렬순서 변경 성공")})
-    public ResponseEntity<Void> updateSortOrder(@PathVariable Long taskId,
+    public ResponseEntity<TaskResponse.Summary> updateSortOrder(@PathVariable Long taskId,
                                                   @RequestBody @Valid TaskRequest.UpdateSortOrder request,
                                                   @LoginMemberId Long loginMemberId) {
-        taskService.updateSortOrder(taskId, request, loginMemberId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(taskService.updateSortOrder(taskId, request, loginMemberId));
     }
 
     @PatchMapping("/{taskId}/toggle")
     @Operation(summary = "테스크 토글(완료/미완료)")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 토글(완료/미완료) 성공")})
-    public ResponseEntity<Void> toggleCompletion(@LoginMemberId Long loginMemberId,
+    public ResponseEntity<TaskResponse.Summary> toggleCompletion(@LoginMemberId Long loginMemberId,
                                                          @PathVariable Long taskId) {
-        taskService.toggleCompletion(taskId,loginMemberId);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(taskService.toggleCompletion(taskId,loginMemberId));
     }
 
     @GetMapping("/upcoming/summary")

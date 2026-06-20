@@ -28,10 +28,9 @@ public class MemberController {
     @PutMapping("/{memberId}")
     @Operation(summary = "회원 정보 업데이트")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 정보 업데이트 성공")})
-    public ResponseEntity<Void> updateMember(@PathVariable Long memberId,
-                                                       @RequestBody MemberRequest.Update request,
-                                                       @LoginMemberId Long loginMemberId){
-        memberService.updateMember(memberId,request,loginMemberId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<MemberResponse.Detail> updateMember(@PathVariable Long memberId,
+                                               @RequestBody MemberRequest.Update request,
+                                               @LoginMemberId Long loginMemberId){
+        return ResponseEntity.ok(memberService.updateMember(memberId,request,loginMemberId));
     }
 }

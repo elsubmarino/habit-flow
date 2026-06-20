@@ -296,6 +296,67 @@ function readTaskPriority(task: TaskDto): PriorityType | null | undefined {
     return task.priorityType ?? task.taskPriorityType;
 }
 
+/** toggle·sort-order 등 TaskResponse.Summary 응답 (count* 필드 + subTasks 없음) */
+export function isTaskSummaryMutationResponse(task: TaskDto | TaskListDto): task is TaskListDto {
+    const dto = task as TaskDto;
+    return (task.countSubTasks != null || task.countComments != null)
+        && dto.subTasks === undefined;
+}
+
+export function normalizeTaskMutationResponse(
+    data: TaskDto | TaskListDto,
+    projectIdHint?: number | null,
+): TaskDto {
+    if (isTaskSummaryMutationResponse(data)) {
+        return mapTaskListToDto(data, projectIdHint ?? undefined);
+    }
+    return data;
+}
+
+function isTaskSummaryMutation(task: TaskDto): boolean {
+    return (task.countSubTasks != null || task.countComments != null)
+        && task.subTasks === undefined;
+}
+
+/** PATCH/PUT 후 Summary·Detail 혼용 응답을 목록용 Habit으로 병합 */
+export function mergeHabitFromTaskMutation(task: TaskDto, previous?: Habit): Habit {
+    const next = mapTaskToHabit(task);
+    if (!previous) return next;
+
+    if (isTaskSummaryMutation(task)) {
+        return {
+            ...next,
+            projectId: next.projectId ?? previous.projectId,
+            projectColor: next.projectColor ?? previous.projectColor,
+            recurrenceLabel: next.recurrenceLabel ?? previous.recurrenceLabel,
+            isRecurring: next.isRecurring || previous.isRecurring,
+        };
+    }
+
+    return {
+        ...next,
+        commentCount: (task.comments?.length ?? 0) > 0 || task.countComments != null
+            ? next.commentCount
+            : previous.commentCount,
+        subtaskCount: (task.subTasks?.length ?? 0) > 0 || task.countSubTasks != null
+            ? next.subtaskCount
+            : previous.subtaskCount,
+        subtaskCompletedCount: task.countSubTasksCompleted != null
+            ? next.subtaskCompletedCount
+            : previous.subtaskCompletedCount,
+        recurrenceLabel: next.recurrenceLabel ?? previous.recurrenceLabel,
+        isRecurring: next.isRecurring || previous.isRecurring,
+        subtasks: next.subtasks.length > 0 ? next.subtasks : previous.subtasks,
+        comments: next.comments.length > 0 ? next.comments : previous.comments,
+        attachments: next.attachments.length > 0 ? next.attachments : previous.attachments,
+        labels: next.labels.length > 0 ? next.labels : previous.labels,
+        projectId: next.projectId ?? previous.projectId,
+        projectName: next.projectName ?? previous.projectName,
+        projectColor: next.projectColor ?? previous.projectColor,
+        description: next.description || previous.description,
+    };
+}
+
 export function mapTaskListToDto(task: TaskListDto, projectId?: number): TaskDto {
     return {
         id: task.id,
@@ -311,6 +372,7 @@ export function mapTaskListToDto(task: TaskListDto, projectId?: number): TaskDto
         countSubTasks: task.countSubTasks,
         countSubTasksCompleted: task.countSubTasksCompleted,
         countComments: task.countComments,
+        completed: task.completed,
         labels: task.labels ?? [],
     };
 }

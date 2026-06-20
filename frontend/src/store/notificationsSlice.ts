@@ -94,20 +94,29 @@ export const markAllNotificationsRead = createAsyncThunk(
     async (_, { getState }) => {
         const state = getState() as { notifications: NotificationsState };
         const unread = state.notifications.items.filter(item => !item.read);
-        await Promise.all(
+        const confirmed = await Promise.all(
             unread.map(item => notificationApi.confirmNotification(item.id).catch(() => undefined)),
         );
-        return state.notifications.items.map(item => ({ ...item, read: true }));
+        const confirmedIds = new Set(
+            confirmed
+                .filter((dto): dto is NotificationDto => dto != null && dto.isConfirmed)
+                .map(dto => dto.id),
+        );
+        return state.notifications.items.map(item =>
+            confirmedIds.has(item.id) || unread.some(u => u.id === item.id)
+                ? { ...item, read: true }
+                : item,
+        );
     },
 );
 
 export const markNotificationRead = createAsyncThunk(
     'notifications/markOneRead',
     async (id: number, { getState }) => {
-        await notificationApi.confirmNotification(id);
+        const dto = await notificationApi.confirmNotification(id);
         const state = getState() as { notifications: NotificationsState };
         return state.notifications.items.map(item =>
-            item.id === id ? { ...item, read: true } : item,
+            item.id === id ? { ...item, read: dto.isConfirmed } : item,
         );
     },
 );

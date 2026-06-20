@@ -153,7 +153,9 @@ public final class TaskResponse{
             @Schema(description = "테스크에 속한 라벨 리스트")
             List<LabelResponse.Summary> labels,
             @Schema(description = "테스크 시간",example = "23:59:59")
-            LocalTime dueTime
+            LocalTime dueTime,
+            @Schema(description = "테스크 완료 여부")
+            boolean completed
     ){
         public Summary {
             labels = Objects.requireNonNullElse(labels, new ArrayList<>());
@@ -174,22 +176,6 @@ public final class TaskResponse{
                     .sortOrder(taskSummaryQuery.sortOrder())
                     .dueTime(taskSummaryQuery.timeSpecified()? taskSummaryQuery.dueDate().toLocalTime():null)
                     .build();
-        }
-
-        public static Summary of(Task task, List<LabelResponse.Summary> labelSummaryResponses) {
-            SummaryBuilder builder = TaskResponse.Summary.builder()
-                    .id(task.getId())
-                    .name(task.getName())
-                    .taskPriorityType(task.getTaskPriorityType())
-                    .sortOrder(task.getSortOrder())
-                    .labels(labelSummaryResponses);
-            if(task.getProject() != null){
-                builder.projectName(task.getProject().getName());
-            }else{
-                builder.projectName("관리함");
-            }
-
-            return builder.build();
         }
     }
 

@@ -1,14 +1,18 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
 
-export async function createComment(taskId: number, content: string, file?: File | null) {
+export async function createComment(
+    taskId: number,
+    content: string,
+    file?: File | null,
+): Promise<CommentResponseDto> {
     const form = new FormData();
     form.append(
         'commentRequest',
         new Blob([JSON.stringify({ taskId, content })], { type: 'application/json' }),
     );
     if (file) form.append('file', file);
-    const { data } = await apiClient.post('/api/comments', form, {
+    const { data } = await apiClient.post<CommentResponseDto>('/api/comments', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data;
@@ -28,12 +32,17 @@ export async function fetchTaskComments(taskId: number): Promise<CommentResponse
     });
 }
 
-export async function updateComment(commentId: number, taskId: number, content: string): Promise<void> {
-    await apiClient.put(`/api/comments/${commentId}`, {
+export async function updateComment(
+    commentId: number,
+    taskId: number,
+    content: string,
+): Promise<CommentResponseDto> {
+    const { data } = await apiClient.put<CommentResponseDto>(`/api/comments/${commentId}`, {
         id: commentId,
         taskId,
         content,
     });
+    return data;
 }
 
 export async function deleteComment(commentId: number): Promise<void> {

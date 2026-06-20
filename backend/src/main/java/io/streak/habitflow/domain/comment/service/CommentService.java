@@ -82,10 +82,10 @@ public class CommentService {
     @Transactional
     @CheckOwnership(type="COMMENT")
     @SuppressWarnings("unused")
-    public void updateComment(Long commentId, CommentRequest.Update request, Long memberId) {
+    public CommentResponse.Detail updateComment(Long commentId, CommentRequest.Update request, Long memberId) {
         Comment comment = commentRepository.getOrThrow(commentId);
-
         comment.updateContent(request.content());
+        return CommentResponse.Detail.from(comment);
     }
 
     @Transactional

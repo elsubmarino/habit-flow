@@ -331,8 +331,12 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         if (!item.backendId) {
             throw new Error('댓글 ID가 없어 수정할 수 없습니다.');
         }
-        await commentApi.updateComment(item.backendId, habit.id, text);
-        await refreshCurrent();
+        const updated = await commentApi.updateComment(item.backendId, habit.id, text);
+        setComments(prev => prev.map(comment => (
+            comment.backendId === item.backendId
+                ? { ...comment, text: updated.content }
+                : comment
+        )));
     };
 
     const handleDeleteComment = async (item: CommentItem) => {

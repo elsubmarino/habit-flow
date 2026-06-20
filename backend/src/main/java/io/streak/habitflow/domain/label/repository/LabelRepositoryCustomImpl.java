@@ -97,4 +97,18 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
                 );
 
     }
+
+    @Override
+    public List<LabelResponse.Summary> findByTask(Long taskId) {
+        return queryFactory
+                .select(Projections.constructor(LabelResponse.Summary.class,
+                        label.id,
+                        label.name,
+                        label.color,
+                        label.sortOrder))
+                .from(taskLabel)
+                .join(taskLabel.label,label)
+                .where(taskLabel.task.id.eq(taskId))
+                .fetch();
+    }
 }

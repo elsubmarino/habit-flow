@@ -222,10 +222,10 @@ public class TaskService {
             tasks.remove(pageSize);
             hasNext = true;
         }
-        List<TaskResponse.Summary> taskSummaryRespons =  tasks.stream()
+        List<TaskResponse.Summary> taskSummaryResponses =  tasks.stream()
                 .map(task-> TaskResponse.Summary.of(task,new ArrayList<>()))
                 .toList();
-        return new SliceImpl<>(taskSummaryRespons,pageable,hasNext);
+        return new SliceImpl<>(taskSummaryResponses,pageable,hasNext);
     }
 
     public TaskResponse.SummarySlice getTasks(TaskRequest.SearchCondition searchCondition,
@@ -253,7 +253,7 @@ public class TaskService {
         List<Long> taskIds = tasks.stream().map(TaskSummaryQuery::id).toList();
         Map<Long, List<LabelResponse.Summary>> labelMap = labelRepository.findLabelsByTaskIds(taskIds);
 
-        List<TaskResponse.Summary> taskSummaryRespons = tasks.stream()
+        List<TaskResponse.Summary> taskSummaryResponses = tasks.stream()
                 .map(task-> TaskResponse.Summary.of(task,
                         labelMap.getOrDefault(task.id(),new ArrayList<>())))
                 .toList();
@@ -283,12 +283,12 @@ public class TaskService {
             }
         }
 
-        return new TaskResponse.SummarySlice(taskSummaryRespons,hasNext,hasPrev,nextCursor,prevCursor);
+        return new TaskResponse.SummarySlice(taskSummaryResponses,hasNext,hasPrev,nextCursor,prevCursor);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public void updateTask(Long taskId, TaskRequest.Update request, Long memberId){
+    public TaskResponse.Detail updateTask(Long taskId, TaskRequest.Update request, Long memberId){
         Task task = taskRepository.getOrThrow(taskId);
 
         List<ChangeSet> changes = new ArrayList<>();
@@ -313,12 +313,16 @@ public class TaskService {
                     changes
             ));
         }
+
+        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
+
+        return TaskResponse.Detail.of(task,taskLabels);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @DistributedLock(key = "#taskId")
-    public void toggleCompletion(Long taskId, Long memberId){
+    public TaskResponse.Summary toggleCompletion(Long taskId, Long memberId){
         Task task = taskRepository.findById(taskId)
                  .orElseThrow();
 
@@ -349,6 +353,10 @@ public class TaskService {
                     Collections.emptyList()
             ));
         }
+
+        List<TaskSummaryQuery> taskSummaryQueries = taskRepository.getTaskListQueries(List.of(taskId));
+        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
+        return TaskResponse.Summary.of(taskSummaryQueries.get(0),taskLabels);
     }
 
     public TaskResponse.SidebarTasksCount getSidebarTaskCount(Long memberId){
@@ -392,7 +400,7 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public void updateTaskDueDate(Long taskId, TaskRequest.UpdateDueDate request, Long memberId){
+    public TaskResponse.Detail updateTaskDueDate(Long taskId, TaskRequest.UpdateDueDate request, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
         LocalDateTime oldDueDate = task.getDueDate();
@@ -405,9 +413,9 @@ public class TaskService {
                 request.recurrenceDayOfMonth(),
                 request.timeSpecified()
         );
-
+        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
         if(!isChanged){
-            return;
+            return TaskResponse.Detail.of(task,taskLabels);
         }
         if(!Objects.equals(oldDueDate, request.dueDate())){
             List<ChangeSet> changeSets = new ArrayList<>();
@@ -425,12 +433,14 @@ public class TaskService {
             ));
         }
 
+
+        return TaskResponse.Detail.of(task,taskLabels);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public void updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
+    public TaskResponse.Detail updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
         TaskPriorityType oldTaskPriorityType = task.getTaskPriorityType();
@@ -447,18 +457,20 @@ public class TaskService {
                 task.getName(),
                 changeSets
         ));
+        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
+        return TaskResponse.Detail.of(task,taskLabels);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public void updateTaskLabels(Long taskId, List<Long> labelIds, Long memberId){
+    public TaskResponse.Detail updateTaskLabels(Long taskId, List<Long> labelIds, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
-
+        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
         if(labelIds == null || labelIds.isEmpty()){
             task.getSubTasks().clear();
-            return;
+            return TaskResponse.Detail.of(task,taskLabels);
         }
 
         List<Label> realLabels  =labelRepository.findAllById(labelIds);
@@ -470,13 +482,14 @@ public class TaskService {
         task.getTaskLabels().clear();
 
         realLabels.forEach(label-> task.addTaskLabel(TaskLabel.builder().label(label).build()));
+        return TaskResponse.Detail.of(task,taskLabels);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public void updateProject(Long taskId, Long projectId, Long memberId){
+    public TaskResponse.Detail updateProject(Long taskId, Long projectId, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
@@ -499,7 +512,8 @@ public class TaskService {
                     changeSets
             ));
         }
-
+        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
+        return TaskResponse.Detail.of(task,taskLabels);
     }
 
     public List<TaskResponse.UpcomingDateCount> getUpcomingDateCounts(Long memberId, LocalDateTime fromDate, LocalDateTime toDate){
@@ -507,8 +521,11 @@ public class TaskService {
     }
 
     @Transactional
-    public void updateSortOrder(Long taskId, TaskRequest.UpdateSortOrder updateSortOrder, Long memberId){
+    public TaskResponse.Summary updateSortOrder(Long taskId, TaskRequest.UpdateSortOrder updateSortOrder, Long memberId){
         Task task = taskRepository.getReferenceById(taskId);
         task.updateSortOrder(updateSortOrder.sortOrder());
+        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
+        List<TaskSummaryQuery> taskSummaryQueries = taskRepository.getTaskListQueries(List.of(taskId));
+        return TaskResponse.Summary.of(taskSummaryQueries.get(0),taskLabels);
     }
 }

@@ -53,10 +53,11 @@ public class MemberService {
     @Transactional
     @CheckOwnership(type = "MEMBER")
     @SuppressWarnings("unused")
-    public void updateMember(Long memberId,MemberRequest.Update  request,Long loginMemberId){
+    public MemberResponse.Detail updateMember(Long memberId,MemberRequest.Update  request,Long loginMemberId){
         Member member = memberRepository.getOrThrow(memberId);
 
         member.updateMember(request.password());
+        return MemberResponse.Detail.from(member);
     }
 
     public MemberResponse.Detail getMember(Long memberId){

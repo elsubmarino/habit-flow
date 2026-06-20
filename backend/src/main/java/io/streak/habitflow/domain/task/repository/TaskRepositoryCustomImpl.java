@@ -85,7 +85,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         return getTaskListQueries(ids);
     }
 
-    private List<TaskSummaryQuery> getTaskListQueries(List<Long> ids) {
+    public List<TaskSummaryQuery> getTaskListQueries(List<Long> ids) {
         QTask subTask = new QTask("subTask");
 
         return queryFactory

@@ -107,7 +107,7 @@ public class ProjectService {
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public void updateProject(ProjectRequest.Create request, Long projectId, Long memberId) {
+    public ProjectResponse.Detail updateProject(ProjectRequest.Create request, Long projectId, Long memberId) {
         Project project =  projectRepository.getOrThrow(projectId);
         String oldProjectName = project.getName();
 
@@ -153,9 +153,7 @@ public class ProjectService {
                     changeSets
             ));
         }
-
-
-
+        return ProjectResponse.Detail.of(project,request.favorite());
     }
 
     public ProjectResponse.Detail getProjectById(Long projectId, Long memberId) {

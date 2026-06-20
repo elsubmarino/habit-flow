@@ -17,6 +17,7 @@ import {
     mapLabel,
     mapProject,
     mapTaskToHabit,
+    mergeHabitFromTaskMutation,
     priorityToApi,
     readCompleted,
     repeatLabelToRecurrence,
@@ -639,6 +640,11 @@ function patchHabitInLists(
     }
 }
 
+function findHabitInState(state: HabitState, habitId: number): Habit | undefined {
+    return state.list.find(h => h.id === habitId)
+        ?? state.overdueList.find(h => h.id === habitId);
+}
+
 export const ensureUpcomingDay = createAsyncThunk(
     'habits/ensureUpcomingDay',
     async (dateKey: string, { getState }) => {
@@ -954,10 +960,17 @@ export const updateProject = createAsyncThunk(
         favorite?: boolean;
     }, { dispatch, getState }) => {
         const { id, ...body } = payload;
-        await projectApi.updateProject(id, body);
-        const detail = await projectApi.fetchProjectById(id);
-        const project = mapProject(detail);
-        const { selectedProjectId } = (getState() as { habits: HabitState }).habits;
+        const detail = await projectApi.updateProject(id, body);
+        const habitsState = (getState() as { habits: HabitState }).habits;
+        const existing = habitsState.projects.find(p => p.id === id);
+        const project = mapProject(
+            {
+                ...detail,
+                favorite: detail.favorite ?? body.favorite ?? existing?.favorite,
+            },
+            existing?.taskCount ?? 0,
+        );
+        const { selectedProjectId } = habitsState;
         const jobs: Array<Promise<unknown>> = [
             dispatch(invalidateSidebarAggregates({ projects: true })),
             dispatch(refetchCurrentTaskList()),
@@ -993,12 +1006,20 @@ export const addLabel = createAsyncThunk(
 
 export const updateLabel = createAsyncThunk(
     'habits/updateLabel',
-    async (payload: { id: number; name: string; color?: string; favorite?: boolean }, { dispatch }) => {
+    async (payload: { id: number; name: string; color?: string; favorite?: boolean }, { dispatch, getState }) => {
         const { id, ...body } = payload;
-        await labelApi.updateLabel(id, body);
-        const detail = await labelApi.fetchLabelById(id);
+        const detail = await labelApi.updateLabel(id, body);
+        const habitsState = (getState() as { habits: HabitState }).habits;
+        const existing = habitsState.labels.find(l => l.id === id);
+        const label = mapLabel(
+            {
+                ...detail,
+                favorite: detail.favorite ?? body.favorite ?? existing?.favorite,
+            },
+            existing?.taskCount ?? countTasksForLabel(habitsState.list, id),
+        );
         await dispatch(invalidateSidebarAggregates({ labels: true }));
-        return mapLabel(detail);
+        return label;
     },
 );
 
@@ -1021,13 +1042,14 @@ export interface CheckHabitPayload {
 
 export const checkHabit = createAsyncThunk(
     'habits/check',
-    async ({ habitId, wasCompleted }: CheckHabitPayload, { dispatch }) => {
-        const task = await taskApi.toggleTaskCompletion(habitId, wasCompleted);
+    async ({ habitId, wasCompleted }: CheckHabitPayload, { dispatch, getState }) => {
+        const previous = findHabitInState((getState() as { habits: HabitState }).habits, habitId);
+        const task = await taskApi.toggleTaskCompletion(habitId, wasCompleted, previous?.projectId);
         await Promise.all([
             dispatch(invalidateSidebarAggregates({ projects: true, nav: true })),
             dispatch(refetchCurrentTaskList()),
         ]);
-        const habit = mapTaskToHabit(task);
+        const habit = mergeHabitFromTaskMutation(task, previous);
         return {
             ...habit,
             id: habitId,
@@ -1038,28 +1060,27 @@ export const checkHabit = createAsyncThunk(
 
 export const updateHabit = createAsyncThunk(
     'habits/updateHabit',
-    async ({ habitId, changes }: { habitId: number; changes: Partial<Habit> }, { dispatch }) => {
-        await taskApi.updateTask(habitId, {
+    async ({ habitId, changes }: { habitId: number; changes: Partial<Habit> }, { dispatch, getState }) => {
+        const previous = findHabitInState((getState() as { habits: HabitState }).habits, habitId);
+        const task = await taskApi.updateTask(habitId, {
             name: changes.name,
             description: changes.description,
-        });
-        const [habit] = await Promise.all([
-            dispatch(fetchHabitDetail(habitId)).unwrap(),
-            dispatch(refetchCurrentTaskList()),
-        ]);
-        return habit;
+        }, previous?.projectId);
+        await dispatch(refetchCurrentTaskList());
+        return mergeHabitFromTaskMutation(task, previous);
     },
 );
 
 export const patchTaskProject = createAsyncThunk(
     'habits/patchProject',
-    async ({ habitId, projectId }: { habitId: number; projectId: number | null }, { dispatch }) => {
-        const task = await taskApi.patchTaskProject(habitId, projectId);
+    async ({ habitId, projectId }: { habitId: number; projectId: number | null }, { dispatch, getState }) => {
+        const previous = findHabitInState((getState() as { habits: HabitState }).habits, habitId);
+        const task = await taskApi.patchTaskProject(habitId, projectId, previous?.projectId);
         await Promise.all([
             dispatch(invalidateSidebarAggregates({ projects: true, nav: true })),
             dispatch(refetchCurrentTaskList()),
         ]);
-        return mapTaskToHabit(task);
+        return mergeHabitFromTaskMutation(task, previous);
     },
 );
 
@@ -1077,7 +1098,8 @@ export const patchTaskDueDate = createAsyncThunk(
         dueTime24?: string | null;
         hasTime: boolean;
         recurrenceLabel?: string | null;
-    }, { dispatch }) => {
+    }, { dispatch, getState }) => {
+        const previous = findHabitInState((getState() as { habits: HabitState }).habits, habitId);
         const recurrence = recurrenceLabel !== undefined
             ? repeatLabelToRecurrence(recurrenceLabel, dueDate)
             : undefined;
@@ -1086,12 +1108,12 @@ export const patchTaskDueDate = createAsyncThunk(
             dueTime24,
             hasTime,
             recurrence,
-        });
+        }, previous?.projectId);
         await Promise.all([
             dispatch(invalidateSidebarAggregates({ nav: true })),
             dispatch(refetchCurrentTaskList()),
         ]);
-        const habit = mapTaskToHabit(task);
+        const habit = mergeHabitFromTaskMutation(task, previous);
         return {
             ...habit,
             id: habitId,
@@ -1107,22 +1129,24 @@ export const patchTaskDueDate = createAsyncThunk(
 
 export const patchTaskPriority = createAsyncThunk(
     'habits/patchPriority',
-    async ({ habitId, priority }: { habitId: number; priority: 1 | 2 | 3 | 4 }, { dispatch }) => {
-        const task = await taskApi.patchTaskPriority(habitId, priorityToApi(priority));
+    async ({ habitId, priority }: { habitId: number; priority: 1 | 2 | 3 | 4 }, { dispatch, getState }) => {
+        const previous = findHabitInState((getState() as { habits: HabitState }).habits, habitId);
+        const task = await taskApi.patchTaskPriority(habitId, priorityToApi(priority), previous?.projectId);
         await dispatch(refetchCurrentTaskList());
-        return mapTaskToHabit(task);
+        return mergeHabitFromTaskMutation(task, previous);
     },
 );
 
 export const patchTaskLabels = createAsyncThunk(
     'habits/patchLabels',
-    async ({ habitId, labelIds }: { habitId: number; labelIds: number[] }, { dispatch }) => {
-        const task = await taskApi.patchTaskLabels(habitId, labelIds);
+    async ({ habitId, labelIds }: { habitId: number; labelIds: number[] }, { dispatch, getState }) => {
+        const previous = findHabitInState((getState() as { habits: HabitState }).habits, habitId);
+        const task = await taskApi.patchTaskLabels(habitId, labelIds, previous?.projectId);
         await Promise.all([
             dispatch(invalidateSidebarAggregates({ labels: true })),
             dispatch(refetchCurrentTaskList()),
         ]);
-        return mapTaskToHabit(task);
+        return mergeHabitFromTaskMutation(task, previous);
     },
 );
 
@@ -1140,9 +1164,17 @@ export const deleteHabit = createAsyncThunk(
 
 export const reorderHabit = createAsyncThunk(
     'habits/reorderHabit',
-    async (request: ReorderHabitRequest, { dispatch, rejectWithValue }) => {
+    async (request: ReorderHabitRequest, { dispatch, getState, rejectWithValue }) => {
         try {
-            await taskApi.patchTaskSortOrder(request.habitId, request.sortOrder);
+            const previous = findHabitInState(
+                (getState() as { habits: HabitState }).habits,
+                request.habitId,
+            );
+            await taskApi.patchTaskSortOrder(
+                request.habitId,
+                request.sortOrder,
+                previous?.projectId,
+            );
             return request;
         } catch (error) {
             void dispatch(refetchCurrentTaskList());
@@ -1631,15 +1663,7 @@ const habitSlice = createSlice({
                 if (habit) habit.completedToday = !action.meta.arg.wasCompleted;
             })
             .addCase(checkHabit.fulfilled, (state, action) => {
-                const index = state.list.findIndex(h => h.id === action.payload.id);
-                if (index !== -1) {
-                    const prev = state.list[index];
-                    state.list[index] = {
-                        ...action.payload,
-                        recurrenceLabel: action.payload.recurrenceLabel ?? prev.recurrenceLabel,
-                        isRecurring: action.payload.isRecurring || prev.isRecurring,
-                    };
-                }
+                patchHabitInLists(state, action.payload.id, () => action.payload);
             })
             .addCase(checkHabit.rejected, (state, action) => {
                 const habit = state.list.find(h => h.id === action.meta.arg.habitId);
@@ -1647,39 +1671,23 @@ const habitSlice = createSlice({
                 state.error = action.error.message ?? '완료 처리에 실패했습니다.';
             })
             .addCase(updateHabit.fulfilled, (state, action) => {
-                const index = state.list.findIndex(h => h.id === action.payload.id);
-                if (index !== -1) {
-                    state.list[index] = action.payload;
-                }
+                patchHabitInLists(state, action.payload.id, () => action.payload);
             })
             .addCase(patchTaskDueDate.fulfilled, (state, action) => {
-                const index = state.list.findIndex(h => h.id === action.payload.id);
-                if (index !== -1) {
-                    const prev = state.list[index];
-                    state.list[index] = {
-                        ...action.payload,
-                        recurrenceLabel: action.payload.recurrenceLabel ?? prev.recurrenceLabel,
-                        isRecurring: action.payload.isRecurring || prev.isRecurring,
-                    };
-                }
+                patchHabitInLists(state, action.payload.id, prev => ({
+                    ...action.payload,
+                    recurrenceLabel: action.payload.recurrenceLabel ?? prev.recurrenceLabel,
+                    isRecurring: action.payload.isRecurring || prev.isRecurring,
+                }));
             })
             .addCase(patchTaskPriority.fulfilled, (state, action) => {
-                const index = state.list.findIndex(h => h.id === action.payload.id);
-                if (index !== -1) {
-                    state.list[index] = action.payload;
-                }
+                patchHabitInLists(state, action.payload.id, () => action.payload);
             })
             .addCase(patchTaskLabels.fulfilled, (state, action) => {
-                const index = state.list.findIndex(h => h.id === action.payload.id);
-                if (index !== -1) {
-                    state.list[index] = action.payload;
-                }
+                patchHabitInLists(state, action.payload.id, () => action.payload);
             })
             .addCase(patchTaskProject.fulfilled, (state, action) => {
-                const index = state.list.findIndex(h => h.id === action.payload.id);
-                if (index !== -1) {
-                    state.list[index] = action.payload;
-                }
+                patchHabitInLists(state, action.payload.id, () => action.payload);
             })
             .addCase(deleteHabit.fulfilled, (state, action) => {
                 state.list = state.list.filter(h => h.id !== action.payload);
@@ -1696,8 +1704,7 @@ const habitSlice = createSlice({
                     : action.error.message ?? '작업 순서를 변경하지 못했습니다.';
             })
             .addCase(fetchHabitDetail.fulfilled, (state, action) => {
-                const index = state.list.findIndex(h => h.id === action.payload.id);
-                if (index !== -1) state.list[index] = action.payload;
+                patchHabitInLists(state, action.payload.id, () => action.payload);
             })
             .addCase(addSubtask.fulfilled, (state, action) => {
                 const habit = state.list.find(h => h.id === action.payload.habitId);

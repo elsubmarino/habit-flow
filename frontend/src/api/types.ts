@@ -108,7 +108,10 @@ export interface TaskDto {
     comments?: CommentDto[];
 }
 
-/** GET /api/tasks/*, /api/projects/{id}/tasks 목록 응답 항목 */
+/** PUT/PATCH mutation — Detail 또는 Summary */
+export type TaskMutationDto = TaskDto | TaskListDto;
+
+/** GET /api/tasks/*, /api/projects/{id}/tasks 목록·toggle/sort-order Summary 응답 */
 export interface TaskListDto {
     id: number;
     name: string;
@@ -123,6 +126,7 @@ export interface TaskListDto {
     countSubTasks?: number;
     countSubTasksCompleted?: number;
     countComments?: number;
+    completed?: boolean;
     labels?: LabelDto[];
 }
 

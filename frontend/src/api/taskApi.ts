@@ -1,7 +1,19 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
-import type { PriorityType, TaskDto, TaskListDto, SidebarTasksCountDto, UpcomingDateCountDto } from './types';
-import { mapTaskListToDto, readCompleted, type RecurrenceApiPayload } from './mappers';
+import type {
+    PriorityType,
+    TaskDto,
+    TaskListDto,
+    TaskMutationDto,
+    SidebarTasksCountDto,
+    UpcomingDateCountDto,
+} from './types';
+import {
+    mapTaskListToDto,
+    normalizeTaskMutationResponse,
+    readCompleted,
+    type RecurrenceApiPayload,
+} from './mappers';
 import { buildPageParams, TASK_PAGE_SIZE } from './pagination';
 import { getUpcomingDayRange, getUpcomingSummaryDateRange, toLocalDateTime } from '../utils/date';
 import { parseSlicePage, type PaginatedResult, type SpringSlice } from './slice';
@@ -249,11 +261,16 @@ export async function createTask(payload: CreateTaskPayload): Promise<TaskDto> {
     return data;
 }
 
-export async function updateTask(taskId: number, payload: UpdateTaskPayload): Promise<void> {
+export async function updateTask(
+    taskId: number,
+    payload: UpdateTaskPayload,
+    projectIdHint?: number | null,
+): Promise<TaskDto> {
     const body: Record<string, unknown> = {};
     if (payload.name !== undefined) body.name = payload.name;
     if (payload.description !== undefined) body.description = payload.description;
-    await apiClient.put(`/api/tasks/${taskId}`, body);
+    const { data } = await apiClient.put<TaskMutationDto>(`/api/tasks/${taskId}`, body);
+    return normalizeTaskMutationResponse(data, projectIdHint);
 }
 
 export interface PatchTaskDueDatePayload {
@@ -267,6 +284,7 @@ export interface PatchTaskDueDatePayload {
 export async function patchTaskDueDate(
     taskId: number,
     payload: PatchTaskDueDatePayload,
+    projectIdHint?: number | null,
 ): Promise<TaskDto> {
     const timeSpecified = payload.timeSpecified ?? payload.hasTime;
     const recurrence = payload.recurrence;
@@ -281,33 +299,52 @@ export async function patchTaskDueDate(
         recurrenceDays: recurrence?.recurrenceDays ?? null,
         recurrenceDayOfMonth: recurrence?.recurrenceDayOfMonth ?? null,
     };
-    await apiClient.patch(`/api/tasks/${taskId}/due-date`, body);
-    return fetchTaskById(taskId);
+    const { data } = await apiClient.patch<TaskMutationDto>(`/api/tasks/${taskId}/due-date`, body);
+    return normalizeTaskMutationResponse(data, projectIdHint);
 }
 
-export async function patchTaskPriority(taskId: number, priorityType: PriorityType): Promise<TaskDto> {
-    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/priority`, {
+export async function patchTaskPriority(
+    taskId: number,
+    priorityType: PriorityType,
+    projectIdHint?: number | null,
+): Promise<TaskDto> {
+    const { data } = await apiClient.patch<TaskMutationDto>(`/api/tasks/${taskId}/priority`, {
         taskPriorityType: priorityType,
     });
-    return data;
+    return normalizeTaskMutationResponse(data, projectIdHint);
 }
 
-export async function patchTaskLabels(taskId: number, labelIds: number[]): Promise<TaskDto> {
-    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/labels`, {
+export async function patchTaskLabels(
+    taskId: number,
+    labelIds: number[],
+    projectIdHint?: number | null,
+): Promise<TaskDto> {
+    const { data } = await apiClient.patch<TaskMutationDto>(`/api/tasks/${taskId}/labels`, {
         labelIds,
     });
-    return data;
+    return normalizeTaskMutationResponse(data, projectIdHint);
 }
 
-export async function patchTaskProject(taskId: number, projectId: number | null): Promise<TaskDto> {
-    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/project`, {
+export async function patchTaskProject(
+    taskId: number,
+    projectId: number | null,
+    projectIdHint?: number | null,
+): Promise<TaskDto> {
+    const { data } = await apiClient.patch<TaskMutationDto>(`/api/tasks/${taskId}/project`, {
         projectId,
     });
-    return data;
+    return normalizeTaskMutationResponse(data, projectIdHint ?? projectId);
 }
 
-export async function patchTaskSortOrder(taskId: number, sortOrder: number): Promise<void> {
-    await apiClient.patch(`/api/tasks/${taskId}/sort-order`, { sortOrder });
+export async function patchTaskSortOrder(
+    taskId: number,
+    sortOrder: number,
+    projectIdHint?: number | null,
+): Promise<TaskDto> {
+    const { data } = await apiClient.patch<TaskMutationDto>(`/api/tasks/${taskId}/sort-order`, {
+        sortOrder,
+    });
+    return normalizeTaskMutationResponse(data, projectIdHint);
 }
 
 export async function deleteTask(taskId: number): Promise<void> {
@@ -317,13 +354,15 @@ export async function deleteTask(taskId: number): Promise<void> {
 export async function toggleTaskCompletion(
     taskId: number,
     previousCompleted?: boolean,
+    projectIdHint?: number | null,
 ): Promise<TaskDto> {
-    const { data } = await apiClient.patch<TaskDto>(`/api/tasks/${taskId}/toggle`);
+    const { data } = await apiClient.patch<TaskMutationDto>(`/api/tasks/${taskId}/toggle`);
+    const task = normalizeTaskMutationResponse(data, projectIdHint);
     if (
         previousCompleted !== undefined
-        && readCompleted(data) === previousCompleted
+        && readCompleted(task) === previousCompleted
     ) {
-        return { ...data, completed: !previousCompleted };
+        return { ...task, completed: !previousCompleted };
     }
-    return data;
+    return task;
 }

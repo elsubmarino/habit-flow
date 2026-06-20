@@ -68,3 +68,12 @@ export async function verifyAuthCode(email: string, code: string): Promise<void>
         { headers: { 'Content-Type': 'application/json' } },
     );
 }
+
+export interface MemberUpdatePayload {
+    password: string;
+}
+
+export async function updateMember(memberId: number, payload: MemberUpdatePayload): Promise<MemberDto> {
+    const { data } = await apiClient.put<MemberDto>(`/api/members/${memberId}`, payload);
+    return data;
+}

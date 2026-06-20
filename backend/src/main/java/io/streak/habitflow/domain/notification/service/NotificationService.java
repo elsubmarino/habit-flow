@@ -31,9 +31,10 @@ public class NotificationService {
     @Transactional
     @CheckOwnership(type="NOTIFICATION")
     @SuppressWarnings("unused")
-    public void confirmNotification(Long notificationId, NotificationRequest.Create request, Long memberId) {
+    public NotificationResponse.Summary confirmNotification(Long notificationId, NotificationRequest.Create request, Long memberId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow();
         notification.confirmNotification(request.isConfirmed());
+        return NotificationResponse.Summary.from(notification);
     }
 }

@@ -17,4 +17,5 @@ public interface TaskRepositoryCustom {
     TaskResponse.SidebarTasksCount countSidebarTasks(Long memberId);
     Optional<Task> findByIdWithProject(Long taskId);
     List<TaskResponse.UpcomingDateCount>countUpcomingTasksByDate(Long memberId, LocalDateTime fromDate, LocalDateTime toDate);
+    List<TaskSummaryQuery> getTaskListQueries(List<Long> ids);
 }

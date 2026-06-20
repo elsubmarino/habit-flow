@@ -35,11 +35,10 @@ public class CommentController {
     @PutMapping("/{commentId}")
     @Operation(summary = "댓글 업데이트")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "댓글 업데이트 성공")})
-    public ResponseEntity<Void> updateComment(@PathVariable Long commentId,
-                                                         @LoginMemberId Long loginMemberId,
-                                                         @RequestBody CommentRequest.Update request) {
-        commentService.updateComment(commentId, request, loginMemberId);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<CommentResponse.Detail> updateComment(@PathVariable Long commentId,
+                                                 @LoginMemberId Long loginMemberId,
+                                                 @RequestBody CommentRequest.Update request) {
+        return ResponseEntity.ok(commentService.updateComment(commentId, request, loginMemberId));
     }
 
     @DeleteMapping("/{commentId}")
