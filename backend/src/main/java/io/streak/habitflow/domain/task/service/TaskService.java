@@ -298,6 +298,68 @@ public class TaskService {
         return new TaskResponse.SummarySlice(taskSummaryResponses,hasNext,hasPrev,nextCursor,prevCursor);
     }
 
+    public TaskResponse.SummarySlice getInboxTasks(TaskRequest.SearchCondition searchCondition,
+                                              TaskRequest.Cursor cursor, Long memberId, Pageable pageable){
+        int pageSize = pageable.getPageSize();
+        List<TaskSummaryQuery> tasks = taskRepository.searchInboxTasks(searchCondition, cursor, memberId, pageable);
+
+        boolean hasNext;
+        boolean hasPrev;
+
+        if(cursor != null && cursor.direction() == CursorDirection.PREV){
+            hasPrev = tasks.size() > pageSize;
+            if(hasPrev){
+                tasks = tasks.subList(tasks.size() - pageSize, tasks.size());
+            }
+            hasNext = cursor.lastTaskId() != null;
+        }else{
+            hasNext=  tasks.size() > pageSize;
+            if(hasNext){
+                tasks=tasks.subList(0, pageSize);
+            }
+            hasPrev = cursor != null && cursor.lastTaskId() != null;
+        }
+
+        List<Long> taskIds = tasks.stream().map(TaskSummaryQuery::id).toList();
+        Map<Long, List<LabelResponse.Summary>> labelMap = labelRepository.findLabelsByTaskIds(taskIds);
+
+        List<TaskResponse.Summary> taskSummaryResponses = tasks.stream()
+                .map(task-> {
+                            String encodedId = hashidsProvider.encode(task.id());
+                            return TaskResponse.Summary.of(task,encodedId,
+                                    labelMap.getOrDefault(task.id(), new ArrayList<>()));
+                        }
+                )
+                .toList();
+
+        TaskRequest.Cursor nextCursor = null;
+        TaskRequest.Cursor prevCursor = null;
+
+        if(!tasks.isEmpty()){
+            TaskSummaryQuery first = tasks.get(0);
+            TaskSummaryQuery last = tasks.get(tasks.size()-1);
+
+            if(hasNext){
+                nextCursor = TaskRequest.Cursor.next(
+                        last.dueDate(),
+                        last.taskPriorityType(),
+                        last.sortOrder(),
+                        hashidsProvider.encode(last.id())
+                );
+            }
+            if(hasPrev){
+                prevCursor = TaskRequest.Cursor.prev(
+                        first.dueDate(),
+                        first.taskPriorityType(),
+                        first.sortOrder(),
+                        hashidsProvider.encode(first.id())
+                );
+            }
+        }
+
+        return new TaskResponse.SummarySlice(taskSummaryResponses,hasNext,hasPrev,nextCursor,prevCursor);
+    }
+
     @Transactional
     @CheckOwnership(type="TASK")
     public TaskResponse.Detail updateTask(Long taskId, TaskRequest.Update request, Long memberId){

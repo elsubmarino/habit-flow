@@ -13,7 +13,6 @@ import java.util.List;
 
 import static io.streak.habitflow.domain.favorite.entity.QFavorite.favorite;
 import static io.streak.habitflow.domain.label.entity.QLabel.label;
-import static io.streak.habitflow.domain.member.entity.QMember.member;
 import static io.streak.habitflow.domain.project.entity.QProject.project;
 import static io.streak.habitflow.domain.task.entity.QTask.task;
 import static io.streak.habitflow.domain.task.entity.QTaskLabel.taskLabel;
@@ -53,7 +52,6 @@ public class FavoriteRepositoryCustomImpl implements FavoriteRepositoryCustom {
                                 .otherwise(0L).as("targetCount")
                         ))
                 .from(favorite)
-                .leftJoin(favorite.member,member)
                 .leftJoin(project).on(favorite.targetType.eq(TargetType.PROJECT).and(project.id.eq(favorite.targetId)))
                 .leftJoin(label).on(favorite.targetType.eq(TargetType.LABEL).and(label.id.eq(favorite.targetId)))
                 .where(favorite.member.id.eq(memberId))

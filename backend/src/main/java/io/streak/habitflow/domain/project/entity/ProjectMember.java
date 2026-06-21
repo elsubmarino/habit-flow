@@ -11,7 +11,9 @@ import lombok.*;
 @Builder
 @Table(name="project_members",uniqueConstraints = {
         @UniqueConstraint(name = "uk_project_member",columnNames = {"project_id","member_id"}),
-},indexes = {@Index(name="idx_projects_member",columnList = "member_id,project_id")})
+},indexes = {
+        @Index(name="idx_project_members_member",columnList = "member_id")
+})
 public class ProjectMember {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

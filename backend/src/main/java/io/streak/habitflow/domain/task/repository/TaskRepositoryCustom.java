@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface TaskRepositoryCustom {
     List<TaskSummaryQuery> searchKeyword(String keyword, Long memberId, Pageable pageable);
     List<TaskSummaryQuery> searchTasksByCondition(TaskRequest.SearchCondition searchCondition, TaskRequest.Cursor cursor, Long memberId, Pageable pageable);
+    List<TaskSummaryQuery> searchInboxTasks(TaskRequest.SearchCondition searchCondition, TaskRequest.Cursor cursor, Long memberId, Pageable pageable);
     List<TaskSummaryQuery> findTasksByProject(Long projectId, Long memberId, Pageable pageable);
     TaskResponse.SidebarTasksCount countSidebarTasks(Long memberId);
     Optional<Task> findByIdWithProject(Long taskId);

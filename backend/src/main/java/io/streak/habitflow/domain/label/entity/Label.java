@@ -11,7 +11,7 @@ import lombok.*;
 @Builder
 @Getter
 @Table(name="labels",indexes = {
-        @Index(name="idx_labels_member_paging",columnList = "member_id,label_id")
+        @Index(name="idx_labels_member_paging",columnList = "member_id,label_id DESC")
 })
 public class Label  extends BaseTimeEntity {
     @Id

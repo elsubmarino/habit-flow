@@ -130,7 +130,7 @@ public class TaskController {
                 TaskFilterType.INBOX
         );
 
-        return ResponseEntity.ok(taskService.getTasks(searchCondition, cursor, loginMemberId,pageable));
+        return ResponseEntity.ok(taskService.getInboxTasks(searchCondition, cursor, loginMemberId,pageable));
     }
 
     @GetMapping("/today")

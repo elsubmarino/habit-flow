@@ -3,6 +3,7 @@ package io.streak.habitflow.domain.task.repository;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.task.dto.query.TaskSummaryQuery;
@@ -64,12 +65,18 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
 
     @Override
     public List<TaskSummaryQuery> findTasksByProject(Long projectId, Long memberId, Pageable pageable) {
+
+        List<Long> projectIds = queryFactory
+                .select(projectMember.project.id)
+                .from(projectMember)
+                .where(projectMember.member.id.eq(memberId))
+                .fetch();
+
         List<Long> ids = queryFactory
                 .select(task.id)
                 .from(task)
-                .join(task.project, project)
-                .join(projectMember).on(projectMember.project.eq(project))
-                .where(task.project.id.eq(projectId),
+                .where(task.project.id.in(projectIds),
+                        task.parent.id.isNull(),
                         task.completed.eq(false)
                 )
                 .orderBy(
@@ -137,10 +144,20 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     public List<TaskSummaryQuery> searchTasksByCondition(TaskRequest.SearchCondition searchCondition, TaskRequest.Cursor cursor, Long memberId, Pageable pageable) {
 
         boolean isPrev = cursor != null && cursor.direction() == CursorDirection.PREV;
+        List<Long> projectIds = queryFactory
+                .select(projectMember.project.id)
+                .from(projectMember)
+                .where(projectMember.member.id.eq(memberId))
+                .fetch();
+
+        if(projectIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         List<Long> ids = queryFactory
                 .select(task.id)
                 .from(task)
-                .where(task.member.id.eq(memberId),
+                .where( task.project.id.in(projectIds),
                         task.parent.isNull(),
                         task.completed.eq(false),
                         filterTypeEq(searchCondition.taskFilterType()),
@@ -161,6 +178,73 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         }
 
         return getTaskListQueries(ids);
+    }
+
+    @Override
+    public List<TaskSummaryQuery> searchInboxTasks(TaskRequest.SearchCondition searchCondition, TaskRequest.Cursor cursor, Long memberId, Pageable pageable) {
+        boolean isPrev = cursor != null && cursor.direction() == CursorDirection.PREV;
+        List<Long> ids = queryFactory
+                .select(task.id)
+                .from(task)
+                .where( task.project.isNull(),
+                        task.parent.isNull(),
+                        task.completed.eq(false),
+                        dateRangeEq(searchCondition.fromDate(),searchCondition.toDate()),
+                        cursorCondition(cursor)
+                )
+                .orderBy(
+                        isPrev?task.dueDate.desc():task.dueDate.asc(),
+                        isPrev?task.taskPriorityType.desc():task.taskPriorityType.asc(),
+                        isPrev?task.sortOrder.desc():task.sortOrder.asc(),
+                        isPrev?task.id.asc():task.id.desc()
+                )
+                .limit(pageable.getPageSize() + 1)
+                .fetch();
+
+        if (ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        QTask subTask = new QTask("subTask");
+
+        return queryFactory
+                .select(
+                        Projections.constructor(
+                                TaskSummaryQuery.class,
+                                task.id,
+                                task.name,
+                                task.description,
+                                task.taskPriorityType,
+                                task.dueDate,
+                                task.sortOrder,
+                                Expressions.constant("관리함"),
+                                ExpressionUtils.as(
+                                        JPAExpressions.select(subTask.count())
+                                                .from(subTask)
+                                                .where(subTask.parent.eq(task)), "countSubTasks"),
+                                ExpressionUtils.as(
+                                        JPAExpressions.select(subTask.count())
+                                                .from(subTask)
+                                                .where(subTask.parent.eq(task)
+                                                        .and(subTask.completed.eq(true))), "countSubTasksCompleted"),
+                                ExpressionUtils.as(
+                                        JPAExpressions.select(comment.count())
+                                                .from(comment)
+                                                .where(comment.task.eq(task)), "countComments"),
+                                task.timeSpecified
+                        )
+                )
+                .from(task)
+                .where(
+                        task.id.in(ids)
+                )
+                .orderBy(
+                        task.dueDate.asc(),
+                        task.taskPriorityType.asc(),
+                        task.sortOrder.asc(),
+                        task.id.desc()
+                )
+                .fetch();
     }
 
     private BooleanExpression cursorCondition(TaskRequest.Cursor cursor){
@@ -248,10 +332,21 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                     .and(task.dueDate.loe(todayEnd));
         } else if (TaskFilterType.UPCOMING == taskFilterType) {
             return task.dueDate.goe(todayStart);
-        } else if (TaskFilterType.INBOX == taskFilterType) {
-            return task.project.isNull();
         } else if (TaskFilterType.OVERDUE == taskFilterType) {
             return task.dueDate.lt(todayStart);
+        }
+        return null;
+    }
+
+    private BooleanExpression filterTypeEqForCount(TaskFilterType taskFilterType) {
+        if (taskFilterType == null) return null;
+        LocalDate today = LocalDate.now();
+        LocalDateTime todayStart = today.atStartOfDay();
+        LocalDateTime todayEnd = today.atTime(LocalTime.MAX);
+        if (TaskFilterType.TODAY == taskFilterType) {
+            return task.dueDate.loe(todayEnd);
+        } else if (TaskFilterType.INBOX == taskFilterType) {
+            return task.project.isNull();
         }
         return null;
     }
@@ -285,6 +380,11 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
 
     @Override
     public List<TaskResponse.UpcomingDateCount> countUpcomingTasksByDate(Long memberId, LocalDateTime fromDate, LocalDateTime toDate) {
+        List<Long> projectIds = queryFactory
+                .select(projectMember.project.id)
+                .from(projectMember)
+                .where(projectMember.member.id.eq(memberId))
+                .fetch();
         return queryFactory
                 .select(
                         task.dueDate.year(),
@@ -294,7 +394,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 )
                 .from(task)
                 .where(
-                        task.member.id.eq(memberId),
+                        task.project.id.in(projectIds),
                         task.parent.isNull(),
                         task.completed.eq(false),
                         filterTypeEq(TaskFilterType.UPCOMING),
@@ -331,23 +431,23 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         Long inboxTasksCount = queryFactory
                 .select(task.count())
                 .from(task)
-                .innerJoin(task.project)
-                .innerJoin(project,projectMember.project).on(projectMember.project.eq(project))
                 .where(
-                        projectMember.member.id.eq(memberId),
+                        task.member.id.eq(memberId),
                         task.completed.eq(false),
                         task.parent.isNull(),
-                        filterTypeEq(TaskFilterType.INBOX)
+                        filterTypeEqForCount(TaskFilterType.INBOX)
                 )
                 .fetchOne();
         Long todayTasksCount = queryFactory
                 .select(task.count())
                 .from(task)
+                .innerJoin(task.project,project)
+                .innerJoin(projectMember).on(projectMember.project.eq(project))
                 .where(
-                        task.member.id.eq(memberId),
+                        projectMember.member.id.eq(memberId),
                         task.completed.eq(false),
                         task.parent.isNull(),
-                        filterTypeEq(TaskFilterType.TODAY)
+                        filterTypeEqForCount(TaskFilterType.TODAY)
                 )
                 .fetchOne();
         return new TaskResponse.SidebarTasksCount(inboxTasksCount != null ? inboxTasksCount : 0L
