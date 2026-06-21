@@ -2,6 +2,7 @@ package io.streak.habitflow.domain.task.dto.response;
 
 import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
+import io.streak.habitflow.domain.task.dto.query.TaskSearchSummaryQuery;
 import io.streak.habitflow.domain.task.dto.query.TaskSummaryQuery;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.entity.Task;
@@ -160,6 +161,17 @@ public final class TaskResponse{
     ){
         public Summary {
             labels = Objects.requireNonNullElse(labels, new ArrayList<>());
+        }
+
+        public static Summary of(TaskSearchSummaryQuery taskSummaryQuery, String encodedId) {
+            return Summary.builder()
+                    .id(encodedId)
+                    .name(taskSummaryQuery.name())
+                    .description(taskSummaryQuery.description())
+                    .taskPriorityType(taskSummaryQuery.taskPriorityType())
+                    .projectName(taskSummaryQuery.projectName())
+                    .sortOrder(taskSummaryQuery.sortOrder())
+                    .build();
         }
 
         public static Summary of(TaskSummaryQuery taskSummaryQuery, String encodedId, List<LabelResponse.Summary> labelSummaryResponses) {

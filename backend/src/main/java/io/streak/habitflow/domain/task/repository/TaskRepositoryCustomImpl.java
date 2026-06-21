@@ -6,6 +6,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import io.streak.habitflow.domain.task.dto.query.TaskSearchSummaryQuery;
 import io.streak.habitflow.domain.task.dto.query.TaskSummaryQuery;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
@@ -46,18 +47,30 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskSummaryQuery> searchKeyword(String keyword, Long memberId, Pageable pageable) {
+    public List<TaskSearchSummaryQuery> searchKeyword(String keyword, Long memberId, Pageable pageable) {
+
+        List<Long> ids = queryFactory
+                .select(projectMember.project.id)
+                .from(projectMember)
+                .where(projectMember.member.id.eq(memberId))
+                .fetch();
+
         return
                 queryFactory
-                        .select(Projections.fields(
-                                TaskSummaryQuery.class,
+                        .select(Projections.constructor(
+                                TaskSearchSummaryQuery.class,
                                 task.id,
-                                task.name
+                                task.name,
+                                task.description,
+                                task.taskPriorityType,
+                                task.sortOrder,
+                                task.project.name
                         ))
                         .from(task)
+                        .leftJoin(task.project,project)
                         .where(
-                                task.name.contains(keyword),
-                                task.member.id.eq(memberId)
+                                task.project.id.in(ids),
+                                task.name.contains(keyword)
                         )
                         .limit(pageable.getPageSize())
                         .fetch();

@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.project.dto.response;
 
+import io.streak.habitflow.domain.project.dto.query.ProjectSearchSummaryQuery;
 import io.streak.habitflow.domain.project.dto.query.ProjectSummaryQuery;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
@@ -80,6 +81,14 @@ public final class ProjectResponse {
 //                    .color(projectSummaryQuery.color())
 //                    .build();
 //        }
+
+        public static Summary ofSearch(ProjectSearchSummaryQuery projectSummaryQuery, String encodedId) {
+            return Summary.builder()
+                    .id(encodedId)
+                    .name(projectSummaryQuery.name())
+                    .color(projectSummaryQuery.color())
+                    .build();
+        }
 
         public static Summary of(ProjectSummaryQuery projectSummaryQuery, String encodedId) {
             return Summary.builder()

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { searchIntegrated } from '../api/searchApi';
+import { useMemo, useState } from 'react';
 import { mapLabel, mapProject, mapTaskToHabit } from '../api/mappers';
+import { INTEGRATED_SEARCH_PAGE_SIZE } from '../api/pagination';
 import type { EntityId } from '../api/types';
+import { useIntegratedSearch } from '../hooks/useIntegratedSearch';
 import type { Habit, Label, Project } from '../store/habitSlice';
 
 interface SearchModalProps {
@@ -14,6 +15,23 @@ interface SearchModalProps {
     onSelectLabel: (labelId: EntityId) => void;
 }
 
+const DEFAULT_RESULT_LIMIT = INTEGRATED_SEARCH_PAGE_SIZE;
+
+function SearchResultSkeleton({ variant }: { variant: 'list' | 'chips' }) {
+    const count = variant === 'list' ? 3 : 2;
+    return (
+        <>
+            {Array.from({ length: count }, (_, index) => (
+                <div
+                    key={index}
+                    className={`search-skeleton ${variant === 'list' ? 'search-skeleton-row' : 'search-skeleton-chip'}`}
+                    aria-hidden
+                />
+            ))}
+        </>
+    );
+}
+
 const SearchModal: React.FC<SearchModalProps> = ({
     habits,
     projects,
@@ -24,62 +42,35 @@ const SearchModal: React.FC<SearchModalProps> = ({
     onSelectLabel,
 }) => {
     const [query, setQuery] = useState('');
-    const [remoteHabits, setRemoteHabits] = useState<Habit[]>([]);
-    const [remoteProjects, setRemoteProjects] = useState<Project[]>([]);
-    const [remoteLabels, setRemoteLabels] = useState<Label[]>([]);
-    const [searching, setSearching] = useState(false);
+    const {
+        data: searchResult,
+        isDebouncing,
+        isFetching,
+        isError,
+    } = useIntegratedSearch(query);
 
     const q = query.trim();
-
-    useEffect(() => {
-        if (!q) {
-            setRemoteHabits([]);
-            setRemoteProjects([]);
-            setRemoteLabels([]);
-            return;
-        }
-        const timer = window.setTimeout(() => {
-            setSearching(true);
-            void searchIntegrated(q)
-                .then(result => {
-                    setRemoteHabits(result.tasks.map(t => mapTaskToHabit(t)));
-                    setRemoteProjects(result.projects.map(p => mapProject(p)));
-                    setRemoteLabels(result.labels.map(l => mapLabel(l)));
-                })
-                .catch(() => {
-                    setRemoteHabits([]);
-                    setRemoteProjects([]);
-                    setRemoteLabels([]);
-                })
-                .finally(() => setSearching(false));
-        }, 250);
-        return () => window.clearTimeout(timer);
-    }, [q]);
+    const showSkeleton = q.length > 0 && !searchResult && (isDebouncing || isFetching);
 
     const filtered = useMemo(() => {
         if (!q) {
             return {
-                habits: habits.slice(0, 8),
-                projects: projects.slice(0, 8),
-                labels: labels.slice(0, 8),
+                habits: habits.slice(0, DEFAULT_RESULT_LIMIT),
+                projects: projects.slice(0, DEFAULT_RESULT_LIMIT),
+                labels: labels.slice(0, DEFAULT_RESULT_LIMIT),
             };
         }
-        if (remoteHabits.length || remoteProjects.length || remoteLabels.length) {
-            return {
-                habits: remoteHabits.slice(0, 10),
-                projects: remoteProjects.slice(0, 10),
-                labels: remoteLabels.slice(0, 10),
-            };
+
+        if (!searchResult) {
+            return { habits: [], projects: [], labels: [] };
         }
-        const lower = q.toLowerCase();
+
         return {
-            habits: habits
-                .filter(h => h.name.toLowerCase().includes(lower) || h.description.toLowerCase().includes(lower))
-                .slice(0, 10),
-            projects: projects.filter(p => p.name.toLowerCase().includes(lower)).slice(0, 10),
-            labels: labels.filter(l => l.name.toLowerCase().includes(lower)).slice(0, 10),
+            habits: searchResult.tasks.map(t => mapTaskToHabit(t)),
+            projects: searchResult.projects.map(p => mapProject(p)),
+            labels: searchResult.labels.map(l => mapLabel(l)),
         };
-    }, [habits, labels, projects, q, remoteHabits, remoteLabels, remoteProjects]);
+    }, [habits, labels, projects, q, searchResult]);
 
     return (
         <div className="search-overlay" onClick={onClose}>
@@ -94,12 +85,16 @@ const SearchModal: React.FC<SearchModalProps> = ({
                     />
                     <kbd>Ctrl K</kbd>
                 </div>
-                {searching && <p className="search-status">검색 중…</p>}
+                {isError && q.length > 0 && (
+                    <p className="search-status search-status-error">검색에 실패했습니다.</p>
+                )}
 
                 <div className="search-section">
                     <p className="search-section-title">할 일</p>
                     <div className="search-results search-results-list">
-                        {filtered.habits.length === 0 ? (
+                        {showSkeleton ? (
+                            <SearchResultSkeleton variant="list" />
+                        ) : filtered.habits.length === 0 ? (
                             <p className="search-empty">표시할 작업이 없습니다.</p>
                         ) : filtered.habits.map(habit => (
                             <button
@@ -120,7 +115,9 @@ const SearchModal: React.FC<SearchModalProps> = ({
                 <div className="search-section">
                     <p className="search-section-title">프로젝트</p>
                     <div className="search-results search-results-chips">
-                        {filtered.projects.length === 0 ? (
+                        {showSkeleton ? (
+                            <SearchResultSkeleton variant="chips" />
+                        ) : filtered.projects.length === 0 ? (
                             <p className="search-empty">표시할 프로젝트가 없습니다.</p>
                         ) : filtered.projects.map(project => (
                             <button
@@ -146,7 +143,9 @@ const SearchModal: React.FC<SearchModalProps> = ({
                 <div className="search-section">
                     <p className="search-section-title">라벨</p>
                     <div className="search-results search-results-chips">
-                        {filtered.labels.length === 0 ? (
+                        {showSkeleton ? (
+                            <SearchResultSkeleton variant="chips" />
+                        ) : filtered.labels.length === 0 ? (
                             <p className="search-empty">표시할 라벨이 없습니다.</p>
                         ) : filtered.labels.map(label => (
                             <button

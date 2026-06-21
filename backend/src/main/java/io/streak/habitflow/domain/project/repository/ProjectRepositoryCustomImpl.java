@@ -2,6 +2,7 @@ package io.streak.habitflow.domain.project.repository;
 
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import io.streak.habitflow.domain.project.dto.query.ProjectSearchSummaryQuery;
 import io.streak.habitflow.domain.project.dto.query.ProjectSummaryQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -18,11 +19,11 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<ProjectSummaryQuery> searchKeyword(String keyword, Long memberId, Pageable pageable) {
+    public List<ProjectSearchSummaryQuery> searchKeyword(String keyword, Long memberId, Pageable pageable) {
         return queryFactory
                 .select(
-                        Projections.fields(
-                                ProjectSummaryQuery.class,
+                        Projections.constructor(
+                                ProjectSearchSummaryQuery.class,
                                 project.id,
                                 project.name,
                                 project.color

@@ -7,6 +7,7 @@ import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.member.service.MailService;
+import io.streak.habitflow.domain.project.dto.query.ProjectSearchSummaryQuery;
 import io.streak.habitflow.domain.project.dto.query.ProjectSummaryQuery;
 import io.streak.habitflow.domain.project.dto.request.ProjectRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
@@ -211,11 +212,11 @@ public class ProjectService {
     }
 
     public List<ProjectResponse.Summary> searchProjects(String keyword, Long memberId, Pageable pageable) {
-        List<ProjectSummaryQuery> projectListQueries = projectRepository.searchKeyword(keyword,memberId, pageable);
+        List<ProjectSearchSummaryQuery> projectListQueries = projectRepository.searchKeyword(keyword,memberId, pageable);
         return projectListQueries.stream()
                 .map(query->{
                     String encodedId = hashidsProvider.encode(query.id());
-                    return ProjectResponse.Summary.of(query,encodedId);
+                    return ProjectResponse.Summary.ofSearch(query,encodedId);
                 })
                 .toList();
     }
