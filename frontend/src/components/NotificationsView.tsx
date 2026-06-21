@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import type { EntityId } from '../api/types';
+import { useDialog } from '../context/DialogContext';
 import {
     formatRelativeTime,
     markAllNotificationsRead,
@@ -18,11 +19,44 @@ interface NotificationsViewProps {
 
 const NotificationsView: React.FC<NotificationsViewProps> = ({ onOpenTask, onOpenProject }) => {
     const dispatch = useAppDispatch();
+    const { showErrorAlert } = useDialog();
     const items = useAppSelector(state => state.notifications.items);
     const projects = useAppSelector(state => state.habits.projects);
     const [tab, setTab] = useState<Tab>('all');
+    const [confirmingIds, setConfirmingIds] = useState<Set<EntityId>>(() => new Set());
+    const [markingAllRead, setMarkingAllRead] = useState(false);
 
     const unreadCount = useMemo(() => selectUnreadCount(items), [items]);
+
+    const handleMarkRead = useCallback(async (notification: AppNotification) => {
+        if (notification.read || confirmingIds.has(notification.id)) return;
+
+        setConfirmingIds(prev => new Set(prev).add(notification.id));
+        try {
+            await dispatch(markNotificationRead(notification.id)).unwrap();
+        } catch {
+            showErrorAlert('알림 확인 처리에 실패했습니다.');
+        } finally {
+            setConfirmingIds(prev => {
+                const next = new Set(prev);
+                next.delete(notification.id);
+                return next;
+            });
+        }
+    }, [confirmingIds, dispatch, showErrorAlert]);
+
+    const handleMarkAllRead = useCallback(async () => {
+        if (markingAllRead || unreadCount === 0) return;
+
+        setMarkingAllRead(true);
+        try {
+            await dispatch(markAllNotificationsRead()).unwrap();
+        } catch {
+            showErrorAlert('알림 확인 처리에 실패했습니다.');
+        } finally {
+            setMarkingAllRead(false);
+        }
+    }, [dispatch, markingAllRead, showErrorAlert, unreadCount]);
 
     const resolveProjectName = useCallback((projectId: EntityId | null) => {
         if (projectId == null) return '프로젝트';
@@ -78,7 +112,8 @@ const NotificationsView: React.FC<NotificationsViewProps> = ({ onOpenTask, onOpe
                 <button
                     type="button"
                     className="mark-all-read"
-                    onClick={() => void dispatch(markAllNotificationsRead())}
+                    disabled={markingAllRead || unreadCount === 0}
+                    onClick={() => void handleMarkAllRead()}
                 >
                     ✓✓ 모두 읽음으로 표시
                 </button>
@@ -148,11 +183,13 @@ const NotificationsView: React.FC<NotificationsViewProps> = ({ onOpenTask, onOpe
                             </div>
                             <button
                                 type="button"
-                                className="notif-action"
-                                aria-label="읽음 처리"
-                                onClick={() => void dispatch(markNotificationRead(n.id))}
+                                className={`notif-action ${n.read ? 'read' : 'unread'} ${confirmingIds.has(n.id) ? 'pending' : ''}`}
+                                aria-label={n.read ? '읽음' : '읽음으로 표시'}
+                                aria-pressed={n.read}
+                                disabled={n.read || confirmingIds.has(n.id)}
+                                onClick={() => void handleMarkRead(n)}
                             >
-                                ○
+                                {n.read ? '✓' : '○'}
                             </button>
                         </li>
                     ))

@@ -4265,9 +4265,24 @@
   cursor: pointer;
 }
 
-.notif-action:hover {
+.notif-action:hover:not(:disabled) {
   background: #f0f0f0;
   color: var(--text-muted);
+}
+
+.notif-action.read {
+  color: #299438;
+  cursor: default;
+}
+
+.notif-action.pending {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.mark-all-read:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* Sidebar favorites & projects sections */

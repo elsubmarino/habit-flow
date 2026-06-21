@@ -94,18 +94,23 @@ export const markAllNotificationsRead = createAsyncThunk(
     async (_, { getState }) => {
         const state = getState() as { notifications: NotificationsState };
         const unread = state.notifications.items.filter(item => !item.read);
-        const confirmed = await Promise.all(
-            unread.map(item => notificationApi.confirmNotification(item.id).catch(() => undefined)),
+        if (unread.length === 0) {
+            return state.notifications.items;
+        }
+
+        const results = await Promise.allSettled(
+            unread.map(item => notificationApi.confirmNotification(item.id)),
         );
-        const confirmedIds = new Set(
-            confirmed
-                .filter((dto): dto is NotificationDto => dto != null && dto.isConfirmed)
-                .map(dto => dto.id),
-        );
+
+        const confirmedIds = new Set<EntityId>();
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled' && result.value.isConfirmed) {
+                confirmedIds.add(unread[index].id);
+            }
+        });
+
         return state.notifications.items.map(item =>
-            confirmedIds.has(item.id) || unread.some(u => u.id === item.id)
-                ? { ...item, read: true }
-                : item,
+            confirmedIds.has(item.id) ? { ...item, read: true } : item,
         );
     },
 );
@@ -113,8 +118,13 @@ export const markAllNotificationsRead = createAsyncThunk(
 export const markNotificationRead = createAsyncThunk(
     'notifications/markOneRead',
     async (id: EntityId, { getState }) => {
-        const dto = await notificationApi.confirmNotification(id);
         const state = getState() as { notifications: NotificationsState };
+        const target = state.notifications.items.find(item => item.id === id);
+        if (!target || target.read) {
+            return state.notifications.items;
+        }
+
+        const dto = await notificationApi.confirmNotification(id);
         return state.notifications.items.map(item =>
             item.id === id ? { ...item, read: dto.isConfirmed } : item,
         );

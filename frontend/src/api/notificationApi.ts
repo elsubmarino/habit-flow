@@ -9,10 +9,13 @@ export async function fetchNotifications(): Promise<NotificationDto[]> {
     });
 }
 
-export async function confirmNotification(notificationId: EntityId): Promise<NotificationDto> {
-    const { data } = await apiClient.put<NotificationDto>(`/api/notifications/${notificationId}/confirm`, {
-        isConfirmed: true,
-        confirmed: true,
-    });
+export async function confirmNotification(
+    notificationId: EntityId,
+    isConfirmed = true,
+): Promise<NotificationDto> {
+    const { data } = await apiClient.put<NotificationDto>(
+        `/api/notifications/${notificationId}/confirm`,
+        { isConfirmed },
+    );
     return data;
 }

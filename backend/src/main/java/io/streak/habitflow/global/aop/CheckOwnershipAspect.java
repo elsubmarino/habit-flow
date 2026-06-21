@@ -110,7 +110,7 @@ public class CheckOwnershipAspect {
 
     public void checkNotificationOwner(Long notificationId, Long memberId){
         Notification notification = notificationRepository.getOrThrow(notificationId);
-        if(!notification.getActor().getId().equals(memberId)){
+        if(!notification.getReceiver().getId().equals(memberId)){
             throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
         }
     }
