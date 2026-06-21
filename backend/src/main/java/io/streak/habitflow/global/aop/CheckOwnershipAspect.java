@@ -77,14 +77,14 @@ public class CheckOwnershipAspect {
                 }
             }else if("COMMENT".equals(domainType) && commentId != null && loginMemberId != null){
                 checkCommentOwner(commentId,loginMemberId);
-            }else if("MEMBER".equals(domainType) && loginMemberId != null && loginMemberId != null){
+            }else if("MEMBER".equals(domainType) && loginMemberId != null){
                 checkMemberOwner(loginMemberId,loginMemberId);
             }else if("NOTIFICATION".equals(domainType) && notificationId != null && loginMemberId != null){
                 checkNotificationOwner(notificationId,loginMemberId);
             }else if("PROJECT".equals(domainType) && projectId != null && loginMemberId != null) {
                 checkProjectOwner(projectId, loginMemberId);
             }else if("LABEL".equals(domainType) && labelId != null && loginMemberId != null){
-
+                checkLabelOwner(labelId,loginMemberId);
             }
         }
     }
