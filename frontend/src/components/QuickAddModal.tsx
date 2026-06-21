@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import type { EntityId } from '../api/types';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addHabit, fetchHabits, fetchNavTaskCounts, fetchProjects, type ApiView } from '../store/habitSlice';
 import { getApiErrorMessage } from '../api/apiError';
@@ -12,8 +13,8 @@ interface QuickAddModalProps {
     isOpen: boolean;
     onClose: () => void;
     view: NavItem;
-    projectId: number | null;
-    labelId: number | null;
+    projectId: EntityId | null;
+    labelId: EntityId | null;
 }
 
 const PRIORITY_OPTIONS = [
@@ -50,8 +51,8 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
     const [dueTime24, setDueTime24] = useState<string | null>(null);
     const [hasTime, setHasTime] = useState(false);
     const [recurrenceLabel, setRecurrenceLabel] = useState<string | null>(null);
-    const [selectedProjectId, setSelectedProjectId] = useState<number | ''>('');
-    const [selectedLabelIds, setSelectedLabelIds] = useState<number[]>([]);
+    const [selectedProjectId, setSelectedProjectId] = useState<EntityId | ''>('');
+    const [selectedLabelIds, setSelectedLabelIds] = useState<EntityId[]>([]);
     const [priority, setPriority] = useState<1 | 2 | 3 | 4>(4);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showPriorityPicker, setShowPriorityPicker] = useState(false);
@@ -188,7 +189,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
         }
     };
 
-    const toggleLabel = (id: number) => {
+    const toggleLabel = (id: EntityId) => {
         setSelectedLabelIds(prev =>
             prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id],
         );
@@ -407,7 +408,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({
                             className="quick-project-select"
                             value={selectedProjectId}
                             onChange={e => setSelectedProjectId(
-                                e.target.value === '' ? '' : Number(e.target.value),
+                                e.target.value === '' ? '' : e.target.value,
                             )}
                         >
                             <option value="">관리함</option>

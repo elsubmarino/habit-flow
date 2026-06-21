@@ -17,8 +17,8 @@ interface UseAppUrlSyncParams {
     setShowProjectsBrowse: (value: boolean) => void;
     showNotifications: boolean;
     setShowNotifications: (value: boolean) => void;
-    selectedProjectId: number | null;
-    selectedLabelId: number | null;
+    selectedProjectId: import('../api/types').EntityId | null;
+    selectedLabelId: import('../api/types').EntityId | null;
     dispatch: AppDispatch;
 }
 

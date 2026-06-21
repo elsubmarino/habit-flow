@@ -8,6 +8,7 @@ import io.streak.habitflow.domain.member.type.Role;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.security.dto.TokenDto;
 import io.streak.habitflow.global.security.jwt.JwtTokenProvider;
+import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -26,6 +27,7 @@ public class MemberService {
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisTemplate<String, String> redisTemplate;
     private final MailService mailService;
+    private final HashidsProvider hashidsProvider;
 
     @Transactional
     public MemberResponse.Detail createMember(MemberRequest.SignUp request){
@@ -46,8 +48,8 @@ public class MemberService {
         Member result = memberRepository.save(member);
 
         mailService.removeVerifiedStatus(request.email());
-
-        return MemberResponse.Detail.from(result);
+        String encodedId = hashidsProvider.encode(result.getId());
+        return MemberResponse.Detail.to(result,encodedId);
     }
 
     @Transactional
@@ -57,12 +59,14 @@ public class MemberService {
         Member member = memberRepository.getOrThrow(memberId);
 
         member.updateMember(request.password());
-        return MemberResponse.Detail.from(member);
+        String encodedId = hashidsProvider.encode(member.getId());
+        return MemberResponse.Detail.to(member,encodedId);
     }
 
     public MemberResponse.Detail getMember(Long memberId){
         Member member = memberRepository.getOrThrow(memberId);
-        return MemberResponse.Detail.from(member);
+        String encodedId = hashidsProvider.encode(member.getId());
+        return MemberResponse.Detail.to(member,encodedId);
     }
 
     @Transactional

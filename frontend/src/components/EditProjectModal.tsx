@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchProjectById } from '../api/projectApi';
 import { parseProjectAccessType, parseProjectLayoutType } from '../api/projectMappers';
-import type { ProjectAccessType, ProjectLayoutType } from '../api/types';
+import type { ProjectAccessType, ProjectLayoutType, EntityId } from '../api/types';
 import type { Project } from '../store/habitSlice';
 import {
     getColorName,
@@ -16,14 +16,15 @@ import {
     ListLayoutIcon,
     LockIcon,
 } from './icons';
+import { useDialog } from '../context/DialogContext';
 
 const NAME_MAX = 120;
 
 export interface ProjectEditSavePayload {
-    id: number;
+    id: EntityId;
     name: string;
     color: string;
-    parentId: number | null;
+    parentId: EntityId | null;
     accessType: ProjectAccessType;
     layoutType: ProjectLayoutType;
     favorite: boolean;
@@ -47,9 +48,10 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
     onClose,
     onSave,
 }) => {
+    const { showAlert } = useDialog();
     const [name, setName] = useState(project.name);
     const [color, setColor] = useState(normalizeProjectColor(project.color));
-    const [parentId, setParentId] = useState<number | null>(null);
+    const [parentId, setParentId] = useState<EntityId | null>(null);
     const [parentName, setParentName] = useState<string | null>(null);
     const [accessType, setAccessType] = useState<ProjectAccessType>('PRIVATE');
     const [layoutType, setLayoutType] = useState<ProjectLayoutType>('LIST');
@@ -338,7 +340,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                     <button
                         type="button"
                         className="project-edit-move-btn"
-                        onClick={() => window.alert('프로젝트 이동 기능은 아직 지원되지 않습니다.')}
+                        onClick={() => void showAlert('프로젝트 이동 기능은 아직 지원되지 않습니다.')}
                     >
                         프로젝트 이동
                     </button>

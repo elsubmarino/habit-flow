@@ -22,7 +22,7 @@ public final class LabelRequest {
 
     public record Update(
             @NotBlank
-            Long id,
+            String id,
             @NotBlank(message = "이름은 필수 입력 사항입니다.")
             @Size(max=100,message = "이름은 100자 이상 초과할 수 없습니다.")
             String name,

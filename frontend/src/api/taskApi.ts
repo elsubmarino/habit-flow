@@ -1,13 +1,6 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
-import type {
-    PriorityType,
-    TaskDto,
-    TaskListDto,
-    TaskMutationDto,
-    SidebarTasksCountDto,
-    UpcomingDateCountDto,
-} from './types';
+import type { EntityId, PriorityType, TaskDto, TaskListDto, TaskMutationDto, SidebarTasksCountDto, UpcomingDateCountDto } from './types';
 import {
     mapTaskListToDto,
     normalizeTaskMutationResponse,
@@ -34,9 +27,9 @@ export interface CreateTaskPayload extends RecurrenceApiPayload {
     hasTime?: boolean;
     timeSpecified?: boolean;
     priorityType?: PriorityType;
-    projectId?: number | null;
-    parentId?: number | null;
-    labelIds?: number[];
+    projectId?: EntityId | null;
+    parentId?: EntityId | null;
+    labelIds?: EntityId[];
     file?: File | null;
 }
 
@@ -45,8 +38,8 @@ export interface UpdateTaskPayload {
     description?: string;
     dueDate?: string | null;
     priorityType?: PriorityType;
-    projectId?: number | null;
-    labelIds?: number[];
+    projectId?: EntityId | null;
+    labelIds?: EntityId[];
 }
 
 export interface UpcomingTasksQuery {
@@ -68,9 +61,8 @@ function buildTaskFormData(body: Record<string, unknown>, file?: File | null) {
 
 function mapTaskListSlice(
     slice: TaskListSliceDto<TaskListDto>,
-    projectId?: number,
 ): TaskPageResult<TaskDto> {
-    const content = (slice.content ?? []).map(task => mapTaskListToDto(task, projectId));
+    const content = (slice.content ?? []).map(task => mapTaskListToDto(task));
     return {
         content,
         hasNext: slice.hasNext ?? false,
@@ -82,12 +74,11 @@ function mapTaskListSlice(
 
 function mapTaskListPage(
     slice: SpringSlice<TaskListDto>,
-    projectId?: number,
 ): PaginatedResult<TaskDto> {
     const page = parseSlicePage(slice);
     return {
         ...page,
-        content: page.content.map(task => mapTaskListToDto(task, projectId)),
+        content: page.content.map(task => mapTaskListToDto(task)),
     };
 }
 
@@ -214,7 +205,7 @@ export async function fetchAllTaskPages(
 }
 
 export async function fetchProjectTasks(
-    projectId: number,
+    projectId: EntityId,
     page = 0,
     size = TASK_PAGE_SIZE,
 ): Promise<PaginatedResult<TaskDto>> {
@@ -223,11 +214,11 @@ export async function fetchProjectTasks(
             `/api/projects/${projectId}/tasks`,
             { params: buildPageParams(size, page) },
         );
-        return mapTaskListPage(data, projectId);
+        return mapTaskListPage(data);
     });
 }
 
-export async function fetchTaskById(taskId: number): Promise<TaskDto> {
+export async function fetchTaskById(taskId: EntityId): Promise<TaskDto> {
     return dedupeInFlight(`task:${taskId}`, async () => {
         const { data } = await apiClient.get<TaskDto>(`/api/tasks/${taskId}`);
         return data;
@@ -262,9 +253,9 @@ export async function createTask(payload: CreateTaskPayload): Promise<TaskDto> {
 }
 
 export async function updateTask(
-    taskId: number,
+    taskId: EntityId,
     payload: UpdateTaskPayload,
-    projectIdHint?: number | null,
+    projectIdHint?: EntityId | null,
 ): Promise<TaskDto> {
     const body: Record<string, unknown> = {};
     if (payload.name !== undefined) body.name = payload.name;
@@ -282,9 +273,9 @@ export interface PatchTaskDueDatePayload {
 }
 
 export async function patchTaskDueDate(
-    taskId: number,
+    taskId: EntityId,
     payload: PatchTaskDueDatePayload,
-    projectIdHint?: number | null,
+    projectIdHint?: EntityId | null,
 ): Promise<TaskDto> {
     const timeSpecified = payload.timeSpecified ?? payload.hasTime;
     const recurrence = payload.recurrence;
@@ -304,9 +295,9 @@ export async function patchTaskDueDate(
 }
 
 export async function patchTaskPriority(
-    taskId: number,
+    taskId: EntityId,
     priorityType: PriorityType,
-    projectIdHint?: number | null,
+    projectIdHint?: EntityId | null,
 ): Promise<TaskDto> {
     const { data } = await apiClient.patch<TaskMutationDto>(`/api/tasks/${taskId}/priority`, {
         taskPriorityType: priorityType,
@@ -315,9 +306,9 @@ export async function patchTaskPriority(
 }
 
 export async function patchTaskLabels(
-    taskId: number,
-    labelIds: number[],
-    projectIdHint?: number | null,
+    taskId: EntityId,
+    labelIds: EntityId[],
+    projectIdHint?: EntityId | null,
 ): Promise<TaskDto> {
     const { data } = await apiClient.patch<TaskMutationDto>(`/api/tasks/${taskId}/labels`, {
         labelIds,
@@ -326,9 +317,9 @@ export async function patchTaskLabels(
 }
 
 export async function patchTaskProject(
-    taskId: number,
-    projectId: number | null,
-    projectIdHint?: number | null,
+    taskId: EntityId,
+    projectId: EntityId | null,
+    projectIdHint?: EntityId | null,
 ): Promise<TaskDto> {
     const { data } = await apiClient.patch<TaskMutationDto>(`/api/tasks/${taskId}/project`, {
         projectId,
@@ -337,9 +328,9 @@ export async function patchTaskProject(
 }
 
 export async function patchTaskSortOrder(
-    taskId: number,
+    taskId: EntityId,
     sortOrder: number,
-    projectIdHint?: number | null,
+    projectIdHint?: EntityId | null,
 ): Promise<TaskDto> {
     const { data } = await apiClient.patch<TaskMutationDto>(`/api/tasks/${taskId}/sort-order`, {
         sortOrder,
@@ -347,14 +338,14 @@ export async function patchTaskSortOrder(
     return normalizeTaskMutationResponse(data, projectIdHint);
 }
 
-export async function deleteTask(taskId: number): Promise<void> {
+export async function deleteTask(taskId: EntityId): Promise<void> {
     await apiClient.delete(`/api/tasks/${taskId}`);
 }
 
 export async function toggleTaskCompletion(
-    taskId: number,
+    taskId: EntityId,
     previousCompleted?: boolean,
-    projectIdHint?: number | null,
+    projectIdHint?: EntityId | null,
 ): Promise<TaskDto> {
     const { data } = await apiClient.patch<TaskMutationDto>(`/api/tasks/${taskId}/toggle`);
     const task = normalizeTaskMutationResponse(data, projectIdHint);

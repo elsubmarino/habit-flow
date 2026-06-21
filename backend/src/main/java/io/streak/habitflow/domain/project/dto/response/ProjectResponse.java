@@ -11,8 +11,8 @@ import lombok.Builder;
 public final class ProjectResponse {
     @Builder
     public record Detail(
-            @Schema(description = "프로젝트 ID",example="1")
-            Long id,
+            @Schema(description = "프로젝트 ID")//TODO
+            String id,
 
             @Schema(description = "프로젝트명 (100자 이하)")
             String name,
@@ -35,9 +35,9 @@ public final class ProjectResponse {
             @Schema(description = "레이아웃 (리스트형, 보드형, 달력형)",examples = {"LIST","BOARD","CALENDAR"})
             LayoutType layoutType
     ){
-        public static Detail of(Project project, boolean favorite) {
+        public static Detail of(Project project, boolean favorite, String encodedId) {
             DetailBuilder builder = Detail.builder()
-                    .id(project.getId())
+                    .id(encodedId)
                     .name(project.getName())
                     .color(project.getColor())
                     .layoutType(project.getLayoutType())
@@ -53,8 +53,8 @@ public final class ProjectResponse {
 
     @Builder
     public record Summary(
-            @Schema(description = "프로젝트 ID",example="1")
-            Long id,
+            @Schema(description = "프로젝트 ID",example="추후업데이트") //TODO
+            String id,
 
             @Schema(description = "프로젝트명 (100자 이하)")
             String name,
@@ -65,17 +65,25 @@ public final class ProjectResponse {
             @Schema(description = "해당 프로젝트에 속한 테스크의 수")
             long taskCount
     ){
-        public static Summary from(Project project) {
-            return Summary.builder()
-                    .id(project.getId())
-                    .name(project.getName())
-                    .color(project.getColor())
-                    .build();
-        }
+//        public static Summary from(Project project) {
+//            return Summary.builder()
+//                    .id(project.getId())
+//                    .name(project.getName())
+//                    .color(project.getColor())
+//                    .build();
+//        }
 
-        public static Summary from(ProjectSummaryQuery projectSummaryQuery) {
+//        public static Summary from(ProjectSummaryQuery projectSummaryQuery) {
+//            return Summary.builder()
+//                    .id(projectSummaryQuery.id())
+//                    .name(projectSummaryQuery.name())
+//                    .color(projectSummaryQuery.color())
+//                    .build();
+//        }
+
+        public static Summary of(ProjectSummaryQuery projectSummaryQuery, String encodedId) {
             return Summary.builder()
-                    .id(projectSummaryQuery.id())
+                    .id(encodedId)
                     .name(projectSummaryQuery.name())
                     .color(projectSummaryQuery.color())
                     .build();

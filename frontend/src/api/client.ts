@@ -195,18 +195,17 @@ export function getStoredAccessToken(): string | null {
 }
 
 /** accessToken JWT의 memberId 클레임 (회원 API에 id가 없을 때 사용) */
-export function getLoggedInMemberId(): number | null {
+export function getLoggedInMemberId(): import('./types').EntityId | null {
     const token = getStoredAccessToken();
     if (!token) return null;
 
     const payload = parseAccessTokenPayload(token);
     const memberId = payload?.memberId;
-    if (typeof memberId === 'number' && Number.isFinite(memberId)) {
+    if (typeof memberId === 'string' && memberId.trim() !== '') {
         return memberId;
     }
-    if (typeof memberId === 'string' && memberId.trim() !== '') {
-        const parsed = Number(memberId);
-        return Number.isFinite(parsed) ? parsed : null;
+    if (typeof memberId === 'number' && Number.isFinite(memberId)) {
+        return String(memberId);
     }
     return null;
 }

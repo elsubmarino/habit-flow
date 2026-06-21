@@ -1,18 +1,18 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import * as notificationApi from '../api/notificationApi';
-import type { ActivityType, NotificationDto, NotificationType } from '../api/types';
+import type { ActivityType, EntityId, NotificationDto, NotificationType } from '../api/types';
 
 export interface AppNotification {
-    id: number;
+    id: EntityId;
     dedupeKey: string;
-    receiverId: number;
-    actorId: number;
+    receiverId: EntityId;
+    actorId: EntityId;
     actor: string;
     action: 'completed' | 'assigned' | 'comment' | 'added' | 'moved' | 'deleted' | 'invited';
     notificationType: NotificationType;
-    targetId: number;
-    projectId: number | null;
-    taskId: number | null;
+    targetId: EntityId;
+    projectId: EntityId | null;
+    taskId: EntityId | null;
     taskName: string;
     customMessage: string | null;
     createdAt: string;
@@ -74,9 +74,9 @@ function mapNotification(dto: NotificationDto): AppNotification {
         projectId: isProject ? dto.targetId : null,
         taskId: isTask ? dto.targetId : null,
         taskName: isProject
-            ? `프로젝트 #${dto.targetId}`
+            ? `프로젝트 ${dto.targetId}`
             : isTask
-                ? `작업 #${dto.targetId}`
+                ? `작업 ${dto.targetId}`
                 : '알림',
         customMessage: dto.customMessage?.trim() || null,
         createdAt: dto.createdAt ?? new Date().toISOString(),
@@ -112,7 +112,7 @@ export const markAllNotificationsRead = createAsyncThunk(
 
 export const markNotificationRead = createAsyncThunk(
     'notifications/markOneRead',
-    async (id: number, { getState }) => {
+    async (id: EntityId, { getState }) => {
         const dto = await notificationApi.confirmNotification(id);
         const state = getState() as { notifications: NotificationsState };
         return state.notifications.items.map(item =>

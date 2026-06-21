@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { displayLabelName } from '../api/labelMappers';
+import type { EntityId } from '../api/types';
 import type { Label } from '../store/habitSlice';
 import { TagIcon } from './icons';
 import ProjectMoreMenu from './ProjectMoreMenu';
@@ -7,9 +8,9 @@ import ProjectMoreMenu from './ProjectMoreMenu';
 interface LabelListRowProps {
     label: Label;
     active?: boolean;
-    onSelect: (labelId: number) => void;
+    onSelect: (labelId: EntityId) => void;
     onEdit: (label: Label) => void;
-    onDelete: (labelId: number) => void;
+    onDelete: (labelId: EntityId) => void;
 }
 
 const LabelListRow: React.FC<LabelListRowProps> = ({

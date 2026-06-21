@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
+import type { EntityId } from '../api/types';
 import type { Project } from '../store/habitSlice';
 import ProjectListRow from './ProjectListRow';
 
 interface ProjectsBrowseViewProps {
     projects: Project[];
-    onSelectProject: (projectId: number) => void;
+    onSelectProject: (projectId: EntityId) => void;
     onAddProject: () => void;
     onEditProject: (project: Project) => void;
-    onDeleteProject: (projectId: number) => void;
+    onDeleteProject: (projectId: EntityId) => void;
 }
 
 const ProjectsBrowseView: React.FC<ProjectsBrowseViewProps> = ({

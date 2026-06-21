@@ -1,4 +1,4 @@
-import type { LabelUpdatePayload } from './types';
+import type { EntityId, LabelUpdatePayload } from './types';
 
 export function formatLabelApiName(name: string): string {
     const trimmed = name.trim();
@@ -17,7 +17,7 @@ export function toLabelWriteBody(payload: { name: string; color?: string; favori
     };
 }
 
-export function toLabelUpdateBody(id: number, payload: LabelUpdatePayload) {
+export function toLabelUpdateBody(id: EntityId, payload: LabelUpdatePayload) {
     return {
         id,
         ...toLabelWriteBody(payload),

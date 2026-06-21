@@ -65,3 +65,6 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
+hashids:
+  salt: "io.streak.habitflow.secret.salt.2026"
+  min-length: 8

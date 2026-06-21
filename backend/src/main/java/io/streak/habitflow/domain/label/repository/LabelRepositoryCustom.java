@@ -12,5 +12,5 @@ public interface LabelRepositoryCustom {
     List<LabelSummaryQuery> searchKeyword(String name, Long memberId, Pageable pageable);
     List<Label> searchLabelsByCondition(Long labelId, Long memberId, Pageable pageable);
     Map<Long, List<LabelResponse.Summary>> findLabelsByTaskIds(List<Long> taskIds);
-    List<LabelResponse.Summary> findByTask(Long taskId);
+    List<LabelSummaryQuery> findByTask(Long taskId);
 }

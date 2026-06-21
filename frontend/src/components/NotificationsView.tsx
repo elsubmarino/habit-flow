@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
+import type { EntityId } from '../api/types';
 import {
     formatRelativeTime,
     markAllNotificationsRead,
@@ -11,8 +12,8 @@ import {
 type Tab = 'all' | 'unread';
 
 interface NotificationsViewProps {
-    onOpenTask: (habitId: number) => void;
-    onOpenProject: (projectId: number) => void;
+    onOpenTask: (habitId: EntityId) => void;
+    onOpenProject: (projectId: EntityId) => void;
 }
 
 const NotificationsView: React.FC<NotificationsViewProps> = ({ onOpenTask, onOpenProject }) => {
@@ -23,7 +24,7 @@ const NotificationsView: React.FC<NotificationsViewProps> = ({ onOpenTask, onOpe
 
     const unreadCount = useMemo(() => selectUnreadCount(items), [items]);
 
-    const resolveProjectName = useCallback((projectId: number | null) => {
+    const resolveProjectName = useCallback((projectId: EntityId | null) => {
         if (projectId == null) return '프로젝트';
         return projects.find(p => p.id === projectId)?.name ?? `프로젝트 #${projectId}`;
     }, [projects]);

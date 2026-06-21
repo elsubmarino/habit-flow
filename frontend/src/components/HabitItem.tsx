@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAppDispatch } from '../store/hooks';
 import { checkHabit, deleteHabit } from '../store/habitSlice';
+import type { EntityId } from '../api/types';
 import type { Habit } from '../store/habitSlice';
+import { useDialog } from '../context/DialogContext';
 import { displayLabelName } from '../api/labelMappers';
 import { formatDueLabel, formatTaskDetailDue, toISODate } from '../utils/date';
 import { formatOverdueDueLabel, isOverdueHabit } from '../utils/overdueTasks';
@@ -22,9 +24,9 @@ interface HabitItemProps {
     onDragEnd?: (event: React.DragEvent<HTMLLIElement>) => void;
     onDrop?: (event: React.DragEvent<HTMLLIElement>) => void;
     onOpenDetails?: (habit: Habit) => void;
-    onOpenProject?: (projectId: number) => void;
+    onOpenProject?: (projectId: EntityId) => void;
     onTaskCompleted?: (habit: Habit) => void;
-    onTaskDeleted?: (habitId: number) => void;
+    onTaskDeleted?: (habitId: EntityId) => void;
 }
 
 const PRIORITY_BORDER: Record<1 | 2 | 3 | 4, string> = {
@@ -52,6 +54,7 @@ const HabitItem: React.FC<HabitItemProps> = ({
     onTaskDeleted,
 }) => {
     const dispatch = useAppDispatch();
+    const { confirm, showErrorAlert } = useDialog();
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const completed = habit.completedToday;
@@ -88,13 +91,18 @@ const HabitItem: React.FC<HabitItemProps> = ({
     const handleDelete = async (e: React.MouseEvent) => {
         e.stopPropagation();
         setMenuOpen(false);
-        if (!window.confirm(`"${habit.name}" 작업을 삭제할까요?`)) return;
+        if (!(await confirm({
+            title: '작업 삭제',
+            message: `"${habit.name}" 작업을 삭제할까요?`,
+            confirmLabel: '삭제',
+            variant: 'danger',
+        }))) return;
 
         const result = await dispatch(deleteHabit(habit.id));
         if (deleteHabit.fulfilled.match(result)) {
             onTaskDeleted?.(habit.id);
         } else {
-            window.alert('작업을 삭제하지 못했습니다.');
+            await showErrorAlert('작업을 삭제하지 못했습니다.');
         }
     };
 

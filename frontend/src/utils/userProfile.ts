@@ -1,8 +1,8 @@
-import type { MemberDto } from '../api/types';
+import type { MemberDto, EntityId } from '../api/types';
 import { getLoggedInMemberId } from '../api/client';
 
 export interface UserProfile {
-    id?: number;
+    id?: EntityId;
     displayName: string;
     fullName: string;
     email: string;

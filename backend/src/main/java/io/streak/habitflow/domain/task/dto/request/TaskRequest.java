@@ -34,14 +34,14 @@ public final class TaskRequest {
             TaskPriorityType taskPriorityType,
 
             @Schema(description = "소속 프로젝트 ID (소속 없을 시에 null 넘기면 인박스로 진입)")
-            Long projectId,
+            String projectId,
 
             @Schema(description = "부모 테스크 ID (하위 테스크 생성 시에 필수 채움)")
-            Long parentId,
+            String parentId,
 
             @Size(max=10,message = "라벨은 최대 10개까지만 매핑할 수 있습니다.")
             @Schema(description = "매핑할 라벨 ID 리스트 (최대 10개)")
-            List<Long> labelIds,
+            List<String> labelIds,
 
             @Schema(description = "반복 일졍 여부")
             boolean recurring,
@@ -119,7 +119,7 @@ public final class TaskRequest {
     public record UpdateLabel(
             @Size(max=10)
             @Schema(description = "매핑할 라벨 ID 리스트 (최대 10개)")
-            List<Long> labelIds
+            List<String> labelIds
     ){
         public UpdateLabel{
             labelIds = (labelIds == null) ? new ArrayList<>() : new ArrayList<>(labelIds);
@@ -135,7 +135,7 @@ public final class TaskRequest {
 
     public record UpdateProject(
             @Schema(description = "변경할 프로젝트 아아디")
-            Long projectId
+            String projectId
     ){}
 
     public record Update(
@@ -162,7 +162,7 @@ public final class TaskRequest {
             Long lastSortOrder,
 
             @Schema(description = "이전 테스크 ID")
-            Long lastTaskId,
+            String lastTaskId,
 
             @Schema(description = "이전 방향 여부(NEXT/PREV)",examples = {"NEXT","PREV"})
             CursorDirection direction
@@ -171,11 +171,11 @@ public final class TaskRequest {
             direction = Objects.requireNonNullElse(direction,CursorDirection.NEXT);
         }
 
-        public static Cursor next(LocalDateTime dueDate, TaskPriorityType priorityType, Long sortOrder, Long taskId){
+        public static Cursor next(LocalDateTime dueDate, TaskPriorityType priorityType, Long sortOrder, String taskId){
             return new Cursor(dueDate,priorityType,sortOrder,taskId,CursorDirection.NEXT);
         }
 
-        public static Cursor prev(LocalDateTime dueDate, TaskPriorityType priorityType, Long sortOrder, Long taskId){
+        public static Cursor prev(LocalDateTime dueDate, TaskPriorityType priorityType, Long sortOrder, String taskId){
             return new Cursor(dueDate,priorityType,sortOrder,taskId,CursorDirection.PREV);
         }
     }

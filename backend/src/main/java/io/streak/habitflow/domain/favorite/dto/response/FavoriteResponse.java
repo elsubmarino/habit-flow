@@ -11,24 +11,24 @@ public final class FavoriteResponse{
             @Schema(description = "대상의 이름 (라벨명,프로젝트명)",examples = {"라벨명","프로젝트명"})
             String targetName,
 
-            @Schema(description = "대상 아이디 (라벨아이디,프로젝트아이디)",examples = {"1","2"})
-            Long targetId,
+            @Schema(description = "대상 아이디 (라벨아이디,프로젝트아이디)",examples = {"6q9WeDv5"})
+            String targetId,
 
             @Schema(description = "대상 타입",examples = {"PROJECT","LABEL"})
             TargetType targetType,
 
-            @Schema(description = "즐겨찾기 아이디",example = "1")
-            Long id,
+            @Schema(description = "즐겨찾기 아이디",example = "6q9WeDv5")
+            String id,
 
             @Schema(description = "즐겨찾기에 해당하는 테스크의 수")
             long targetCount
     ) {
-        public static Summary from(FavoriteSummaryQuery favoriteSummaryQuery) {
+        public static Summary to(FavoriteSummaryQuery favoriteSummaryQuery,String encodedTargetId, String encodedId) {
             return Summary.builder()
                     .targetName(favoriteSummaryQuery.getTargetName())
-                    .targetId(favoriteSummaryQuery.getTargetId())
+                    .targetId(encodedTargetId)
                     .targetType(favoriteSummaryQuery.getTargetType())
-                    .id(favoriteSummaryQuery.getId())
+                    .id(encodedId)
                     .targetCount(favoriteSummaryQuery.getTargetCount())
                     .build();
         }

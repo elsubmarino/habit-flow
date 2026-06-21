@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
+import type { EntityId } from '../api/types';
 import type { Label } from '../store/habitSlice';
+import { useDialog } from '../context/DialogContext';
 
 interface LabelsPanelProps {
     labels: Label[];
-    selectedLabelId: number | null;
-    onSelect: (id: number | null) => void;
+    selectedLabelId: EntityId | null;
+    onSelect: (id: EntityId | null) => void;
     onAdd: (name: string) => void;
-    onDelete: (id: number) => void;
+    onDelete: (id: EntityId) => void;
 }
 
 const LabelsPanel: React.FC<LabelsPanelProps> = ({
@@ -17,6 +19,7 @@ const LabelsPanel: React.FC<LabelsPanelProps> = ({
     onDelete,
 }) => {
     const [newName, setNewName] = useState('');
+    const { confirm } = useDialog();
 
     const handleAdd = () => {
         if (!newName.trim()) return;
@@ -56,9 +59,15 @@ const LabelsPanel: React.FC<LabelsPanelProps> = ({
                             type="button"
                             className="delete-btn"
                             onClick={() => {
-                                if (window.confirm(`"${label.name}" 라벨을 삭제할까요?`)) {
+                                void (async () => {
+                                    if (!(await confirm({
+                                        title: '라벨 삭제',
+                                        message: `"${label.name}" 라벨을 삭제할까요?`,
+                                        confirmLabel: '삭제',
+                                        variant: 'danger',
+                                    }))) return;
                                     onDelete(label.id);
-                                }
+                                })();
                             }}
                         >
                             삭제

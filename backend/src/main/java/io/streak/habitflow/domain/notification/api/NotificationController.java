@@ -4,6 +4,7 @@ import io.streak.habitflow.domain.notification.dto.request.NotificationRequest;
 import io.streak.habitflow.domain.notification.dto.response.NotificationResponse;
 import io.streak.habitflow.domain.notification.service.NotificationService;
 import io.streak.habitflow.global.aop.LoginMemberId;
+import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.infra.sse.SseEmitters;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -31,10 +32,11 @@ public class NotificationController {
 
     @PutMapping("/{notificationId}/confirm")
     @Operation(summary = "알림 확인")
-    public ResponseEntity<NotificationResponse.Summary> confirmNotification(@PathVariable Long notificationId,
+    public ResponseEntity<NotificationResponse.Summary> confirmNotification(@PathVariable RoutingId notificationId,
                                                             @RequestBody NotificationRequest.Create request,
                                                             @LoginMemberId Long loginMemberId) {
-        return ResponseEntity.ok(notificationService.confirmNotification(notificationId, request, loginMemberId));
+        long realNotificationId = notificationId.value();
+        return ResponseEntity.ok(notificationService.confirmNotification(realNotificationId, request, loginMemberId));
     }
 
     @GetMapping(value="/subscribe",produces= MediaType.TEXT_EVENT_STREAM_VALUE)

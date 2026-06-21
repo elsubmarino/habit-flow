@@ -1,3 +1,4 @@
+import type { EntityId } from '../api/types';
 import { getUserProfile } from './userProfile';
 import { toISODate } from './date';
 
@@ -10,13 +11,13 @@ export type ActivityType =
     | 'date_changed';
 
 export interface ActivityEntry {
-    id: number;
+    id: EntityId;
     actor: string;
     actorColor: string;
     type: ActivityType;
-    taskId: number;
+    taskId: EntityId;
     taskName: string;
-    projectId: number | null;
+    projectId: EntityId | null;
     projectName: string | null;
     projectColor: string | null;
     createdAt: string;
@@ -46,23 +47,23 @@ function seedActivities(): ActivityEntry[] {
     const profile = getUserProfile();
     const items: ActivityEntry[] = [
         {
-            id: now - 1,
+            id: String(now - 1),
             actor: profile.displayName,
             actorColor: '#4073ff',
             type: 'added',
-            taskId: 901,
+            taskId: '901',
             taskName: '포인트 환전',
-            projectId: 1,
+            projectId: '1',
             projectName: 'Money',
             projectColor: '#4073ff',
             createdAt: new Date(now - 37 * 60 * 1000).toISOString(),
         },
         {
-            id: now - 2,
+            id: String(now - 2),
             actor: profile.displayName,
             actorColor: '#299438',
             type: 'completed',
-            taskId: 902,
+            taskId: '902',
             taskName: '만보 걷기',
             projectId: null,
             projectName: '관리함',
@@ -70,25 +71,25 @@ function seedActivities(): ActivityEntry[] {
             createdAt: new Date(now - 3 * 60 * 60 * 1000).toISOString(),
         },
         {
-            id: now - 3,
+            id: String(now - 3),
             actor: 'minji',
             actorColor: '#db4c3f',
             type: 'moved',
-            taskId: 903,
+            taskId: '903',
             taskName: 'Fitness Set',
-            projectId: 2,
+            projectId: '2',
             projectName: 'Study',
             projectColor: '#299438',
             createdAt: new Date(now - 5 * 60 * 60 * 1000).toISOString(),
         },
         {
-            id: now - 4,
+            id: String(now - 4),
             actor: profile.displayName,
             actorColor: '#4073ff',
             type: 'date_changed',
-            taskId: 904,
+            taskId: '904',
             taskName: 'Good Morning set',
-            projectId: 1,
+            projectId: '1',
             projectName: 'Money',
             projectColor: '#4073ff',
             createdAt: new Date(now - 8 * 60 * 60 * 1000).toISOString(),
@@ -107,7 +108,7 @@ export function readActivities(): ActivityEntry[] {
 
 export function logActivity(
     entry: Omit<ActivityEntry, 'id' | 'createdAt' | 'actor' | 'actorColor'> & {
-        id?: number;
+        id?: EntityId;
         createdAt?: string;
         actor?: string;
         actorColor?: string;
@@ -116,7 +117,7 @@ export function logActivity(
     const profile = getUserProfile();
     const items = readRaw();
     items.unshift({
-        id: entry.id ?? Date.now(),
+        id: entry.id ?? String(Date.now()),
         actor: entry.actor ?? profile.displayName,
         actorColor: entry.actorColor ?? '#4073ff',
         createdAt: entry.createdAt ?? new Date().toISOString(),

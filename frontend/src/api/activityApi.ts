@@ -1,7 +1,7 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
 import { buildActivityLogCursorParams, ACTIVITY_LOG_PAGE_SIZE } from './pagination';
-import type { ActivityLogDto } from './types';
+import type { EntityId, ActivityLogDto } from './types';
 import { parseSlicePage, type PaginatedResult, type SpringSlice } from './slice';
 import { normalizeActivityLog, type ActivityLogEntry } from '../utils/activityLogMessages';
 
@@ -16,7 +16,7 @@ function mapActivityLogPage(
 }
 
 export async function fetchActivityLogs(
-    lastActivityLogId?: number,
+    lastActivityLogId?: EntityId,
     size = ACTIVITY_LOG_PAGE_SIZE,
 ): Promise<PaginatedResult<ActivityLogEntry>> {
     if (lastActivityLogId == null) {

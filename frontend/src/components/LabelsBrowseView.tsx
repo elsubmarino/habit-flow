@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { EntityId } from '../api/types';
 import type { Label } from '../store/habitSlice';
 import { ChevronDownIcon, ChevronUpIcon, PlusIcon } from './icons';
 import LabelListRow from './LabelListRow';
@@ -6,10 +7,10 @@ import LabelListRow from './LabelListRow';
 interface LabelsBrowseViewProps {
     labels: Label[];
     loading?: boolean;
-    onSelectLabel: (labelId: number) => void;
+    onSelectLabel: (labelId: EntityId) => void;
     onAddLabel: () => void;
     onEditLabel: (label: Label) => void;
-    onDeleteLabel: (labelId: number) => void;
+    onDeleteLabel: (labelId: EntityId) => void;
 }
 
 const LabelsBrowseView: React.FC<LabelsBrowseViewProps> = ({

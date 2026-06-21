@@ -20,7 +20,7 @@ import {
     resolveFavoriteLabel,
     resolveFavoriteProject,
 } from '../api/favoriteMappers';
-import type { FavoriteDto } from '../api/types';
+import type { FavoriteDto, EntityId } from '../api/types';
 import type { Label, Project } from '../store/habitSlice';
 import { getUserProfile } from '../utils/userProfile';
 import UserMenuDropdown from './UserMenuDropdown';
@@ -36,21 +36,21 @@ interface SidebarProps {
     projects: Project[];
     labels: Label[];
     favorites: FavoriteDto[];
-    selectedProjectId: number | null;
-    selectedLabelId: number | null;
+    selectedProjectId: EntityId | null;
+    selectedLabelId: EntityId | null;
     projectsBrowseActive: boolean;
     projectsListExpanded: boolean;
     favoritesListExpanded: boolean;
     onNavChange: (nav: NavItem) => void;
-    onProjectSelect: (projectId: number) => void;
-    onLabelSelect: (labelId: number) => void;
+    onProjectSelect: (projectId: EntityId) => void;
+    onLabelSelect: (labelId: EntityId) => void;
     onEditLabel: (label: Label) => void;
-    onDeleteLabel: (labelId: number) => void;
+    onDeleteLabel: (labelId: EntityId) => void;
     onProjectsBrowse: () => void;
     onAddProject: () => void;
     onEditProject: (project: Project) => void;
     onShareProject: (project: Project) => void;
-    onDeleteProject: (projectId: number) => void;
+    onDeleteProject: (projectId: EntityId) => void;
     onToggleProjectsList: () => void;
     onToggleFavoritesList: () => void;
     onAddClick: () => void;

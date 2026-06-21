@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { searchIntegrated } from '../api/searchApi';
 import { mapLabel, mapProject, mapTaskToHabit } from '../api/mappers';
+import type { EntityId } from '../api/types';
 import type { Habit, Label, Project } from '../store/habitSlice';
 
 interface SearchModalProps {
@@ -9,8 +10,8 @@ interface SearchModalProps {
     labels: Label[];
     onClose: () => void;
     onSelectHabit: (habit: Habit) => void;
-    onSelectProject: (projectId: number) => void;
-    onSelectLabel: (labelId: number) => void;
+    onSelectProject: (projectId: EntityId) => void;
+    onSelectLabel: (labelId: EntityId) => void;
 }
 
 const SearchModal: React.FC<SearchModalProps> = ({

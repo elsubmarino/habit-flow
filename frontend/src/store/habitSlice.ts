@@ -22,7 +22,7 @@ import {
     readCompleted,
     repeatLabelToRecurrence,
 } from '../api/mappers';
-import type { FavoriteDto, ProjectDetailDto, TaskDto } from '../api/types';
+import type { FavoriteDto, ProjectDetailDto, TaskDto, EntityId } from '../api/types';
 import { parseProjectAccessType, parseProjectLayoutType } from '../api/projectMappers';
 import { habitRouteStateFromPath } from '../utils/appRoutes';
 import {
@@ -36,7 +36,7 @@ import {
 import type { ReorderHabitRequest } from '../utils/taskSortOrder';
 
 export interface Label {
-    id: number;
+    id: EntityId;
     name: string;
     color: string;
     taskCount: number;
@@ -52,7 +52,7 @@ export interface Attachment {
 }
 
 export interface Subtask {
-    id: number;
+    id: EntityId;
     name: string;
     description: string;
     completed: boolean;
@@ -61,7 +61,7 @@ export interface Subtask {
 
 export interface CommentItem {
     id: number;
-    backendId?: number;
+    backendId?: EntityId;
     text: string;
     createdAt: string;
     attachments: Attachment[];
@@ -72,7 +72,7 @@ export function habitRowKey(habit: Habit): string {
 }
 
 export interface Habit {
-    id: number;
+    id: EntityId;
     name: string;
     description: string;
     streak: number;
@@ -81,9 +81,9 @@ export interface Habit {
     dueTime: string | null;
     dueTime24: string | null;
     hasTime: boolean;
-    parentId: number | null;
+    parentId: EntityId | null;
     userName: string | null;
-    projectId: number | null;
+    projectId: EntityId | null;
     projectName: string | null;
     projectColor: string | null;
     completedToday: boolean;
@@ -107,7 +107,7 @@ export function attachmentDownloadUrl(path: string): string {
 }
 
 export interface Project {
-    id: number;
+    id: EntityId;
     name: string;
     color: string;
     sortOrder: number;
@@ -116,7 +116,7 @@ export interface Project {
 }
 
 export interface ProjectDetail extends Project {
-    parentId: number | null;
+    parentId: EntityId | null;
     parentName: string | null;
     accessType: 'PRIVATE' | 'PUBLIC';
     layoutType: 'LIST' | 'BOARD';
@@ -153,11 +153,11 @@ export interface HabitState {
     labelsStatus: 'idle' | 'loading' | 'failed';
     labelsLoadMoreStatus: 'idle' | 'loading' | 'failed';
     labelsHasNext: boolean;
-    labelsNextCursor: number | null;
+    labelsNextCursor: EntityId | null;
     error: string | null;
     activeView: ApiView;
-    selectedProjectId: number | null;
-    selectedLabelId: number | null;
+    selectedProjectId: EntityId | null;
+    selectedLabelId: EntityId | null;
     selectedProjectDetail: ProjectDetail | null;
     selectedProjectDetailStatus: 'idle' | 'loading' | 'failed';
     tasksHasNext: boolean;
@@ -229,7 +229,7 @@ function clearOverdueList(state: HabitState) {
 }
 
 function dedupeLabels(labels: Label[]): Label[] {
-    const seen = new Set<number>();
+    const seen = new Set<EntityId>();
     const result: Label[] = [];
     for (const label of labels) {
         if (seen.has(label.id)) continue;
@@ -296,7 +296,7 @@ function dedupeTasks(tasks: TaskDto[]): TaskDto[] {
     return [...map.values()];
 }
 
-function countTasksForLabel(habits: Habit[], labelId: number) {
+function countTasksForLabel(habits: Habit[], labelId: EntityId) {
     return habits.filter(h => h.labels.some(l => l.id === labelId)).length;
 }
 
@@ -368,8 +368,8 @@ function shouldFetchUpcomingDay(
 
 async function loadTasksForView(params: {
     view: ApiView;
-    projectId?: number | null;
-    labelId?: number | null;
+    projectId?: EntityId | null;
+    labelId?: EntityId | null;
 }): Promise<LoadedTasksPage> {
     if (params.labelId != null) {
         const [today, upcoming] = await Promise.all([
@@ -452,13 +452,13 @@ async function loadTasksForView(params: {
     }
 }
 
-type FetchHabitsParams = { view: ApiView; projectId?: number | null; labelId?: number | null };
+type FetchHabitsParams = { view: ApiView; projectId?: EntityId | null; labelId?: EntityId | null };
 
 type FetchHabitsResult = {
     habits: Habit[];
     view: ApiView;
-    projectId: number | null;
-    labelId: number | null;
+    projectId: EntityId | null;
+    labelId: EntityId | null;
     hasNext: boolean;
     nextCursor: TaskCursor | null;
     overdueHabits: Habit[];
@@ -485,10 +485,10 @@ function isFetchHabitsResultCurrent(state: HabitState, arg: FetchHabitsParams): 
 }
 
 const inFlightHabitsFetches = new Map<string, Promise<FetchHabitsResult>>();
-const inFlightProjectHabitsFetches = new Map<number, Promise<FetchProjectHabitsResult>>();
+const inFlightProjectHabitsFetches = new Map<EntityId, Promise<FetchProjectHabitsResult>>();
 
 type FetchProjectHabitsResult = {
-    projectId: number;
+    projectId: EntityId;
     habits: Habit[];
     hasNext: boolean;
     nextPage: number;
@@ -497,7 +497,7 @@ type FetchProjectHabitsResult = {
 async function loadHabitsForView(params: FetchHabitsParams): Promise<FetchHabitsResult> {
     const page = await loadTasksForView(params);
     return {
-        habits: page.tasks.map(t => mapTaskToHabit(t)),
+        habits: page.tasks.map(t => mapTaskToHabit(t, params.projectId)),
         view: params.view,
         projectId: params.projectId ?? null,
         labelId: params.labelId ?? null,
@@ -533,7 +533,7 @@ export const fetchHabits = createAsyncThunk(
 
 export const fetchProjectHabits = createAsyncThunk(
     'habits/fetchProjectHabits',
-    async (projectId: number, { dispatch }) => {
+    async (projectId: EntityId, { dispatch }) => {
         const existing = inFlightProjectHabitsFetches.get(projectId);
         if (existing) return existing;
 
@@ -542,7 +542,7 @@ export const fetchProjectHabits = createAsyncThunk(
             const page = await taskApi.fetchProjectTasks(projectId, 0);
             return {
                 projectId,
-                habits: page.content.map(t => mapTaskToHabit(t)),
+                habits: page.content.map(t => mapTaskToHabit(t, projectId)),
                 hasNext: page.hasNext,
                 nextPage: page.hasNext ? 1 : 0,
             };
@@ -571,7 +571,7 @@ export const fetchMoreHabits = createAsyncThunk(
         if (selectedProjectId != null) {
             const page = await taskApi.fetchProjectTasks(selectedProjectId, tasksNextPage);
             return {
-                habits: page.content.map(t => mapTaskToHabit(t)),
+                habits: page.content.map(t => mapTaskToHabit(t, selectedProjectId)),
                 hasNext: page.hasNext,
                 nextCursor: null,
             };
@@ -619,7 +619,7 @@ function mergeHabitsById(existing: Habit[], incoming: Habit[]): Habit[] {
 
 function patchHabitInLists(
     state: HabitState,
-    habitId: number,
+    habitId: EntityId,
     patch: Partial<Habit> | ((habit: Habit) => Habit),
 ) {
     const apply = (habits: Habit[]) => {
@@ -640,7 +640,7 @@ function patchHabitInLists(
     }
 }
 
-function findHabitInState(state: HabitState, habitId: number): Habit | undefined {
+function findHabitInState(state: HabitState, habitId: EntityId): Habit | undefined {
     return state.list.find(h => h.id === habitId)
         ?? state.overdueList.find(h => h.id === habitId);
 }
@@ -766,7 +766,7 @@ export const fetchProjects = createAsyncThunk('habits/fetchProjects', async () =
 
 export const fetchProjectDetail = createAsyncThunk(
     'habits/fetchProjectDetail',
-    async (projectId: number) => {
+    async (projectId: EntityId) => {
         const detail = await projectApi.fetchProjectById(projectId);
         return mapProjectDetail(detail);
     },
@@ -889,7 +889,7 @@ export const refetchCurrentTaskList = createAsyncThunk(
 
 export const fetchHabitDetail = createAsyncThunk(
     'habits/fetchDetail',
-    async (taskId: number) => {
+    async (taskId: EntityId) => {
         const task = await taskApi.fetchTaskById(taskId);
         return mapTaskToHabit(task);
     },
@@ -901,12 +901,12 @@ export const addHabit = createAsyncThunk(
         name: string;
         description: string;
         view: NavItem;
-        projectId?: number | null;
+        projectId?: EntityId | null;
         dueDate?: string | null;
         dueTime24?: string | null;
         hasTime?: boolean;
         recurrenceLabel?: string | null;
-        labelIds?: number[];
+        labelIds?: EntityId[];
         file?: File | null;
         priority?: 1 | 2 | 3 | 4;
     }, { dispatch, rejectWithValue }) => {
@@ -951,10 +951,10 @@ export const addProject = createAsyncThunk(
 export const updateProject = createAsyncThunk(
     'habits/updateProject',
     async (payload: {
-        id: number;
+        id: EntityId;
         name: string;
         color?: string;
-        parentId?: number | null;
+        parentId?: EntityId | null;
         accessType?: 'PRIVATE' | 'PUBLIC';
         layoutType?: 'LIST' | 'BOARD';
         favorite?: boolean;
@@ -985,7 +985,7 @@ export const updateProject = createAsyncThunk(
 
 export const deleteProject = createAsyncThunk(
     'habits/deleteProject',
-    async (projectId: number, { dispatch }) => {
+    async (projectId: EntityId, { dispatch }) => {
         await projectApi.deleteProject(projectId);
         await Promise.all([
             dispatch(invalidateSidebarAggregates({ projects: true, nav: true })),
@@ -1006,7 +1006,7 @@ export const addLabel = createAsyncThunk(
 
 export const updateLabel = createAsyncThunk(
     'habits/updateLabel',
-    async (payload: { id: number; name: string; color?: string; favorite?: boolean }, { dispatch, getState }) => {
+    async (payload: { id: EntityId; name: string; color?: string; favorite?: boolean }, { dispatch, getState }) => {
         const { id, ...body } = payload;
         const detail = await labelApi.updateLabel(id, body);
         const habitsState = (getState() as { habits: HabitState }).habits;
@@ -1025,7 +1025,7 @@ export const updateLabel = createAsyncThunk(
 
 export const deleteLabel = createAsyncThunk(
     'habits/deleteLabel',
-    async (labelId: number, { dispatch }) => {
+    async (labelId: EntityId, { dispatch }) => {
         await labelApi.deleteLabel(labelId);
         await Promise.all([
             dispatch(invalidateSidebarAggregates({ labels: true })),
@@ -1036,7 +1036,7 @@ export const deleteLabel = createAsyncThunk(
 );
 
 export interface CheckHabitPayload {
-    habitId: number;
+    habitId: EntityId;
     wasCompleted: boolean;
 }
 
@@ -1060,7 +1060,7 @@ export const checkHabit = createAsyncThunk(
 
 export const updateHabit = createAsyncThunk(
     'habits/updateHabit',
-    async ({ habitId, changes }: { habitId: number; changes: Partial<Habit> }, { dispatch, getState }) => {
+    async ({ habitId, changes }: { habitId: EntityId; changes: Partial<Habit> }, { dispatch, getState }) => {
         const previous = findHabitInState((getState() as { habits: HabitState }).habits, habitId);
         const task = await taskApi.updateTask(habitId, {
             name: changes.name,
@@ -1073,7 +1073,7 @@ export const updateHabit = createAsyncThunk(
 
 export const patchTaskProject = createAsyncThunk(
     'habits/patchProject',
-    async ({ habitId, projectId }: { habitId: number; projectId: number | null }, { dispatch, getState }) => {
+    async ({ habitId, projectId }: { habitId: EntityId; projectId: EntityId | null }, { dispatch, getState }) => {
         const previous = findHabitInState((getState() as { habits: HabitState }).habits, habitId);
         const task = await taskApi.patchTaskProject(habitId, projectId, previous?.projectId);
         await Promise.all([
@@ -1093,7 +1093,7 @@ export const patchTaskDueDate = createAsyncThunk(
         hasTime,
         recurrenceLabel,
     }: {
-        habitId: number;
+        habitId: EntityId;
         dueDate: string | null;
         dueTime24?: string | null;
         hasTime: boolean;
@@ -1129,7 +1129,7 @@ export const patchTaskDueDate = createAsyncThunk(
 
 export const patchTaskPriority = createAsyncThunk(
     'habits/patchPriority',
-    async ({ habitId, priority }: { habitId: number; priority: 1 | 2 | 3 | 4 }, { dispatch, getState }) => {
+    async ({ habitId, priority }: { habitId: EntityId; priority: 1 | 2 | 3 | 4 }, { dispatch, getState }) => {
         const previous = findHabitInState((getState() as { habits: HabitState }).habits, habitId);
         const task = await taskApi.patchTaskPriority(habitId, priorityToApi(priority), previous?.projectId);
         await dispatch(refetchCurrentTaskList());
@@ -1139,7 +1139,7 @@ export const patchTaskPriority = createAsyncThunk(
 
 export const patchTaskLabels = createAsyncThunk(
     'habits/patchLabels',
-    async ({ habitId, labelIds }: { habitId: number; labelIds: number[] }, { dispatch, getState }) => {
+    async ({ habitId, labelIds }: { habitId: EntityId; labelIds: EntityId[] }, { dispatch, getState }) => {
         const previous = findHabitInState((getState() as { habits: HabitState }).habits, habitId);
         const task = await taskApi.patchTaskLabels(habitId, labelIds, previous?.projectId);
         await Promise.all([
@@ -1152,7 +1152,7 @@ export const patchTaskLabels = createAsyncThunk(
 
 export const deleteHabit = createAsyncThunk(
     'habits/delete',
-    async (habitId: number, { dispatch }) => {
+    async (habitId: EntityId, { dispatch }) => {
         await taskApi.deleteTask(habitId);
         await Promise.all([
             dispatch(invalidateSidebarAggregates({ projects: true, labels: true, nav: true })),
@@ -1194,10 +1194,10 @@ export const addSubtask = createAsyncThunk(
         projectId,
         dueDate,
     }: {
-        habitId: number;
+        habitId: EntityId;
         name: string;
         description: string;
-        projectId?: number | null;
+        projectId?: EntityId | null;
         dueDate?: string | null;
     }, { dispatch }) => {
         const task = await taskApi.createTask({
@@ -1224,7 +1224,7 @@ export const addSubtask = createAsyncThunk(
 export const toggleSubtask = createAsyncThunk(
     'habits/toggleSubtask',
     async (
-        { habitId, subtaskId }: { habitId: number; subtaskId: number },
+        { habitId, subtaskId }: { habitId: EntityId; subtaskId: EntityId },
         { getState },
     ) => {
         const state = getState() as { habits: HabitState };
@@ -1241,7 +1241,7 @@ export const toggleSubtask = createAsyncThunk(
 
 export const addComment = createAsyncThunk(
     'habits/addComment',
-    async ({ habitId, text }: { habitId: number; text: string }) => {
+    async ({ habitId, text }: { habitId: EntityId; text: string }) => {
         await commentApi.createComment(habitId, text);
         const commentDtos = await commentApi.fetchTaskComments(habitId);
         return { habitId, commentCount: commentDtos.length };
@@ -1250,7 +1250,7 @@ export const addComment = createAsyncThunk(
 
 export const syncHabitCommentCount = createAsyncThunk(
     'habits/syncHabitCommentCount',
-    async (habitId: number) => {
+    async (habitId: EntityId) => {
         const commentDtos = await commentApi.fetchTaskComments(habitId);
         return { habitId, commentCount: commentDtos.length };
     },
@@ -1258,7 +1258,7 @@ export const syncHabitCommentCount = createAsyncThunk(
 
 export const uploadAttachments = createAsyncThunk(
     'habits/uploadAttachments',
-    async ({ habitId, files }: { habitId: number; files: File[] }) => {
+    async ({ habitId, files }: { habitId: EntityId; files: File[] }) => {
         for (const file of files) {
             await commentApi.createComment(habitId, '첨부파일이 등록되었습니다.', file);
         }
@@ -1299,7 +1299,7 @@ const habitSlice = createSlice({
             state.selectedProjectDetail = null;
             state.selectedProjectDetailStatus = 'idle';
         },
-        setSelectedProject(state, action: { payload: number | null }) {
+        setSelectedProject(state, action: { payload: EntityId | null }) {
             if (action.payload !== state.selectedProjectId) {
                 state.selectedProjectDetail = null;
                 state.selectedProjectDetailStatus = action.payload == null ? 'idle' : 'loading';
@@ -1307,7 +1307,7 @@ const habitSlice = createSlice({
             state.selectedProjectId = action.payload;
             state.selectedLabelId = null;
         },
-        setSelectedLabel(state, action: { payload: number | null }) {
+        setSelectedLabel(state, action: { payload: EntityId | null }) {
             state.selectedLabelId = action.payload;
             if (action.payload != null) {
                 state.selectedProjectId = null;

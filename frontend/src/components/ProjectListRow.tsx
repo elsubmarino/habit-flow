@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { EntityId } from '../api/types';
 import type { Project } from '../store/habitSlice';
 import { HashIcon } from './icons';
 import ProjectMoreMenu from './ProjectMoreMenu';
@@ -7,9 +8,9 @@ interface ProjectListRowProps {
     project: Project;
     active?: boolean;
     variant: 'sidebar' | 'browse';
-    onSelect: (projectId: number) => void;
+    onSelect: (projectId: EntityId) => void;
     onEdit: (project: Project) => void;
-    onDelete: (projectId: number) => void;
+    onDelete: (projectId: EntityId) => void;
     onShare?: (project: Project) => void;
 }
 

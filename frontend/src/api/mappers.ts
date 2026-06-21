@@ -1,5 +1,5 @@
 import type { Habit, Label, Project, CommentItem, Subtask, Attachment } from '../store/habitSlice';
-import type { PriorityType, TaskDto, TaskListDto, LabelDto, ProjectDto } from './types';
+import type { EntityId, PriorityType, TaskDto, TaskListDto, LabelDto, ProjectDto } from './types';
 import { datePartFromDue, formatTime12From24, localTimeTo24 } from '../utils/date';
 
 export function readCompleted(task: TaskDto): boolean {
@@ -194,7 +194,7 @@ function mapAttachments(comments?: TaskDto['comments']): Attachment[] {
 const ATTACHMENT_COMMENT_PLACEHOLDER = '첨부파일이 등록되었습니다.';
 
 type CommentDtoLike = {
-    id?: number;
+    id?: EntityId;
     content: string;
     createdAt?: string;
     attachments?: { fileUrl: string; originalFileName: string }[];
@@ -220,7 +220,7 @@ function mapSingleComment(comment: CommentDtoLike, index: number): CommentItem |
     if (!hasText && attachments.length === 0) return null;
 
     return {
-        id: comment.id ?? index + 1,
+        id: index + 1,
         backendId: comment.id,
         text: hasText ? comment.content : '',
         createdAt: comment.createdAt ?? new Date().toISOString(),
@@ -305,10 +305,10 @@ export function isTaskSummaryMutationResponse(task: TaskDto | TaskListDto): task
 
 export function normalizeTaskMutationResponse(
     data: TaskDto | TaskListDto,
-    projectIdHint?: number | null,
+    _projectIdHint?: EntityId | null,
 ): TaskDto {
     if (isTaskSummaryMutationResponse(data)) {
-        return mapTaskListToDto(data, projectIdHint ?? undefined);
+        return mapTaskListToDto(data);
     }
     return data;
 }
@@ -319,8 +319,8 @@ function isTaskSummaryMutation(task: TaskDto): boolean {
 }
 
 /** PATCH/PUT 후 Summary·Detail 혼용 응답을 목록용 Habit으로 병합 */
-export function mergeHabitFromTaskMutation(task: TaskDto, previous?: Habit): Habit {
-    const next = mapTaskToHabit(task);
+export function mergeHabitFromTaskMutation(task: TaskDto, previous?: Habit, projectIdHint?: EntityId | null): Habit {
+    const next = mapTaskToHabit(task, projectIdHint ?? previous?.projectId);
     if (!previous) return next;
 
     if (isTaskSummaryMutation(task)) {
@@ -357,7 +357,7 @@ export function mergeHabitFromTaskMutation(task: TaskDto, previous?: Habit): Hab
     };
 }
 
-export function mapTaskListToDto(task: TaskListDto, projectId?: number): TaskDto {
+export function mapTaskListToDto(task: TaskListDto): TaskDto {
     return {
         id: task.id,
         name: task.name,
@@ -367,7 +367,6 @@ export function mapTaskListToDto(task: TaskListDto, projectId?: number): TaskDto
         dueTime: task.dueTime ?? null,
         hasTime: task.timeSpecified ?? task.hasTime ?? Boolean(task.dueTime),
         sortOrder: task.sortOrder,
-        projectId: projectId ?? null,
         projectName: task.projectName ?? null,
         countSubTasks: task.countSubTasks,
         countSubTasksCompleted: task.countSubTasksCompleted,
@@ -377,7 +376,7 @@ export function mapTaskListToDto(task: TaskListDto, projectId?: number): TaskDto
     };
 }
 
-export function mapTaskToHabit(task: TaskDto): Habit {
+export function mapTaskToHabit(task: TaskDto, projectIdHint?: EntityId | null): Habit {
     const completed = readCompleted(task);
     const { dueDate, dueTime24, hasTime } = parseDueFromApi(task);
     const counts = resolveTaskCounts(task);
@@ -391,9 +390,9 @@ export function mapTaskToHabit(task: TaskDto): Habit {
         dueTime: hasTime && dueTime24 ? formatTime12From24(dueTime24) : null,
         dueTime24,
         hasTime,
-        parentId: task.parentId ?? null,
+        parentId: task.parentId != null ? String(task.parentId) : null,
         userName: task.userName ?? null,
-        projectId: task.projectId ?? null,
+        projectId: projectIdHint ?? (task.projectId != null ? String(task.projectId) : null),
         projectName: task.projectName ?? null,
         projectColor: task.projectColor ?? null,
         completedToday: completed,

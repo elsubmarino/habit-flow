@@ -9,6 +9,7 @@ import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
+import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -27,6 +28,7 @@ public class LabelService {
     private final LabelRepository labelRepository;
     private final MemberRepository memberRepository;
     private final FavoriteRepository favoriteRepository;
+    private final HashidsProvider hashidsProvider;
 
     @Transactional
     public LabelResponse.Detail createLabel(LabelRequest.Create request, Long memberId) {
@@ -51,7 +53,8 @@ public class LabelService {
                     savedLabel.getId()
             ).orElseGet(()->favoriteRepository.save(favorite));
         }
-        return LabelResponse.Detail.of(savedLabel, request.favorite());
+        String encodedId = hashidsProvider.encode(savedLabel.getId());
+        return LabelResponse.Detail.of(savedLabel, request.favorite(),encodedId);
     }
 
     public LabelResponse.Detail getLabelById(Long labelId, Long memberId) {
@@ -62,7 +65,8 @@ public class LabelService {
         if(favorite.isPresent()){
             isFavorite = true;
         }
-        return LabelResponse.Detail.of(label,isFavorite);
+        String encodedId = hashidsProvider.encode(label.getId());
+        return LabelResponse.Detail.of(label,isFavorite,encodedId);
     }
 
     @Transactional
@@ -92,7 +96,8 @@ public class LabelService {
 
         label.updateLabel(request.name(),
                 request.color());
-        return LabelResponse.Detail.of(label, request.favorite());
+        String encodedId = hashidsProvider.encode(label.getId());
+        return LabelResponse.Detail.of(label, request.favorite(),encodedId);
     }
 
     public Slice<LabelResponse.Summary> getLabels(Long labelId, Long memberId, Pageable pageable) {
@@ -107,7 +112,10 @@ public class LabelService {
         }
 
         List<LabelResponse.Summary> labelResponses =  labels.stream()
-                .map(LabelResponse.Summary::from)
+                .map(label->{
+                    String encodedId = hashidsProvider.encode(label.getId());
+                    return LabelResponse.Summary.of(label,encodedId);
+                })
                 .toList();
 
         return new SliceImpl<>(labelResponses, pageable, hasNext);

@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
-import type { MemberDto } from './types';
+import type { EntityId, MemberDto } from './types';
 
 export interface MemberSignUpPayload {
     email: string;
@@ -73,7 +73,7 @@ export interface MemberUpdatePayload {
     password: string;
 }
 
-export async function updateMember(memberId: number, payload: MemberUpdatePayload): Promise<MemberDto> {
+export async function updateMember(memberId: EntityId, payload: MemberUpdatePayload): Promise<MemberDto> {
     const { data } = await apiClient.put<MemberDto>(`/api/members/${memberId}`, payload);
     return data;
 }

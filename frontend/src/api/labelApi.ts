@@ -2,11 +2,11 @@ import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
 import { toLabelUpdateBody, toLabelWriteBody } from './labelMappers';
 import { buildLabelCursorParams, LABEL_PAGE_SIZE } from './pagination';
-import type { LabelDetailDto, LabelDto, LabelUpdatePayload } from './types';
+import type { EntityId, LabelDetailDto, LabelDto, LabelUpdatePayload } from './types';
 import { parseSlicePage, type PaginatedResult, type SpringSlice } from './slice';
 
 export async function fetchLabels(
-    lastLabelId?: number,
+    lastLabelId?: EntityId,
     size = LABEL_PAGE_SIZE,
 ): Promise<PaginatedResult<LabelDto>> {
     const cursorKey = lastLabelId ?? 'first';
@@ -18,7 +18,7 @@ export async function fetchLabels(
     });
 }
 
-export async function fetchLabelById(labelId: number): Promise<LabelDetailDto> {
+export async function fetchLabelById(labelId: EntityId): Promise<LabelDetailDto> {
     return dedupeInFlight(`label:${labelId}`, async () => {
         const { data } = await apiClient.get<LabelDetailDto>(`/api/labels/${labelId}`);
         return data;
@@ -37,7 +37,7 @@ export async function createLabel(
     return data;
 }
 
-export async function updateLabel(labelId: number, payload: LabelUpdatePayload): Promise<LabelDetailDto> {
+export async function updateLabel(labelId: EntityId, payload: LabelUpdatePayload): Promise<LabelDetailDto> {
     const { data } = await apiClient.put<LabelDetailDto>(
         `/api/labels/${labelId}`,
         toLabelUpdateBody(labelId, payload),
@@ -45,6 +45,6 @@ export async function updateLabel(labelId: number, payload: LabelUpdatePayload):
     return data;
 }
 
-export async function deleteLabel(labelId: number): Promise<void> {
+export async function deleteLabel(labelId: EntityId): Promise<void> {
     await apiClient.delete(`/api/labels/${labelId}`);
 }

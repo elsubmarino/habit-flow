@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Project } from '../store/habitSlice';
 import { fetchActivityLogs } from '../api/activityApi';
 import { fetchMember } from '../api/memberApi';
-import type { ActivityType } from '../api/types';
+import type { ActivityType, EntityId } from '../api/types';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { formatActivityDateHeader, formatActivityRelativeTime } from '../utils/activityLog';
 import {
@@ -17,17 +17,21 @@ import { applyMemberProfile } from '../utils/userProfile';
 
 const ACTOR_AVATAR_COLORS = ['#4073ff', '#299438', '#db4c3f', '#eb8909', '#8b5cf6'];
 
-function actorAvatarColor(actorId: number): string {
-    return ACTOR_AVATAR_COLORS[Math.abs(actorId) % ACTOR_AVATAR_COLORS.length]!;
+function actorAvatarColor(actorId: EntityId): string {
+    let hash = 0;
+    for (let i = 0; i < actorId.length; i++) {
+        hash = ((hash << 5) - hash + actorId.charCodeAt(i)) | 0;
+    }
+    return ACTOR_AVATAR_COLORS[Math.abs(hash) % ACTOR_AVATAR_COLORS.length]!;
 }
 
-type ProjectFilter = 'all' | number;
+type ProjectFilter = 'all' | EntityId;
 type ActivityFilter = 'all' | ActivityType;
 type DateFilter = 'all' | 'today' | 'week';
 
 interface ActivityLogViewProps {
     projects: Project[];
-    onOpenTask?: (taskId: number) => void;
+    onOpenTask?: (taskId: EntityId) => void;
 }
 
 const ACTIVITY_FILTER_OPTIONS: { value: ActivityFilter; label: string }[] = [
@@ -50,7 +54,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
     const [loading, setLoading] = useState(true);
     const [loadMoreStatus, setLoadMoreStatus] = useState<'idle' | 'loading' | 'failed'>('idle');
     const [hasNext, setHasNext] = useState(false);
-    const [nextCursor, setNextCursor] = useState<number | null>(null);
+    const [nextCursor, setNextCursor] = useState<EntityId | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [projectFilter, setProjectFilter] = useState<ProjectFilter>('all');
     const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
@@ -211,7 +215,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
                             value={String(projectFilter)}
                             onChange={e => {
                                 const v = e.target.value;
-                                setProjectFilter(v === 'all' ? 'all' : Number(v));
+                                setProjectFilter(v === 'all' ? 'all' : v);
                             }}
                         >
                             <option value="all">모든 프로젝트</option>

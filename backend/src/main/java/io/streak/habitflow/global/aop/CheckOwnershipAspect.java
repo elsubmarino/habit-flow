@@ -12,6 +12,7 @@ import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
+import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
@@ -33,6 +34,7 @@ public class CheckOwnershipAspect {
     private final NotificationRepository notificationRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final HashidsProvider hashidsProvider;
 
     @Before("@annotation(CheckOwnership) || @annotation(CheckOwnerships)")
     public void validateOwnership(JoinPoint joinPoint) throws AccessDeniedException {
@@ -69,7 +71,7 @@ public class CheckOwnershipAspect {
                 checkTaskOwner(taskId,memberId);
             }else if("SUB_TASK".equals(domainType)){
                 if(request != null && request.parentId() != null && memberId != null){
-                    checkTaskOwner(request.parentId(),memberId);
+                    checkTaskOwner(hashidsProvider.decode(request.parentId()),memberId);
                 }
             }else if("COMMENT".equals(domainType) && commentId != null && memberId != null){
                 checkCommentOwner(commentId,memberId);

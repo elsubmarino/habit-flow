@@ -15,6 +15,7 @@ import io.streak.habitflow.domain.task.type.TargetType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
+import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -33,12 +34,14 @@ public class CommentService {
     private final TaskRepository taskRepository;
     private final FileStorageService fileStorageService;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final HashidsProvider hashidsProvider;
 
     @Transactional
     public CommentResponse.Detail createComment(CommentRequest.Create request, MultipartFile file, Long memberId) {
+        Long realTaskId = hashidsProvider.decode(request.taskId());
         Member member = memberRepository.getReferenceById(memberId);
 
-        Task task = taskRepository.getOrThrow(request.taskId());
+        Task task = taskRepository.getOrThrow(realTaskId);
 
         Comment comment = Comment.builder()
                 .member(member)
@@ -68,14 +71,18 @@ public class CommentService {
                 Collections.emptyList()
         ));
 
-        return CommentResponse.Detail.from(result);
+        String encodedId = hashidsProvider.encode(result.getId());
+        return CommentResponse.Detail.of(result,encodedId);
     }
 
     public List<CommentResponse.Detail> getComments(Long taskId) {
         Task task = taskRepository.getOrThrow(taskId);
         List<Comment> comments = commentRepository.findByTaskIdWithAttachments(task.getId());
         return comments.stream()
-                .map(CommentResponse.Detail::from)
+                .map(comment->{
+                    String encodedId = hashidsProvider.encode(comment.getId());
+                    return CommentResponse.Detail.of(comment,encodedId);
+                })
                 .toList();
     }
 
@@ -84,8 +91,12 @@ public class CommentService {
     @SuppressWarnings("unused")
     public CommentResponse.Detail updateComment(Long commentId, CommentRequest.Update request, Long memberId) {
         Comment comment = commentRepository.getOrThrow(commentId);
+        if(comment.getContent().equals(request.content())){
+            return CommentResponse.Detail.of(comment,request.content());
+        }
         comment.updateContent(request.content());
-        return CommentResponse.Detail.from(comment);
+        String encodedId = hashidsProvider.encode(comment.getId());
+        return CommentResponse.Detail.of(comment,encodedId);
     }
 
     @Transactional

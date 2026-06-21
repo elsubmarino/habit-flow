@@ -1,11 +1,13 @@
+export type EntityId = string;
+
 export type PriorityType = 'P1' | 'P2' | 'P3' | 'P4';
 
 export type FavoriteTargetType = 'PROJECT' | 'LABEL';
 
 export interface FavoriteDto {
-    id: number;
+    id: EntityId;
     targetType: FavoriteTargetType;
-    targetId: number;
+    targetId: EntityId;
     targetName: string;
     targetCount: number;
 }
@@ -23,13 +25,13 @@ export type ActivityType =
 export type ActivityTargetType = 'PROJECT' | 'TASK' | 'COMMENT';
 
 export interface ActivityLogActorDto {
-    id: number;
+    id: EntityId;
     name: string;
 }
 
 export interface ActivityLogTargetDto {
     type: ActivityTargetType;
-    id: number;
+    id: EntityId;
     name: string | null;
 }
 
@@ -42,7 +44,7 @@ export interface ActivityLogChangeSetDto {
 export type NotificationType = 'PROJECT' | 'TASK';
 
 export interface LabelDto {
-    id: number;
+    id: EntityId;
     name: string;
     color: string;
     sortOrder?: number;
@@ -59,7 +61,7 @@ export interface LabelUpdatePayload {
 }
 
 export interface CommentDto {
-    id?: number;
+    id?: EntityId;
     content: string;
     createdAt?: string;
     attachments?: { fileUrl: string; originalFileName: string }[];
@@ -75,7 +77,7 @@ export interface UpcomingDateCountDto {
 
 /** Task ID */
 export interface TaskDto {
-    id: number;
+    id: EntityId;
     name: string;
     description?: string | null;
     isCompleted?: boolean;
@@ -113,7 +115,7 @@ export type TaskMutationDto = TaskDto | TaskListDto;
 
 /** GET /api/tasks/*, /api/projects/{id}/tasks 목록·toggle/sort-order Summary 응답 */
 export interface TaskListDto {
-    id: number;
+    id: EntityId;
     name: string;
     description?: string | null;
     taskPriorityType?: PriorityType | null;
@@ -139,7 +141,7 @@ export interface SidebarTasksCountDto {
 }
 
 export interface ProjectDto {
-    id: number;
+    id: EntityId;
     name: string;
     color: string;
     taskCount?: number;
@@ -147,7 +149,7 @@ export interface ProjectDto {
 
 export interface ProjectDetailDto extends ProjectDto {
     favorite?: boolean;
-    parentId?: number | null;
+    parentId?: EntityId | null;
     parentName?: string | null;
     accessType?: ProjectAccessType | string;
     layoutType?: ProjectLayoutType | 'CALENDAR' | string;
@@ -164,25 +166,25 @@ export type ProjectLayoutType = 'LIST' | 'BOARD';
 export interface ProjectUpdatePayload {
     name: string;
     color?: string;
-    parentId?: number | null;
+    parentId?: EntityId | null;
     accessType?: ProjectAccessType;
     layoutType?: ProjectLayoutType;
     favorite?: boolean;
 }
 
 export interface MemberDto {
-    id: number;
+    id: EntityId;
     name?: string;
     email?: string;
     role?: string;
 }
 
 export interface NotificationDto {
-    id: number;
-    receiverId: number;
-    actorId: number;
+    id: EntityId;
+    receiverId: EntityId;
+    actorId: EntityId;
     actorName: string;
-    targetId: number;
+    targetId: EntityId;
     notificationType: NotificationType;
     activityType: ActivityType;
     isConfirmed: boolean;
@@ -191,7 +193,7 @@ export interface NotificationDto {
 }
 
 export interface ActivityLogDto {
-    id: number;
+    id: EntityId;
     activityType: ActivityType;
     actor: ActivityLogActorDto;
     target: ActivityLogTargetDto;

@@ -15,12 +15,13 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 public final class TaskResponse{
     @Builder
     public record Detail(
-            @Schema(description = "테스크 ID")
-            Long id,
+            @Schema(description = "테스크 ID",example = "6q9WeDv5")
+            String id,
 
             @Schema(description = "테스크 제목 (최대 100자)")
             String name,
@@ -42,13 +43,13 @@ public final class TaskResponse{
             long sortOrder,
 
             @Schema(description = "사용자 ID")
-            Long userId,
+            String userId,
 
             @Schema(description = "사용자명")
             String userName,
 
             @Schema(description = "프로젝트 ID")
-            Long projectId,
+            String projectId,
 
             @Schema(description = "프로젝트명")
             String projectName,
@@ -57,7 +58,7 @@ public final class TaskResponse{
             String projectColor,
 
             @Schema(description = "부모 테스크 ID")
-            Long parentId,
+            String parentId,
 
             @Schema(description = "반복 여부")
             boolean recurring,
@@ -80,9 +81,9 @@ public final class TaskResponse{
             labels =  Objects.requireNonNullElse(labels, new ArrayList<>());
             comments =  Objects.requireNonNullElse(comments, new ArrayList<>());
         }
-        public static Detail of(Task task, List<LabelResponse.Summary> labelSummaryResponses) {
+        public static Detail of(Task task, String encodedId, List<LabelResponse.Summary> labelSummaryResponses, Function<Long, String> idEncoder) {
             DetailBuilder builder = Detail.builder()
-                    .id(task.getId())
+                    .id(encodedId)
                     .name(task.getName())
                     .description(task.getDescription())
                     .completed(task.isCompleted())
@@ -93,12 +94,12 @@ public final class TaskResponse{
                     .recurring(task.isRecurring())
                     .dueTime(task.isTimeSpecified()?task.getDueDate().toLocalTime():null)
                     .subTasks(task.getSubTasks().stream()
-                            .map(Detail::fromSimpleSubTask)
+                            .map(subTask->Detail.fromSimpleSubTask(subTask,idEncoder.apply(subTask.getId())))
                             .toList());
 
 
             if(task.getProject() != null){
-                builder.projectId(task.getProject().getId())
+                builder.projectId(idEncoder.apply(task.getProject().getId()))
                         .projectName(task.getProject().getName())
                         .projectColor(task.getProject().getColor());
             }else{
@@ -108,20 +109,20 @@ public final class TaskResponse{
             }
 
             if(task.getMember() != null){
-                builder.userId(task.getMember().getId());
+                builder.userId(idEncoder.apply(task.getMember().getId()));
             }
 
             if(task.getParent() != null){
-                builder.parentId(task.getParent().getId());
+                builder.parentId(idEncoder.apply(task.getParent().getId()));
             }
 
 
             return builder.build();
         }
 
-        private static Detail fromSimpleSubTask(Task subTask){
+        private static Detail fromSimpleSubTask(Task subTask, String encodedId){
             return Detail.builder()
-                    .id(subTask.getId())
+                    .id(encodedId)
                     .name(subTask.getName())
                     .completed(subTask.isCompleted())
                     .build();
@@ -130,8 +131,8 @@ public final class TaskResponse{
 
     @Builder
     public record Summary(
-            @Schema(description = "테스크 ID")
-            Long id,
+            @Schema(description = "테스크 ID",example = "6q9WeDv5")
+            String id,
             @Schema(description = "테스크명")
             String name,
             @Schema(description = "테스크 설명")
@@ -161,9 +162,9 @@ public final class TaskResponse{
             labels = Objects.requireNonNullElse(labels, new ArrayList<>());
         }
 
-        public static Summary of(TaskSummaryQuery taskSummaryQuery, List<LabelResponse.Summary> labelSummaryResponses) {
+        public static Summary of(TaskSummaryQuery taskSummaryQuery, String encodedId, List<LabelResponse.Summary> labelSummaryResponses) {
             return Summary.builder()
-                    .id(taskSummaryQuery.id())
+                    .id(encodedId)
                     .name(taskSummaryQuery.name())
                     .description(taskSummaryQuery.description())
                     .taskPriorityType(taskSummaryQuery.taskPriorityType())

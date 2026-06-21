@@ -12,8 +12,8 @@ import java.util.List;
 public final class ActivityLogResponse {
     @Builder
     public record Summary(
-            @Schema(description = "액티비티 로그 ID")
-            Long id,
+            @Schema(description = "액티비티 로그 ID",example = "6q9WeDv5")
+            String id,
             @Schema(description = """
                     액티비티 유형 (ADDED,
                         COMPLETED,
@@ -46,8 +46,8 @@ public final class ActivityLogResponse {
 
     @Builder
     public record ActorInfo(
-       @Schema(description = "행위자의 member id")
-       Long id,
+       @Schema(description = "행위자의 member id",example = "6q9WeDv5")
+       String id,
        @Schema(description = "행위자의 이름")
        String name
     ){}
@@ -59,8 +59,8 @@ public final class ActivityLogResponse {
                PROJECT,TASK,COMMENT
                """,examples = {"PROJECT","TASK","COMMENT"})
        TargetType type,
-       @Schema(description = "대상자의 member id")
-       Long id,
+       @Schema(description = "대상자의 member id",example = "6q9WeDv5")
+       String id,
        @Schema(description = "대상자의 이름")
        String name
     ){}

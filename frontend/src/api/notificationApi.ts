@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
-import type { NotificationDto } from './types';
+import type { EntityId, NotificationDto } from './types';
 
 export async function fetchNotifications(): Promise<NotificationDto[]> {
     return dedupeInFlight('notifications', async () => {
@@ -9,7 +9,7 @@ export async function fetchNotifications(): Promise<NotificationDto[]> {
     });
 }
 
-export async function confirmNotification(notificationId: number): Promise<NotificationDto> {
+export async function confirmNotification(notificationId: EntityId): Promise<NotificationDto> {
     const { data } = await apiClient.put<NotificationDto>(`/api/notifications/${notificationId}/confirm`, {
         isConfirmed: true,
         confirmed: true,

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchMoreOverdue, patchTaskDueDate } from '../store/habitSlice';
+import type { EntityId } from '../api/types';
 import type { Habit } from '../store/habitSlice';
+import { useDialog } from '../context/DialogContext';
 import { rescheduleHabitToToday } from '../utils/overdueTasks';
 import type { ReorderHabitRequest } from '../utils/taskSortOrder';
 import SortableTaskList from './SortableTaskList';
@@ -14,9 +16,9 @@ interface OverdueTasksSectionProps {
     sortable?: boolean;
     onReorder?: (request: ReorderHabitRequest) => void;
     onOpenDetails?: (habit: Habit) => void;
-    onOpenProject?: (projectId: number) => void;
+    onOpenProject?: (projectId: EntityId) => void;
     onTaskCompleted?: (habit: Habit) => void;
-    onTaskDeleted?: (habitId: number) => void;
+    onTaskDeleted?: (habitId: EntityId) => void;
 }
 
 const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
@@ -30,6 +32,7 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
     onTaskDeleted,
 }) => {
     const dispatch = useAppDispatch();
+    const { showErrorAlert } = useDialog();
     const { overdueHasNext, overdueLoadMoreStatus } = useAppSelector(state => state.habits);
     const [collapsed, setCollapsed] = useState(false);
     const [rescheduling, setRescheduling] = useState(false);
@@ -51,7 +54,7 @@ const OverdueTasksSection: React.FC<OverdueTasksSectionProps> = ({
                 }),
             );
         } catch {
-            window.alert('일정 변경에 실패했습니다.');
+            await showErrorAlert('일정 변경에 실패했습니다.');
         } finally {
             setRescheduling(false);
         }

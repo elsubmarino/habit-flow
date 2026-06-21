@@ -3,6 +3,7 @@ package io.streak.habitflow.domain.task.service;
 import io.streak.habitflow.domain.activitylog.dto.ChangeSet;
 import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
+import io.streak.habitflow.domain.label.dto.query.LabelSummaryQuery;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
@@ -26,6 +27,7 @@ import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.DistributedLock;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
+import io.streak.habitflow.global.util.HashidsProvider;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -53,6 +55,7 @@ public class TaskService {
     private final ProjectMemberRepository projectMemberRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final HashidsProvider hashidsProvider;
 
     @Transactional
     @CheckOwnership(type="TASK")
@@ -85,7 +88,7 @@ public class TaskService {
             if (projectCount > 500) {
                 throw new IllegalArgumentException("해당 프로젝트에 테스크를 500개까지 보유할 수 있습니다.");
             }
-            project = projectRepository.findById(request.projectId())
+            project = projectRepository.findById(hashidsProvider.decode(request.projectId()))
                     .orElseThrow(()->new EntityNotFoundException("존재하지 않는 프로젝트입니다."));
             boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
             if(!isMember){
@@ -130,7 +133,10 @@ public class TaskService {
         }
 
         if(request.labelIds() != null && !request.labelIds().isEmpty()){
-            List<Label> labels = labelRepository.findAllById(request.labelIds());
+            List<Long> realLabelIds = request.labelIds().stream()
+                    .map(hashidsProvider::decode)
+                    .toList();
+            List<Label> labels = labelRepository.findAllById(realLabelIds);
             if(labels.size() != request.labelIds().size()){
                 throw new EntityNotFoundException("존재하지 않는 라벨이 있습니다.");
             }
@@ -177,16 +183,16 @@ public class TaskService {
                 .stream()
                 .map(taskLabel -> {
                     Label realLabel = taskLabel.getLabel();
-                    return LabelResponse.Summary.from(realLabel);
+                    return LabelResponse.Summary.of(realLabel, hashidsProvider.encode(realLabel.getId()));
                 })
                 .toList();
-
-        return TaskResponse.Detail.of(savedTask, labelSummaryResponses);
+        String encodedId = hashidsProvider.encode(savedTask.getId());
+        return TaskResponse.Detail.of(savedTask, encodedId, labelSummaryResponses,hashidsProvider::encode);
     }
 
     private Task getTask(TaskRequest.Create request, Task parentTask) {
         if(request.parentId() != null){
-            parentTask = taskRepository.findById(request.parentId())
+            parentTask = taskRepository.findById(hashidsProvider.decode(request.parentId()))
                     .orElseThrow(()-> new EntityNotFoundException("존재하지 않는 테스크입니다."));
 
             if(parentTask.getSubTasks().size() >= 4){
@@ -205,10 +211,14 @@ public class TaskService {
         }
 
         List<LabelResponse.Summary> labelSummaryResponses = task.getTaskLabels().stream()
-                .map(taskLabel -> LabelResponse.Summary.from(taskLabel.getLabel()))
+                .map(taskLabel -> {
+                    String encodedId = hashidsProvider.encode(taskLabel.getId());
+                    return LabelResponse.Summary.of(taskLabel.getLabel(),encodedId);
+                })
                 .toList();
 
-        return TaskResponse.Detail.of(task, labelSummaryResponses);
+        String encodedId = hashidsProvider.encode(task.getId());
+        return TaskResponse.Detail.of(task, encodedId, labelSummaryResponses,hashidsProvider::encode);
     }
 
     @CheckOwnership(type="PROJECT")
@@ -223,7 +233,8 @@ public class TaskService {
             hasNext = true;
         }
         List<TaskResponse.Summary> taskSummaryResponses =  tasks.stream()
-                .map(task-> TaskResponse.Summary.of(task,new ArrayList<>()))
+                .map(task-> TaskResponse.Summary.of(task,
+                        hashidsProvider.encode(task.id()), new ArrayList<>()))
                 .toList();
         return new SliceImpl<>(taskSummaryResponses,pageable,hasNext);
     }
@@ -254,8 +265,12 @@ public class TaskService {
         Map<Long, List<LabelResponse.Summary>> labelMap = labelRepository.findLabelsByTaskIds(taskIds);
 
         List<TaskResponse.Summary> taskSummaryResponses = tasks.stream()
-                .map(task-> TaskResponse.Summary.of(task,
-                        labelMap.getOrDefault(task.id(),new ArrayList<>())))
+                .map(task-> {
+                            String encodedId = hashidsProvider.encode(task.id());
+                            return TaskResponse.Summary.of(task,encodedId,
+                                    labelMap.getOrDefault(task.id(), new ArrayList<>()));
+                        }
+                )
                 .toList();
 
         TaskRequest.Cursor nextCursor = null;
@@ -270,7 +285,7 @@ public class TaskService {
                         last.dueDate(),
                         last.taskPriorityType(),
                         last.sortOrder(),
-                        last.id()
+                        hashidsProvider.encode(last.id())
                 );
             }
             if(hasPrev){
@@ -278,7 +293,7 @@ public class TaskService {
                         first.dueDate(),
                         first.taskPriorityType(),
                         first.sortOrder(),
-                        first.id()
+                        hashidsProvider.encode(first.id())
                 );
             }
         }
@@ -314,9 +329,13 @@ public class TaskService {
             ));
         }
 
-        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
-
-        return TaskResponse.Detail.of(task,taskLabels);
+        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
+            String encodedId = hashidsProvider.encode(label.id());
+            return LabelResponse.Summary.of(label,encodedId);
+        }).toList();
+        String encodedId = hashidsProvider.encode(task.getId());
+        return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
     }
 
     @Transactional
@@ -355,8 +374,13 @@ public class TaskService {
         }
 
         List<TaskSummaryQuery> taskSummaryQueries = taskRepository.getTaskListQueries(List.of(taskId));
-        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
-        return TaskResponse.Summary.of(taskSummaryQueries.get(0),taskLabels);
+        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
+            String encodedId = hashidsProvider.encode(label.id());
+            return LabelResponse.Summary.of(label,encodedId);
+        }).toList();
+        String encodedId = hashidsProvider.encode(task.getId());
+        return TaskResponse.Summary.of(taskSummaryQueries.get(0),encodedId,summaries);
     }
 
     public TaskResponse.SidebarTasksCount getSidebarTaskCount(Long memberId){
@@ -413,9 +437,14 @@ public class TaskService {
                 request.recurrenceDayOfMonth(),
                 request.timeSpecified()
         );
-        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
+            String encodedId = hashidsProvider.encode(label.id());
+            return LabelResponse.Summary.of(label,encodedId);
+        }).toList();
         if(!isChanged){
-            return TaskResponse.Detail.of(task,taskLabels);
+            String encodedId = hashidsProvider.encode(task.getId());
+            return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
         }
         if(!Objects.equals(oldDueDate, request.dueDate())){
             List<ChangeSet> changeSets = new ArrayList<>();
@@ -433,8 +462,8 @@ public class TaskService {
             ));
         }
 
-
-        return TaskResponse.Detail.of(task,taskLabels);
+        String encodedId = hashidsProvider.encode(task.getId());
+        return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
     }
 
     @Transactional
@@ -457,45 +486,61 @@ public class TaskService {
                 task.getName(),
                 changeSets
         ));
-        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
-        return TaskResponse.Detail.of(task,taskLabels);
+        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
+            String encodedId = hashidsProvider.encode(label.id());
+            return LabelResponse.Summary.of(label,encodedId);
+        }).toList();
+        String encodedId = hashidsProvider.encode(task.getId());
+        return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updateTaskLabels(Long taskId, List<Long> labelIds, Long memberId){
+    public TaskResponse.Detail updateTaskLabels(Long taskId, List<String> labelIds, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
-        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
-        if(labelIds == null || labelIds.isEmpty()){
-            task.getSubTasks().clear();
-            return TaskResponse.Detail.of(task,taskLabels);
+        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
+            String encodedId = hashidsProvider.encode(label.id());
+            return LabelResponse.Summary.of(label,encodedId);
+        }).toList();
+        List<Long> realLabelIds = labelIds.stream()
+                .map(hashidsProvider::decode)
+                .toList();
+        if(labelIds.isEmpty()){
+            task.getTaskLabels().clear();
+            String encodedId = hashidsProvider.encode(task.getId());
+            return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
         }
 
-        List<Label> realLabels  =labelRepository.findAllById(labelIds);
+        List<Label> realLabels  =labelRepository.findAllById(realLabelIds);
 
-        if(realLabels.size() != labelIds.size()){
+        if(realLabels.size() != realLabelIds.size()){
             throw new EntityNotFoundException("존재하지 않는 라벨이 포함되어 있습니다.");
         }
 
         task.getTaskLabels().clear();
 
         realLabels.forEach(label-> task.addTaskLabel(TaskLabel.builder().label(label).build()));
-        return TaskResponse.Detail.of(task,taskLabels);
+        String encodedId = hashidsProvider.encode(task.getId());
+        return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updateProject(Long taskId, Long projectId, Long memberId){
+    public TaskResponse.Detail updateProject(Long taskId, String projectId, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
+        long realProjectId = hashidsProvider.decode(projectId);
+
         Project project = null;
         if(projectId != null) {
-            project = projectRepository.findById(projectId)
+            project = projectRepository.findById(realProjectId)
                     .orElseThrow();
             String oldProjectName = project.getName();
             task.updateProject(project);
@@ -512,8 +557,13 @@ public class TaskService {
                     changeSets
             ));
         }
-        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
-        return TaskResponse.Detail.of(task,taskLabels);
+        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
+            String encodedId = hashidsProvider.encode(label.id());
+            return LabelResponse.Summary.of(label,encodedId);
+        }).toList();
+        String encodedId = hashidsProvider.encode(task.getId());
+        return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
     }
 
     public List<TaskResponse.UpcomingDateCount> getUpcomingDateCounts(Long memberId, LocalDateTime fromDate, LocalDateTime toDate){
@@ -524,8 +574,13 @@ public class TaskService {
     public TaskResponse.Summary updateSortOrder(Long taskId, TaskRequest.UpdateSortOrder updateSortOrder, Long memberId){
         Task task = taskRepository.getReferenceById(taskId);
         task.updateSortOrder(updateSortOrder.sortOrder());
-        List<LabelResponse.Summary> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
+            String encodedId = hashidsProvider.encode(label.id());
+            return LabelResponse.Summary.of(label,encodedId);
+        }).toList();
         List<TaskSummaryQuery> taskSummaryQueries = taskRepository.getTaskListQueries(List.of(taskId));
-        return TaskResponse.Summary.of(taskSummaryQueries.get(0),taskLabels);
+        String encodedId = hashidsProvider.encode(task.getId());
+        return TaskResponse.Summary.of(taskSummaryQueries.get(0),encodedId,summaries);
     }
 }

@@ -38,7 +38,7 @@ public final class ProjectRequest {
     ){}
 
     public record Invite(
-            Long id,
+            String id,
             @Size(max=100,message = "백명이상 초대할 수 없습니다.")
             @NotBlank(message = "초대할 이메일을 입력하세요")
             @Schema(description = "초대할 이메일 주소 리스트", requiredMode = Schema.RequiredMode.REQUIRED)

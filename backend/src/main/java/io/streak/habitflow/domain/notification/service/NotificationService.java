@@ -7,6 +7,7 @@ import io.streak.habitflow.domain.notification.dto.response.NotificationResponse
 import io.streak.habitflow.domain.notification.entity.Notification;
 import io.streak.habitflow.domain.notification.repository.NotificationRepository;
 import io.streak.habitflow.global.aop.CheckOwnership;
+import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,12 +20,20 @@ import java.util.List;
 public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final MemberRepository memberRepository;
+    private final HashidsProvider hashidsProvider;
 
     public List<NotificationResponse.Summary> getNotifications(Long memberId) {
         Member receiver = memberRepository.getReferenceById(memberId);
+        String encodedReceiverId = hashidsProvider.encode(receiver.getId());
         List<Notification> notifications = notificationRepository.findByReceiver(receiver);
         return notifications.stream()
-                .map(NotificationResponse.Summary::from)
+                .map(response->{
+                    String encodedId = hashidsProvider.encode(response.getId());
+                    String encodedActorId = hashidsProvider.encode(response.getActor().getId());
+                    String encodedTargetId = hashidsProvider.encode(response.getTargetId());
+                    return NotificationResponse.Summary.of(response,encodedId,encodedReceiverId,
+                            encodedActorId,encodedTargetId);
+                })
                 .toList();
     }
 
@@ -35,6 +44,11 @@ public class NotificationService {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow();
         notification.confirmNotification(request.isConfirmed());
-        return NotificationResponse.Summary.from(notification);
+        String encodedId = hashidsProvider.encode(notification.getId());
+        String encodedReceiverId = hashidsProvider.encode(notification.getReceiver().getId());
+        String encodedActorId = hashidsProvider.encode(notification.getActor().getId());
+        String encodedTargetId = hashidsProvider.encode(notification.getTargetId());
+        return NotificationResponse.Summary.of(notification,encodedId,encodedReceiverId,
+                encodedActorId,encodedTargetId);
     }
 }

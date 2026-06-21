@@ -1,3 +1,4 @@
+import type { EntityId } from '../api/types';
 import type { Habit } from '../store/habitSlice';
 
 export function reorderList<T>(items: T[], fromIndex: number, toIndex: number): T[] {
@@ -49,7 +50,7 @@ export function mergeVisibleOrder(fullList: Habit[], visibleOrdered: Habit[]): H
 }
 
 export interface ReorderHabitRequest {
-    habitId: number;
+    habitId: EntityId;
     fromIndex: number;
     toIndex: number;
     sortOrder: number;

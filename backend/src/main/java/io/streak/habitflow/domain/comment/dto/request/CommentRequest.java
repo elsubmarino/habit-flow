@@ -14,12 +14,12 @@ public final class CommentRequest {
 
             @NotNull
             @Schema(description = "댓글이 속한 TASK ID", requiredMode = Schema.RequiredMode.REQUIRED)
-            Long taskId
+            String taskId
     ){}
     public record Update(
             @NotNull
             @Schema(description = "수정할 댓글 ID", requiredMode = Schema.RequiredMode.REQUIRED)
-            Long id,
+            String id,
 
             @Schema(description = "수정할 댓글 내용", requiredMode = Schema.RequiredMode.REQUIRED)
             @NotBlank(message = "내용은 필수 입력 항목입니다.")

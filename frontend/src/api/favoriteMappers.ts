@@ -1,4 +1,4 @@
-import type { FavoriteDto, FavoriteTargetType } from './types';
+import type { FavoriteDto, FavoriteTargetType, EntityId } from './types';
 import type { Label, Project } from '../store/habitSlice';
 
 export function normalizeFavoriteTargetType(value: unknown): FavoriteTargetType | null {
@@ -8,9 +8,13 @@ export function normalizeFavoriteTargetType(value: unknown): FavoriteTargetType 
     return null;
 }
 
+function isValidEntityId(value: unknown): value is EntityId {
+    return typeof value === 'string' && value.trim() !== '';
+}
+
 export function normalizeFavoriteDto(favorite: FavoriteDto): FavoriteDto | null {
     const targetType = normalizeFavoriteTargetType(favorite.targetType);
-    if (targetType == null || !Number.isFinite(favorite.targetId)) return null;
+    if (targetType == null || !isValidEntityId(favorite.targetId)) return null;
     return {
         ...favorite,
         targetType,
@@ -18,8 +22,12 @@ export function normalizeFavoriteDto(favorite: FavoriteDto): FavoriteDto | null 
     };
 }
 
-function favoriteKey(targetType: FavoriteTargetType, targetId: number): string {
+function favoriteKey(targetType: FavoriteTargetType, targetId: EntityId): string {
     return `${targetType}:${targetId}`;
+}
+
+function localFavoriteId(targetType: FavoriteTargetType, targetId: EntityId): EntityId {
+    return `local:${targetType}:${targetId}`;
 }
 
 /** API 목록 + 로컬 favorite 플래그를 합쳐 사이드바에 표시할 목록 생성 */
@@ -37,7 +45,7 @@ export function buildSidebarFavorites(
     const fromProjects = projects
         .filter(p => p.favorite && !keys.has(favoriteKey('PROJECT', p.id)))
         .map(p => ({
-            id: -p.id,
+            id: localFavoriteId('PROJECT', p.id),
             targetType: 'PROJECT' as const,
             targetId: p.id,
             targetName: p.name,
@@ -51,7 +59,7 @@ export function buildSidebarFavorites(
     const fromLabels = labels
         .filter(l => l.favorite && !keys.has(favoriteKey('LABEL', l.id)))
         .map(l => ({
-            id: -(l.id + 100_000),
+            id: localFavoriteId('LABEL', l.id),
             targetType: 'LABEL' as const,
             targetId: l.id,
             targetName: l.name,
@@ -61,7 +69,7 @@ export function buildSidebarFavorites(
     return [...fromApi, ...fromProjects, ...fromLabels];
 }
 
-export function readFavoriteTargetId(favorite: FavoriteDto): number {
+export function readFavoriteTargetId(favorite: FavoriteDto): EntityId {
     return favorite.targetId;
 }
 
@@ -95,7 +103,7 @@ export function resolveFavoriteLabel(favorite: FavoriteDto, label?: Label): Labe
 export function favoriteTargetIds(
     favorites: FavoriteDto[],
     targetType: FavoriteTargetType,
-): Set<number> {
+): Set<EntityId> {
     return new Set(
         favorites
             .map(normalizeFavoriteDto)
@@ -116,7 +124,7 @@ export function upsertFavoriteFromProject(favorites: FavoriteDto[], project: Pro
     return [
         ...rest,
         {
-            id: existing?.id ?? -project.id,
+            id: existing?.id ?? localFavoriteId('PROJECT', project.id),
             targetType: 'PROJECT',
             targetId: project.id,
             targetName: project.name,
@@ -137,7 +145,7 @@ export function upsertFavoriteFromLabel(favorites: FavoriteDto[], label: Label):
     return [
         ...rest,
         {
-            id: existing?.id ?? -(label.id + 100_000),
+            id: existing?.id ?? localFavoriteId('LABEL', label.id),
             targetType: 'LABEL',
             targetId: label.id,
             targetName: label.name,
@@ -146,7 +154,7 @@ export function upsertFavoriteFromLabel(favorites: FavoriteDto[], label: Label):
     ];
 }
 
-export function applyFavoriteFlags<T extends { id: number; favorite: boolean }>(
+export function applyFavoriteFlags<T extends { id: EntityId; favorite: boolean }>(
     items: T[],
     favorites: FavoriteDto[],
     targetType: FavoriteTargetType,

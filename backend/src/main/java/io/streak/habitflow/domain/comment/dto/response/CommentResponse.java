@@ -17,16 +17,16 @@ public final class CommentResponse{
 
             @Schema(description = "첨부파일")
             List<AttachmentResponse.Detail> attachments,
-            Long id
+            String id
     ) {
         public Detail{
             attachments = Objects.requireNonNullElse(attachments, new ArrayList<>());
         }
 
-        public static Detail from(Comment comment) {
+        public static Detail of(Comment comment, String encodedId) {
             return Detail.builder()
                     .content(comment.getContent())
-                    .id(comment.getId())
+                    .id(encodedId)
                     .attachments(comment.getAttachments().stream()
                             .map(AttachmentResponse.Detail::from)
                             .toList())

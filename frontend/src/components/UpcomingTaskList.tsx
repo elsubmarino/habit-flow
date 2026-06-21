@@ -1,6 +1,7 @@
 import { useVirtualizer, type VirtualItem } from '@tanstack/react-virtual';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { habitRowKey, type Habit, type UpcomingDayBundle } from '../store/habitSlice';
+import type { EntityId } from '../api/types';
 import type { ReorderHabitRequest } from '../utils/taskSortOrder';
 import {
     addDays,
@@ -45,10 +46,10 @@ interface UpcomingTaskListProps {
     onEnsureDay: (dateKey: string) => void;
     onLoadMoreDay: (dateKey: string) => void;
     onOpenDetails?: (habit: Habit) => void;
-    onOpenProject?: (projectId: number) => void;
+    onOpenProject?: (projectId: EntityId) => void;
     onAddTask?: () => void;
     onTaskCompleted?: (habit: Habit) => void;
-    onTaskDeleted?: (habitId: number) => void;
+    onTaskDeleted?: (habitId: EntityId) => void;
     onReorder?: (request: ReorderHabitRequest) => void;
 }
 
@@ -60,10 +61,10 @@ interface UpcomingDaySectionProps {
     mayHaveTasks: boolean;
     onLoadMoreDay?: (dateKey: string) => void;
     onOpenDetails?: (habit: Habit) => void;
-    onOpenProject?: (projectId: number) => void;
+    onOpenProject?: (projectId: EntityId) => void;
     onAddTask?: () => void;
     onTaskCompleted?: (habit: Habit) => void;
-    onTaskDeleted?: (habitId: number) => void;
+    onTaskDeleted?: (habitId: EntityId) => void;
     onReorder?: (request: ReorderHabitRequest) => void;
 }
 
@@ -154,10 +155,10 @@ interface UpcomingVirtualRowProps {
     onEnsureDay: (dateKey: string) => void;
     onLoadMoreDay?: (dateKey: string) => void;
     onOpenDetails?: (habit: Habit) => void;
-    onOpenProject?: (projectId: number) => void;
+    onOpenProject?: (projectId: EntityId) => void;
     onAddTask?: () => void;
     onTaskCompleted?: (habit: Habit) => void;
-    onTaskDeleted?: (habitId: number) => void;
+    onTaskDeleted?: (habitId: EntityId) => void;
     onReorder?: (request: ReorderHabitRequest) => void;
 }
 

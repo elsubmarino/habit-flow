@@ -58,12 +58,14 @@ import { BellIcon, PanelToggleIcon } from './components/icons';
 import { applyMemberProfile } from './utils/userProfile';
 import { bootstrapAuthFromCallback, restoreAuthSession } from './api/authBootstrap';
 import { clearStoredTokens, onAuthLogout } from './api/client';
+import { useDialog } from './context/DialogContext';
 import { fetchMember, logoutMember } from './api/memberApi';
 import OAuthRedirectHandler from './components/OAuthRedirectHandler';
 import ProjectInviteHandler from './components/ProjectInviteHandler';
 import { clearHabitError } from './store/habitSlice';
 import { useAppUrlSync } from './hooks/useAppUrlSync';
 import { useInfiniteScroll } from './hooks/useInfiniteScroll';
+import type { EntityId } from './api/types';
 import { parseAppPath } from './utils/appRoutes';
 import type { ReorderHabitRequest } from './utils/taskSortOrder';
 import { formatSectionDate, formatTodayHeader, toISODate } from './utils/date';
@@ -100,6 +102,7 @@ function getInitialNav(): NavItem {
 
 function App() {
     const dispatch = useAppDispatch();
+    const { confirm } = useDialog();
     const {
         list: habits,
         projects,
@@ -153,7 +156,7 @@ function App() {
         () => localStorage.getItem('habitflow.favoritesListExpanded') !== 'false',
     );
     const [showSearchModal, setShowSearchModal] = useState(false);
-    const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+    const [selectedTaskId, setSelectedTaskId] = useState<EntityId | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => bootstrapAuthFromCallback());
     const [sessionRestorePending, setSessionRestorePending] = useState(
         () => !bootstrapAuthFromCallback(),
@@ -211,7 +214,7 @@ function App() {
         setSelectedTaskId(habit.id);
     }, []);
 
-    const handleOpenTaskId = useCallback((taskId: number) => {
+    const handleOpenTaskId = useCallback((taskId: EntityId) => {
         const habit = habits.find(h => h.id === taskId);
         if (habit) {
             handleOpenHabit(habit);
@@ -220,7 +223,7 @@ function App() {
         setSelectedTaskId(taskId);
     }, [habits, handleOpenHabit]);
 
-    const handleTaskDeleted = useCallback((habitId: number) => {
+    const handleTaskDeleted = useCallback((habitId: EntityId) => {
         if (selectedTaskId === habitId) setSelectedTaskId(null);
         refreshSidebarCounts();
     }, [selectedTaskId, refreshSidebarCounts]);
@@ -400,7 +403,7 @@ function App() {
         dispatch(setSelectedLabel(null));
     };
 
-    const handleProjectSelect = (projectId: number) => {
+    const handleProjectSelect = (projectId: EntityId) => {
         setShowNotifications(false);
         setShowProjectsBrowse(false);
         dispatch(setSelectedProject(projectId));
@@ -415,7 +418,7 @@ function App() {
         dispatch(setSelectedProject(null));
     };
 
-    const handleLabelSelect = (labelId: number | null) => {
+    const handleLabelSelect = (labelId: EntityId | null) => {
         setShowNotifications(false);
         setShowProjectsBrowse(false);
         if (labelId != null) {
@@ -426,7 +429,7 @@ function App() {
         dispatch(setSelectedProject(null));
     };
 
-    const handleLabelOpen = (labelId: number) => {
+    const handleLabelOpen = (labelId: EntityId) => {
         handleLabelSelect(labelId);
     };
 
@@ -434,10 +437,15 @@ function App() {
         setEditingLabel(label);
     };
 
-    const handleDeleteLabel = (labelId: number) => {
+    const handleDeleteLabel = async (labelId: EntityId) => {
         const label = labels.find(l => l.id === labelId);
         if (!label) return;
-        if (!window.confirm(`"${displayLabelName(label.name)}" 라벨을 삭제할까요?`)) return;
+        if (!(await confirm({
+            title: '라벨 삭제',
+            message: `"${displayLabelName(label.name)}" 라벨을 삭제할까요?`,
+            confirmLabel: '삭제',
+            variant: 'danger',
+        }))) return;
         dispatch(deleteLabel(labelId));
         if (selectedLabelId === labelId) {
             handleLabelsBrowse();
@@ -468,10 +476,15 @@ function App() {
         setSharingProject(project);
     };
 
-    const handleDeleteProject = (projectId: number) => {
+    const handleDeleteProject = async (projectId: EntityId) => {
         const project = projects.find(p => p.id === projectId);
         if (!project) return;
-        if (!window.confirm(`"${project.name}" 프로젝트를 삭제할까요?\n작업은 프로젝트 없이 유지됩니다.`)) {
+        if (!(await confirm({
+            title: '프로젝트 삭제',
+            message: `"${project.name}" 프로젝트를 삭제할까요?\n작업은 프로젝트 없이 유지됩니다.`,
+            confirmLabel: '삭제',
+            variant: 'danger',
+        }))) {
             return;
         }
         dispatch(deleteProject(projectId));

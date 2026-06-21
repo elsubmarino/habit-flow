@@ -13,6 +13,7 @@ import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.CursorDirection;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
+import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
@@ -32,6 +33,7 @@ import static io.streak.habitflow.domain.task.entity.QTask.task;
 @RequiredArgsConstructor
 public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     private final JPAQueryFactory queryFactory;
+    private final HashidsProvider hashidsProvider;
 
     private BooleanExpression nameContains(String name) {
         return StringUtils.hasText(name) ? task.name.contains(name) : null;
@@ -42,11 +44,11 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskResponse> searchKeyword(String keyword, Long memberId, Pageable pageable) {
+    public List<TaskSummaryQuery> searchKeyword(String keyword, Long memberId, Pageable pageable) {
         return
                 queryFactory
                         .select(Projections.fields(
-                                TaskResponse.class,
+                                TaskSummaryQuery.class,
                                 task.id,
                                 task.name
                         ))
@@ -167,7 +169,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         LocalDateTime lastDue = cursor.lastDueDate();
         TaskPriorityType lastPriority = cursor.lastPriorityType();
         Long lastSortOrder = cursor.lastSortOrder();
-        Long lastTaskId = cursor.lastTaskId();
+        Long lastTaskId = hashidsProvider.decode(cursor.lastTaskId());
 
         if (cursor.direction() == CursorDirection.PREV) {
             // asc 정렬 기준으로 "커서 이전" 행

@@ -10,6 +10,7 @@ import io.streak.habitflow.domain.project.event.ProjectAcceptEvent;
 import io.streak.habitflow.domain.project.event.ProjectInvitationEvent;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.infra.sse.SseEmitters;
+import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
@@ -25,6 +26,7 @@ public class NotificationEventListener {
     private final NotificationRepository notificationRepository;
     private final MemberRepository memberRepository;
     private final SseEmitters sseEmitters;
+    private final HashidsProvider hashidsProvider;
 
     @Async("activityLogExecutor")
     @Transactional
@@ -53,7 +55,8 @@ public class NotificationEventListener {
         for(Notification notification: notifications){
             if(notification.getActivityType() == ActivityType.INVITED){
                 sseEmitters.sendToMember(notification.getReceiver().getId()
-                        , NotificationResponse.Summary.from(notification));
+                        , NotificationResponse.Summary.of(notification,hashidsProvider.encode(notification.getId())
+                                ,null,null,null));
             }
         }
 
@@ -80,7 +83,7 @@ public class NotificationEventListener {
 
         if(notification.getActivityType() == ActivityType.JOINED){
             sseEmitters.sendToMember(notification.getReceiver().getId()
-                    , NotificationResponse.Summary.from(notification));
+                    , NotificationResponse.Summary.of(notification,hashidsProvider.encode(notification.getId()),null,null,null));
         }
 
     }

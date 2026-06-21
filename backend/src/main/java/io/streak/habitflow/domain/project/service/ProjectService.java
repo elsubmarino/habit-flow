@@ -18,6 +18,7 @@ import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
+import io.streak.habitflow.global.util.HashidsProvider;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -41,6 +42,7 @@ public class ProjectService {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final RedisTemplate<String, String> redisTemplate;
     private final MailService mailService;
+    private final HashidsProvider hashidsProvider;
 
     private static final String INVITE_TOKEN_PREFIX = "PROJECT_INVITE:";
     private static final long INVITE_EXPIRATION_HOURS = 24L;
@@ -101,8 +103,8 @@ public class ProjectService {
                 project.getName(),
                 Collections.emptyList()
         ));
-
-        return ProjectResponse.Detail.of(savedProject, request.favorite());
+        String encodedId = hashidsProvider.encode(savedProject.getId());
+        return ProjectResponse.Detail.of(savedProject, request.favorite(),encodedId);
     }
 
     @Transactional
@@ -153,7 +155,8 @@ public class ProjectService {
                     changeSets
             ));
         }
-        return ProjectResponse.Detail.of(project,request.favorite());
+        String encodedId = hashidsProvider.encode(project.getId());
+        return ProjectResponse.Detail.of(project,request.favorite(),encodedId);
     }
 
     public ProjectResponse.Detail getProjectById(Long projectId, Long memberId) {
@@ -164,13 +167,17 @@ public class ProjectService {
        if(favorite.isPresent()){
            isFavorite = true;
        }
-       return ProjectResponse.Detail.of(project,isFavorite);
+       String encodedId = hashidsProvider.encode(project.getId());
+       return ProjectResponse.Detail.of(project,isFavorite,encodedId);
     }
 
     public List<ProjectResponse.Summary> getProjectsByMember(Long memberId) {
         List<ProjectSummaryQuery> projectListQueries = projectRepository.findByMemberId(memberId);
         return projectListQueries.stream()
-                .map(ProjectResponse.Summary::from)
+                .map(query ->{
+                    String encodedId = hashidsProvider.encode(query.id());
+                    return ProjectResponse.Summary.of(query,encodedId);
+                })
                 .toList();
     }
 
@@ -199,14 +206,17 @@ public class ProjectService {
     public List<ProjectResponse.Summary> searchProjects(String keyword, Long memberId, Pageable pageable) {
         List<ProjectSummaryQuery> projectListQueries = projectRepository.searchKeyword(keyword,memberId, pageable);
         return projectListQueries.stream()
-                .map(ProjectResponse.Summary::from)
+                .map(query->{
+                    String encodedId = hashidsProvider.encode(query.id());
+                    return ProjectResponse.Summary.of(query,encodedId);
+                })
                 .toList();
     }
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public void invite(ProjectRequest.Invite inviteRequest, Long memberId){
-        Project project = projectRepository.getOrThrow(inviteRequest.id());
+    public void invite(ProjectRequest.Invite inviteRequest, Long projectId, Long memberId){
+        Project project = projectRepository.getOrThrow(projectId);
         Member inviter = memberRepository.getOrThrow(memberId);
 
         List<String> inviteEmails  = inviteRequest.emails();

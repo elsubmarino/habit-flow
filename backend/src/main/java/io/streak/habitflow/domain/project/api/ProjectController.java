@@ -6,6 +6,7 @@ import io.streak.habitflow.domain.project.service.ProjectService;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
 import io.streak.habitflow.global.aop.LoginMemberId;
+import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.common.constant.PageSizeConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -41,9 +42,10 @@ public class ProjectController {
 
     @GetMapping("/{projectId}")
     @Operation(summary = "프로젝트 상세 조회")
-    public ResponseEntity<ProjectResponse.Detail> getProjectById(@PathVariable Long projectId,
+    public ResponseEntity<ProjectResponse.Detail> getProjectById(@PathVariable RoutingId projectId,
                                                           @LoginMemberId Long loginMemberId) {
-        return ResponseEntity.ok(projectService.getProjectById(projectId,loginMemberId));
+        Long realProjectId = projectId.value();
+        return ResponseEntity.ok(projectService.getProjectById(realProjectId,loginMemberId));
     }
 
     @GetMapping
@@ -55,25 +57,28 @@ public class ProjectController {
     @PutMapping("/{projectId}")
     @Operation(summary = "프로젝트 업데이트")
     public ResponseEntity<ProjectResponse.Detail> updateProject(@RequestBody ProjectRequest.Create request,
-                                                 @PathVariable Long projectId,
+                                                 @PathVariable RoutingId projectId,
                                                  @LoginMemberId Long loginMemberId) {
-        return ResponseEntity.ok(projectService.updateProject(request,projectId,loginMemberId));
+        Long realProjectId = projectId.value();
+        return ResponseEntity.ok(projectService.updateProject(request,realProjectId,loginMemberId));
     }
 
     @DeleteMapping("/{projectId}")
     @Operation(summary = "프로젝트 삭제")
-    public ResponseEntity<Void> deleteProject(@PathVariable Long projectId,
+    public ResponseEntity<Void> deleteProject(@PathVariable RoutingId projectId,
                                               @LoginMemberId Long loginMemberId) {
-        projectService.deleteProject(projectId,loginMemberId);
+        Long realProjectId = projectId.value();
+        projectService.deleteProject(realProjectId,loginMemberId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{projectId}/tasks")
     @Operation(summary = "프로젝트에 딸린 테스크 조회")
-    public ResponseEntity<Slice<TaskResponse.Summary>> getTasksByProject(@PathVariable Long projectId,
+    public ResponseEntity<Slice<TaskResponse.Summary>> getTasksByProject(@PathVariable RoutingId projectId,
                                                                          @LoginMemberId Long loginMemberId,
                                                                          @PageableDefault(size= PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
-        return ResponseEntity.ok(taskService.getTasksByProject(projectId, loginMemberId, pageable));
+        Long realProjectId = projectId.value();
+        return ResponseEntity.ok(taskService.getTasksByProject(realProjectId, loginMemberId, pageable));
     }
 
     @GetMapping("/search")
@@ -88,8 +93,9 @@ public class ProjectController {
     @Operation(summary = "프로젝트 초대 이메일 발송")
     public ResponseEntity<Void> invite(@LoginMemberId Long loginMemberId,
                                        @RequestBody ProjectRequest.Invite request,
-                                       @PathVariable Long projectId){
-        projectService.invite(request, loginMemberId);
+                                       @PathVariable RoutingId projectId){
+        Long realProjectId = projectId.value();
+        projectService.invite(request, realProjectId, loginMemberId);
         return ResponseEntity.noContent().build();
     }
 
@@ -103,7 +109,8 @@ public class ProjectController {
 
     @GetMapping("/{projectId}/members")
     public ResponseEntity<List<ProjectResponse.Member>> getProjectMembers(@LoginMemberId Long loginMemberId,
-                                                                   @PathVariable Long projectId){
-        return ResponseEntity.ok(projectService.getProjectMembers(projectId,loginMemberId));
+                                                                   @PathVariable RoutingId projectId){
+        Long realProjectId = projectId.value();
+        return ResponseEntity.ok(projectService.getProjectMembers(realProjectId,loginMemberId));
     }
 }

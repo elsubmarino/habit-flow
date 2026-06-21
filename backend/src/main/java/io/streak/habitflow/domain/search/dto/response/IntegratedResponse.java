@@ -17,7 +17,7 @@ public final class IntegratedResponse {
             List<ProjectResponse.Summary> projects,
 
             @Schema(description = "검색된 테스크의 리스트")
-            List<TaskResponse> tasks,
+            List<TaskResponse.Summary> tasks,
 
             @Schema(description = "검색된 라벨의 리스트")
             List<LabelResponse.Summary> labels

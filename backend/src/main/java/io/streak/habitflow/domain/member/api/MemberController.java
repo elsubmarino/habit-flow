@@ -4,6 +4,7 @@ import io.streak.habitflow.domain.member.dto.request.MemberRequest;
 import io.streak.habitflow.domain.member.dto.response.MemberResponse;
 import io.streak.habitflow.domain.member.service.MemberService;
 import io.streak.habitflow.global.aop.LoginMemberId;
+import io.streak.habitflow.global.common.RoutingId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -28,9 +29,10 @@ public class MemberController {
     @PutMapping("/{memberId}")
     @Operation(summary = "회원 정보 업데이트")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 정보 업데이트 성공")})
-    public ResponseEntity<MemberResponse.Detail> updateMember(@PathVariable Long memberId,
+    public ResponseEntity<MemberResponse.Detail> updateMember(@PathVariable RoutingId memberId,
                                                @RequestBody MemberRequest.Update request,
                                                @LoginMemberId Long loginMemberId){
-        return ResponseEntity.ok(memberService.updateMember(memberId,request,loginMemberId));
+        long realMemberId = memberId.value();
+        return ResponseEntity.ok(memberService.updateMember(realMemberId,request,loginMemberId));
     }
 }

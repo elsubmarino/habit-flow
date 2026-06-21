@@ -19,7 +19,9 @@ import {
     type Subtask,
 } from '../store/habitSlice';
 import { getApiErrorMessage } from '../api/apiError';
+import type { EntityId } from '../api/types';
 import { displayLabelName } from '../api/labelMappers';
+import { useDialog } from '../context/DialogContext';
 import { formatTaskDetailDue, toISODate } from '../utils/date';
 import CommentListItem from './CommentListItem';
 import DatePickerDropdown, { type DatePickerChange } from './DatePickerDropdown';
@@ -27,7 +29,7 @@ import TaskEditBox from './TaskEditBox';
 import { CloseIcon, HashIcon } from './icons';
 
 interface TaskDetailModalProps {
-    taskId: number;
+    taskId: EntityId;
     onClose: () => void;
     onTaskCompleted?: (habit: Habit) => void;
 }
@@ -46,9 +48,10 @@ const PRIORITY_OPTIONS = [
 
 const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTaskCompleted }) => {
     const dispatch = useAppDispatch();
+    const { confirm, showAlert, showErrorAlert } = useDialog();
     const { projects, labels } = useAppSelector(state => state.habits);
-    const [stack, setStack] = useState<number[]>([taskId]);
-    const [tasks, setTasks] = useState<Record<number, Habit>>({});
+    const [stack, setStack] = useState<EntityId[]>([taskId]);
+    const [tasks, setTasks] = useState<Record<EntityId, Habit>>({});
     const [loading, setLoading] = useState(true);
     const [subtasksExpanded, setSubtasksExpanded] = useState(true);
     const [showSubtaskForm, setShowSubtaskForm] = useState(false);
@@ -63,13 +66,13 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     const [editName, setEditName] = useState('');
     const [editDesc, setEditDesc] = useState('');
     const [savingMain, setSavingMain] = useState(false);
-    const [editingSubtaskId, setEditingSubtaskId] = useState<number | null>(null);
+    const [editingSubtaskId, setEditingSubtaskId] = useState<EntityId | null>(null);
     const [subEditName, setSubEditName] = useState('');
     const [subEditDesc, setSubEditDesc] = useState('');
     const [savingSubtask, setSavingSubtask] = useState(false);
     const [comments, setComments] = useState<CommentItem[]>([]);
     const [recurrence, setRecurrence] = useState<string | null>(null);
-    const [draftLabelIds, setDraftLabelIds] = useState<number[]>([]);
+    const [draftLabelIds, setDraftLabelIds] = useState<EntityId[]>([]);
     const [savingLabels, setSavingLabels] = useState(false);
     const labelMenuRef = useRef<HTMLDivElement>(null);
     const dateMenuRef = useRef<HTMLDivElement>(null);
@@ -190,7 +193,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         }
     };
 
-    const startSubtaskEdit = async (subtaskId: number) => {
+    const startSubtaskEdit = async (subtaskId: EntityId) => {
         setEditingSubtaskId(subtaskId);
         setSavingSubtask(false);
         const cached = habit?.subtasks.find(s => s.id === subtaskId);
@@ -244,7 +247,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         }
     };
 
-    const handleToggleSubtask = async (subtaskId: number) => {
+    const handleToggleSubtask = async (subtaskId: EntityId) => {
         if (!habit) return;
         const subtask = habit.subtasks.find(s => s.id === subtaskId);
         const previousCompleted = subtask?.completed;
@@ -278,7 +281,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         setActiveMenu(null);
     };
 
-    const resolveProjectIdForSubtask = (): number | null => {
+    const resolveProjectIdForSubtask = (): EntityId | null => {
         for (let i = stack.length - 1; i >= 0; i -= 1) {
             const projectId = tasks[stack[i]]?.projectId;
             if (projectId != null) return projectId;
@@ -289,12 +292,12 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     const handleAddSubtask = async () => {
         if (!habit || !subName.trim()) return;
         if (!canAddSubtaskByDepth) {
-            window.alert(`하위 작업은 최대 ${MAX_SUBTASK_DEPTH}단계까지만 추가할 수 있습니다.`);
+            await showAlert(`하위 작업은 최대 ${MAX_SUBTASK_DEPTH}단계까지만 추가할 수 있습니다.`);
             setShowSubtaskForm(false);
             return;
         }
         if (!canAddSubtaskByCount) {
-            window.alert(`하위 작업은 부모당 최대 ${MAX_SUBTASKS_PER_PARENT}개까지 추가할 수 있습니다.`);
+            await showAlert(`하위 작업은 부모당 최대 ${MAX_SUBTASKS_PER_PARENT}개까지 추가할 수 있습니다.`);
             setShowSubtaskForm(false);
             return;
         }
@@ -308,7 +311,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         }));
 
         if (addSubtask.rejected.match(result)) {
-            window.alert(getApiErrorMessage(result.error, '하위 작업을 추가하지 못했습니다.'));
+            await showErrorAlert(getApiErrorMessage(result.error, '하위 작업을 추가하지 못했습니다.'));
             return;
         }
 
@@ -343,7 +346,12 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         if (!item.backendId) {
             throw new Error('댓글 ID가 없어 삭제할 수 없습니다.');
         }
-        if (!window.confirm('이 댓글을 삭제할까요?')) return;
+        if (!(await confirm({
+            title: '댓글 삭제',
+            message: '이 댓글을 삭제할까요?',
+            confirmLabel: '삭제',
+            variant: 'danger',
+        }))) return;
         if (!habit) return;
         await commentApi.deleteComment(item.backendId);
         await refreshCurrent();
@@ -384,13 +392,13 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         });
     };
 
-    const handleProjectChange = (projectId: number | null) => {
+    const handleProjectChange = (projectId: EntityId | null) => {
         if (!habit) return;
         void dispatch(patchTaskProject({ habitId: habit.id, projectId })).then(result => {
             if (patchTaskProject.fulfilled.match(result)) {
                 applyLocalHabit(result.payload);
             } else {
-                window.alert('프로젝트를 변경하지 못했습니다.');
+                void showErrorAlert('프로젝트를 변경하지 못했습니다.');
             }
             setActiveMenu(null);
         });
@@ -406,8 +414,8 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     const commitLabelSelection = useCallback(async () => {
         if (!habit) return;
 
-        const savedIds = habit.labels.map(l => l.id).sort((a, b) => a - b);
-        const draftSorted = [...draftLabelIds].sort((a, b) => a - b);
+        const savedIds = habit.labels.map(l => l.id).sort((a, b) => a.localeCompare(b));
+        const draftSorted = [...draftLabelIds].sort((a, b) => a.localeCompare(b));
         const unchanged = savedIds.length === draftSorted.length
             && savedIds.every((id, index) => id === draftSorted[index]);
 
@@ -422,7 +430,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
             if (patchTaskLabels.fulfilled.match(result)) {
                 applyLocalHabit(result.payload);
             } else {
-                window.alert('라벨을 저장하지 못했습니다.');
+                await showErrorAlert('라벨을 저장하지 못했습니다.');
             }
         } finally {
             setSavingLabels(false);
@@ -434,7 +442,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         setActiveMenu(null);
     }, [commitLabelSelection]);
 
-    const toggleDraftLabel = (labelId: number) => {
+    const toggleDraftLabel = (labelId: EntityId) => {
         setDraftLabelIds(prev =>
             prev.includes(labelId) ? prev.filter(id => id !== labelId) : [...prev, labelId],
         );

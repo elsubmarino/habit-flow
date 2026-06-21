@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fetchLabelById } from '../api/labelApi';
 import { displayLabelName } from '../api/labelMappers';
+import type { EntityId } from '../api/types';
 import type { Label } from '../store/habitSlice';
 import {
     getLabelColorName,
@@ -15,7 +16,7 @@ const NAME_MAX = 60;
 interface EditLabelModalProps {
     label: Label;
     onClose: () => void;
-    onSave: (id: number, payload: LabelFormPayload) => void;
+    onSave: (id: EntityId, payload: LabelFormPayload) => void;
 }
 
 const EditLabelModal: React.FC<EditLabelModalProps> = ({ label, onClose, onSave }) => {

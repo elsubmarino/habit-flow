@@ -1,3 +1,5 @@
+import type { EntityId } from './types';
+
 /** Spring Data Slice JSON (ScrollResponse 대체) */
 export interface SpringSlice<T> {
     content?: T[];
@@ -9,17 +11,17 @@ export interface SpringSlice<T> {
 export interface PaginatedResult<T> {
     content: T[];
     hasNext: boolean;
-    nextCursor: number | null;
+    nextCursor: EntityId | null;
 }
 
 export function parseSlicePage<T>(
     slice: SpringSlice<T>,
-    getCursorId?: (item: T) => number | null | undefined,
+    getCursorId?: (item: T) => EntityId | null | undefined,
 ): PaginatedResult<T> {
     const content = Array.isArray(slice.content) ? slice.content : [];
     const hasNext = slice.hasNext ?? (slice.last != null ? !slice.last : false);
 
-    let nextCursor: number | null = null;
+    let nextCursor: EntityId | null = null;
     if (hasNext && content.length > 0 && getCursorId) {
         const id = getCursorId(content[content.length - 1]!);
         nextCursor = id ?? null;

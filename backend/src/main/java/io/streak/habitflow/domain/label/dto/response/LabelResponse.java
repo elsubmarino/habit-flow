@@ -8,8 +8,8 @@ import lombok.Builder;
 public final class LabelResponse{
     @Builder
     public record Detail(
-            @Schema(description = "라벨 ID",example = "1")
-            Long id,
+            @Schema(description = "라벨 ID",example = "6q9WeDv5")
+            String id,
 
             @Schema(description = "라벨명")
             String name,
@@ -23,9 +23,9 @@ public final class LabelResponse{
             @Schema(description = "즐겨찾기 색상(헥사코드)",example = "#123456")
             String color
     ){
-        public static Detail of(Label label, boolean favorite){
+        public static Detail of(Label label, boolean favorite, String encodedId){
             return Detail.builder()
-                    .id(label.getId())
+                    .id(encodedId)
                     .name(label.getName())
                     .sortOrder(label.getSortOrder())
                     .favorite(favorite)
@@ -36,8 +36,8 @@ public final class LabelResponse{
 
     @Builder
     public record Summary(
-            @Schema(description = "라벨 ID",example = "1")
-            Long id,
+            @Schema(description = "라벨 ID",example = "6q9WeDv5")
+            String id,
             @Schema(description = "라벨명")
             String name,
             @Schema(description = "즐겨찾기 색상(헥사코드)",example = "#123456")
@@ -45,18 +45,18 @@ public final class LabelResponse{
             @Schema(description = "정렬순서")
             long sortOrder
     ){
-        public static Summary from(Label label){
+        public static Summary of(Label label,String encodedId){
             return Summary.builder()
-                    .id(label.getId())
+                    .id(encodedId)
                     .name(label.getName())
                     .sortOrder(label.getSortOrder())
                     .color(label.getColor())
                     .build();
         }
 
-        public static Summary from(LabelSummaryQuery labelSummaryQuery){
+        public static Summary of(LabelSummaryQuery labelSummaryQuery, String encodedId){
             return Summary.builder()
-                    .id(labelSummaryQuery.id())
+                    .id(encodedId)
                     .name(labelSummaryQuery.name())
                     .sortOrder(labelSummaryQuery.sortOrder())
                     .color(labelSummaryQuery.color())

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { attachmentDownloadUrl, type CommentItem } from '../store/habitSlice';
+import { useDialog } from '../context/DialogContext';
 import { getUserProfile } from '../utils/userProfile';
 
 interface CommentListItemProps {
@@ -24,6 +25,7 @@ const CommentListItem: React.FC<CommentListItemProps> = ({
     onEdit,
     onDelete,
 }) => {
+    const { showErrorAlert } = useDialog();
     const [menuOpen, setMenuOpen] = useState(false);
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState(comment.text);
@@ -54,7 +56,7 @@ const CommentListItem: React.FC<CommentListItemProps> = ({
             await onEdit(comment, draft.trim());
             setEditing(false);
         } catch (err) {
-            window.alert(err instanceof Error ? err.message : '댓글을 수정할 수 없습니다.');
+            await showErrorAlert(err instanceof Error ? err.message : '댓글을 수정할 수 없습니다.');
         } finally {
             setSaving(false);
         }
@@ -154,7 +156,7 @@ const CommentListItem: React.FC<CommentListItemProps> = ({
                             onClick={() => {
                                 setMenuOpen(false);
                                 void onDelete(comment).catch(err => {
-                                    window.alert(err instanceof Error ? err.message : '댓글을 삭제할 수 없습니다.');
+                                    void showErrorAlert(err instanceof Error ? err.message : '댓글을 삭제할 수 없습니다.');
                                 });
                             }}
                         >

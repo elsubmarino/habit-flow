@@ -7,8 +7,8 @@ import lombok.Builder;
 public final class MemberResponse{
     @Builder
     public record Detail(
-            @Schema(description = "멤버 ID",example = "1")
-            Long id,
+            @Schema(description = "멤버 ID",example = "6q9WeDv5")
+            String id,
 
             @Schema(description = "사용자명",example = "홍길동")
             String name,
@@ -19,9 +19,9 @@ public final class MemberResponse{
             @Schema(description = "역할명",examples = {"USER","ADMIN"})
             String role
     ){
-        public static Detail from(Member member) {
+        public static Detail to(Member member, String encodedId) {
             return Detail.builder()
-                    .id(member.getId())
+                    .id(encodedId)
                     .name(member.getName())
                     .email(member.getEmail())
                     .role(member.getRole().name())

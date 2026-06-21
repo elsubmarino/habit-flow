@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
+import type { EntityId } from '../api/types';
 import type { Project } from '../store/habitSlice';
+import { useDialog } from '../context/DialogContext';
 
 interface ProjectModalProps {
     projects: Project[];
     onClose: () => void;
     onAdd: (name: string, color: string) => void;
-    onDelete: (id: number) => void;
+    onDelete: (id: EntityId) => void;
 }
 
 const COLORS = ['#4073ff', '#299438', '#eb8909', '#ad46ff', '#db4c3f', '#808080'];
@@ -13,6 +15,7 @@ const COLORS = ['#4073ff', '#299438', '#eb8909', '#ad46ff', '#db4c3f', '#808080'
 const ProjectModal: React.FC<ProjectModalProps> = ({ projects, onClose, onAdd, onDelete }) => {
     const [name, setName] = useState('');
     const [color, setColor] = useState(COLORS[0]);
+    const { confirm } = useDialog();
 
     const handleAdd = () => {
         if (!name.trim()) return;
@@ -58,9 +61,15 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ projects, onClose, onAdd, o
                                 type="button"
                                 className="delete-btn"
                                 onClick={() => {
-                                    if (window.confirm(`"${project.name}" 프로젝트를 삭제할까요?\n작업은 프로젝트 없이 유지됩니다.`)) {
+                                    void (async () => {
+                                        if (!(await confirm({
+                                            title: '프로젝트 삭제',
+                                            message: `"${project.name}" 프로젝트를 삭제할까요?\n작업은 프로젝트 없이 유지됩니다.`,
+                                            confirmLabel: '삭제',
+                                            variant: 'danger',
+                                        }))) return;
                                         onDelete(project.id);
-                                    }
+                                    })();
                                 }}
                             >
                                 삭제

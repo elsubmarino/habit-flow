@@ -1,4 +1,4 @@
-import type { PriorityType } from './types';
+import type { EntityId, PriorityType } from './types';
 
 export type CursorDirection = 'NEXT' | 'PREV';
 
@@ -6,7 +6,7 @@ export interface TaskCursor {
     lastDueDate: string | null;
     lastPriorityType: PriorityType | null;
     lastSortOrder: number | null;
-    lastTaskId: number | null;
+    lastTaskId: EntityId | null;
     direction?: CursorDirection;
 }
 

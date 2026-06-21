@@ -3,6 +3,7 @@ import type {
     ActivityLogDto,
     ActivityTargetType,
     ActivityType,
+    EntityId,
 } from '../api/types';
 import { getLoggedInMemberId } from '../api/client';
 import { getUserProfile } from './userProfile';
@@ -177,7 +178,7 @@ export function formatActivityLogMessageRest(entry: ActivityLogEntry): string {
     }
 }
 
-export function resolveCurrentMemberId(explicit?: number | null): number | null {
+export function resolveCurrentMemberId(explicit?: EntityId | null): EntityId | null {
     if (explicit != null) return explicit;
     const profileId = getUserProfile().id;
     if (profileId != null) return profileId;
@@ -186,11 +187,11 @@ export function resolveCurrentMemberId(explicit?: number | null): number | null 
 
 export function isSelfActivityActor(
     entry: ActivityLogEntry,
-    currentMemberId?: number | null,
+    currentMemberId?: EntityId | null,
 ): boolean {
     const memberId = resolveCurrentMemberId(currentMemberId);
     if (memberId == null || entry.actor.id == null) return false;
-    return Number(entry.actor.id) === Number(memberId);
+    return entry.actor.id === memberId;
 }
 
 const ACTOR_PARTICLE = '님이';
@@ -201,7 +202,7 @@ function stripActorParticle(rest: string): string {
 
 export function formatActivityLogMessageParts(
     entry: ActivityLogEntry,
-    currentMemberId?: number | null,
+    currentMemberId?: EntityId | null,
 ): { actorLabel: string; body: string } {
     const rest = formatActivityLogMessageRest(entry);
     if (isSelfActivityActor(entry, currentMemberId)) {
@@ -218,7 +219,7 @@ export function formatActivityLogMessageParts(
 
 export function getActivityActorLabel(
     entry: ActivityLogEntry,
-    currentMemberId: number | null | undefined,
+    currentMemberId: EntityId | null | undefined,
 ): string {
     return isSelfActivityActor(entry, currentMemberId) ? '당신' : entry.actor.name;
 }
@@ -226,14 +227,14 @@ export function getActivityActorLabel(
 /** actor 라벨을 제외한 나머지 문장 */
 export function formatActivityLogMessageSuffix(
     entry: ActivityLogEntry,
-    currentMemberId: number | null | undefined,
+    currentMemberId: EntityId | null | undefined,
 ): string {
     return formatActivityLogMessageParts(entry, currentMemberId).body;
 }
 
 export function formatActivityLogMessage(
     entry: ActivityLogEntry,
-    currentMemberId?: number | null,
+    currentMemberId?: EntityId | null,
 ): string {
     const { actorLabel, body } = formatActivityLogMessageParts(entry, currentMemberId);
     return `${actorLabel}${body}`;
@@ -243,8 +244,8 @@ export function normalizeActivityLog(dto: ActivityLogDto): ActivityLogEntry {
     return {
         id: dto.id,
         activityType: dto.activityType,
-        actor: dto.actor ?? { id: 0, name: '사용자' },
-        target: dto.target ?? { type: 'TASK' as ActivityTargetType, id: 0, name: null },
+        actor: dto.actor ?? { id: '0', name: '사용자' },
+        target: dto.target ?? { type: 'TASK' as ActivityTargetType, id: '0', name: null },
         createdAt: dto.createdAt,
         changes: dto.changes ?? [],
     };
@@ -253,7 +254,7 @@ export function normalizeActivityLog(dto: ActivityLogDto): ActivityLogEntry {
 /** 프로젝트 필터: target이 해당 프로젝트인 로그만 매칭 */
 export function matchesActivityProjectFilter(
     entry: ActivityLogEntry,
-    projectId: number,
+    projectId: EntityId,
 ): boolean {
     return entry.target.type === 'PROJECT' && entry.target.id === projectId;
 }

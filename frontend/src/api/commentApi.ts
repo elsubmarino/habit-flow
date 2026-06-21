@@ -1,8 +1,9 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
+import type { EntityId } from './types';
 
 export async function createComment(
-    taskId: number,
+    taskId: EntityId,
     content: string,
     file?: File | null,
 ): Promise<CommentResponseDto> {
@@ -19,13 +20,13 @@ export async function createComment(
 }
 
 export interface CommentResponseDto {
-    id?: number;
+    id?: EntityId;
     content: string;
     createdAt?: string;
     attachments?: { fileUrl: string; originalFileName: string }[];
 }
 
-export async function fetchTaskComments(taskId: number): Promise<CommentResponseDto[]> {
+export async function fetchTaskComments(taskId: EntityId): Promise<CommentResponseDto[]> {
     return dedupeInFlight(`task-comments:${taskId}`, async () => {
         const { data } = await apiClient.get<CommentResponseDto[]>(`/api/tasks/${taskId}/comments`);
         return data;
@@ -33,8 +34,8 @@ export async function fetchTaskComments(taskId: number): Promise<CommentResponse
 }
 
 export async function updateComment(
-    commentId: number,
-    taskId: number,
+    commentId: EntityId,
+    taskId: EntityId,
     content: string,
 ): Promise<CommentResponseDto> {
     const { data } = await apiClient.put<CommentResponseDto>(`/api/comments/${commentId}`, {
@@ -45,6 +46,6 @@ export async function updateComment(
     return data;
 }
 
-export async function deleteComment(commentId: number): Promise<void> {
+export async function deleteComment(commentId: EntityId): Promise<void> {
     await apiClient.delete(`/api/comments/${commentId}`);
 }

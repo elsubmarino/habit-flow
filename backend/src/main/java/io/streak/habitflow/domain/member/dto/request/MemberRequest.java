@@ -58,7 +58,7 @@ public final class MemberRequest {
             String password,
 
             @NotNull
-            Long id
+            String id
     ) {
     }
 

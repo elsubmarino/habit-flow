@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TaskRepositoryCustom {
-    List<TaskResponse> searchKeyword(String keyword, Long memberId, Pageable pageable);
+    List<TaskSummaryQuery> searchKeyword(String keyword, Long memberId, Pageable pageable);
     List<TaskSummaryQuery> searchTasksByCondition(TaskRequest.SearchCondition searchCondition, TaskRequest.Cursor cursor, Long memberId, Pageable pageable);
     List<TaskSummaryQuery> findTasksByProject(Long projectId, Long memberId, Pageable pageable);
     TaskResponse.SidebarTasksCount countSidebarTasks(Long memberId);

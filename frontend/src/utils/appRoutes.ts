@@ -1,3 +1,4 @@
+import type { EntityId } from '../api/types';
 import type { NavItem } from '../components/Sidebar';
 import { OAUTH_CALLBACK_PATH } from '../api/authBootstrap';
 import {
@@ -37,9 +38,9 @@ export type AppLocation =
     | { kind: 'projectInvite'; token: string | null }
     | { kind: 'nav'; nav: NavItem }
     | { kind: 'labelsBrowse' }
-    | { kind: 'label'; labelId: number }
+    | { kind: 'label'; labelId: EntityId }
     | { kind: 'projectsBrowse' }
-    | { kind: 'project'; projectId: number }
+    | { kind: 'project'; projectId: EntityId }
     | { kind: 'notifications' }
     | { kind: 'unknown' };
 
@@ -49,19 +50,19 @@ export function isOAuthCallbackPath(pathname: string): boolean {
 
 export { isProjectInvitePath };
 
-function parseLabelId(pathname: string): number | null {
-    const match = pathname.match(/^\/labels\/(\d+)$/);
-    if (match) return Number(match[1]);
-    const legacy = pathname.match(/^\/api\/labels\/(\d+)$/);
-    if (legacy) return Number(legacy[1]);
+function parseLabelId(pathname: string): EntityId | null {
+    const match = pathname.match(/^\/labels\/([^/]+)$/);
+    if (match) return match[1];
+    const legacy = pathname.match(/^\/api\/labels\/([^/]+)$/);
+    if (legacy) return legacy[1];
     return null;
 }
 
-function parseProjectId(pathname: string): number | null {
-    const match = pathname.match(/^\/projects\/(\d+)$/);
-    if (match) return Number(match[1]);
-    const legacy = pathname.match(/^\/api\/projects\/(\d+)\/tasks$/);
-    if (legacy) return Number(legacy[1]);
+function parseProjectId(pathname: string): EntityId | null {
+    const match = pathname.match(/^\/projects\/([^/]+)$/);
+    if (match) return match[1];
+    const legacy = pathname.match(/^\/api\/projects\/([^/]+)\/tasks$/);
+    if (legacy) return legacy[1];
     return null;
 }
 
@@ -113,8 +114,8 @@ export function parseAppPath(pathname: string): AppLocation {
 export function buildAppPath(params: {
     activeNav: NavItem;
     showProjectsBrowse: boolean;
-    selectedProjectId: number | null;
-    selectedLabelId: number | null;
+    selectedProjectId: EntityId | null;
+    selectedLabelId: EntityId | null;
     showNotifications: boolean;
 }): string {
     if (params.showNotifications) {
@@ -151,8 +152,8 @@ export function defaultAppPath(): string {
 /** Redux 초기값·직접 URL 진입 시 선택 상태 복원 */
 export function habitRouteStateFromPath(pathname: string): {
     activeView: NavItem;
-    selectedProjectId: number | null;
-    selectedLabelId: number | null;
+    selectedProjectId: EntityId | null;
+    selectedLabelId: EntityId | null;
 } {
     const location = parseAppPath(pathname);
     switch (location.kind) {

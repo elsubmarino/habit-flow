@@ -1,4 +1,5 @@
 import { forwardRef, useImperativeHandle, useState } from 'react';
+import type { EntityId } from '../api/types';
 import QuickAddModal from './QuickAddModal';
 import type { NavItem } from './Sidebar';
 
@@ -8,8 +9,8 @@ export interface AddHabitFormHandle {
 
 interface AddHabitFormProps {
     view: NavItem;
-    projectId: number | null;
-    labelId: number | null;
+    projectId: EntityId | null;
+    labelId: EntityId | null;
     hideTrigger?: boolean;
 }
 

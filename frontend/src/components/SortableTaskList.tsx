@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import type { EntityId } from '../api/types';
 import { habitRowKey, type Habit } from '../store/habitSlice';
 import { computeSortOrderAfterMove, reorderList, type ReorderHabitRequest } from '../utils/taskSortOrder';
 import HabitItem, { type TaskRowLayout } from './HabitItem';
@@ -10,9 +11,9 @@ interface SortableTaskListProps {
     sortable?: boolean;
     onReorder?: (request: ReorderHabitRequest) => void;
     onOpenDetails?: (habit: Habit) => void;
-    onOpenProject?: (projectId: number) => void;
+    onOpenProject?: (projectId: EntityId) => void;
     onTaskCompleted?: (habit: Habit) => void;
-    onTaskDeleted?: (habitId: number) => void;
+    onTaskDeleted?: (habitId: EntityId) => void;
 }
 
 const SortableTaskList: React.FC<SortableTaskListProps> = ({

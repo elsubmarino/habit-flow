@@ -7,6 +7,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.label.dto.query.LabelSummaryQuery;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
+import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 
@@ -22,8 +23,9 @@ import static io.streak.habitflow.domain.task.entity.QTaskLabel.taskLabel;
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
 public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
-
     private final JPAQueryFactory queryFactory;
+    private final HashidsProvider hashidsProvider;
+
     @Override
     public List<LabelSummaryQuery> searchKeyword(String name, Long memberId, Pageable pageable) {
         return queryFactory
@@ -86,7 +88,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
                                     long safeSortOrder = (dbSortOrder != null) ? dbSortOrder : 0L;
 
                                     return LabelResponse.Summary.builder()
-                                            .id(row.get(label.id))
+                                            .id(hashidsProvider.encode(row.get(label.id)))
                                             .name(row.get(label.name))
                                             .color(row.get(label.color))
                                             .sortOrder(safeSortOrder)
@@ -99,9 +101,9 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
     }
 
     @Override
-    public List<LabelResponse.Summary> findByTask(Long taskId) {
+    public List<LabelSummaryQuery> findByTask(Long taskId) {
         return queryFactory
-                .select(Projections.constructor(LabelResponse.Summary.class,
+                .select(Projections.constructor(LabelSummaryQuery.class,
                         label.id,
                         label.name,
                         label.color,
