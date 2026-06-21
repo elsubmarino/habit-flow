@@ -17,13 +17,20 @@ public class SseEmitters {
         log.info("[SSE 연결 완료] -> memberId : {}, 현재 연결 수 : {}", memberId, emitters.size());
 
         emitter.onCompletion(()->{
-            log.info("[SSE 만료 청소] -> memberId: {}",memberId);
             this.emitters.remove(memberId);
+            log.info("[SSE 만료 청소] -> memberId: {}",memberId);
         });
 
         emitter.onTimeout(()->{
-            log.info("[SSE 타임아웃 청소] -> memberId: {}",memberId);
+            emitter.complete();
             this.emitters.remove(memberId);
+            log.info("[SSE 타임아웃 청소] -> memberId: {}",memberId);
+        });
+
+        emitter.onError((e)->{
+            emitter.completeWithError(e);
+            this.emitters.remove(memberId);
+            log.info("[SSE 에러 발생] -> memberId: {}",memberId);
         });
 
         return emitter;

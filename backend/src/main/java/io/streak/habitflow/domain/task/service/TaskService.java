@@ -84,12 +84,13 @@ public class TaskService {
 
         Project project = null;
         if(request.projectId() != null){
+            project = projectRepository.findById(hashidsProvider.decode(request.projectId()))
+                    .orElseThrow(()->new EntityNotFoundException("존재하지 않는 프로젝트입니다."));
             long projectCount = taskRepository.countByProject(project);
             if (projectCount > 500) {
                 throw new IllegalArgumentException("해당 프로젝트에 테스크를 500개까지 보유할 수 있습니다.");
             }
-            project = projectRepository.findById(hashidsProvider.decode(request.projectId()))
-                    .orElseThrow(()->new EntityNotFoundException("존재하지 않는 프로젝트입니다."));
+
             boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
             if(!isMember){
                 throw new AccessDeniedException("해당 프로젝트에 대한 접근 권한이 없습니다.");
@@ -202,13 +203,9 @@ public class TaskService {
         return parentTask;
     }
 
+    @CheckOwnership(type="TASK")
     public TaskResponse.Detail getTaskById(Long taskId, Long memberId){
-        Task task = taskRepository.findByIdWithProject(taskId)
-                .orElseThrow(()->new EntityNotFoundException("존재하지 않는 테스크입니다."));
-
-        if(!task.getMember().getId().equals(memberId)){
-            throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
-        }
+        Task task = taskRepository.getReferenceById(taskId);
 
         List<LabelResponse.Summary> labelSummaryResponses = task.getTaskLabels().stream()
                 .map(taskLabel -> {

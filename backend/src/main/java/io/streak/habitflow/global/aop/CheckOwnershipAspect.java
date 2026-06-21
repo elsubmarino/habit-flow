@@ -10,7 +10,6 @@ import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
-import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
@@ -86,9 +85,11 @@ public class CheckOwnershipAspect {
     }
 
     public void checkTaskOwner(Long taskId, Long memberId){
-        Task task = taskRepository.getOrThrow(taskId);
+        if(!taskRepository.existsById(taskId)){
+            throw new AccessDeniedException("존재하지 않는 테스크입니다.");
+        }
 
-        if(!task.getMember().getId().equals(memberId)){
+        if(!taskRepository.existsByIdAndHasAccess(taskId,memberId)){
             throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
         }
     }

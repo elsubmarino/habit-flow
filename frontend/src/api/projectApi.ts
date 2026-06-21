@@ -65,6 +65,13 @@ export async function inviteToProject(projectId: EntityId, emails: string[]): Pr
     });
 }
 
+/** DELETE /api/projects/{projectId}/members?email= — 백엔드 구현 대기 */
+export async function removeProjectMember(projectId: EntityId, email: string): Promise<void> {
+    await apiClient.delete(`/api/projects/${projectId}/members`, {
+        params: { email },
+    });
+}
+
 export async function acceptProjectInvitation(token: string): Promise<void> {
     await apiClient.post('/api/projects/invitation/accept', null, {
         params: { token },

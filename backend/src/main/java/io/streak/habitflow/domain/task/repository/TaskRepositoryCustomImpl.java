@@ -27,6 +27,7 @@ import java.util.Optional;
 
 import static io.streak.habitflow.domain.comment.entity.QComment.comment;
 import static io.streak.habitflow.domain.project.entity.QProject.project;
+import static io.streak.habitflow.domain.project.entity.QProjectMember.projectMember;
 import static io.streak.habitflow.domain.task.entity.QTask.task;
 
 @SuppressWarnings("unused")
@@ -66,8 +67,9 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         List<Long> ids = queryFactory
                 .select(task.id)
                 .from(task)
-                .where(task.member.id.eq(memberId),
-                        task.project.id.eq(projectId),
+                .join(task.project, project)
+                .join(projectMember).on(projectMember.project.eq(project))
+                .where(task.project.id.eq(projectId),
                         task.completed.eq(false)
                 )
                 .orderBy(
@@ -276,6 +278,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         return Optional.ofNullable(queryFactory
                 .selectFrom(task)
                 .leftJoin(task.project, project).fetchJoin()
+                .innerJoin(projectMember).on(projectMember.project.eq(project)).fetchJoin()
                 .where(task.id.eq(taskId))
                 .fetchOne());
     }
@@ -328,8 +331,10 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         Long inboxTasksCount = queryFactory
                 .select(task.count())
                 .from(task)
+                .innerJoin(task.project)
+                .innerJoin(project,projectMember.project).on(projectMember.project.eq(project))
                 .where(
-                        task.member.id.eq(memberId),
+                        projectMember.member.id.eq(memberId),
                         task.completed.eq(false),
                         task.parent.isNull(),
                         filterTypeEq(TaskFilterType.INBOX)
@@ -347,6 +352,21 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .fetchOne();
         return new TaskResponse.SidebarTasksCount(inboxTasksCount != null ? inboxTasksCount : 0L
                 , todayTasksCount != null ? todayTasksCount : 0L);
+    }
+
+    @Override
+    public boolean existsByIdAndHasAccess(Long taskId, Long memberId) {
+        Integer fetchOne =  queryFactory
+                .selectOne()
+                .from(task)
+                .leftJoin(task.project,project)
+                .leftJoin(projectMember).on(projectMember.project.eq(project))
+                .where(
+                        task.id.eq(taskId),
+                        (task.member.id.eq(memberId).or(projectMember.member.id.eq(memberId))
+                ))
+                .fetchFirst();
+        return fetchOne != null;
     }
 }
 

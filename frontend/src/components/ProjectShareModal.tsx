@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getApiErrorMessage } from '../api/apiError';
-import { fetchProjectMembers, inviteToProject } from '../api/projectApi';
+import { fetchProjectMembers, inviteToProject, removeProjectMember } from '../api/projectApi';
 import type { ProjectMemberListDto } from '../api/types';
+import { useDialog } from '../context/DialogContext';
 import { useToast } from '../context/ToastContext';
 import type { Project } from '../store/habitSlice';
 import { getUserProfile } from '../utils/userProfile';
@@ -44,6 +45,7 @@ function toShareMember(dto: ProjectMemberListDto, selfEmail: string): ShareMembe
 
 const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose }) => {
     const { showToast, showErrorToast } = useToast();
+    const { confirm } = useDialog();
     const profile = getUserProfile();
     const selfEmail = profile.email;
     const [draft, setDraft] = useState('');
@@ -53,6 +55,7 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
     const [membersError, setMembersError] = useState<string | null>(null);
     const [accessOpen, setAccessOpen] = useState(false);
     const [inviteSubmitting, setInviteSubmitting] = useState(false);
+    const [removingEmail, setRemovingEmail] = useState<string | null>(null);
 
     const loadMembers = useCallback(async () => {
         setMembersLoading(true);
@@ -88,6 +91,11 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
 
     const memberEmails = useMemo(
         () => new Set(members.map(m => m.email.toLowerCase())),
+        [members],
+    );
+
+    const isOwner = useMemo(
+        () => members.some(member => member.isSelf),
         [members],
     );
 
@@ -139,6 +147,31 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
         }
         if (showInlineInvite) {
             void sendInvite(draftTrimmed);
+        }
+    };
+
+    const handleRemoveMember = async (member: ShareMember) => {
+        if (member.isSelf || removingEmail) return;
+
+        const displayName = member.name.trim() || member.email;
+        if (!(await confirm({
+            title: '참여자 제거',
+            message: `"${displayName}"님을 이 프로젝트에서 제거할까요?\n제거된 사용자는 더 이상 프로젝트에 접근할 수 없습니다.`,
+            confirmLabel: '제거',
+            variant: 'danger',
+        }))) {
+            return;
+        }
+
+        setRemovingEmail(member.email);
+        try {
+            await removeProjectMember(project.id, member.email);
+            setMembers(prev => prev.filter(item => item.email !== member.email));
+            showToast(`${displayName}님을 프로젝트에서 제거했습니다.`);
+        } catch (err) {
+            showErrorToast(getApiErrorMessage(err, '참여자를 제거하지 못했습니다.'));
+        } finally {
+            setRemovingEmail(null);
         }
     };
 
@@ -271,11 +304,31 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
                                         </p>
                                         <p className="project-share-member-email">{member.email}</p>
                                     </div>
-                                    {member.isSelf ? (
-                                        <span className="project-share-member-action muted">소유자</span>
-                                    ) : (
-                                        <span className="project-share-member-action muted">공동 작업자</span>
-                                    )}
+                                    <div className="project-share-member-actions">
+                                        {member.isSelf ? (
+                                            <span className="project-share-member-action muted">소유자</span>
+                                        ) : (
+                                            <>
+                                                <span className="project-share-member-action muted">공동 작업자</span>
+                                                {isOwner && (
+                                                    <button
+                                                        type="button"
+                                                        className="project-share-remove-btn"
+                                                        aria-label={`${member.name || member.email} 제거`}
+                                                        title="프로젝트에서 제거"
+                                                        disabled={removingEmail != null || inviteSubmitting}
+                                                        onClick={() => void handleRemoveMember(member)}
+                                                    >
+                                                        {removingEmail === member.email ? (
+                                                            <span className="project-share-remove-spinner" aria-hidden />
+                                                        ) : (
+                                                            <CloseIcon />
+                                                        )}
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
                                 </li>
                             ))}
                         </ul>

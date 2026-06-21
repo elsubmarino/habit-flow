@@ -18,4 +18,5 @@ public interface TaskRepositoryCustom {
     Optional<Task> findByIdWithProject(Long taskId);
     List<TaskResponse.UpcomingDateCount>countUpcomingTasksByDate(Long memberId, LocalDateTime fromDate, LocalDateTime toDate);
     List<TaskSummaryQuery> getTaskListQueries(List<Long> ids);
+    boolean existsByIdAndHasAccess(Long taskId, Long memberId);
 }

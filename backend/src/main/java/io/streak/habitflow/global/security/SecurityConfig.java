@@ -4,6 +4,7 @@ import io.streak.habitflow.global.security.jwt.JwtAuthenticationFilter;
 import io.streak.habitflow.global.security.jwt.JwtTokenProvider;
 import io.streak.habitflow.global.security.oauth.CustomOAuth2UserService;
 import io.streak.habitflow.global.security.oauth.OAuth2LoginSuccessHandler;
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,6 +50,7 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth->auth
                         .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                         .requestMatchers("/api/auth/**","/oauth2/**","/uploads/**")
                         .permitAll()
                         .anyRequest().authenticated()

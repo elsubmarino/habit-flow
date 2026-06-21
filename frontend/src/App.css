@@ -5312,6 +5312,10 @@
 }
 
 .project-share-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   width: 28px;
   height: 28px;
   border: none;
@@ -5319,6 +5323,34 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.project-share-remove-btn:hover:not(:disabled) {
+  background: #fdecea;
+  color: var(--todoist-red);
+}
+
+.project-share-remove-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.project-share-remove-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #e0e0e0;
+  border-top-color: var(--todoist-red);
+  border-radius: 50%;
+  animation: project-share-remove-spin 0.7s linear infinite;
+}
+
+@keyframes project-share-remove-spin {
+  to { transform: rotate(360deg); }
+}
+
+.project-share-member-status.error {
+  color: var(--todoist-red);
 }
 
 .project-share-footer {

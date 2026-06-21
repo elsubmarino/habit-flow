@@ -25,11 +25,11 @@ public final class FavoriteResponse{
     ) {
         public static Summary to(FavoriteSummaryQuery favoriteSummaryQuery,String encodedTargetId, String encodedId) {
             return Summary.builder()
-                    .targetName(favoriteSummaryQuery.getTargetName())
+                    .targetName(favoriteSummaryQuery.targetName())
                     .targetId(encodedTargetId)
-                    .targetType(favoriteSummaryQuery.getTargetType())
+                    .targetType(favoriteSummaryQuery.targetType())
                     .id(encodedId)
-                    .targetCount(favoriteSummaryQuery.getTargetCount())
+                    .targetCount(favoriteSummaryQuery.targetCount())
                     .build();
         }
     }
