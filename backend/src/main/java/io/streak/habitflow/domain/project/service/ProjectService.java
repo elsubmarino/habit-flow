@@ -121,13 +121,6 @@ public class ProjectService {
                     .orElseThrow(()->new EntityNotFoundException("부모 프로젝트가 존재하지 않습니다."));
         }
 
-
-        project.updateProject(request.name(),
-                request.color(),
-                request.accessType(),
-                request.layoutType(),
-                parentProject);
-
         if(request.favorite()){
             Favorite favorite = Favorite.builder()
                     .targetType(TargetType.PROJECT)
@@ -143,6 +136,21 @@ public class ProjectService {
             favoriteRepository.deleteByMemberIdAndTargetTypeAndTargetId(member.getId(),TargetType.PROJECT,project.getId());
         }
 
+        String encodedId = hashidsProvider.encode(project.getId());
+        if(request.name().equals(project.getName()) &&
+                request.color().equals(project.getColor()) &&
+                request.accessType() == project.getAccessType() &&
+                request.layoutType() == project.getLayoutType() &&
+                request.parentId() != null && Objects.equals(request.parentId(),project.getParent().getId())){
+            return ProjectResponse.Detail.of(project,request.favorite(),encodedId);
+        }
+
+        project.updateProject(request.name(),
+                request.color(),
+                request.accessType(),
+                request.layoutType(),
+                parentProject);
+
         if(request.name() != null && !request.name().equals(oldProjectName)){
             List<ChangeSet> changeSets = new ArrayList<>();
             changeSets.add(new ChangeSet("name",oldProjectName,request.name()));
@@ -155,7 +163,6 @@ public class ProjectService {
                     changeSets
             ));
         }
-        String encodedId = hashidsProvider.encode(project.getId());
         return ProjectResponse.Detail.of(project,request.favorite(),encodedId);
     }
 

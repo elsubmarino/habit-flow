@@ -364,6 +364,18 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     public TaskResponse.Detail updateTask(Long taskId, TaskRequest.Update request, Long memberId){
         Task task = taskRepository.getOrThrow(taskId);
+        String encodedId = hashidsProvider.encode(task.getId());
+
+        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
+            String labelEncodedId = hashidsProvider.encode(label.id());
+            return LabelResponse.Summary.of(label,labelEncodedId);
+        }).toList();
+
+        if(request.name().equals(task.getName()) &&
+            request.description().equals(task.getDescription())){
+            return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+        }
 
         List<ChangeSet> changes = new ArrayList<>();
 
@@ -388,12 +400,7 @@ public class TaskService {
             ));
         }
 
-        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
-        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
-            String encodedId = hashidsProvider.encode(label.id());
-            return LabelResponse.Summary.of(label,encodedId);
-        }).toList();
-        String encodedId = hashidsProvider.encode(task.getId());
+
         return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
     }
 
@@ -486,6 +493,7 @@ public class TaskService {
     public TaskResponse.Detail updateTaskDueDate(Long taskId, TaskRequest.UpdateDueDate request, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
+
         LocalDateTime oldDueDate = task.getDueDate();
         boolean isChanged = task.updateSchedule(
                 request.dueDate(),
@@ -531,6 +539,15 @@ public class TaskService {
     public TaskResponse.Detail updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
+        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
+            String encodedId = hashidsProvider.encode(label.id());
+            return LabelResponse.Summary.of(label,encodedId);
+        }).toList();
+        String encodedId = hashidsProvider.encode(task.getId());
+        if(task.getTaskPriorityType() == taskPriorityType){
+            return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+        }
         TaskPriorityType oldTaskPriorityType = task.getTaskPriorityType();
         task.updatePriorityType(taskPriorityType);
 
@@ -545,12 +562,7 @@ public class TaskService {
                 task.getName(),
                 changeSets
         ));
-        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
-        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
-            String encodedId = hashidsProvider.encode(label.id());
-            return LabelResponse.Summary.of(label,encodedId);
-        }).toList();
-        String encodedId = hashidsProvider.encode(task.getId());
+
         return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
     }
 
@@ -560,6 +572,7 @@ public class TaskService {
     public TaskResponse.Detail updateTaskLabels(Long taskId, List<String> labelIds, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
+
         List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
             String encodedId = hashidsProvider.encode(label.id());
@@ -594,6 +607,21 @@ public class TaskService {
     public TaskResponse.Detail updateProject(Long taskId, String projectId, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
+        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
+            String encodedId = hashidsProvider.encode(label.id());
+            return LabelResponse.Summary.of(label,encodedId);
+        }).toList();
+        String encodedId = hashidsProvider.encode(task.getId());
+
+        if(projectId != null){
+            long realProjectId = hashidsProvider.decode(projectId);
+            if(task.getProject().getId() == realProjectId){
+                return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+            }
+        }else if(task.getProject().getId() == null){
+            return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+        }
 
         long realProjectId = hashidsProvider.decode(projectId);
 
@@ -616,12 +644,7 @@ public class TaskService {
                     changeSets
             ));
         }
-        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
-        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
-            String encodedId = hashidsProvider.encode(label.id());
-            return LabelResponse.Summary.of(label,encodedId);
-        }).toList();
-        String encodedId = hashidsProvider.encode(task.getId());
+
         return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
     }
 
@@ -632,7 +655,6 @@ public class TaskService {
     @Transactional
     public TaskResponse.Summary updateSortOrder(Long taskId, TaskRequest.UpdateSortOrder updateSortOrder, Long memberId){
         Task task = taskRepository.getReferenceById(taskId);
-        task.updateSortOrder(updateSortOrder.sortOrder());
         List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
             String encodedId = hashidsProvider.encode(label.id());
@@ -640,6 +662,12 @@ public class TaskService {
         }).toList();
         List<TaskSummaryQuery> taskSummaryQueries = taskRepository.getTaskListQueries(List.of(taskId));
         String encodedId = hashidsProvider.encode(task.getId());
+
+        if(Objects.equals(task.getSortOrder(), updateSortOrder.sortOrder())){
+            return TaskResponse.Summary.of(taskSummaryQueries.get(0),encodedId,summaries);
+        }
+        task.updateSortOrder(updateSortOrder.sortOrder());
+
         return TaskResponse.Summary.of(taskSummaryQueries.get(0),encodedId,summaries);
     }
 }

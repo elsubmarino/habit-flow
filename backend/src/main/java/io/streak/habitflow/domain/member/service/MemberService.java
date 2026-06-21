@@ -57,9 +57,11 @@ public class MemberService {
     @SuppressWarnings("unused")
     public MemberResponse.Detail updateMember(Long memberId,MemberRequest.Update  request,Long loginMemberId){
         Member member = memberRepository.getOrThrow(memberId);
-
-        member.updateMember(request.password());
         String encodedId = hashidsProvider.encode(member.getId());
+        if(request.password().equals(member.getPassword())){
+            return MemberResponse.Detail.to(member,encodedId);
+        }
+        member.updateMember(request.password());
         return MemberResponse.Detail.to(member,encodedId);
     }
 

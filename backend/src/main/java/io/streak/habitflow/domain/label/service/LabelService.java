@@ -93,10 +93,14 @@ public class LabelService {
         }else{
             favoriteRepository.deleteByMemberIdAndTargetTypeAndTargetId(member.getId(),TargetType.LABEL,label.getId());
         }
+        String encodedId = hashidsProvider.encode(label.getId());
+        if(request.name().equals(label.getName()) &&
+            request.color().equals(label.getColor())) {
+            return LabelResponse.Detail.of(label, request.favorite(),encodedId);
+        }
 
         label.updateLabel(request.name(),
                 request.color());
-        String encodedId = hashidsProvider.encode(label.getId());
         return LabelResponse.Detail.of(label, request.favorite(),encodedId);
     }
 
