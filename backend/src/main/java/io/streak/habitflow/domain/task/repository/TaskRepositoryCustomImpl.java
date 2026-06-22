@@ -1,8 +1,10 @@
 package io.streak.habitflow.domain.task.repository;
 
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -23,9 +25,8 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static io.streak.habitflow.domain.comment.entity.QComment.comment;
 import static io.streak.habitflow.domain.project.entity.QProject.project;
@@ -113,34 +114,20 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     public List<TaskSummaryQuery> getTaskListQueries(List<Long> ids) {
-        QTask subTask = new QTask("subTask");
+        if(ids == null || ids.isEmpty()){
+            return Collections.emptyList();
+        }
 
-        return queryFactory
+        List<Tuple> mainTasks = queryFactory
                 .select(
-                        Projections.constructor(
-                                TaskSummaryQuery.class,
-                                task.id,
-                                task.name,
-                                task.description,
-                                task.taskPriorityType,
-                                task.dueDate,
-                                task.sortOrder,
-                                task.project.name.as("projectName"),
-                                ExpressionUtils.as(
-                                        JPAExpressions.select(subTask.count())
-                                                .from(subTask)
-                                                .where(subTask.parent.eq(task)), "countSubTasks"),
-                                ExpressionUtils.as(
-                                        JPAExpressions.select(subTask.count())
-                                                .from(subTask)
-                                                .where(subTask.parent.eq(task)
-                                                        .and(subTask.completed.eq(true))), "countSubTasksCompleted"),
-                                ExpressionUtils.as(
-                                        JPAExpressions.select(comment.count())
-                                                .from(comment)
-                                                .where(comment.task.eq(task)), "countComments"),
-                                task.timeSpecified
-                        )
+                        task.id,
+                        task.name,
+                        task.description,
+                        task.taskPriorityType,
+                        task.dueDate,
+                        task.sortOrder,
+                        task.project.name,
+                        task.timeSpecified
                 )
                 .from(task)
                 .leftJoin(task.project, project)
@@ -154,6 +141,72 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         task.id.desc()
                 )
                 .fetch();
+
+        QTask subTask = new QTask("subTask");
+        List<Tuple> subTaskCounts = queryFactory
+                .select(
+                        subTask.parent.id,
+                        subTask.count(),
+                        new CaseBuilder()
+                                .when(subTask.completed.eq(true))
+                                .then(1L)
+                                .otherwise(0L)
+                                .sum()
+                )
+                .from(subTask)
+                .where(
+                        task.parent.id.in(ids)
+                )
+                .groupBy(
+                        subTask.parent.id
+                )
+                .fetch();
+
+        Map<Long, Long> subTaskTotalMap = new HashMap<>();
+        Map<Long, Long> subTaskCompletedMap = new HashMap<>();
+        for(Tuple row : subTaskCounts){
+            Long parentId = row.get(subTask.parent.id);
+            subTaskTotalMap.put(parentId, row.get(1,Long.class));
+
+            Number completedSum = row.get(2,Number.class);
+            subTaskCompletedMap.put(parentId, completedSum != null ? completedSum.longValue(): 0L );
+        }
+
+        List<Tuple> commentCounts = queryFactory
+                .select(
+                        comment.task.id,
+                        comment.count()
+                )
+                .from(comment)
+                .where(comment.task.id.in(ids))
+                .groupBy(comment.task.id)
+                .fetch();
+
+        Map<Long, Long> commentCountMap = commentCounts.stream()
+                .collect(Collectors.toMap(
+                        row -> row.get(comment.task.id),
+                        row -> row.get(comment.count())
+                ));
+
+        return mainTasks.stream()
+                .map(row -> {
+                    Long taskId = row.get(task.id);
+                    return new TaskSummaryQuery(
+                            taskId,
+                            row.get(task.name),
+                            row.get(task.description),
+                            row.get(task.taskPriorityType),
+                            row.get(task.dueDate),
+                            row.get(task.sortOrder),
+                            row.get(task.project.name),
+                            // Map에서 꺼내오고 없으면 0 반환
+                            subTaskTotalMap.getOrDefault(taskId, 0L),
+                            subTaskCompletedMap.getOrDefault(taskId, 0L),
+                            commentCountMap.getOrDefault(taskId, 0L),
+                            Boolean.TRUE.equals(row.get(task.timeSpecified))
+                    );
+                })
+                .toList();
     }
 
     @Override
