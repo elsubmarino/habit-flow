@@ -9,4 +9,5 @@ import java.util.List;
 public interface ProjectRepositoryCustom {
     List<ProjectSearchSummaryQuery> searchKeyword(String keyword, Long memberId, Pageable pageable);
     List<ProjectSummaryQuery> findByMemberId(Long memberId);
+    Long findMaxSortOrder(Long memberId, Long parentId);
 }

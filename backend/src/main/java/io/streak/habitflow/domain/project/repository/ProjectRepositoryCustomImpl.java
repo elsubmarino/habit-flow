@@ -58,4 +58,17 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                 .orderBy(project.sortOrder.asc())
                 .fetch();
     }
+
+    @Override
+    public Long findMaxSortOrder(Long memberId, Long parentId) {
+        return queryFactory
+                .select(project.sortOrder.max().coalesce(0L))
+                .from(projectMember)
+                .innerJoin(projectMember.project,project)
+                .where(
+                        projectMember.member.id.eq(memberId),
+                        parentId == null ? project.parent.isNull():project.parent.id.eq(parentId)
+                )
+                .fetchOne();
+    }
 }

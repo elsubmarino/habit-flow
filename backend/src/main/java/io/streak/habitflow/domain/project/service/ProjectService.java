@@ -58,11 +58,15 @@ public class ProjectService {
             throw new IllegalArgumentException("보유하고 있는 프로젝트가 500개 이상이므로 더 이상 생성할 수 없습니다.");
         }
 
+        Long maxSortOrder = projectRepository.findMaxSortOrder(memberId, request.parentId());
+        Long nextOrderOrder = maxSortOrder + 1024L;
+
         Project.ProjectBuilder projectBuilder = Project.builder()
                 .name(request.name())
                 .color(request.color())
                 .accessType(request.accessType())
-                .layoutType(request.layoutType());
+                .layoutType(request.layoutType())
+                .sortOrder(nextOrderOrder);
 
         if(request.parentId() != null){
             Project parentProject = projectRepository.findById(request.parentId())
