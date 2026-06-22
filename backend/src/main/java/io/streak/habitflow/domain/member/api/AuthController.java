@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.member.api;
 
 import io.streak.habitflow.domain.member.dto.request.MemberRequest;
-import io.streak.habitflow.domain.member.dto.response.MemberResponse;
+import io.streak.habitflow.domain.member.service.AuthService;
 import io.streak.habitflow.domain.member.service.MailService;
 import io.streak.habitflow.domain.member.service.MemberService;
 import io.streak.habitflow.global.security.dto.TokenDto;
@@ -13,7 +13,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
@@ -26,6 +25,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
     private final MemberService memberService;
+    private final AuthService authService;
     private final TokenCookieManager tokenCookieManager;
     private final MailService mailService;
 
@@ -45,20 +45,12 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/signup")
-    @Operation(summary = "회원 가입")
-    @ApiResponses({@ApiResponse(responseCode = "201", description = "회원 가입 성공")})
-    public ResponseEntity<MemberResponse.Detail> createMember(@RequestBody MemberRequest.SignUp request){
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(memberService.createMember(request));
-    }
-
     @PostMapping("/login")
     @Operation(summary = "회원 로그인")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 로그인 성공")})
     public ResponseEntity<Map<String, String>> loginMember(@RequestBody MemberRequest.Login request,
                                                            HttpServletResponse httpServletResponse){
-        TokenDto tokenDto = memberService.login(request);
+        TokenDto tokenDto = authService.login(request);
         tokenCookieManager.addRefreshTokenCookie(httpServletResponse,tokenDto.refreshToken());
         return ResponseEntity.ok(Map.of("accessToken", tokenDto.accessToken()));
     }
@@ -74,7 +66,7 @@ public class AuthController {
         if(StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")){
             accessToken = bearerToken.substring(7);
         }
-        memberService.logout(accessToken, refreshToken,userPrincipal.getUsername());
+        authService.logout(accessToken, refreshToken,userPrincipal.getUsername());
         tokenCookieManager.deleteRefreshTokenCookie(httpServletResponse);
 
         return ResponseEntity.ok().build();
@@ -85,7 +77,7 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> reissue(
             @CookieValue(value="refreshToken") String refreshToken,
             HttpServletResponse response){
-        TokenDto tokenDto = memberService.reissue(refreshToken);
+        TokenDto tokenDto = authService.reissue(refreshToken);
         tokenCookieManager.addRefreshTokenCookie(response,tokenDto.refreshToken());
 
         return ResponseEntity.ok(Map.of("accessToken",tokenDto.accessToken()));

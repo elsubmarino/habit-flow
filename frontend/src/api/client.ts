@@ -51,7 +51,6 @@ function isPublicAuthRequest(url: string): boolean {
     return (
         path.includes('/api/auth/login')
         || path.includes('/api/auth/reissue')
-        || path.includes('/api/auth/signup')
         || path.includes('/api/auth/email/')
     );
 }

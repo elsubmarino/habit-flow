@@ -42,7 +42,7 @@ export async function logoutMember(): Promise<void> {
 
 export async function signUpMember(payload: MemberSignUpPayload): Promise<MemberDto> {
     const { data } = await apiClient.post<MemberDto>(
-        '/api/auth/signup',
+        '/api/members',
         {
             email: payload.email,
             password: payload.password,

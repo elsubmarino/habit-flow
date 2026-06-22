@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -51,8 +52,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth->auth
                         .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
                         .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
-                        .requestMatchers("/api/auth/**","/oauth2/**","/uploads/**")
-                        .permitAll()
+                        .requestMatchers("/api/auth/**","/oauth2/**","/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/members").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, redisTemplate),
