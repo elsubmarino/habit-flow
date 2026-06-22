@@ -8,3 +8,4 @@ backend/HELP.md
 frontend/dist/
 backend/src/main/resources/application-secret.yml
 backend/uploads
+backend/src/test/java/io/streak/habitflow/JasyptTest.java

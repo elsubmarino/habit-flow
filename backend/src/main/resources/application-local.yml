@@ -2,8 +2,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USER_NAME}
-    password: ${MAIL_PASSWORD}
+    username: ENC(r6O6tI4qt0WoNOVWSCgcxQVziOE702LlpcRGmm79slFTdP0SpWwBa4yz6pkDVowo8LvomHU/z/dNHdt9blsxLg==)
+    password: ENC(ku3hlyPF07tVWaWMLD/HxlfMK1t7yHhY1BNDzKDtjilplIuMky3zX7Z0iA+ZNGBgsEcrS9EOkf7ElrN3ZeMiGQ==)
     properties:
       mail:
         smtp:
@@ -19,16 +19,16 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
+            client-id: ENC(iAIIZiWw2LhIsUR4sxskMfmAZcP68VpuaaIlDLetKPdBsn7bQ2EcERCDNPLTTv2Z2+x34eLedyGRZfiOkJHMmtXyLagInxpWC+CaNwJCP2jk9G05juD4Al5aZ7+xain/oQvALGd2WhTWGao5lPI9/A==)
+            client-secret: ENC(bC/sBpgao3HoJp7xcE4zy1ty2C/EZc6cBWBHgB8MWt28AkYcbQwsERJn1RLl2o1MnHo14czjGW7Frv+dMUuYQkvuVO8pPj7lA2GnMWZhBsU=)
             scope:
               - profile
               - email
   datasource:
     url: jdbc:mariadb://localhost:3305/habitflow
     driver-class-name: org.mariadb.jdbc.Driver
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    username: ENC(6C2nXCMuFou0ePtLyk8SZNEeu/tZ9f8WPlmR/wtqHZlIb0El6r9oB0LZ0XIWKxpd)
+    password: ENC(oRgUYpBUQ8DKmY/aEjtZQ/v3/pofZmsD0KIA+ZEzJ41mGV0qRFkRhZ7yFAUDPTaE)
     hikari:
       maximum-pool-size: 50
   jpa:
@@ -48,7 +48,7 @@ spring:
       port: 6379
 
 jwt:
-  secret: ${JWT_KEY}
+  secret: ENC(Cpk+U9LRorH6iqLwdH3cJJRXyYekl/vkss0Go8yEVGAv+scAic9dW9IBchRJm6PaaCnaGnShMOfStTOc0FrJaDkRTZUBGs6X7pY7Fe6iXBw=)
 file:
   upload:
     dir: ./uploads
