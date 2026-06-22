@@ -1064,9 +1064,6 @@ function App() {
 
             {showSearchModal && (
                 <SearchModal
-                    habits={habits}
-                    projects={projects}
-                    labels={labels}
                     onClose={() => setShowSearchModal(false)}
                     onSelectHabit={handleOpenHabit}
                     onSelectProject={id => handleProjectSelect(id)}

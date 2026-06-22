@@ -2630,6 +2630,29 @@
   align-items: flex-start;
 }
 
+.search-results-recent {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-recent-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.search-recent-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.search-recent-term {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .search-empty {
   margin: 0;
   padding: 4px 2px 8px;
