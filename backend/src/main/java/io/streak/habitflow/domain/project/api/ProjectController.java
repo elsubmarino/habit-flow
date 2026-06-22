@@ -109,10 +109,23 @@ public class ProjectController {
     }
 
     @GetMapping("/{projectId}/members")
+    @Operation(summary = "프로젝트 참여 회원 보기")
     public ResponseEntity<List<ProjectResponse.Member>> getProjectMembers(@LoginMemberId Long loginMemberId,
                                                                    @PathVariable RoutingId projectId){
         Long realProjectId = projectId.value();
-        return ResponseEntity.ok(projectService.getProjectMembers(realProjectId,loginMemberId));
+        List<ProjectResponse.Member> list =  projectService.getProjectMembers(realProjectId,loginMemberId);
+        return ResponseEntity.ok(list);
+    }
+
+    @DeleteMapping("/{projectId}/members")
+    @Operation(summary = "프로젝트에서 해당 멤버 제거")
+    @ApiResponses(value={@ApiResponse(responseCode = "204",description = "프로젝트에서 해당 멤버 제거 성공")})
+    public ResponseEntity<Void> deleteProjectMember(@LoginMemberId Long loginMemberId,
+                                                                          @RequestBody ProjectRequest.DeleteMember request,
+                                                                          @PathVariable RoutingId projectId){
+        Long realProjectId = projectId.value();
+        projectService.deleteProjectMember(realProjectId,loginMemberId, request);
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{projectId}/sort-order")

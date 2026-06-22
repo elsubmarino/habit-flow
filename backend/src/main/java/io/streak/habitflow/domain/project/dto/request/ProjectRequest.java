@@ -53,4 +53,8 @@ public final class ProjectRequest {
             Long sortOrder
     ){
     }
+
+    public record DeleteMember(
+            String memberId
+    ){}
 }

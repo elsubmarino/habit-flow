@@ -157,6 +157,7 @@ export interface ProjectDetailDto extends ProjectDto {
 }
 
 export interface ProjectMemberListDto {
+    memberId?: EntityId;
     memberName: string;
     email: string;
 }

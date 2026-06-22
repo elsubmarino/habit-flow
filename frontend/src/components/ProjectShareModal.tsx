@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getApiErrorMessage } from '../api/apiError';
 import { fetchProjectMembers, inviteToProject, removeProjectMember } from '../api/projectApi';
-import type { ProjectMemberListDto } from '../api/types';
+import type { ProjectMemberListDto, EntityId } from '../api/types';
 import { useDialog } from '../context/DialogContext';
 import { useToast } from '../context/ToastContext';
 import type { Project } from '../store/habitSlice';
@@ -15,6 +15,7 @@ interface ProjectShareModalProps {
 
 interface ShareMember {
     id: string;
+    memberId: EntityId | null;
     name: string;
     email: string;
     role: 'owner' | 'collaborator';
@@ -36,6 +37,7 @@ function toShareMember(dto: ProjectMemberListDto, selfEmail: string): ShareMembe
     const isSelf = dto.email.toLowerCase() === selfEmail.toLowerCase();
     return {
         id: dto.email,
+        memberId: dto.memberId ?? null,
         name: dto.memberName,
         email: dto.email,
         role: isSelf ? 'owner' : 'collaborator',
@@ -153,6 +155,11 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
     const handleRemoveMember = async (member: ShareMember) => {
         if (member.isSelf || removingEmail) return;
 
+        if (!member.memberId) {
+            showErrorToast('멤버 ID가 없어 제거할 수 없습니다.');
+            return;
+        }
+
         const displayName = member.name.trim() || member.email;
         if (!(await confirm({
             title: '참여자 제거',
@@ -165,7 +172,7 @@ const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose 
 
         setRemovingEmail(member.email);
         try {
-            await removeProjectMember(project.id, member.email);
+            await removeProjectMember(project.id, member.memberId);
             setMembers(prev => prev.filter(item => item.email !== member.email));
             showToast(`${displayName}님을 프로젝트에서 제거했습니다.`);
         } catch (err) {

@@ -117,12 +117,14 @@ public final class ProjectResponse {
             @Schema(description = "프로젝트에 속한 멤버의 이름")
             String memberName,
             @Schema(description = "프로젝트에 속한 멤버의 이메일주소")
-            String email
+            String email,
+            String memberId
     ){
-        public static Member from(ProjectMember projectMember){
+        public static Member of(ProjectMember projectMember, String encodedMemberId){
             return Member.builder()
                     .memberName(projectMember.getMember().getName())
                     .email(projectMember.getMember().getEmail())
+                    .memberId(encodedMemberId)
                     .build();
         }
     }

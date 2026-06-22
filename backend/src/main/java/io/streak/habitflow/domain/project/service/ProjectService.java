@@ -316,8 +316,21 @@ public class ProjectService {
         Project project = projectRepository.getOrThrow(projectId);
         List<ProjectMember> projectMembers = projectMemberRepository.findByProject(project);
         return projectMembers.stream()
-                .map(ProjectResponse.Member::from)
+                .map(projectMember->{
+                    String encodedMemberId = hashidsProvider.encode(projectMember.getMember().getId());
+                    return ProjectResponse.Member.of(projectMember,encodedMemberId);
+                })
                 .toList();
+    }
+
+    @Transactional
+    @CheckOwnership(type="PROJECT")
+    @SuppressWarnings("unused")
+    public void deleteProjectMember(Long projectId,Long memberId, ProjectRequest.DeleteMember request) {
+        Project project = projectRepository.getOrThrow(projectId);
+        Long realMemberId = hashidsProvider.decode(request.memberId());
+        Member member = memberRepository.getReferenceById(realMemberId);
+        projectMemberRepository.deleteByProjectAndMember(project,member);
     }
 
     @Transactional
