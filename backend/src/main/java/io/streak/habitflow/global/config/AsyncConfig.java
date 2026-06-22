@@ -21,4 +21,15 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    @Bean(name="mailExecutor")
+    public Executor mailExecutor(){
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5); //기본으로 유지할 쓰레드 개수
+        executor.setMaxPoolSize(15); //트래픽 몰릴 때 최대 뿜어낼 쓰레드 개수
+        executor.setQueueCapacity(100); //쓰레드가 다 차면 대기할 큐크기
+        executor.setThreadNamePrefix("MailAsync-");
+        executor.initialize();
+        return executor;
+    }
 }
