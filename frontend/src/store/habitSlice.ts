@@ -1138,6 +1138,52 @@ export const patchTaskDueDate = createAsyncThunk(
     },
 );
 
+export const patchTaskDueDateBatch = createAsyncThunk(
+    'habits/patchDueDateBatch',
+    async ({
+        habitIds,
+        dueDate,
+        dueTime24,
+        hasTime,
+        recurrenceLabel,
+    }: {
+        habitIds: EntityId[];
+        dueDate: string | null;
+        dueTime24?: string | null;
+        hasTime: boolean;
+        recurrenceLabel?: string | null;
+    }, { dispatch, getState }) => {
+        const habitsState = (getState() as { habits: HabitState }).habits;
+        const recurrence = recurrenceLabel !== undefined
+            ? repeatLabelToRecurrence(recurrenceLabel, dueDate)
+            : undefined;
+        const tasks = await taskApi.patchTaskDueDateBatch(habitIds, {
+            dueDate,
+            dueTime24,
+            hasTime,
+            recurrence,
+        });
+        await Promise.all([
+            dispatch(invalidateSidebarAggregates({ nav: true })),
+            dispatch(refetchCurrentTaskList()),
+        ]);
+        return tasks.map(task => {
+            const previous = findHabitInState(habitsState, task.id);
+            const habit = mergeHabitFromTaskMutation(task, previous);
+            return {
+                ...habit,
+                id: task.id,
+                ...(recurrence !== undefined
+                    ? {
+                        isRecurring: recurrence.isRecurring ?? false,
+                        recurrenceLabel: recurrenceLabel ?? null,
+                    }
+                    : {}),
+            };
+        });
+    },
+);
+
 export const patchTaskPriority = createAsyncThunk(
     'habits/patchPriority',
     async ({ habitId, priority }: { habitId: EntityId; priority: 1 | 2 | 3 | 4 }, { dispatch, getState }) => {
@@ -1721,6 +1767,15 @@ const habitSlice = createSlice({
                     recurrenceLabel: action.payload.recurrenceLabel ?? prev.recurrenceLabel,
                     isRecurring: action.payload.isRecurring || prev.isRecurring,
                 }));
+            })
+            .addCase(patchTaskDueDateBatch.fulfilled, (state, action) => {
+                for (const payload of action.payload) {
+                    patchHabitInLists(state, payload.id, prev => ({
+                        ...payload,
+                        recurrenceLabel: payload.recurrenceLabel ?? prev.recurrenceLabel,
+                        isRecurring: payload.isRecurring || prev.isRecurring,
+                    }));
+                }
             })
             .addCase(patchTaskPriority.fulfilled, (state, action) => {
                 patchHabitInLists(state, action.payload.id, () => action.payload);

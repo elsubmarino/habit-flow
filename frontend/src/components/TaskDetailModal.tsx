@@ -448,6 +448,32 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         );
     };
 
+    const removeLabelFromTask = useCallback(async (labelId: EntityId, event: React.MouseEvent) => {
+        event.stopPropagation();
+        if (!habit) return;
+
+        if (activeMenu === 'label') {
+            setDraftLabelIds(prev => prev.filter(id => id !== labelId));
+            return;
+        }
+
+        const nextIds = habit.labels.filter(label => label.id !== labelId).map(label => label.id);
+        setSavingLabels(true);
+        try {
+            const result = await dispatch(patchTaskLabels({
+                habitId: habit.id,
+                labelIds: nextIds,
+            }));
+            if (patchTaskLabels.fulfilled.match(result)) {
+                applyLocalHabit(result.payload);
+            } else {
+                await showErrorAlert('라벨을 제거하지 못했습니다.');
+            }
+        } finally {
+            setSavingLabels(false);
+        }
+    }, [activeMenu, applyLocalHabit, dispatch, habit]);
+
     useEffect(() => {
         if (activeMenu !== 'label') return;
 
@@ -751,9 +777,32 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
                             >
                                 <p className="detail-label">라벨</p>
                                 <p className="detail-value">
-                                    {visibleLabels.length > 0
-                                        ? visibleLabels.map(l => displayLabelName(l.name)).join(', ')
-                                        : <span className="detail-add">+</span>}
+                                    {visibleLabels.length > 0 ? (
+                                        <span className="detail-label-chips">
+                                            {visibleLabels.map(label => (
+                                                <span
+                                                    key={label.id}
+                                                    className="detail-label-chip"
+                                                    style={{ borderColor: label.color, color: label.color }}
+                                                >
+                                                    <span className="detail-label-chip-name">
+                                                        {displayLabelName(label.name)}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        className="detail-label-chip-remove"
+                                                        aria-label={`${displayLabelName(label.name)} 라벨 제거`}
+                                                        disabled={savingLabels}
+                                                        onClick={event => void removeLabelFromTask(label.id, event)}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </span>
+                                            ))}
+                                        </span>
+                                    ) : (
+                                        <span className="detail-add">+</span>
+                                    )}
                                     {savingLabels && <span className="detail-saving"> 저장 중…</span>}
                                 </p>
                                 {activeMenu === 'label' && (

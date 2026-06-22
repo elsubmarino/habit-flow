@@ -82,7 +82,9 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         List<Long> projectIds = queryFactory
                 .select(projectMember.project.id)
                 .from(projectMember)
-                .where(projectMember.member.id.eq(memberId))
+                .where(
+                        projectMember.member.id.eq(memberId),
+                        projectMember.project.id.eq(projectId))
                 .fetch();
 
         List<Long> ids = queryFactory

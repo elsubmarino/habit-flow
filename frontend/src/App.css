@@ -1372,9 +1372,27 @@
   cursor: pointer;
 }
 
+.overdue-reschedule-btn.active {
+  text-decoration: underline;
+}
+
 .overdue-reschedule-btn:disabled {
   opacity: 0.6;
   cursor: default;
+}
+
+.overdue-reschedule-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.overdue-reschedule-wrap .date-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: auto;
+  width: min(320px, calc(100vw - 32px));
+  z-index: 25;
 }
 
 .section-label.today-date-title {
@@ -2855,6 +2873,52 @@
   margin: 0;
   font-size: 14px;
   color: var(--text-primary);
+}
+
+.detail-label-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.detail-label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 2px 4px 2px 8px;
+  border: 1px solid;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: #fff;
+}
+
+.detail-label-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-label-chip-remove {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  opacity: 0.65;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.detail-label-chip-remove:hover:not(:disabled) {
+  opacity: 1;
+}
+
+.detail-label-chip-remove:disabled {
+  cursor: default;
 }
 
 .detail-row.interactive {

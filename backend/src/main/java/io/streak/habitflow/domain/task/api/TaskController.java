@@ -186,6 +186,15 @@ public class TaskController {
         return ResponseEntity.ok(taskService.updateTaskDueDate(realTaskId, request, loginMemberId));
     }
 
+    @PatchMapping("/due-date-batch")
+    @Operation(summary = "만료일 일괄 업데이트")
+    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "만료일 업데이트 성공")})
+    public ResponseEntity<List<TaskResponse.Detail>> updateTaskDueDateBatch(
+                                                                 @RequestBody @Valid TaskRequest.UpdateDueDateBatch request,
+                                                                 @LoginMemberId Long loginMemberId) {
+        return ResponseEntity.ok(taskService.updateTaskDueDateBatch(request, loginMemberId));
+    }
+
     @PatchMapping("/{taskId}/sort-order")
     @Operation(summary = "정렬순서 변경")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "정렬순서 변경 성공")})

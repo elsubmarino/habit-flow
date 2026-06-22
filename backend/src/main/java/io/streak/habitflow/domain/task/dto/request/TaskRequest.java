@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.streak.habitflow.domain.task.type.CursorDirection;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
+import io.streak.habitflow.global.common.RoutingId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -114,6 +116,35 @@ public final class TaskRequest {
                 throw new IllegalArgumentException("반복 일정을 설정할 경우 반복 규칙이 필수입니다.");
             }
         }
+    }
+
+    public record UpdateDueDateBatch(
+            @NotEmpty(message = "업데이트할 테스크 ID 목록은 필수입니다.")
+            List<RoutingId> taskIds,
+
+            @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd'T'HH:mm:ss")
+            @Schema(description = "마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss)",pattern="yyyy-MM-dd'T'HH:mm:ss",examples = "2026-06-19T23:59:59")
+            LocalDateTime dueDate,
+
+            @Schema(description = "반복 일정 여부")
+            boolean recurring,
+
+            @Schema(description = "반복 규칙 (DAILY, WEEKLY, MONTHLY 등), 반복일정을 설정할 경우 필수",requiredMode = Schema.RequiredMode.AUTO,
+                    examples = {"DAILY","WEEKLY","MONTHLY"})
+            String recurrenceRule,
+
+            @Schema(description = "반복 간격")
+            Integer recurrenceInterval,
+
+            @Schema(description = "반복 요일 (MON,TUE,WED) 등 문자열 파싱용)",examples = {"MON","TUE","WED"})
+            String recurrenceDays,
+
+            @Schema(description = "반복 요일 일자 (매월 몇 일)")
+            Integer recurrenceDayOfMonth,
+
+            @Schema(description = "시간 존재 여부")
+            boolean timeSpecified
+    ){
     }
 
     public record UpdateLabel(

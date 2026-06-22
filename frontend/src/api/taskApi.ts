@@ -272,14 +272,10 @@ export interface PatchTaskDueDatePayload {
     recurrence?: RecurrenceApiPayload;
 }
 
-export async function patchTaskDueDate(
-    taskId: EntityId,
-    payload: PatchTaskDueDatePayload,
-    projectIdHint?: EntityId | null,
-): Promise<TaskDto> {
+function buildPatchDueDateBody(payload: PatchTaskDueDatePayload): Record<string, unknown> {
     const timeSpecified = payload.timeSpecified ?? payload.hasTime;
     const recurrence = payload.recurrence;
-    const body: Record<string, unknown> = {
+    return {
         dueDate: payload.dueDate == null
             ? null
             : toLocalDateTime(payload.dueDate, payload.dueTime24, timeSpecified),
@@ -290,8 +286,34 @@ export async function patchTaskDueDate(
         recurrenceDays: recurrence?.recurrenceDays ?? null,
         recurrenceDayOfMonth: recurrence?.recurrenceDayOfMonth ?? null,
     };
-    const { data } = await apiClient.patch<TaskMutationDto>(`/api/tasks/${taskId}/due-date`, body);
+}
+
+export async function patchTaskDueDate(
+    taskId: EntityId,
+    payload: PatchTaskDueDatePayload,
+    projectIdHint?: EntityId | null,
+): Promise<TaskDto> {
+    const { data } = await apiClient.patch<TaskMutationDto>(
+        `/api/tasks/${taskId}/due-date`,
+        buildPatchDueDateBody(payload),
+    );
     return normalizeTaskMutationResponse(data, projectIdHint);
+}
+
+export async function patchTaskDueDateBatch(
+    taskIds: EntityId[],
+    payload: PatchTaskDueDatePayload,
+): Promise<TaskDto[]> {
+    if (taskIds.length === 0) return [];
+
+    const { data } = await apiClient.patch<TaskMutationDto[]>(
+        '/api/tasks/due-date-batch',
+        {
+            taskIds,
+            ...buildPatchDueDateBody(payload),
+        },
+    );
+    return data.map(task => normalizeTaskMutationResponse(task));
 }
 
 export async function patchTaskPriority(

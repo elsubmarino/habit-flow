@@ -25,6 +25,7 @@ import io.streak.habitflow.domain.task.type.TargetType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.DistributedLock;
+import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
 import io.streak.habitflow.global.util.HashidsProvider;
@@ -534,6 +535,55 @@ public class TaskService {
     }
 
     @Transactional
+    @SuppressWarnings("unused")
+    public List<TaskResponse.Detail> updateTaskDueDateBatch(TaskRequest.UpdateDueDateBatch request, Long memberId){
+        List<Long> realTaskIds = request.taskIds().stream().map(RoutingId::value).toList();
+        List<Task> tasks = taskRepository.findAllById(realTaskIds);
+        List<TaskResponse.Detail> responseList = new ArrayList<>();
+
+        for(Task task : tasks){
+            LocalDateTime oldDueDate = task.getDueDate();
+            boolean isChanged = task.updateSchedule(
+                    request.dueDate(),
+                    request.recurring(),
+                    request.recurrenceRule(),
+                    request.recurrenceInterval(),
+                    request.recurrenceDays(),
+                    request.recurrenceDayOfMonth(),
+                    request.timeSpecified()
+            );
+
+            if(isChanged && !Objects.equals(oldDueDate, request.dueDate())){
+                List<ChangeSet> changeSets = new ArrayList<>();
+                String fromDate = (oldDueDate != null)? oldDueDate.toString():null;
+                String toDate = (request.dueDate() != null)? request.timeSpecified() ? request.dueDate().toString()
+                        :request.dueDate().toLocalDate().toString():null;
+                changeSets.add(new ChangeSet("dueDate",fromDate,toDate));
+
+                applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                        task.getId(),
+                        memberId,
+                        TargetType.TASK,
+                        ActivityType.UPDATED,
+                        task.getName(),
+                        changeSets
+                ));
+            }
+            List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+            List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
+                String encodedId = hashidsProvider.encode(label.id());
+                return LabelResponse.Summary.of(label,encodedId);
+            }).toList();
+
+            String encodedId = hashidsProvider.encode(task.getId());
+            responseList.add(TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode));
+        }
+
+
+        return responseList;
+    }
+
+    @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
     public TaskResponse.Detail updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
@@ -588,10 +638,6 @@ public class TaskService {
         }
 
         List<Label> realLabels  =labelRepository.findAllById(realLabelIds);
-
-        if(realLabels.size() != realLabelIds.size()){
-            throw new EntityNotFoundException("존재하지 않는 라벨이 포함되어 있습니다.");
-        }
 
         task.getTaskLabels().clear();
 
