@@ -147,7 +147,15 @@ public class Task extends BaseTimeEntity {
             this.timeSpecified = newTimeSpecified;
             isChanged = true;
         }
+
+        validateRecurrence();
         return isChanged;
+    }
+
+    public void validateRecurrence(){
+        if(recurring && (recurrenceRule == null || recurrenceRule.isBlank())) {
+            throw new IllegalArgumentException("반복 일정을 설정할 경우 반복 규칙이 필수입니다.");
+        }
     }
 
 }

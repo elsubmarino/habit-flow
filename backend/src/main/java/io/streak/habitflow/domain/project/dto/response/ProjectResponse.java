@@ -43,11 +43,9 @@ public final class ProjectResponse {
                     .color(project.getColor())
                     .layoutType(project.getLayoutType())
                     .accessType(project.getAccessType())
+                    .parentId(project.getParentIdOrNull())
+                    .parentName(project.getParentNameOrNull())
                     .favorite(favorite);
-            if(project.getParent() != null){
-                builder.parentId(project.getParent().getId());
-                builder.parentName(project.getParent().getName());
-            }
             return builder.build();
         }
     }

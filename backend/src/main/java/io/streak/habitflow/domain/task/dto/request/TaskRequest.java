@@ -65,10 +65,6 @@ public final class TaskRequest {
     ) {
         public Create{
             labelIds = (labelIds == null) ? new ArrayList<>() : new ArrayList<>(labelIds);
-
-            if(recurring && (recurrenceRule == null || recurrenceRule.isBlank())) {
-                throw new IllegalArgumentException("반복 일정을 설정할 경우 반복 규칙이 필수입니다.");
-            }
         }
     }
 
@@ -110,13 +106,7 @@ public final class TaskRequest {
 
             @Schema(description = "시간 존재 여부")
             boolean timeSpecified
-    ){
-        public UpdateDueDate{
-            if(recurring && (recurrenceRule == null || recurrenceRule.isBlank())) {
-                throw new IllegalArgumentException("반복 일정을 설정할 경우 반복 규칙이 필수입니다.");
-            }
-        }
-    }
+    ){}
 
     public record UpdateDueDateBatch(
             @NotEmpty(message = "업데이트할 테스크 ID 목록은 필수입니다.")

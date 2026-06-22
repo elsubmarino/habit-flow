@@ -48,4 +48,12 @@ public class Project  extends BaseTimeEntity {
     public void updateSortOrder(Long sortOrder){
         this.sortOrder = sortOrder;
     }
+
+    public String getParentNameOrNull(){
+        return this.parent != null ? this.parent.getName() : null;
+    }
+
+    public Long getParentIdOrNull(){
+        return this.parent != null ? this.parent.getId() : null;
+    }
 }

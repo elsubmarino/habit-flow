@@ -131,6 +131,7 @@ public class TaskService {
                 .sortOrder(nextSortOrder)
                 .build();
 
+        task.validateRecurrence();
 
         if(parentTask != null){
             parentTask.getSubTasks().add(task);
