@@ -1,12 +1,10 @@
 package io.streak.habitflow.domain.task.repository;
 
 import com.querydsl.core.Tuple;
-import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.task.dto.query.TaskSearchSummaryQuery;
 import io.streak.habitflow.domain.task.dto.query.TaskSummaryQuery;
@@ -155,7 +153,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 )
                 .from(subTask)
                 .where(
-                        task.parent.id.in(ids)
+                        subTask.parent.id.in(ids)
                 )
                 .groupBy(
                         subTask.parent.id
@@ -270,38 +268,18 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .limit(pageable.getPageSize() + 1)
                 .fetch();
 
-        if (ids.isEmpty()) {
+        if (ids == null || ids.isEmpty()) {
             return new ArrayList<>();
         }
 
-        QTask subTask = new QTask("subTask");
-
-        return queryFactory
+        List<Tuple> mainTasks = queryFactory
                 .select(
-                        Projections.constructor(
-                                TaskSummaryQuery.class,
-                                task.id,
-                                task.name,
-                                task.description,
-                                task.taskPriorityType,
-                                task.dueDate,
-                                task.sortOrder,
-                                Expressions.constant("관리함"),
-                                ExpressionUtils.as(
-                                        JPAExpressions.select(subTask.count())
-                                                .from(subTask)
-                                                .where(subTask.parent.eq(task)), "countSubTasks"),
-                                ExpressionUtils.as(
-                                        JPAExpressions.select(subTask.count())
-                                                .from(subTask)
-                                                .where(subTask.parent.eq(task)
-                                                        .and(subTask.completed.eq(true))), "countSubTasksCompleted"),
-                                ExpressionUtils.as(
-                                        JPAExpressions.select(comment.count())
-                                                .from(comment)
-                                                .where(comment.task.eq(task)), "countComments"),
-                                task.timeSpecified
-                        )
+                        task.id,
+                        task.name,
+                        task.description,
+                        task.taskPriorityType,
+                        task.dueDate,
+                        task.sortOrder
                 )
                 .from(task)
                 .where(
@@ -314,6 +292,69 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         task.id.desc()
                 )
                 .fetch();
+
+        QTask subTask = new QTask("subTask");
+        List<Tuple> subTaskCounts = queryFactory
+                .select(
+                        subTask.parent.id,
+                        subTask.count(),
+                        new CaseBuilder().when(subTask.completed.eq(true))
+                                .then(1L)
+                                .otherwise(0L)
+                                .sum())
+                .from(subTask)
+                .where(
+                        subTask.parent.id.in(ids)
+                )
+                .groupBy(
+                        subTask.parent.id
+                )
+                .fetch();
+
+        Map<Long, Long> subTaskTotalMap = new HashMap<>();
+        Map<Long, Long> subTaskCompletedMap = new HashMap<>();
+        for(Tuple row:subTaskCounts) {
+            Long parentId = row.get(subTask.parent.id);
+            subTaskTotalMap.put(parentId,row.get(1,Long.class));
+
+            Number completedSum = row.get(2,Number.class);
+            subTaskCompletedMap.put(parentId, completedSum != null ? completedSum.longValue() : 0L);
+        }
+
+        List<Tuple> commentCounts = queryFactory
+                .select(
+                        comment.task.id,
+                        comment.count()
+                )
+                .from(comment)
+                .where(comment.task.id.in(ids))
+                .groupBy(comment.task.id)
+                .fetch();
+
+        Map<Long, Long> commentCountMap = commentCounts.stream()
+                .collect(Collectors.toMap(
+                        row->row.get(comment.task.id),
+                        row->row.get(comment.count())
+                ));
+
+        return mainTasks.stream()
+                .map(row->{
+                    Long taskId = row.get(task.id);
+                    return new TaskSummaryQuery(
+                            taskId,
+                            row.get(task.name),
+                            row.get(task.description),
+                            row.get(task.taskPriorityType),
+                            row.get(task.dueDate),
+                            row.get(task.sortOrder),
+                            Expressions.constant("관리함").toString(),
+                            subTaskTotalMap.getOrDefault(taskId,0L),
+                            subTaskCompletedMap.getOrDefault(taskId,0L),
+                            commentCountMap.getOrDefault(taskId,0L),
+                            Boolean.TRUE.equals(row.get(task.timeSpecified))
+                    );
+                })
+                .toList();
     }
 
     private BooleanExpression cursorCondition(TaskRequest.Cursor cursor){
@@ -540,44 +581,32 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
 
     @Override
     public List<TaskSummaryQuery> findByLabel(Long labelId, Pageable pageable, Long loginMemberId) {
-        List<Long> taskIds =  queryFactory
+        List<Long> ids =  queryFactory
                 .select(task.id)
                 .from(taskLabel)
                 .where(taskLabel.label.id.eq(labelId))
                 .fetch();
+        if(ids == null || ids.isEmpty()){
+            return Collections.emptyList();
+        }
 
-        QTask subTask = new QTask("subTask");
-        return queryFactory
-                .select(Projections.constructor(
-                        TaskSummaryQuery.class,
+        List<Tuple> mainTasks = queryFactory
+                .select(
                         task.id,
                         task.name,
                         task.description,
                         task.taskPriorityType,
                         task.dueDate,
                         task.sortOrder,
-                        task.project.name.as("projectName"),
-                        ExpressionUtils.as(
-                                JPAExpressions.select(subTask.count())
-                                        .from(subTask)
-                                        .where(subTask.parent.eq(task)), "countSubTasks"),
-                        ExpressionUtils.as(
-                                JPAExpressions.select(subTask.count())
-                                        .from(subTask)
-                                        .where(subTask.parent.eq(task)
-                                                .and(subTask.completed.eq(true))), "countSubTasksCompleted"),
-                        ExpressionUtils.as(
-                                JPAExpressions.select(comment.count())
-                                        .from(comment)
-                                        .where(comment.task.eq(task)), "countComments"),
+                        task.project.name,
                         task.timeSpecified
-                ))
+                )
                 .from(task)
                 .innerJoin(task.project,project)
                 .innerJoin(projectMember).on(projectMember.project.eq(project))
                 .where(
                         projectMember.member.id.eq(loginMemberId),
-                        task.id.in(taskIds),
+                        task.id.in(ids),
                         task.parent.id.isNull(),
                         task.completed.eq(false)
                 )
@@ -588,6 +617,73 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         task.id.desc())
                 .limit(pageable.getPageSize() + 1)
                 .fetch();
+
+        QTask subTask = new QTask("subTask");
+        List<Tuple> subTaskCounts = queryFactory
+                .select(
+                        subTask.parent.id,
+                        subTask.count(),
+                        new CaseBuilder()
+                                .when(subTask.completed.eq(true))
+                                .then(1L)
+                                .otherwise(0L)
+                                .sum()
+                )
+                .from(subTask)
+                .where(
+                        subTask.parent.id.in(ids)
+                )
+                .groupBy(
+                        subTask.parent.id
+                )
+                .fetch();
+
+        Map<Long, Long> subTaskTotalMap = new HashMap<>();
+        Map<Long, Long> subTaskCompletedMap = new HashMap<>();
+        for(Tuple row : subTaskCounts){
+            Long parentId = row.get(subTask.parent.id);
+            subTaskTotalMap.put(parentId, row.get(1,Long.class));
+
+            Number completedSum = row.get(2,Number.class);
+            subTaskCompletedMap.put(parentId, completedSum != null ? completedSum.longValue(): 0L );
+        }
+
+        List<Tuple> commentCounts = queryFactory
+                .select(
+                        comment.task.id,
+                        comment.count()
+                )
+                .from(comment)
+                .where(comment.task.id.in(ids))
+                .groupBy(comment.task.id)
+                .fetch();
+
+        Map<Long, Long> commentCountMap = commentCounts.stream()
+                .collect(Collectors.toMap(
+                        row -> row.get(comment.task.id),
+                        row -> row.get(comment.count())
+                ));
+
+
+        return mainTasks.stream()
+                .map(row -> {
+                    Long taskId = row.get(task.id);
+                    return new TaskSummaryQuery(
+                            taskId,
+                            row.get(task.name),
+                            row.get(task.description),
+                            row.get(task.taskPriorityType),
+                            row.get(task.dueDate),
+                            row.get(task.sortOrder),
+                            row.get(task.project.name),
+                            // Map에서 꺼내오고 없으면 0 반환
+                            subTaskTotalMap.getOrDefault(taskId, 0L),
+                            subTaskCompletedMap.getOrDefault(taskId, 0L),
+                            commentCountMap.getOrDefault(taskId, 0L),
+                            Boolean.TRUE.equals(row.get(task.timeSpecified))
+                    );
+                })
+                .toList();
     }
 }
 
