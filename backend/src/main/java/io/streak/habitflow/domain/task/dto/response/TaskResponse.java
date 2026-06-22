@@ -16,7 +16,6 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 
 public final class TaskResponse{
     @Builder
@@ -82,46 +81,8 @@ public final class TaskResponse{
             labels =  Objects.requireNonNullElse(labels, new ArrayList<>());
             comments =  Objects.requireNonNullElse(comments, new ArrayList<>());
         }
-        public static Detail of(Task task, String encodedId, List<LabelResponse.Summary> labelSummaryResponses, Function<Long, String> idEncoder) {
-            DetailBuilder builder = Detail.builder()
-                    .id(encodedId)
-                    .name(task.getName())
-                    .description(task.getDescription())
-                    .completed(task.isCompleted())
-                    .taskPriorityType(task.getTaskPriorityType())
-                    .dueDate(task.getDueDate())
-                    .sortOrder(task.getSortOrder())
-                    .labels(labelSummaryResponses)
-                    .recurring(task.isRecurring())
-                    .dueTime(task.isTimeSpecified()?task.getDueDate().toLocalTime():null)
-                    .subTasks(task.getSubTasks().stream()
-                            .map(subTask->Detail.fromSimpleSubTask(subTask,idEncoder.apply(subTask.getId())))
-                            .toList());
 
-
-            if(task.getProject() != null){
-                builder.projectId(idEncoder.apply(task.getProject().getId()))
-                        .projectName(task.getProject().getName())
-                        .projectColor(task.getProject().getColor());
-            }else{
-                builder.projectId(null)
-                        .projectName("관리함")
-                        .projectColor("#808080");
-            }
-
-            if(task.getMember() != null){
-                builder.userId(idEncoder.apply(task.getMember().getId()));
-            }
-
-            if(task.getParent() != null){
-                builder.parentId(idEncoder.apply(task.getParent().getId()));
-            }
-
-
-            return builder.build();
-        }
-
-        private static Detail fromSimpleSubTask(Task subTask, String encodedId){
+        public static Detail fromSimpleSubTask(Task subTask, String encodedId){
             return Detail.builder()
                     .id(encodedId)
                     .name(subTask.getName())

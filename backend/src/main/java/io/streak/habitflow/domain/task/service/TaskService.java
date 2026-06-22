@@ -18,6 +18,7 @@ import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.entity.TaskLabel;
 import io.streak.habitflow.domain.task.event.TaskChangedEvent;
+import io.streak.habitflow.domain.task.mapper.TaskMapper;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.domain.task.type.CursorDirection;
@@ -57,6 +58,7 @@ public class TaskService {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final RedisTemplate<String, Object> redisTemplate;
     private final HashidsProvider hashidsProvider;
+    private final TaskMapper taskMapper;
 
     @Transactional
     @CheckOwnership(type="TASK")
@@ -189,7 +191,7 @@ public class TaskService {
                 })
                 .toList();
         String encodedId = hashidsProvider.encode(savedTask.getId());
-        return TaskResponse.Detail.of(savedTask, encodedId, labelSummaryResponses,hashidsProvider::encode);
+        return taskMapper.toDetail(savedTask, encodedId, labelSummaryResponses);
     }
 
     private Task getTask(TaskRequest.Create request, Task parentTask) {
@@ -216,7 +218,7 @@ public class TaskService {
                 .toList();
 
         String encodedId = hashidsProvider.encode(task.getId());
-        return TaskResponse.Detail.of(task, encodedId, labelSummaryResponses,hashidsProvider::encode);
+        return taskMapper.toDetail(task, encodedId, labelSummaryResponses);
     }
 
     @CheckOwnership(type="PROJECT")
@@ -375,7 +377,7 @@ public class TaskService {
 
         if(request.name().equals(task.getName()) &&
             request.description().equals(task.getDescription())){
-            return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+            return taskMapper.toDetail(task,encodedId,summaries);
         }
 
         List<ChangeSet> changes = new ArrayList<>();
@@ -402,7 +404,7 @@ public class TaskService {
         }
 
 
-        return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+        return taskMapper.toDetail(task,encodedId,summaries);
     }
 
     @Transactional
@@ -512,7 +514,7 @@ public class TaskService {
         }).toList();
         if(!isChanged){
             String encodedId = hashidsProvider.encode(task.getId());
-            return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+            return taskMapper.toDetail(task,encodedId,summaries);
         }
         if(!Objects.equals(oldDueDate, request.dueDate())){
             List<ChangeSet> changeSets = new ArrayList<>();
@@ -531,7 +533,7 @@ public class TaskService {
         }
 
         String encodedId = hashidsProvider.encode(task.getId());
-        return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+        return taskMapper.toDetail(task,encodedId,summaries);
     }
 
     @Transactional
@@ -576,7 +578,7 @@ public class TaskService {
             }).toList();
 
             String encodedId = hashidsProvider.encode(task.getId());
-            responseList.add(TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode));
+            responseList.add(taskMapper.toDetail(task,encodedId,summaries));
         }
 
 
@@ -596,7 +598,7 @@ public class TaskService {
         }).toList();
         String encodedId = hashidsProvider.encode(task.getId());
         if(task.getTaskPriorityType() == taskPriorityType){
-            return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+            return taskMapper.toDetail(task,encodedId,summaries);
         }
         TaskPriorityType oldTaskPriorityType = task.getTaskPriorityType();
         task.updatePriorityType(taskPriorityType);
@@ -613,7 +615,7 @@ public class TaskService {
                 changeSets
         ));
 
-        return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+        return taskMapper.toDetail(task,encodedId,summaries);
     }
 
     @Transactional
@@ -634,7 +636,7 @@ public class TaskService {
         if(labelIds.isEmpty()){
             task.getTaskLabels().clear();
             String encodedId = hashidsProvider.encode(task.getId());
-            return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+            return taskMapper.toDetail(task,encodedId,summaries);
         }
 
         List<Label> realLabels  =labelRepository.findAllById(realLabelIds);
@@ -643,7 +645,7 @@ public class TaskService {
 
         realLabels.forEach(label-> task.addTaskLabel(TaskLabel.builder().label(label).build()));
         String encodedId = hashidsProvider.encode(task.getId());
-        return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+        return taskMapper.toDetail(task,encodedId,summaries);
     }
 
     @Transactional
@@ -663,10 +665,10 @@ public class TaskService {
         if(projectId != null){
             long realProjectId = hashidsProvider.decode(projectId);
             if(task.getProject().getId() == realProjectId){
-                return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+                return taskMapper.toDetail(task,encodedId,summaries);
             }
         }else if(task.getProject().getId() == null){
-            return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+            return taskMapper.toDetail(task,encodedId,summaries);
         }
 
         long realProjectId = hashidsProvider.decode(projectId);
@@ -691,7 +693,7 @@ public class TaskService {
             ));
         }
 
-        return TaskResponse.Detail.of(task,encodedId,summaries,hashidsProvider::encode);
+        return taskMapper.toDetail(task,encodedId,summaries);
     }
 
     public List<TaskResponse.UpcomingDateCount> getUpcomingDateCounts(Long memberId, LocalDateTime fromDate, LocalDateTime toDate){
