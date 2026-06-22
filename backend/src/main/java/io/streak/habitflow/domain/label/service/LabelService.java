@@ -9,6 +9,7 @@ import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
+import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -133,5 +135,23 @@ public class LabelService {
             throw new AccessDeniedException("삭제 권한이 없습니다.");
         }
         labelRepository.deleteById(labelId);
+    }
+
+    @Transactional
+    @CheckOwnership(type="LABEL")
+    public LabelResponse.Summary updateSortOrder(Long labelId, LabelRequest.UpdateSortOrder updateSortOrder, Long memberId){
+        Label label = labelRepository.getReferenceById(labelId);
+        String encodedId = hashidsProvider.encode(label.getId());
+
+        Favorite favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(
+                memberId,TargetType.LABEL,label.getId()
+        ).orElse(null);
+
+        if(Objects.equals(label.getSortOrder(), updateSortOrder.sortOrder())){
+            return LabelResponse.Summary.of(label, favorite != null,encodedId);
+        }
+        label.updateSortOrder(updateSortOrder.sortOrder());
+
+        return LabelResponse.Summary.of(label, favorite != null,encodedId);
     }
 }

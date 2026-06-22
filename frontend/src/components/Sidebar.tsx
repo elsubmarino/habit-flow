@@ -22,10 +22,12 @@ import {
 } from '../api/favoriteMappers';
 import type { FavoriteDto, EntityId } from '../api/types';
 import type { Label, Project } from '../store/habitSlice';
+import type { ReorderProjectRequest } from '../utils/projectSortOrder';
 import { getUserProfile } from '../utils/userProfile';
 import UserMenuDropdown from './UserMenuDropdown';
 import LabelListRow from './LabelListRow';
 import ProjectListRow from './ProjectListRow';
+import SortableProjectList from './SortableProjectList';
 
 export type NavItem = 'inbox' | 'today' | 'upcoming' | 'filters' | 'report';
 
@@ -51,6 +53,7 @@ interface SidebarProps {
     onEditProject: (project: Project) => void;
     onShareProject: (project: Project) => void;
     onDeleteProject: (projectId: EntityId) => void;
+    onReorderProject?: (request: ReorderProjectRequest) => void;
     onToggleProjectsList: () => void;
     onToggleFavoritesList: () => void;
     onAddClick: () => void;
@@ -85,6 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     onEditProject,
     onShareProject,
     onDeleteProject,
+    onReorderProject,
     onToggleProjectsList,
     onToggleFavoritesList,
     onAddClick,
@@ -348,20 +352,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                     </div>
 
                     {projectsListExpanded && (
-                        <ul className="project-list">
-                            {projects.map(project => (
-                                <ProjectListRow
-                                    key={project.id}
-                                    project={project}
-                                    variant="sidebar"
-                                    active={selectedProjectId === project.id}
-                                    onSelect={onProjectSelect}
-                                    onEdit={onEditProject}
-                                    onShare={onShareProject}
-                                    onDelete={onDeleteProject}
-                                />
-                            ))}
-                        </ul>
+                        <SortableProjectList
+                            projects={projects}
+                            sortable={!!onReorderProject}
+                            onReorder={onReorderProject}
+                            onSelect={onProjectSelect}
+                            onEdit={onEditProject}
+                            onShare={onShareProject}
+                            onDelete={onDeleteProject}
+                        />
                     )}
                 </div>
             </div>

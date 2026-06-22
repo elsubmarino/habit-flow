@@ -43,10 +43,10 @@ export function computeSortOrderAfterMove(items: Habit[], toIndex: number): numb
 }
 
 /** 화면에 보이는 순서만 바꾼 뒤 전체 목록에 반영 */
-export function mergeVisibleOrder(fullList: Habit[], visibleOrdered: Habit[]): Habit[] {
-    const visibleIds = new Set(visibleOrdered.map(habit => habit.id));
+export function mergeVisibleOrder<T extends { id: EntityId }>(fullList: T[], visibleOrdered: T[]): T[] {
+    const visibleIds = new Set(visibleOrdered.map(item => item.id));
     const queue = [...visibleOrdered];
-    return fullList.map(habit => (visibleIds.has(habit.id) ? queue.shift()! : habit));
+    return fullList.map(item => (visibleIds.has(item.id) ? queue.shift()! : item));
 }
 
 export interface ReorderHabitRequest {

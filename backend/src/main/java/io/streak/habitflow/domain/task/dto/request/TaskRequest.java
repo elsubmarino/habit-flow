@@ -184,6 +184,5 @@ public final class TaskRequest {
             @Schema(description = "정렬순서")
             Long sortOrder
     ){
-
     }
 }

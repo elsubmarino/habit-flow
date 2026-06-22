@@ -25,6 +25,8 @@ import {
     updateProject,
     checkHabit,
     reorderHabit,
+    reorderLabel,
+    reorderProject,
     type ApiView,
     type Habit,
     type Label,
@@ -68,6 +70,8 @@ import { useInfiniteScroll } from './hooks/useInfiniteScroll';
 import type { EntityId } from './api/types';
 import { parseAppPath } from './utils/appRoutes';
 import type { ReorderHabitRequest } from './utils/taskSortOrder';
+import type { ReorderLabelRequest } from './utils/labelSortOrder';
+import type { ReorderProjectRequest } from './utils/projectSortOrder';
 import { formatSectionDate, formatTodayHeader, toISODate } from './utils/date';
 import {
     filterHabits,
@@ -636,6 +640,14 @@ function App() {
         void dispatch(reorderHabit(request));
     }, [dispatch]);
 
+    const handleReorderLabels = useCallback((request: ReorderLabelRequest) => {
+        void dispatch(reorderLabel(request));
+    }, [dispatch]);
+
+    const handleReorderProjects = useCallback((request: ReorderProjectRequest) => {
+        void dispatch(reorderProject(request));
+    }, [dispatch]);
+
     const taskListProps = {
         layout: taskRowLayout,
         sortable: canReorderTasks,
@@ -835,6 +847,7 @@ function App() {
                 onEditProject={handleEditProject}
                 onShareProject={handleShareProject}
                 onDeleteProject={handleDeleteProject}
+                onReorderProject={handleReorderProjects}
                 onToggleProjectsList={toggleProjectsList}
                 onToggleFavoritesList={toggleFavoritesList}
                 onAddClick={() => addFormRef.current?.open()}
@@ -885,6 +898,7 @@ function App() {
                             onAddLabel={() => setShowAddLabelModal(true)}
                             onEditLabel={handleEditLabel}
                             onDeleteLabel={handleDeleteLabel}
+                            onReorderLabel={handleReorderLabels}
                         />
                         {showLabelsPagination && (
                             <div ref={labelsLoadMoreSentinelRef} className="tasks-scroll-sentinel" aria-hidden="true">

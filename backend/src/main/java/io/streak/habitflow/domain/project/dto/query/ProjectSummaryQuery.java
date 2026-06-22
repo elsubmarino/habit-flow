@@ -4,5 +4,6 @@ public record ProjectSummaryQuery(
         Long id,
         String name,
         String color,
-        Long taskCount
+        Long taskCount,
+        Long sortOrder
 ) {}

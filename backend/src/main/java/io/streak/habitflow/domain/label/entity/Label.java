@@ -31,4 +31,8 @@ public class Label  extends BaseTimeEntity {
         this.name = name;
         this.color = color;
     }
+
+    public void updateSortOrder(Long sortOrder){
+        this.sortOrder = sortOrder;
+    }
 }

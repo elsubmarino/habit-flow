@@ -43,7 +43,10 @@ public final class LabelResponse{
             @Schema(description = "즐겨찾기 색상(헥사코드)",example = "#123456")
             String color,
             @Schema(description = "정렬순서")
-            long sortOrder
+            long sortOrder,
+
+            @Schema(description="즐겨찾기 여부")
+            boolean favorite
     ){
         public static Summary of(Label label,String encodedId){
             return Summary.builder()
@@ -51,6 +54,16 @@ public final class LabelResponse{
                     .name(label.getName())
                     .sortOrder(label.getSortOrder())
                     .color(label.getColor())
+                    .build();
+        }
+
+        public static Summary of(Label label,boolean favorite,String encodedId){
+            return Summary.builder()
+                    .id(encodedId)
+                    .name(label.getName())
+                    .sortOrder(label.getSortOrder())
+                    .color(label.getColor())
+                    .favorite(favorite)
                     .build();
         }
 

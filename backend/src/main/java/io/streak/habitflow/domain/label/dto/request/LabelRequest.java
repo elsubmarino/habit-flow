@@ -31,4 +31,10 @@ public final class LabelRequest {
             String color,
             boolean favorite
     ){}
+
+    public record UpdateSortOrder(
+            @Schema(description = "정렬순서")
+            Long sortOrder
+    ){
+    }
 }

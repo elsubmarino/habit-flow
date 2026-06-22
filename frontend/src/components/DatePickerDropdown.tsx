@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { dueDateToTimeInput, formatTime12From24, toISODate } from '../utils/date';
-import { buildDatePresets, formatPickerHeader } from '../utils/datePresets';
+import React, { useEffect, useMemo, useState } from 'react';
+import { dueDateToTimeInput, formatTime12From24, isBeforeToday, isSelectableDueDate, toISODate } from '../utils/date';
+import { buildDatePresets } from '../utils/datePresets';
+import { formatNaturalDateInput, parseNaturalDateInput } from '../utils/parseNaturalDateInput';
 
 export interface DatePickerChange {
     date: string | null;
@@ -70,6 +71,32 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
     const [panel, setPanel] = useState<Panel>('main');
     const [timeDraft, setTimeDraft] = useState(() => dueDateToTimeInput(value, timeValue));
     const [repeatDraft, setRepeatDraft] = useState(repeatValue);
+    const [inputDraft, setInputDraft] = useState('');
+    const [isEditingInput, setIsEditingInput] = useState(false);
+
+    const composedInput = useMemo(
+        () => formatNaturalDateInput(
+            value,
+            hasTimeValue,
+            timeDraft,
+            repeatDraft,
+        ),
+        [value, hasTimeValue, timeDraft, repeatDraft],
+    );
+
+    useEffect(() => {
+        if (!isEditingInput) {
+            setInputDraft(composedInput);
+        }
+    }, [composedInput, isEditingInput]);
+
+    useEffect(() => {
+        setRepeatDraft(repeatValue);
+    }, [repeatValue]);
+
+    useEffect(() => {
+        setTimeDraft(dueDateToTimeInput(value, timeValue));
+    }, [value, timeValue]);
 
     const presets = useMemo(() => buildDatePresets(today), [today]);
     const grid = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
@@ -84,6 +111,8 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
 
     const selectDate = (date: Date | null) => {
         const iso = date ? toISODate(date) : null;
+        if (!isSelectableDueDate(iso, todayIso)) return;
+
         const nextHasTime = iso != null && hasTimeValue && Boolean(timeDraft);
         onChange({
             date: iso,
@@ -154,6 +183,74 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
         });
     };
 
+    const applyNaturalInput = () => {
+        const parsed = parseNaturalDateInput(inputDraft, {
+            referenceDate: today,
+            fallbackDate: value,
+            fallbackHasTime: hasTimeValue,
+            fallbackTime: timeDraft,
+            fallbackRepeat: repeatDraft,
+        });
+
+        if (!parsed) {
+            setInputDraft(composedInput);
+            setIsEditingInput(false);
+            return;
+        }
+
+        let nextDate = parsed.date !== undefined ? parsed.date : value;
+        if (nextDate && isBeforeToday(nextDate.slice(0, 10), todayIso)) {
+            if (parsed.date !== undefined) {
+                const current = value?.slice(0, 10) ?? null;
+                nextDate = current && !isBeforeToday(current, todayIso) ? current : todayIso;
+            }
+        }
+        const nextHasTime = parsed.hasTime !== undefined ? parsed.hasTime : hasTimeValue;
+        const nextTime = parsed.time !== undefined
+            ? parsed.time
+            : nextHasTime
+                ? timeDraft
+                : null;
+        const nextRepeat = parsed.repeat !== undefined ? parsed.repeat : repeatDraft;
+
+        if (nextDate) {
+            const next = new Date(`${nextDate.slice(0, 10)}T00:00:00`);
+            setViewYear(next.getFullYear());
+            setViewMonth(next.getMonth());
+        }
+
+        if (parsed.time !== undefined && parsed.time) {
+            setTimeDraft(parsed.time);
+        }
+
+        if (parsed.repeat !== undefined) {
+            setRepeatDraft(nextRepeat);
+        }
+
+        onChange({
+            date: nextDate,
+            time: nextHasTime ? nextTime : null,
+            hasTime: nextHasTime && Boolean(nextTime),
+            repeat: nextRepeat,
+        });
+
+        setInputDraft(parsed.displayText);
+        setIsEditingInput(false);
+    };
+
+    const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        event.stopPropagation();
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            applyNaturalInput();
+        }
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            setInputDraft(composedInput);
+            setIsEditingInput(false);
+        }
+    };
+
     if (panel === 'time') {
         return (
             <div className="date-picker-dropdown date-picker-panel-view" onClick={e => e.stopPropagation()} role="dialog" aria-label="시간 선택">
@@ -221,11 +318,18 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
     return (
         <div className="date-picker-dropdown" onClick={e => e.stopPropagation()} role="dialog" aria-label="날짜 선택">
             <div className="date-picker-header">
-                <span className="date-picker-selected">
-                    {value
-                        ? formatPickerHeader(value)
-                        : '날짜 선택'}
-                </span>
+                <input
+                    type="text"
+                    className="date-picker-input"
+                    value={inputDraft}
+                    placeholder="예: 6월 18일 오전 9:00 매일"
+                    aria-label="날짜·시간·반복 입력"
+                    onClick={event => event.stopPropagation()}
+                    onFocus={() => setIsEditingInput(true)}
+                    onBlur={() => applyNaturalInput()}
+                    onChange={event => setInputDraft(event.target.value)}
+                    onKeyDown={handleInputKeyDown}
+                />
             </div>
 
             <button type="button" className="date-preset-row" onClick={() => selectDate(today)}>
@@ -234,18 +338,23 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
                 <span className="preset-hint">{WEEKDAYS[today.getDay()]}</span>
             </button>
 
-            {presets.map(preset => (
+            {presets.map(preset => {
+                const presetIso = preset.date ? toISODate(preset.date) : null;
+                const presetDisabled = preset.date != null && !isSelectableDueDate(presetIso, todayIso);
+                return (
                 <button
                     key={preset.id}
                     type="button"
                     className="date-preset-row"
+                    disabled={presetDisabled}
                     onClick={() => selectDate(preset.date)}
                 >
                     <span className="preset-icon">{presetIcon(preset.id)}</span>
                     <span className="preset-label">{preset.label}</span>
                     {preset.hint && <span className="preset-hint">{preset.hint}</span>}
                 </button>
-            ))}
+                );
+            })}
 
             <div className="date-picker-calendar">
                 <div className="calendar-nav">
@@ -266,15 +375,18 @@ const DatePickerDropdown: React.FC<DatePickerDropdownProps> = ({
                         const iso = toISODate(date);
                         const isSelected = value?.slice(0, 10) === iso;
                         const isToday = iso === todayIso;
+                        const isPast = isBeforeToday(iso, todayIso);
                         return (
                             <button
                                 key={iso + String(inMonth)}
                                 type="button"
+                                disabled={isPast}
                                 className={[
                                     'calendar-day',
                                     !inMonth && 'other-month',
                                     isToday && 'is-today',
                                     isSelected && 'is-selected',
+                                    isPast && 'is-past',
                                 ].filter(Boolean).join(' ')}
                                 onClick={() => selectDate(date)}
                             >

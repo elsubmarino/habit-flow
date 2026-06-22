@@ -25,7 +25,7 @@ spring:
               - profile
               - email
   datasource:
-    url: jdbc:mariadb://localhost:3307/habitflow
+    url: jdbc:mariadb://localhost:3305/habitflow
     driver-class-name: org.mariadb.jdbc.Driver
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}

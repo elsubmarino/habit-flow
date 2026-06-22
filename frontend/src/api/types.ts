@@ -145,6 +145,7 @@ export interface ProjectDto {
     name: string;
     color: string;
     taskCount?: number;
+    sortOrder?: number;
 }
 
 export interface ProjectDetailDto extends ProjectDto {

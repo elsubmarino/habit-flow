@@ -48,3 +48,13 @@ export async function updateLabel(labelId: EntityId, payload: LabelUpdatePayload
 export async function deleteLabel(labelId: EntityId): Promise<void> {
     await apiClient.delete(`/api/labels/${labelId}`);
 }
+
+export async function patchLabelSortOrder(
+    labelId: EntityId,
+    sortOrder: number,
+): Promise<LabelDto> {
+    const { data } = await apiClient.patch<LabelDto>(`/api/labels/${labelId}/sort-order`, {
+        sortOrder,
+    });
+    return data;
+}

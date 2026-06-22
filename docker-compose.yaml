@@ -5,7 +5,7 @@ services:
     image: mariadb:10.11
     container_name: habitflow-mariadb
     ports:
-      - "3307:3306"
+      - "3305:3306"
     environment:
       MARIADB_DATABASE: habitflow
       MARIADB_ROOT_PASSWORD: ${DB_PASSWORD}

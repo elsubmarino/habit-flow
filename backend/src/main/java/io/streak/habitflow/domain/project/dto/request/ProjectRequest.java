@@ -47,4 +47,10 @@ public final class ProjectRequest {
             emails = Objects.requireNonNullElse(emails, new ArrayList<>());
         }
     }
+
+    public record UpdateSortOrder(
+            @Schema(description = "정렬순서")
+            Long sortOrder
+    ){
+    }
 }

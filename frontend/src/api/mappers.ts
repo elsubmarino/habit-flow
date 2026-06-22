@@ -157,6 +157,7 @@ export function mapLabel(dto: LabelDto & { favorite?: boolean }, taskCount = 0):
         color: dto.color ?? '#808080',
         taskCount,
         favorite: Boolean(dto.favorite),
+        sortOrder: dto.sortOrder ?? 0,
     };
 }
 
@@ -168,7 +169,7 @@ export function mapProject(
         id: dto.id,
         name: dto.name,
         color: dto.color ?? '#4073ff',
-        sortOrder: 0,
+        sortOrder: dto.sortOrder ?? 0,
         taskCount,
         favorite: Boolean(dto.favorite),
     };

@@ -31,6 +31,8 @@ public class Project  extends BaseTimeEntity {
     @JoinColumn(name = "parent_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Project parent;
 
+    private Long sortOrder;
+
     public void updateProject(String name,
                               String color,
                               AccessType accessType,
@@ -41,5 +43,9 @@ public class Project  extends BaseTimeEntity {
         this.accessType = accessType;
         this.layoutType = layoutType;
         this.parent = parent;
+    }
+
+    public void updateSortOrder(Long sortOrder){
+        this.sortOrder = sortOrder;
     }
 }

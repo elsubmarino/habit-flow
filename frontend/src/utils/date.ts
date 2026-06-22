@@ -220,7 +220,17 @@ export function isDateInWeek(iso: string, weekStartIso: string): boolean {
 }
 
 export function isAfterToday(iso: string, todayIso = toISODate(new Date())): boolean {
-    return iso > todayIso;
+    return iso.slice(0, 10) > todayIso;
+}
+
+export function isBeforeToday(iso: string, todayIso = toISODate(new Date())): boolean {
+    return iso.slice(0, 10) < todayIso;
+}
+
+/** 마감일 선택: null(날짜 없음) 또는 오늘 이후만 허용 */
+export function isSelectableDueDate(iso: string | null, todayIso = toISODate(new Date())): boolean {
+    if (!iso) return true;
+    return !isBeforeToday(iso.slice(0, 10), todayIso);
 }
 
 export function getUpcomingWeekRange(anchorIso: string): {

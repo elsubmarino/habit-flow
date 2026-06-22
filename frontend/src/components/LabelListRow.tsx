@@ -8,6 +8,14 @@ import ProjectMoreMenu from './ProjectMoreMenu';
 interface LabelListRowProps {
     label: Label;
     active?: boolean;
+    showDragHandle?: boolean;
+    isDragging?: boolean;
+    isDragOver?: boolean;
+    onDragHandleStart?: (event: React.DragEvent<HTMLButtonElement>) => void;
+    onDragEnter?: (event: React.DragEvent<HTMLLIElement>) => void;
+    onDragOver?: (event: React.DragEvent<HTMLLIElement>) => void;
+    onDragEnd?: (event: React.DragEvent<HTMLLIElement>) => void;
+    onDrop?: (event: React.DragEvent<HTMLLIElement>) => void;
     onSelect: (labelId: EntityId) => void;
     onEdit: (label: Label) => void;
     onDelete: (labelId: EntityId) => void;
@@ -16,6 +24,14 @@ interface LabelListRowProps {
 const LabelListRow: React.FC<LabelListRowProps> = ({
     label,
     active = false,
+    showDragHandle = false,
+    isDragging = false,
+    isDragOver = false,
+    onDragHandleStart,
+    onDragEnter,
+    onDragOver,
+    onDragEnd,
+    onDrop,
     onSelect,
     onEdit,
     onDelete,
@@ -26,12 +42,33 @@ const LabelListRow: React.FC<LabelListRowProps> = ({
 
     return (
         <li
-            className={`label-row ${active ? 'active' : ''}`}
+            className={[
+                'label-row',
+                active ? 'active' : '',
+                isDragging ? 'is-dragging' : '',
+                isDragOver ? 'is-drag-over' : '',
+            ].filter(Boolean).join(' ')}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => {
                 if (!menuOpen) setHovered(false);
             }}
+            onDragEnter={onDragEnter}
+            onDragOver={onDragOver}
+            onDragEnd={onDragEnd}
+            onDrop={onDrop}
         >
+            {showDragHandle && (
+                <button
+                    type="button"
+                    className="label-drag-handle"
+                    draggable
+                    onDragStart={onDragHandleStart}
+                    onClick={event => event.stopPropagation()}
+                    aria-label="순서 변경"
+                >
+                    <span aria-hidden>⋮⋮</span>
+                </button>
+            )}
             <button
                 type="button"
                 className={`label-row-main ${active ? 'active' : ''}`}

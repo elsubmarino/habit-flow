@@ -11,6 +11,7 @@ import io.streak.habitflow.global.util.HashidsProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -77,5 +78,15 @@ public class LabelController {
         long realLabelId = labelId.value();
         labelService.deleteLabel(realLabelId, loginMemberId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{labelId}/sort-order")
+    @Operation(summary = "정렬순서 변경")
+    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "정렬순서 변경 성공")})
+    public ResponseEntity<LabelResponse.Summary> updateSortOrder(@PathVariable RoutingId labelId,
+                                                                @RequestBody @Valid LabelRequest.UpdateSortOrder request,
+                                                                @LoginMemberId Long loginMemberId) {
+        long realLabelId = labelId.value();
+        return ResponseEntity.ok(labelService.updateSortOrder(realLabelId, request, loginMemberId));
     }
 }

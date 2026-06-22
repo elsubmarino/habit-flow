@@ -8,6 +8,14 @@ interface ProjectListRowProps {
     project: Project;
     active?: boolean;
     variant: 'sidebar' | 'browse';
+    showDragHandle?: boolean;
+    isDragging?: boolean;
+    isDragOver?: boolean;
+    onDragHandleStart?: (event: React.DragEvent<HTMLButtonElement>) => void;
+    onDragEnter?: (event: React.DragEvent<HTMLLIElement>) => void;
+    onDragOver?: (event: React.DragEvent<HTMLLIElement>) => void;
+    onDragEnd?: (event: React.DragEvent<HTMLLIElement>) => void;
+    onDrop?: (event: React.DragEvent<HTMLLIElement>) => void;
     onSelect: (projectId: EntityId) => void;
     onEdit: (project: Project) => void;
     onDelete: (projectId: EntityId) => void;
@@ -18,6 +26,14 @@ const ProjectListRow: React.FC<ProjectListRowProps> = ({
     project,
     active = false,
     variant,
+    showDragHandle = false,
+    isDragging = false,
+    isDragOver = false,
+    onDragHandleStart,
+    onDragEnter,
+    onDragOver,
+    onDragEnd,
+    onDrop,
     onSelect,
     onEdit,
     onDelete,
@@ -29,8 +45,14 @@ const ProjectListRow: React.FC<ProjectListRowProps> = ({
 
     const rowClass =
         variant === 'sidebar'
-            ? `project-row project-row-sidebar ${active ? 'active' : ''}`
-            : `project-row project-row-browse`;
+            ? [
+                'project-row',
+                'project-row-sidebar',
+                active ? 'active' : '',
+                isDragging ? 'is-dragging' : '',
+                isDragOver ? 'is-drag-over' : '',
+            ].filter(Boolean).join(' ')
+            : 'project-row project-row-browse';
 
     const mainClass =
         variant === 'sidebar' ? 'project-item' : 'projects-browse-item';
@@ -42,7 +64,23 @@ const ProjectListRow: React.FC<ProjectListRowProps> = ({
             onMouseLeave={() => {
                 if (!menuOpen) setHovered(false);
             }}
+            onDragEnter={onDragEnter}
+            onDragOver={onDragOver}
+            onDragEnd={onDragEnd}
+            onDrop={onDrop}
         >
+            {showDragHandle && variant === 'sidebar' && (
+                <button
+                    type="button"
+                    className="project-drag-handle"
+                    draggable
+                    onDragStart={onDragHandleStart}
+                    onClick={event => event.stopPropagation()}
+                    aria-label="순서 변경"
+                >
+                    <span aria-hidden>⋮⋮</span>
+                </button>
+            )}
             <button
                 type="button"
                 className={`${mainClass} ${active ? 'active' : ''}`}

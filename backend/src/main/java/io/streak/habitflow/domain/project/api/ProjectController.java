@@ -11,6 +11,7 @@ import io.streak.habitflow.global.common.constant.PageSizeConstants;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -112,5 +113,15 @@ public class ProjectController {
                                                                    @PathVariable RoutingId projectId){
         Long realProjectId = projectId.value();
         return ResponseEntity.ok(projectService.getProjectMembers(realProjectId,loginMemberId));
+    }
+
+    @PatchMapping("/{projectId}/sort-order")
+    @Operation(summary = "정렬순서 변경")
+    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "정렬순서 변경 성공")})
+    public ResponseEntity<ProjectResponse.Summary> updateSortOrder(@PathVariable RoutingId projectId,
+                                                                 @RequestBody @Valid ProjectRequest.UpdateSortOrder request,
+                                                                 @LoginMemberId Long loginMemberId) {
+        long realProjectId = projectId.value();
+        return ResponseEntity.ok(projectService.updateSortOrder(realProjectId, request, loginMemberId));
     }
 }

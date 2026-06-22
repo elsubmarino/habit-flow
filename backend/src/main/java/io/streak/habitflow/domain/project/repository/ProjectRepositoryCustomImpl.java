@@ -26,7 +26,8 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                                 ProjectSearchSummaryQuery.class,
                                 project.id,
                                 project.name,
-                                project.color
+                                project.color,
+                                project.sortOrder
                         )
                 ).from(project)
                 .join(projectMember).on(projectMember.project.eq(project))
@@ -46,13 +47,15 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                         project.id,
                         project.name,
                         project.color,
-                        task.count()
+                        task.count(),
+                        project.sortOrder
                 ))
                 .from(project)
                 .leftJoin(task).on(task.project.eq(project)
                         .and(task.completed.eq(false)))
                 .innerJoin(projectMember).on(projectMember.project.eq(project).and(projectMember.member.id.eq(memberId)))
                 .groupBy(project.id)
+                .orderBy(project.sortOrder.asc())
                 .fetch();
     }
 }

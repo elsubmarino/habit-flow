@@ -30,6 +30,16 @@ import {
     toISODate,
 } from '../utils/date';
 import {
+    applyLabelReorder,
+    sortLabelsByOrder,
+    type ReorderLabelRequest,
+} from '../utils/labelSortOrder';
+import {
+    applyProjectReorder,
+    sortProjectsByOrder,
+    type ReorderProjectRequest,
+} from '../utils/projectSortOrder';
+import {
     mergeVisibleOrder,
     reorderList,
 } from '../utils/taskSortOrder';
@@ -41,6 +51,7 @@ export interface Label {
     color: string;
     taskCount: number;
     favorite: boolean;
+    sortOrder: number;
 }
 
 export interface Attachment {
@@ -1185,6 +1196,34 @@ export const reorderHabit = createAsyncThunk(
     },
 );
 
+export const reorderLabel = createAsyncThunk(
+    'habits/reorderLabel',
+    async (request: ReorderLabelRequest, { rejectWithValue }) => {
+        try {
+            await labelApi.patchLabelSortOrder(request.labelId, request.sortOrder);
+            return request;
+        } catch (error) {
+            return rejectWithValue(
+                getApiErrorMessage(error, '라벨 순서를 변경하지 못했습니다.'),
+            );
+        }
+    },
+);
+
+export const reorderProject = createAsyncThunk(
+    'habits/reorderProject',
+    async (request: ReorderProjectRequest, { rejectWithValue }) => {
+        try {
+            await projectApi.patchProjectSortOrder(request.projectId, request.sortOrder);
+            return request;
+        } catch (error) {
+            return rejectWithValue(
+                getApiErrorMessage(error, '프로젝트 순서를 변경하지 못했습니다.'),
+            );
+        }
+    },
+);
+
 export const addSubtask = createAsyncThunk(
     'habits/addSubtask',
     async ({
@@ -1527,7 +1566,9 @@ const habitSlice = createSlice({
             })
             .addCase(fetchProjects.fulfilled, (state, action) => {
                 state.projectsStatus = 'idle';
-                state.projects = applyFavoriteFlags(action.payload, state.favorites, 'PROJECT');
+                state.projects = sortProjectsByOrder(
+                    applyFavoriteFlags(action.payload, state.favorites, 'PROJECT'),
+                );
             })
             .addCase(fetchProjects.rejected, state => {
                 state.projectsStatus = 'failed';
@@ -1562,7 +1603,7 @@ const habitSlice = createSlice({
                     ...l,
                     taskCount: countTasksForLabel(state.list, l.id),
                 })));
-                state.labels = applyFavoriteFlags(withCounts, state.favorites, 'LABEL');
+                state.labels = sortLabelsByOrder(applyFavoriteFlags(withCounts, state.favorites, 'LABEL'));
                 state.labelsHasNext = action.payload.hasNext;
                 state.labelsNextCursor = action.payload.nextCursor;
             })
@@ -1584,6 +1625,7 @@ const habitSlice = createSlice({
                         });
                     }
                 }
+                state.labels = sortLabelsByOrder(state.labels);
                 state.labelsHasNext = action.payload.hasNext;
                 state.labelsNextCursor = action.payload.nextCursor;
             })
@@ -1702,6 +1744,28 @@ const habitSlice = createSlice({
                 state.error = typeof action.payload === 'string'
                     ? action.payload
                     : action.error.message ?? '작업 순서를 변경하지 못했습니다.';
+            })
+            .addCase(reorderLabel.pending, (state, action) => {
+                state.labels = applyLabelReorder(state.labels, action.meta.arg);
+            })
+            .addCase(reorderLabel.rejected, (state, action) => {
+                state.labels = sortLabelsByOrder(
+                    mergeVisibleOrder(state.labels, action.meta.arg.contextList),
+                );
+                state.error = typeof action.payload === 'string'
+                    ? action.payload
+                    : action.error.message ?? '라벨 순서를 변경하지 못했습니다.';
+            })
+            .addCase(reorderProject.pending, (state, action) => {
+                state.projects = applyProjectReorder(state.projects, action.meta.arg);
+            })
+            .addCase(reorderProject.rejected, (state, action) => {
+                state.projects = sortProjectsByOrder(
+                    mergeVisibleOrder(state.projects, action.meta.arg.contextList),
+                );
+                state.error = typeof action.payload === 'string'
+                    ? action.payload
+                    : action.error.message ?? '프로젝트 순서를 변경하지 못했습니다.';
             })
             .addCase(fetchHabitDetail.fulfilled, (state, action) => {
                 patchHabitInLists(state, action.payload.id, () => action.payload);

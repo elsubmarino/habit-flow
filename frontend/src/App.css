@@ -672,6 +672,40 @@
   gap: 2px;
 }
 
+.project-row.is-dragging {
+  opacity: 0.45;
+}
+
+.project-row.is-drag-over {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.project-drag-handle {
+  display: none;
+  flex-shrink: 0;
+  width: 20px;
+  height: 24px;
+  margin-left: 2px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1;
+  cursor: grab;
+}
+
+.project-row-sidebar:hover .project-drag-handle,
+.project-row-sidebar.is-dragging .project-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-drag-handle:active {
+  cursor: grabbing;
+}
+
 .project-row .project-item,
 .project-row .projects-browse-item {
   flex: 1;
@@ -3511,7 +3545,12 @@
 }
 
 .task-detail-side:has(.date-menu-open) {
-  overflow: visible;
+  overflow-x: visible;
+  overflow-y: auto;
+}
+
+.task-detail-modal:has(.date-menu-open) {
+  grid-template-columns: 1fr minmax(300px, 320px);
 }
 
 .date-picker-dropdown {
@@ -3522,7 +3561,9 @@
   z-index: 30;
   width: min(320px, 72vw);
   max-height: min(520px, calc(100vh - 220px));
+  overflow-x: hidden;
   overflow-y: auto;
+  box-sizing: border-box;
   background: #fff;
   border: 1px solid #e6e6e6;
   border-radius: 10px;
@@ -3531,13 +3572,36 @@
 }
 
 .detail-row .date-picker-dropdown {
-  width: min(320px, 100%);
+  width: 100%;
+  max-width: 100%;
   max-height: min(460px, calc(100vh - 260px));
 }
 
 .date-picker-header {
   padding: 8px 16px 10px;
   border-bottom: 1px solid #f0f0f0;
+}
+
+.date-picker-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  outline: none;
+}
+
+.date-picker-input::placeholder {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.date-picker-input:focus {
+  outline: none;
 }
 
 .date-picker-selected {
@@ -3583,6 +3647,8 @@
 .date-picker-calendar {
   padding: 8px 12px 4px;
   border-top: 1px solid #f0f0f0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .calendar-nav {
@@ -3634,7 +3700,7 @@
 
 .calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   margin-bottom: 4px;
 }
 
@@ -3648,19 +3714,23 @@
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 2px;
+  width: 100%;
 }
 
 .calendar-day {
   aspect-ratio: 1;
-  min-height: 32px;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
   border: none;
   border-radius: 50%;
   background: transparent;
   font-size: 13px;
   color: var(--text-primary);
   cursor: pointer;
+  padding: 0;
 }
 
 .calendar-day:hover {
@@ -3680,6 +3750,33 @@
   background: var(--todoist-red);
   color: #fff;
   font-weight: 600;
+}
+
+.calendar-day.is-past {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.calendar-day.is-past:hover {
+  background: transparent;
+}
+
+.calendar-day.is-past.is-selected {
+  background: #e8a8a8;
+  color: #fff;
+}
+
+.calendar-day:disabled {
+  cursor: not-allowed;
+}
+
+.date-preset-row:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.date-preset-row:disabled:hover {
+  background: transparent;
 }
 
 .date-picker-footer,
@@ -3702,6 +3799,8 @@
   justify-content: flex-start;
   gap: 8px;
   width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 10px 12px;
   border: 1px solid #e8e8e8;
   border-radius: 8px;
@@ -5012,6 +5111,40 @@
   align-items: center;
   gap: 2px;
   border-bottom: 1px solid #f0f0f0;
+}
+
+.label-row.is-dragging {
+  opacity: 0.45;
+}
+
+.label-row.is-drag-over {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.label-drag-handle {
+  display: none;
+  flex-shrink: 0;
+  width: 24px;
+  height: 32px;
+  margin-left: 2px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1;
+  cursor: grab;
+}
+
+.label-row:hover .label-drag-handle,
+.label-row.is-dragging .label-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.label-drag-handle:active {
+  cursor: grabbing;
 }
 
 .label-row-main {

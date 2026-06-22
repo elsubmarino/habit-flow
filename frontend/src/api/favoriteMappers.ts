@@ -97,6 +97,7 @@ export function resolveFavoriteLabel(favorite: FavoriteDto, label?: Label): Labe
         color: '#808080',
         taskCount: favorite.targetCount,
         favorite: true,
+        sortOrder: 0,
     };
 }
 

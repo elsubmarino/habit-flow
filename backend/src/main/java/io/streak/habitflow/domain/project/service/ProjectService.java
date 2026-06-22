@@ -309,4 +309,18 @@ public class ProjectService {
                 .map(ProjectResponse.Member::from)
                 .toList();
     }
+
+    @Transactional
+    @CheckOwnership(type="PROJECT")
+    public ProjectResponse.Summary updateSortOrder(Long projectId, ProjectRequest.UpdateSortOrder updateSortOrder, Long memberId){
+        Project project = projectRepository.getReferenceById(projectId);
+        String encodedId = hashidsProvider.encode(project.getId());
+
+        if(Objects.equals(project.getSortOrder(), updateSortOrder.sortOrder())){
+            return ProjectResponse.Summary.of(project, encodedId);
+        }
+        project.updateSortOrder(updateSortOrder.sortOrder());
+
+        return ProjectResponse.Summary.of(project, encodedId);
+    }
 }

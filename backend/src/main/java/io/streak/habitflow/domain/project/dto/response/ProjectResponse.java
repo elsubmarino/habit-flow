@@ -64,7 +64,9 @@ public final class ProjectResponse {
             String color,
 
             @Schema(description = "해당 프로젝트에 속한 테스크의 수")
-            long taskCount
+            long taskCount,
+
+            long sortOrder
     ){
 //        public static Summary from(Project project) {
 //            return Summary.builder()
@@ -87,6 +89,16 @@ public final class ProjectResponse {
                     .id(encodedId)
                     .name(projectSummaryQuery.name())
                     .color(projectSummaryQuery.color())
+                    .sortOrder(projectSummaryQuery.sortOrder())
+                    .build();
+        }
+
+        public static Summary of(Project project, String encodedId) {
+            return Summary.builder()
+                    .id(encodedId)
+                    .name(project.getName())
+                    .color(project.getColor())
+                    .sortOrder(project.getSortOrder())
                     .build();
         }
 
@@ -95,6 +107,7 @@ public final class ProjectResponse {
                     .id(encodedId)
                     .name(projectSummaryQuery.name())
                     .color(projectSummaryQuery.color())
+                    .sortOrder(projectSummaryQuery.sortOrder())
                     .build();
         }
     }

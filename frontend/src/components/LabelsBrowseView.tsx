@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { EntityId } from '../api/types';
 import type { Label } from '../store/habitSlice';
+import type { ReorderLabelRequest } from '../utils/labelSortOrder';
 import { ChevronDownIcon, ChevronUpIcon, PlusIcon } from './icons';
-import LabelListRow from './LabelListRow';
+import SortableLabelList from './SortableLabelList';
 
 interface LabelsBrowseViewProps {
     labels: Label[];
@@ -11,6 +12,7 @@ interface LabelsBrowseViewProps {
     onAddLabel: () => void;
     onEditLabel: (label: Label) => void;
     onDeleteLabel: (labelId: EntityId) => void;
+    onReorderLabel?: (request: ReorderLabelRequest) => void;
 }
 
 const LabelsBrowseView: React.FC<LabelsBrowseViewProps> = ({
@@ -20,6 +22,7 @@ const LabelsBrowseView: React.FC<LabelsBrowseViewProps> = ({
     onAddLabel,
     onEditLabel,
     onDeleteLabel,
+    onReorderLabel,
 }) => {
     const [sectionExpanded, setSectionExpanded] = useState(true);
 
@@ -54,17 +57,14 @@ const LabelsBrowseView: React.FC<LabelsBrowseViewProps> = ({
                     ) : labels.length === 0 ? (
                         <p className="labels-browse-empty">라벨이 없습니다.</p>
                     ) : (
-                        <ul className="labels-browse-list">
-                            {labels.map(label => (
-                                <LabelListRow
-                                    key={label.id}
-                                    label={label}
-                                    onSelect={onSelectLabel}
-                                    onEdit={onEditLabel}
-                                    onDelete={onDeleteLabel}
-                                />
-                            ))}
-                        </ul>
+                        <SortableLabelList
+                            labels={labels}
+                            sortable={!!onReorderLabel}
+                            onReorder={onReorderLabel}
+                            onSelectLabel={onSelectLabel}
+                            onEditLabel={onEditLabel}
+                            onDeleteLabel={onDeleteLabel}
+                        />
                     )
                 )}
             </section>

@@ -43,6 +43,16 @@ export async function deleteProject(projectId: EntityId): Promise<void> {
     await apiClient.delete(`/api/projects/${projectId}`);
 }
 
+export async function patchProjectSortOrder(
+    projectId: EntityId,
+    sortOrder: number,
+): Promise<ProjectDto> {
+    const { data } = await apiClient.patch<ProjectDto>(`/api/projects/${projectId}/sort-order`, {
+        sortOrder,
+    });
+    return data;
+}
+
 export interface ProjectInvitePayload {
     id: EntityId;
     emails: string[];
