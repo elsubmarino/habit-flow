@@ -21,8 +21,11 @@ public class MailService {
 
     private static final String AUTH_CODE_PREFIX = "AUTH_CODE:";
     private static final String VERIFIED_PREFIX ="VERIFIED:";
+    private static final String MAIL_LIMIT_PREFIX ="MAIL_LIMIT:";
+
     private static final long AUTH_CODE_EXPIRATION_MINUTES = 3L; //인증 코드 유효시간 3분
     private static final long VERIFIED_EXPIRATION_MINUTES = 30L;
+    private static final long MAIL_LIMIT_SECONDS = 60L;
 
     @Async("mailExecutor")
     public void sendProjectInvitationMail(String email, String projectName, String inviterName, String invitationToken){
@@ -42,8 +45,21 @@ public class MailService {
         }
     }
 
-    @Async("mailExecutor")
     public void sendAuthCode(String email){
+        String limitKey = MAIL_LIMIT_PREFIX + email;
+
+        String isLimited = redisTemplate.opsForValue().get(limitKey);
+        if("LOCK".equals(isLimited)){
+            log.warn("[Rate Limit 차단] 단 시간 내 이메일 중복 요청 발생 -> Email: {}",email);
+            throw new IllegalStateException("인증번호는 1분에 한 번만 요청할 수 있습니다. 잠시 후 다시 시도해주세요.");
+        }
+        redisTemplate.opsForValue().set(
+                limitKey,
+                "LOCK",
+                MAIL_LIMIT_SECONDS,
+                TimeUnit.SECONDS
+        );
+
         String authCode = generateRandomCode();
 
         redisTemplate.opsForValue().set(
@@ -53,6 +69,11 @@ public class MailService {
                 TimeUnit.MINUTES
         );
 
+        sendEmailAsync(email, authCode);
+
+    }
+    @Async("mailExecutor")
+    public void sendEmailAsync(String email, String authCode){
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("[HabitFlow] 회원가입 인증번호 안내");
@@ -62,10 +83,9 @@ public class MailService {
             javaMailSender.send(message);
             log.info("인증 이메일 발송 완료 : {}",email);
         } catch (MailException e) {
-            log.error("인증 이메일 발송 완료 : {}",email,e);
+            log.error("인증 이메일 발송 실패 : {}",email,e);
+            redisTemplate.delete(MAIL_LIMIT_PREFIX+email);
         }
-
-
     }
 
     public void verifyAuthCode(String email, String inputCode){
