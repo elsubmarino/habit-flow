@@ -225,4 +225,15 @@ public class TaskController {
         );
     }
 
+    @GetMapping("/labels/{labelId}")
+    @Operation(summary = "라벨별 테스크 조회")
+    @ApiResponses(value={@ApiResponse(responseCode = "200",description = "라벨별 테스크 조회 성공")})
+    public ResponseEntity<TaskResponse.SummarySlice> getTasks(@LoginMemberId Long loginMemberId,
+                                                               @PathVariable RoutingId labelId,
+                                                              @ModelAttribute @Valid TaskRequest.Cursor cursor,
+                                                              @PageableDefault(size = PageSizeConstants.CURSOR_PAGING_SMALL) Pageable pageable){
+        TaskResponse.SummarySlice summarySlice = taskService.getTasksByLabel(labelId.value(),loginMemberId,pageable,cursor);
+        return ResponseEntity.ok(summarySlice);
+    }
+
 }

@@ -31,6 +31,7 @@ import static io.streak.habitflow.domain.comment.entity.QComment.comment;
 import static io.streak.habitflow.domain.project.entity.QProject.project;
 import static io.streak.habitflow.domain.project.entity.QProjectMember.projectMember;
 import static io.streak.habitflow.domain.task.entity.QTask.task;
+import static io.streak.habitflow.domain.task.entity.QTaskLabel.taskLabel;
 
 @SuppressWarnings("unused")
 @RequiredArgsConstructor
@@ -482,6 +483,58 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 ))
                 .fetchFirst();
         return fetchOne != null;
+    }
+
+    @Override
+    public List<TaskSummaryQuery> findByLabel(Long labelId, Pageable pageable, Long loginMemberId) {
+        List<Long> taskIds =  queryFactory
+                .select(task.id)
+                .from(taskLabel)
+                .where(taskLabel.label.id.eq(labelId))
+                .fetch();
+
+        QTask subTask = new QTask("subTask");
+        return queryFactory
+                .select(Projections.constructor(
+                        TaskSummaryQuery.class,
+                        task.id,
+                        task.name,
+                        task.description,
+                        task.taskPriorityType,
+                        task.dueDate,
+                        task.sortOrder,
+                        task.project.name.as("projectName"),
+                        ExpressionUtils.as(
+                                JPAExpressions.select(subTask.count())
+                                        .from(subTask)
+                                        .where(subTask.parent.eq(task)), "countSubTasks"),
+                        ExpressionUtils.as(
+                                JPAExpressions.select(subTask.count())
+                                        .from(subTask)
+                                        .where(subTask.parent.eq(task)
+                                                .and(subTask.completed.eq(true))), "countSubTasksCompleted"),
+                        ExpressionUtils.as(
+                                JPAExpressions.select(comment.count())
+                                        .from(comment)
+                                        .where(comment.task.eq(task)), "countComments"),
+                        task.timeSpecified
+                ))
+                .from(task)
+                .innerJoin(task.project,project)
+                .innerJoin(projectMember).on(projectMember.project.eq(project))
+                .where(
+                        projectMember.member.id.eq(loginMemberId),
+                        task.id.in(taskIds),
+                        task.parent.id.isNull(),
+                        task.completed.eq(false)
+                )
+                .orderBy(
+                        task.dueDate.asc(),
+                        task.taskPriorityType.asc(),
+                        task.sortOrder.asc(),
+                        task.id.desc())
+                .limit(pageable.getPageSize() + 1)
+                .fetch();
     }
 }
 

@@ -7,6 +7,7 @@ import {
     deleteProject,
     fetchHabits,
     fetchProjectHabits,
+    fetchLabelHabits,
     fetchMoreHabits,
     fetchFavorites,
     jumpToUpcomingWeek,
@@ -353,8 +354,12 @@ function App() {
             return;
         }
 
-        const view = selectedLabelId != null ? 'all' : toApiView(activeNav);
-        dispatch(fetchHabits({ view, projectId: null, labelId: selectedLabelId }));
+        if (selectedLabelId != null) {
+            dispatch(fetchLabelHabits(selectedLabelId));
+            return;
+        }
+
+        dispatch(fetchHabits({ view: toApiView(activeNav), projectId: null, labelId: null }));
     }, [
         dispatch,
         isAuthenticated,
@@ -425,12 +430,12 @@ function App() {
     const handleLabelSelect = (labelId: EntityId | null) => {
         setShowNotifications(false);
         setShowProjectsBrowse(false);
-        if (labelId != null) {
-            setActiveNav('filters');
+        setActiveNav('filters');
+        if (labelId == null) {
             dispatch(setActiveView('filters'));
+            dispatch(setSelectedProject(null));
         }
         dispatch(setSelectedLabel(labelId));
-        dispatch(setSelectedProject(null));
     };
 
     const handleLabelOpen = (labelId: EntityId) => {
@@ -510,14 +515,14 @@ function App() {
     const displayHabits = useMemo(() => {
         let list = filterHabits(habits, viewPrefs, {
             preserveOrder:
-                (paginatedTaskView || selectedProjectId != null)
+                (paginatedTaskView || selectedProjectId != null || selectedLabelId != null)
                 && viewPrefs.grouping === 'none',
         });
         if (!viewPrefs.showCompleted) {
             list = list.filter(h => !h.completedToday);
         }
         return list;
-    }, [habits, viewPrefs, paginatedTaskView, selectedProjectId]);
+    }, [habits, viewPrefs, paginatedTaskView, selectedProjectId, selectedLabelId]);
 
     const meta = selectedLabelId
         ? {
@@ -555,7 +560,7 @@ function App() {
         && !showReport
         && !showProjectsPanel;
     const showTaskPagination =
-        showTodaySections || showInboxList || selectedProjectId != null;
+        showTodaySections || showInboxList || selectedProjectId != null || selectedLabelId != null;
     const showLabelsPagination = showLabelsPanel && labelsHasNext;
 
     const headerTaskCount = showTodaySections
@@ -571,14 +576,12 @@ function App() {
             upcomingScrollTopRef.current = mainPanelRef.current.scrollTop;
         }
 
-        if (selectedProjectId != null) {
+        if (selectedProjectId != null || selectedLabelId != null) {
             dispatch(fetchMoreHabits('all'));
             return;
         }
 
-        const view = selectedLabelId != null
-            ? 'all'
-            : taskListView ?? toApiView(activeNav);
+        const view = taskListView ?? toApiView(activeNav);
         if (view !== 'today' && view !== 'upcoming' && view !== 'inbox') return;
         dispatch(fetchMoreHabits(view));
     }, [dispatch, activeNav, taskListView, selectedProjectId, selectedLabelId, tasksHasNext, loadMoreStatus, upcomingJumpStatus, showUpcomingGrouped]);
@@ -610,7 +613,7 @@ function App() {
     const loadMoreSentinelRef = useInfiniteScroll(
         status !== 'loading'
             && upcomingJumpStatus !== 'loading'
-            && (paginatedTaskView || selectedProjectId != null)
+            && (paginatedTaskView || selectedProjectId != null || selectedLabelId != null)
             && tasksHasNext,
         tasksHasNext,
         loadMoreStatus === 'loading',
@@ -750,10 +753,18 @@ function App() {
                     </div>
                 );
             }
+            if (selectedLabelId != null && status !== 'loading') {
+                return (
+                    <div className="empty-state">
+                        <p className="empty-title">이 라벨에 작업이 없습니다</p>
+                        <p className="empty-desc">작업에 라벨을 붙이면 여기에 표시됩니다.</p>
+                    </div>
+                );
+            }
             return null;
         }
 
-        if (selectedProjectId != null) {
+        if (selectedProjectId != null || selectedLabelId != null) {
             if (viewPrefs.grouping !== 'none') {
                 return <>{renderGroupedTasks(displayHabits)}</>;
             }

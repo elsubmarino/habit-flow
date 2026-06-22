@@ -204,6 +204,15 @@ export async function fetchAllTaskPages(
     return all;
 }
 
+export async function fetchLabelTasks(
+    labelId: EntityId,
+    cursor?: TaskCursor | null,
+    size = TASK_PAGE_SIZE,
+): Promise<TaskPageResult<TaskDto>> {
+    const key = `tasks:label:${labelId}:${cursor?.lastTaskId ?? 'start'}:${cursor?.direction ?? 'NEXT'}:${size}`;
+    return fetchTaskListSlice(`/api/tasks/labels/${labelId}`, key, cursor, size);
+}
+
 export async function fetchProjectTasks(
     projectId: EntityId,
     page = 0,

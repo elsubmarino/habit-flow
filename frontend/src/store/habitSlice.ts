@@ -382,24 +382,6 @@ async function loadTasksForView(params: {
     projectId?: EntityId | null;
     labelId?: EntityId | null;
 }): Promise<LoadedTasksPage> {
-    if (params.labelId != null) {
-        const [today, upcoming] = await Promise.all([
-            taskApi.fetchAllTaskPages(cursor => taskApi.fetchTodayTasks(cursor)),
-            taskApi.fetchAllTaskPages(cursor => taskApi.fetchUpcomingTasks({ cursor })),
-        ]);
-        const tasks = dedupeTasks([...today, ...upcoming]).filter(t =>
-            (t.labels ?? []).some(l => l.id === params.labelId),
-        );
-        return {
-            tasks,
-            hasNext: false,
-            nextCursor: null,
-            overdueTasks: [],
-            overdueHasNext: false,
-            overdueNextCursor: null,
-        };
-    }
-
     switch (params.view) {
         case 'today': {
             const [overdueBundle, todayPage] = await Promise.all([
@@ -497,12 +479,20 @@ function isFetchHabitsResultCurrent(state: HabitState, arg: FetchHabitsParams): 
 
 const inFlightHabitsFetches = new Map<string, Promise<FetchHabitsResult>>();
 const inFlightProjectHabitsFetches = new Map<EntityId, Promise<FetchProjectHabitsResult>>();
+const inFlightLabelHabitsFetches = new Map<EntityId, Promise<FetchLabelHabitsResult>>();
 
 type FetchProjectHabitsResult = {
     projectId: EntityId;
     habits: Habit[];
     hasNext: boolean;
     nextPage: number;
+};
+
+type FetchLabelHabitsResult = {
+    labelId: EntityId;
+    habits: Habit[];
+    hasNext: boolean;
+    nextCursor: TaskCursor | null;
 };
 
 async function loadHabitsForView(params: FetchHabitsParams): Promise<FetchHabitsResult> {
@@ -568,6 +558,31 @@ export const fetchProjectHabits = createAsyncThunk(
     },
 );
 
+export const fetchLabelHabits = createAsyncThunk(
+    'habits/fetchLabelHabits',
+    async (labelId: EntityId) => {
+        const existing = inFlightLabelHabitsFetches.get(labelId);
+        if (existing) return existing;
+
+        const promise = (async (): Promise<FetchLabelHabitsResult> => {
+            const page = await taskApi.fetchLabelTasks(labelId);
+            return {
+                labelId,
+                habits: page.content.map(t => mapTaskToHabit(t)),
+                hasNext: page.hasNext,
+                nextCursor: page.nextCursor,
+            };
+        })().finally(() => {
+            if (inFlightLabelHabitsFetches.get(labelId) === promise) {
+                inFlightLabelHabitsFetches.delete(labelId);
+            }
+        });
+
+        inFlightLabelHabitsFetches.set(labelId, promise);
+        return promise;
+    },
+);
+
 export const fetchMoreHabits = createAsyncThunk(
     'habits/fetchMore',
     async (viewOverride: ApiView | undefined, { getState }) => {
@@ -576,7 +591,13 @@ export const fetchMoreHabits = createAsyncThunk(
         const view = viewOverride ?? activeView;
 
         if (selectedLabelId != null) {
-            return { habits: [], hasNext: false, nextCursor: null };
+            const cursor = tasksNextCursor ? { ...tasksNextCursor, direction: 'NEXT' as const } : null;
+            const page = await taskApi.fetchLabelTasks(selectedLabelId, cursor);
+            return {
+                habits: page.content.map(t => mapTaskToHabit(t)),
+                hasNext: page.hasNext,
+                nextCursor: page.nextCursor,
+            };
         }
 
         if (selectedProjectId != null) {
@@ -886,14 +907,19 @@ export const refetchCurrentTaskList = createAsyncThunk(
             return;
         }
 
+        if (selectedLabelId != null) {
+            await dispatch(fetchLabelHabits(selectedLabelId));
+            return;
+        }
+
         if (activeView === 'report' || activeView === 'filters') {
             return;
         }
 
         await dispatch(fetchHabits({
-            view: selectedLabelId != null ? 'all' : activeView,
+            view: activeView,
             projectId: null,
-            labelId: selectedLabelId,
+            labelId: null,
         }));
     },
 );
@@ -1390,7 +1416,9 @@ const habitSlice = createSlice({
                 state.selectedProjectDetailStatus = action.payload == null ? 'idle' : 'loading';
             }
             state.selectedProjectId = action.payload;
-            state.selectedLabelId = null;
+            if (action.payload != null) {
+                state.selectedLabelId = null;
+            }
         },
         setSelectedLabel(state, action: { payload: EntityId | null }) {
             state.selectedLabelId = action.payload;
@@ -1481,6 +1509,25 @@ const habitSlice = createSlice({
                 if (state.selectedProjectId !== action.meta.arg) return;
                 state.status = 'failed';
                 state.error = action.error.message ?? '프로젝트 작업을 불러오지 못했습니다.';
+            })
+            .addCase(fetchLabelHabits.pending, state => {
+                state.status = 'loading';
+                state.loadMoreStatus = 'idle';
+                state.tasksNextPage = 0;
+                state.tasksNextCursor = null;
+                state.error = null;
+            })
+            .addCase(fetchLabelHabits.fulfilled, (state, action) => {
+                if (state.selectedLabelId !== action.payload.labelId) return;
+                state.status = 'idle';
+                state.list = action.payload.habits;
+                state.tasksHasNext = action.payload.hasNext;
+                state.tasksNextCursor = action.payload.nextCursor;
+            })
+            .addCase(fetchLabelHabits.rejected, (state, action) => {
+                if (state.selectedLabelId !== action.meta.arg) return;
+                state.status = 'failed';
+                state.error = action.error.message ?? '라벨 작업을 불러오지 못했습니다.';
             })
             .addCase(fetchMoreHabits.pending, state => {
                 state.loadMoreStatus = 'loading';
