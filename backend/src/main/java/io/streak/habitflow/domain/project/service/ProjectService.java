@@ -13,6 +13,7 @@ import io.streak.habitflow.domain.project.dto.request.ProjectRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
+import io.streak.habitflow.domain.project.event.ProjectAcceptEvent;
 import io.streak.habitflow.domain.project.event.ProjectInvitationEvent;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
@@ -242,7 +243,7 @@ public class ProjectService {
             });
 
             String InvitationToken = UUID.randomUUID().toString();
-            String redisValue = project.getId()+":"+email;
+            String redisValue = project.getId()+":"+email+":"+inviter.getId()+":"+inviter.getName();
             redisTemplate.opsForValue().set(
                     INVITE_TOKEN_PREFIX + InvitationToken,
                     redisValue,
@@ -279,6 +280,8 @@ public class ProjectService {
         String[]parts = redisValue.split(":");
         Long projectId = Long.parseLong(parts[0]);
         String targetEmail = parts[1];
+        Long inviterId = Long.parseLong(parts[2]);
+        String inviterName = parts[3];
 
         Member loginMember = memberRepository.getOrThrow(loginMemberId);
         if(!loginMember.getEmail().equals(targetEmail)){
@@ -297,11 +300,14 @@ public class ProjectService {
 
         redisTemplate.delete(redisKey);
 
-//        applicationEventPublisher.publishEvent(new ProjectAcceptEvent(
-//                project.getId(),
-//                project.getName(),
-//                loginMember.getId(),loginMember.getName()
-//        ));
+        applicationEventPublisher.publishEvent(new ProjectAcceptEvent(
+                project.getId(),
+                project.getName(),
+                loginMember.getId(),
+                loginMember.getName(),
+                inviterId,
+                inviterName
+        ));
     }
 
     @CheckOwnership(type="PROJECT")
