@@ -22,10 +22,11 @@ import { getApiErrorMessage } from '../api/apiError';
 import type { EntityId } from '../api/types';
 import { displayLabelName } from '../api/labelMappers';
 import { useDialog } from '../context/DialogContext';
-import { formatTaskDetailDue, toISODate } from '../utils/date';
+import { formatTaskDetailDue } from '../utils/date';
 import CommentListItem from './CommentListItem';
 import DatePickerDropdown, { type DatePickerChange } from './DatePickerDropdown';
 import TaskEditBox from './TaskEditBox';
+import TaskQuickAddForm, { type TaskQuickAddSubmitPayload } from './TaskQuickAddForm';
 import { CloseIcon, HashIcon } from './icons';
 
 interface TaskDetailModalProps {
@@ -55,9 +56,8 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     const [loading, setLoading] = useState(true);
     const [subtasksExpanded, setSubtasksExpanded] = useState(true);
     const [showSubtaskForm, setShowSubtaskForm] = useState(false);
+    const [subtaskSubmitting, setSubtaskSubmitting] = useState(false);
     const [showCommentForm, setShowCommentForm] = useState(false);
-    const [subName, setSubName] = useState('');
-    const [subDesc, setSubDesc] = useState('');
     const [comment, setComment] = useState('');
     const [activeMenu, setActiveMenu] = useState<'project' | 'date' | 'priority' | 'label' | null>(null);
     const [projectQuery, setProjectQuery] = useState('');
@@ -289,8 +289,8 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
         return habit?.projectId ?? null;
     };
 
-    const handleAddSubtask = async () => {
-        if (!habit || !subName.trim()) return;
+    const handleAddSubtask = async (payload: TaskQuickAddSubmitPayload) => {
+        if (!habit) return;
         if (!canAddSubtaskByDepth) {
             await showAlert(`하위 작업은 최대 ${MAX_SUBTASK_DEPTH}단계까지만 추가할 수 있습니다.`);
             setShowSubtaskForm(false);
@@ -302,23 +302,32 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
             return;
         }
 
-        const result = await dispatch(addSubtask({
-            habitId: habit.id,
-            name: subName.trim(),
-            description: subDesc.trim(),
-            projectId: resolveProjectIdForSubtask(),
-            dueDate: habit.dueDate ?? toISODate(new Date()),
-        }));
+        setSubtaskSubmitting(true);
+        try {
+            const result = await dispatch(addSubtask({
+                habitId: habit.id,
+                name: payload.name,
+                description: payload.description,
+                projectId: payload.projectId ?? resolveProjectIdForSubtask(),
+                dueDate: payload.dueDate,
+                dueTime24: payload.dueTime24,
+                hasTime: payload.hasTime,
+                recurrenceLabel: payload.recurrenceLabel,
+                labelIds: payload.labelIds,
+                file: payload.file,
+                priority: payload.priority,
+            }));
 
-        if (addSubtask.rejected.match(result)) {
-            await showErrorAlert(getApiErrorMessage(result.error, '하위 작업을 추가하지 못했습니다.'));
-            return;
+            if (addSubtask.rejected.match(result)) {
+                await showErrorAlert(getApiErrorMessage(result.error, '하위 작업을 추가하지 못했습니다.'));
+                return;
+            }
+
+            await refreshCurrent();
+            setShowSubtaskForm(false);
+        } finally {
+            setSubtaskSubmitting(false);
         }
-
-        await refreshCurrent();
-        setSubName('');
-        setSubDesc('');
-        setShowSubtaskForm(false);
     };
 
     const handleAddComment = async () => {
@@ -660,14 +669,18 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
                             ) : (
                                 <p className="subtask-limit-hint">{subtaskLimitHint}</p>
                             )}
-                            {showSubtaskForm && canAddSubtask && (
-                                <div className="subtask-form">
-                                    <input value={subName} onChange={e => setSubName(e.target.value)} placeholder="작업 이름" />
-                                    <input value={subDesc} onChange={e => setSubDesc(e.target.value)} placeholder="설명" />
-                                    <div className="subtask-form-actions">
-                                        <button type="button" className="quick-cancel" onClick={() => setShowSubtaskForm(false)}>취소</button>
-                                        <button type="button" className="quick-submit" onClick={() => void handleAddSubtask()}>작업 추가</button>
-                                    </div>
+                            {showSubtaskForm && canAddSubtask && habit && (
+                                <div className="subtask-quick-add-wrap">
+                                    <TaskQuickAddForm
+                                        key={`subtask-${currentTaskId}`}
+                                        variant="inline"
+                                        showHint={false}
+                                        submitting={subtaskSubmitting}
+                                        initialProjectId={resolveProjectIdForSubtask()}
+                                        initialDueDate={habit.dueDate}
+                                        onCancel={() => setShowSubtaskForm(false)}
+                                        onSubmit={handleAddSubtask}
+                                    />
                                 </div>
                             )}
 

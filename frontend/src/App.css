@@ -2319,6 +2319,32 @@
   padding: 16px 16px 12px;
 }
 
+.quick-add-card-inline {
+  width: 100%;
+  box-shadow: none;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.subtask-quick-add-wrap {
+  margin-top: 4px;
+}
+
+.subtask-quick-add-wrap .quick-add-pills {
+  position: relative;
+  z-index: 2;
+}
+
+.subtask-quick-add-wrap .pill-wrapper {
+  position: static;
+}
+
+.subtask-quick-add-wrap .quick-popover,
+.subtask-quick-add-wrap .date-picker-dropdown {
+  z-index: 30;
+}
+
 .quick-add-body {
   padding: 4px 4px 8px;
 }
