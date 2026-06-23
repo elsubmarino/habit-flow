@@ -23,6 +23,7 @@ import type { EntityId } from '../api/types';
 import { displayLabelName } from '../api/labelMappers';
 import { useDialog } from '../context/DialogContext';
 import { formatTaskDetailDue } from '../utils/date';
+import { formatFileSize, validateFile } from '../utils/file';
 import CommentListItem from './CommentListItem';
 import DatePickerDropdown, { type DatePickerChange } from './DatePickerDropdown';
 import TaskEditBox from './TaskEditBox';
@@ -59,6 +60,10 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     const [subtaskSubmitting, setSubtaskSubmitting] = useState(false);
     const [showCommentForm, setShowCommentForm] = useState(false);
     const [comment, setComment] = useState('');
+    const [commentFile, setCommentFile] = useState<File | null>(null);
+    const [commentFileError, setCommentFileError] = useState<string | null>(null);
+    const [commentSubmitting, setCommentSubmitting] = useState(false);
+    const commentFileInputRef = useRef<HTMLInputElement>(null);
     const [activeMenu, setActiveMenu] = useState<'project' | 'date' | 'priority' | 'label' | null>(null);
     const [projectQuery, setProjectQuery] = useState('');
     const [labelQuery, setLabelQuery] = useState('');
@@ -331,11 +336,52 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
     };
 
     const handleAddComment = async () => {
-        if (!habit || !comment.trim()) return;
-        await dispatch(addComment({ habitId: habit.id, text: comment.trim() }));
-        await refreshCurrent();
+        if (!habit || commentSubmitting) return;
+        if (!comment.trim() && !commentFile) return;
+
+        setCommentSubmitting(true);
+        try {
+            const result = await dispatch(addComment({
+                habitId: habit.id,
+                text: comment,
+                file: commentFile,
+            }));
+            if (addComment.rejected.match(result)) {
+                await showErrorAlert(getApiErrorMessage(result.error, '댓글을 등록하지 못했습니다.'));
+                return;
+            }
+            await refreshCurrent();
+            resetCommentForm();
+        } finally {
+            setCommentSubmitting(false);
+        }
+    };
+
+    const resetCommentForm = () => {
         setComment('');
+        setCommentFile(null);
+        setCommentFileError(null);
         setShowCommentForm(false);
+        if (commentFileInputRef.current) {
+            commentFileInputRef.current.value = '';
+        }
+    };
+
+    const handleCommentFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const error = validateFile(file);
+        if (error) {
+            setCommentFileError(error);
+            setCommentFile(null);
+            e.target.value = '';
+            return;
+        }
+
+        setCommentFileError(null);
+        setCommentFile(file);
+        e.target.value = '';
     };
 
     const handleEditComment = async (item: CommentItem, text: string) => {
@@ -693,10 +739,72 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClose, onTa
                                     </button>
                                 ) : (
                                     <div className="comment-form">
-                                        <textarea rows={3} value={comment} onChange={e => setComment(e.target.value)} placeholder="댓글" />
+                                        <textarea
+                                            rows={3}
+                                            value={comment}
+                                            onChange={e => setComment(e.target.value)}
+                                            placeholder="댓글"
+                                        />
+                                        <div className="comment-form-toolbar">
+                                            <input
+                                                ref={commentFileInputRef}
+                                                type="file"
+                                                className="file-input-hidden"
+                                                accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.txt,.md,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip"
+                                                onChange={handleCommentFileSelect}
+                                            />
+                                            <button
+                                                type="button"
+                                                className="comment-attach-btn"
+                                                onClick={() => commentFileInputRef.current?.click()}
+                                                disabled={commentSubmitting}
+                                            >
+                                                📎 첨부 파일
+                                            </button>
+                                        </div>
+                                        {commentFile && (
+                                            <div className="comment-pending-file">
+                                                <span className="comment-pending-file-name">{commentFile.name}</span>
+                                                <span className="comment-pending-file-size">
+                                                    {formatFileSize(commentFile.size)}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    className="comment-pending-file-remove"
+                                                    aria-label="첨부 제거"
+                                                    onClick={() => {
+                                                        setCommentFile(null);
+                                                        setCommentFileError(null);
+                                                        if (commentFileInputRef.current) {
+                                                            commentFileInputRef.current.value = '';
+                                                        }
+                                                    }}
+                                                    disabled={commentSubmitting}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        )}
+                                        {commentFileError && (
+                                            <p className="file-error">{commentFileError}</p>
+                                        )}
                                         <div className="subtask-form-actions">
-                                            <button type="button" className="quick-cancel" onClick={() => setShowCommentForm(false)}>취소</button>
-                                            <button type="button" className="quick-submit" onClick={() => void handleAddComment()}>댓글</button>
+                                            <button
+                                                type="button"
+                                                className="quick-cancel"
+                                                onClick={resetCommentForm}
+                                                disabled={commentSubmitting}
+                                            >
+                                                취소
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="quick-submit"
+                                                onClick={() => void handleAddComment()}
+                                                disabled={commentSubmitting || (!comment.trim() && !commentFile)}
+                                            >
+                                                {commentSubmitting ? '등록 중…' : '댓글'}
+                                            </button>
                                         </div>
                                     </div>
                                 )}

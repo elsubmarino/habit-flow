@@ -1371,8 +1371,13 @@ export const toggleSubtask = createAsyncThunk(
 
 export const addComment = createAsyncThunk(
     'habits/addComment',
-    async ({ habitId, text }: { habitId: EntityId; text: string }) => {
-        await commentApi.createComment(habitId, text);
+    async ({ habitId, text, file }: { habitId: EntityId; text: string; file?: File | null }) => {
+        const trimmed = text.trim();
+        const content = trimmed || (file ? '첨부파일이 등록되었습니다.' : '');
+        if (!content) {
+            throw new Error('댓글 내용을 입력하거나 파일을 첨부해 주세요.');
+        }
+        await commentApi.createComment(habitId, content, file);
         const commentDtos = await commentApi.fetchTaskComments(habitId);
         return { habitId, commentCount: commentDtos.length };
     },
