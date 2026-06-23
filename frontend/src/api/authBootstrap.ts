@@ -1,4 +1,4 @@
-import { ensureAccessToken, isAuthenticated, setStoredTokens } from './client';
+import { ensureAccessToken, isAuthenticated, setAccessToken } from './client';
 import { defaultAppPath } from '../utils/appRoutes';
 
 /** 백엔드 OAuth2LoginSuccessHandler 와 동일한 경로 */
@@ -9,22 +9,25 @@ function readOAuthAccessTokenFromUrl(): string | null {
     return params.get('accessToken') ?? params.get('token');
 }
 
+function isOAuthCallbackPath(): boolean {
+    return (
+        window.location.pathname === OAUTH_CALLBACK_PATH ||
+        window.location.pathname.endsWith(OAUTH_CALLBACK_PATH)
+    );
+}
+
 /**
  * OAuth 리다이렉트 URL의 token을 useEffect 전에 동기 처리.
- * refreshToken은 httpOnly 쿠키로 관리 (URL query는 레거시 호환만 무시).
+ * refreshToken은 httpOnly 쿠키, accessToken은 메모리에만 저장.
  */
 export function bootstrapAuthFromCallback(): boolean {
-    const isCallback =
-        window.location.pathname === OAUTH_CALLBACK_PATH ||
-        window.location.pathname.endsWith(OAUTH_CALLBACK_PATH);
-
-    if (!isCallback) {
+    if (!isOAuthCallbackPath()) {
         return isAuthenticated();
     }
 
     const accessToken = readOAuthAccessTokenFromUrl();
     if (accessToken) {
-        setStoredTokens(accessToken);
+        setAccessToken(accessToken);
         window.history.replaceState({}, '', defaultAppPath());
         return true;
     }
@@ -32,11 +35,11 @@ export function bootstrapAuthFromCallback(): boolean {
     return isAuthenticated();
 }
 
-/** accessToken이 없어도 httpOnly refresh 쿠키로 세션 복구 시도 */
+/**
+ * 앱 기동 시 Silent Refresh — 메모리에 accessToken이 없거나 만료되면
+ * httpOnly refreshToken 쿠키로 /api/auth/reissue 호출.
+ */
 export async function restoreAuthSession(): Promise<boolean> {
-    if (isAuthenticated()) {
-        return true;
-    }
     const accessToken = await ensureAccessToken();
     return !!accessToken;
 }

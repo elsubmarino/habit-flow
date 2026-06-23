@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { getApiErrorMessage } from '../api/apiError';
-import { setStoredTokens } from '../api/client';
+import { setAccessToken } from '../api/client';
 import {
     loginMember,
     sendAuthCode,
@@ -186,7 +186,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
                 email: trimmedEmail,
                 password: trimmedPassword,
             });
-            setStoredTokens(accessToken);
+            setAccessToken(accessToken);
             onLoginSuccess();
         } catch (err) {
             setStatus({

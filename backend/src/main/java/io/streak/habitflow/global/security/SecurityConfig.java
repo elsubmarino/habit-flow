@@ -3,6 +3,7 @@ package io.streak.habitflow.global.security;
 import io.streak.habitflow.global.security.jwt.JwtAuthenticationFilter;
 import io.streak.habitflow.global.security.jwt.JwtTokenProvider;
 import io.streak.habitflow.global.security.oauth.CustomOAuth2UserService;
+import io.streak.habitflow.global.security.oauth.HttpCookieOauth2AuthorizationRequestRepository;
 import io.streak.habitflow.global.security.oauth.OAuth2LoginSuccessHandler;
 import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final HttpCookieOauth2AuthorizationRequestRepository httpCookieOauth2AuthorizationRequestRepository;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -59,6 +61,8 @@ public class SecurityConfig {
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, redisTemplate),
                 UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(endpoint -> endpoint
+                                .authorizationRequestRepository(httpCookieOauth2AuthorizationRequestRepository))
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService)
                         )

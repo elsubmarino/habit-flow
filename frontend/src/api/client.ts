@@ -1,23 +1,37 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
-const ACCESS_TOKEN_KEY = 'habitflow.accessToken';
-const REFRESH_TOKEN_KEY = 'habitflow.refreshToken';
-const AUTH_FLAG_KEY = 'habitflow.auth';
+/** 레거시 localStorage 키 — 마이그레이션 후 삭제만 수행 */
+const LEGACY_ACCESS_TOKEN_KEY = 'habitflow.accessToken';
+const LEGACY_REFRESH_TOKEN_KEY = 'habitflow.refreshToken';
+const LEGACY_AUTH_FLAG_KEY = 'habitflow.auth';
 const LEGACY_TOKEN_KEY = 'habitflow.token';
 
 const AUTH_LOGOUT_EVENT = 'habitflow:logout';
 const ACCESS_TOKEN_SKEW_MS = 30_000;
 
-function migrateLegacyToken() {
-    const legacy = localStorage.getItem(LEGACY_TOKEN_KEY);
-    if (legacy && !localStorage.getItem(ACCESS_TOKEN_KEY)) {
-        localStorage.setItem(ACCESS_TOKEN_KEY, legacy);
-        localStorage.removeItem(LEGACY_TOKEN_KEY);
-    }
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
+type AccessTokenListener = (token: string) => void;
+const accessTokenListeners = new Set<AccessTokenListener>();
+
+/** Access Token은 메모리에만 보관 (XSS 시 localStorage 유출 방지) */
+let memoryAccessToken: string | null = null;
+
+export function registerOnAccessTokenSet(listener: AccessTokenListener): () => void {
+    accessTokenListeners.add(listener);
+    return () => accessTokenListeners.delete(listener);
 }
 
-migrateLegacyToken();
+function notifyAccessTokenSet(token: string) {
+    accessTokenListeners.forEach(listener => listener(token));
+}
+
+function clearLegacyTokenStorage() {
+    localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
+    localStorage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+    localStorage.removeItem(LEGACY_AUTH_FLAG_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+}
+
+clearLegacyTokenStorage();
 
 export const apiClient = axios.create({
     baseURL: '',
@@ -99,7 +113,7 @@ async function refreshAccessToken(): Promise<string | null> {
     if (!inFlightRefresh) {
         inFlightRefresh = reissueTokensRequest()
             .then(accessToken => {
-                setStoredTokens(accessToken);
+                setAccessToken(accessToken);
                 return accessToken;
             })
             .catch(error => {
@@ -120,7 +134,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
 /** access 만료 시 쿠키 refreshToken으로 선(reissue) 갱신 */
 export async function ensureAccessToken(): Promise<string | null> {
-    const accessToken = getStoredAccessToken();
+    const accessToken = getAccessToken();
     if (accessToken && !isAccessTokenExpired(accessToken)) {
         return accessToken;
     }
@@ -189,13 +203,18 @@ apiClient.interceptors.response.use(
     },
 );
 
+export function getAccessToken(): string | null {
+    return memoryAccessToken;
+}
+
+/** @deprecated getAccessToken 사용 */
 export function getStoredAccessToken(): string | null {
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
+    return getAccessToken();
 }
 
 /** accessToken JWT의 memberId 클레임 (회원 API에 id가 없을 때 사용) */
 export function getLoggedInMemberId(): import('./types').EntityId | null {
-    const token = getStoredAccessToken();
+    const token = getAccessToken();
     if (!token) return null;
 
     const payload = parseAccessTokenPayload(token);
@@ -214,28 +233,29 @@ export function getStoredRefreshToken(): null {
     return null;
 }
 
-/** @deprecated getStoredAccessToken 사용 */
+/** @deprecated getAccessToken 사용 */
 export function getStoredToken(): string | null {
-    return getStoredAccessToken();
+    return getAccessToken();
 }
 
+export function setAccessToken(accessToken: string) {
+    memoryAccessToken = accessToken;
+    notifyAccessTokenSet(accessToken);
+}
+
+/** @deprecated setAccessToken 사용 */
 export function setStoredTokens(accessToken: string) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-    localStorage.setItem(AUTH_FLAG_KEY, 'true');
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    setAccessToken(accessToken);
 }
 
-/** accessToken만 있는 경우 (OAuth 콜백 등) */
+/** @deprecated setAccessToken 사용 */
 export function setStoredToken(token: string) {
-    setStoredTokens(token);
+    setAccessToken(token);
 }
 
 export function clearStoredTokens() {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(AUTH_FLAG_KEY);
-    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    memoryAccessToken = null;
+    clearLegacyTokenStorage();
     window.dispatchEvent(new CustomEvent(AUTH_LOGOUT_EVENT));
 }
 
@@ -245,10 +265,7 @@ export function clearStoredToken() {
 }
 
 export function isAuthenticated(): boolean {
-    if (localStorage.getItem(AUTH_FLAG_KEY) === 'true') {
-        return true;
-    }
-    const accessToken = getStoredAccessToken();
+    const accessToken = getAccessToken();
     return !!accessToken && !isAccessTokenExpired(accessToken);
 }
 

@@ -5,7 +5,7 @@ import type { ProjectMemberListDto, EntityId } from '../api/types';
 import { useDialog } from '../context/DialogContext';
 import { useToast } from '../context/ToastContext';
 import type { Project } from '../store/habitSlice';
-import { getUserProfile } from '../utils/userProfile';
+import { useUserProfile } from '../hooks/useUserProfile';
 import { ChevronDownIcon, CloseIcon, HelpCircleIcon, LockIcon } from './icons';
 
 interface ProjectShareModalProps {
@@ -48,7 +48,7 @@ function toShareMember(dto: ProjectMemberListDto, selfEmail: string): ShareMembe
 const ProjectShareModal: React.FC<ProjectShareModalProps> = ({ project, onClose }) => {
     const { showToast, showErrorToast } = useToast();
     const { confirm } = useDialog();
-    const profile = getUserProfile();
+    const profile = useUserProfile();
     const selfEmail = profile.email;
     const [draft, setDraft] = useState('');
     const [chipEmail, setChipEmail] = useState<string | null>(null);

@@ -23,7 +23,7 @@ import {
 import type { FavoriteDto, EntityId } from '../api/types';
 import type { Label, Project } from '../store/habitSlice';
 import type { ReorderProjectRequest } from '../utils/projectSortOrder';
-import { getUserProfile } from '../utils/userProfile';
+import { useUserProfile } from '../hooks/useUserProfile';
 import UserMenuDropdown from './UserMenuDropdown';
 import LabelListRow from './LabelListRow';
 import ProjectListRow from './ProjectListRow';
@@ -104,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const [projectsHeaderHover, setProjectsHeaderHover] = useState(false);
     const [favoritesHeaderHover, setFavoritesHeaderHover] = useState(false);
     const userMenuRef = useRef<HTMLDivElement>(null);
-    const profile = getUserProfile();
+    const profile = useUserProfile();
     const projectById = new Map(projects.map(project => [project.id, project]));
     const labelById = new Map(labels.map(label => [label.id, label]));
     const sidebarFavorites = useMemo(
