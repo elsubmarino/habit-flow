@@ -33,7 +33,7 @@
 
 |항목|기술|도입 배경 및 근거|
 |---|---|---------------|
-|언어|Java 17|레코드(Record)를 활용한 DTO 불변성 보장 및 최신 문법 활용|
+|언어|Java 17|레코드(Record)를 활용한 DTO 불변성 보장|
 |프레임워크|Spring Boot 3.5.14 | Spring Security 6 호환 및 웹 애플리케이션의 견고한 생태계|
 |데이터베이스|MariaDB 10.11 | 커버링 인덱스를 활용한 페이징 쿼리 최적화 및 안정적인 RDBMS|
 |Cache/Lock | Redis (Redisson) | 분산 락(Distributed Lock)을 활용한 동시성 제어 및 병목 해소|
