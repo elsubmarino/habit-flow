@@ -20,9 +20,10 @@ import java.util.Objects;
 @Builder
 @Getter
 @Table(name="tasks",indexes = {
-        @Index(name="idx_task_cursor_paging_order",columnList = "project_id,parent_id,completed,due_date ASC,task_priority_type ASC,sort_order ASC,task_id DESC"),
-        @Index(name="idx_task_today_count",columnList = "project_id,completed,parent_id,due_date"),
-        @Index(name="idx_task_inbox_count",columnList = "member_id,completed,parent_id,project_id")
+        @Index(name="idx_tasks_cursor_paging_order",columnList = "project_id,parent_id,completed,due_date ASC,task_priority_type ASC,sort_order ASC,task_id DESC"),
+        @Index(name="idx_tasks_today_count",columnList = "project_id,completed,parent_id,due_date"),
+        @Index(name="idx_tasks_inbox_count",columnList = "member_id,completed,parent_id,project_id"),
+        @Index(name="idx_tasks_parent_completed",columnList = "parent_id,completed")
 })
 public class Task extends BaseTimeEntity {
     @Id

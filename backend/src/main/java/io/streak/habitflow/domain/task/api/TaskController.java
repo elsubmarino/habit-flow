@@ -9,6 +9,7 @@ import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.global.aop.LoginMemberId;
 import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.common.constant.PageSizeConstants;
+import io.streak.habitflow.global.util.HashidsProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -32,6 +33,7 @@ import java.util.List;
 public class TaskController {
     private final TaskService taskService;
     private final CommentService commentService;
+    private final HashidsProvider hashidsProvider;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
@@ -81,8 +83,9 @@ public class TaskController {
     public ResponseEntity<TaskResponse.Detail> updateProject(@PathVariable RoutingId taskId,
                                                       @RequestBody @Valid TaskRequest.UpdateProject request,
                                                       @LoginMemberId Long loginMemberId) {
-        long realTaskId = taskId.value();
-        return ResponseEntity.ok(taskService.updateProject(realTaskId, request.projectId(), loginMemberId));
+        Long realTaskId = taskId.value();
+        Long realProjectId = hashidsProvider.decode(request.projectId());
+        return ResponseEntity.ok(taskService.updateProject(realTaskId, realProjectId, loginMemberId));
     }
 
     @DeleteMapping("/{taskId}")

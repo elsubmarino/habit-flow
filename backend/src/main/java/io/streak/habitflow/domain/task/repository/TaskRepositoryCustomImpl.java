@@ -55,6 +55,10 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .where(projectMember.member.id.eq(memberId))
                 .fetch();
 
+        if(ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         return
                 queryFactory
                         .select(Projections.constructor(
@@ -495,6 +499,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .from(projectMember)
                 .where(projectMember.member.id.eq(memberId))
                 .fetch();
+        if(projectIds == null || projectIds.isEmpty()) return Collections.emptyList();
         return queryFactory
                 .select(
                         task.dueDate.year(),

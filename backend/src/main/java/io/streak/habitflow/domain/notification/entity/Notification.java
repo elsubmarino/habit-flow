@@ -12,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Getter
-@Table(name="notifications")
+@Table(name="notifications",indexes = {@Index(name="idx_notification_receiver_member_id",columnList = "receiver_member_id")})
 public class Notification extends BaseCreatedTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

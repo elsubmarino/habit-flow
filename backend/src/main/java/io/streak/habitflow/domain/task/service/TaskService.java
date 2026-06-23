@@ -653,7 +653,7 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updateProject(Long taskId, String projectId, Long memberId){
+    public TaskResponse.Detail updateProject(Long taskId, Long projectId, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
         List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
@@ -663,20 +663,9 @@ public class TaskService {
         }).toList();
         String encodedId = hashidsProvider.encode(task.getId());
 
-        if(projectId != null){
-            long realProjectId = hashidsProvider.decode(projectId);
-            if(task.getProject().getId() == realProjectId){
-                return taskMapper.toDetail(task,encodedId,summaries);
-            }
-        }else if(task.getProject().getId() == null){
-            return taskMapper.toDetail(task,encodedId,summaries);
-        }
-
-        long realProjectId = hashidsProvider.decode(projectId);
-
         Project project = null;
         if(projectId != null) {
-            project = projectRepository.findById(realProjectId)
+            project = projectRepository.findById(projectId)
                     .orElseThrow();
             String oldProjectName = project.getName();
             task.updateProject(project);
