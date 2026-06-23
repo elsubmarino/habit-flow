@@ -1,9 +1,14 @@
 import { apiClient } from './client';
 import { dedupeInFlight } from './inFlight';
-import { buildActivityLogCursorParams, ACTIVITY_LOG_PAGE_SIZE } from './pagination';
+import { ACTIVITY_LOG_PAGE_SIZE } from './pagination';
 import type { EntityId, ActivityLogDto } from './types';
 import { parseSlicePage, type PaginatedResult, type SpringSlice } from './slice';
 import { normalizeActivityLog, type ActivityLogEntry } from '../utils/activityLogMessages';
+import {
+    activityLogSearchKey,
+    buildActivityLogSearchQuery,
+    type ActivityLogSearchParams,
+} from './activityLogSearch';
 
 function mapActivityLogPage(
     data: SpringSlice<ActivityLogDto>,
@@ -18,20 +23,33 @@ function mapActivityLogPage(
 export async function fetchActivityLogs(
     lastActivityLogId?: EntityId,
     size = ACTIVITY_LOG_PAGE_SIZE,
+    search?: ActivityLogSearchParams,
 ): Promise<PaginatedResult<ActivityLogEntry>> {
-    if (lastActivityLogId == null) {
-        return dedupeInFlight(`activity-logs:first:${size}`, async () => {
-            const { data } = await apiClient.get<SpringSlice<ActivityLogDto>>('/api/activity-logs', {
-                params: buildActivityLogCursorParams(undefined, size),
-            });
-            return mapActivityLogPage(data);
-        });
-    }
+    const searchQuery = buildActivityLogSearchQuery(search);
+    const cacheKey = [
+        'activity-logs',
+        lastActivityLogId ?? 'first',
+        size,
+        activityLogSearchKey(search),
+    ].join(':');
 
-    return dedupeInFlight(`activity-logs:${lastActivityLogId}:${size}`, async () => {
+    return dedupeInFlight(cacheKey, async () => {
+        const params: Record<string, string | number | string[]> = {
+            size,
+            ...searchQuery,
+        };
+        if (lastActivityLogId != null) {
+            params.lastActivityLogId = lastActivityLogId;
+        }
+
         const { data } = await apiClient.get<SpringSlice<ActivityLogDto>>('/api/activity-logs', {
-            params: buildActivityLogCursorParams(lastActivityLogId, size),
+            params,
+            paramsSerializer: {
+                indexes: null,
+            },
         });
         return mapActivityLogPage(data);
     });
 }
+
+export type { ActivityLogSearchParams };

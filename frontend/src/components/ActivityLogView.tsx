@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Project } from '../store/habitSlice';
-import { fetchActivityLogs } from '../api/activityApi';
+import { fetchActivityLogs, type ActivityLogSearchParams } from '../api/activityApi';
+import { ACTIVITY_LOG_PAGE_SIZE } from '../api/pagination';
+import { activityLogSearchKey } from '../api/activityLogSearch';
 import { fetchMember } from '../api/memberApi';
 import type { ActivityType, EntityId } from '../api/types';
 import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
@@ -9,11 +11,12 @@ import {
     activityBadge,
     formatActivityLogMessage,
     isSelfActivityActor,
-    matchesActivityProjectFilter,
     resolveCurrentMemberId,
     type ActivityLogEntry,
 } from '../utils/activityLogMessages';
 import { applyMemberProfile } from '../utils/userProfile';
+import ActivityLogCheckboxFilter from './ActivityLogCheckboxFilter';
+import ActivityLogDateRangePicker from './ActivityLogDateRangePicker';
 
 const ACTOR_AVATAR_COLORS = ['#4073ff', '#299438', '#db4c3f', '#eb8909', '#8b5cf6'];
 
@@ -25,17 +28,12 @@ function actorAvatarColor(actorId: EntityId): string {
     return ACTOR_AVATAR_COLORS[Math.abs(hash) % ACTOR_AVATAR_COLORS.length]!;
 }
 
-type ProjectFilter = 'all' | EntityId;
-type ActivityFilter = 'all' | ActivityType;
-type DateFilter = 'all' | 'today' | 'week';
-
 interface ActivityLogViewProps {
     projects: Project[];
     onOpenTask?: (taskId: EntityId) => void;
 }
 
-const ACTIVITY_FILTER_OPTIONS: { value: ActivityFilter; label: string }[] = [
-    { value: 'all', label: '모든 활동' },
+const ACTIVITY_FILTER_OPTIONS: { value: ActivityType; label: string }[] = [
     { value: 'ADDED', label: '추가' },
     { value: 'COMPLETED', label: '완료' },
     { value: 'UNCOMPLETED', label: '완료 취소' },
@@ -45,6 +43,35 @@ const ACTIVITY_FILTER_OPTIONS: { value: ActivityFilter; label: string }[] = [
     { value: 'UPDATED', label: '수정' },
     { value: 'DELETED', label: '삭제' },
 ];
+
+function buildSearchParams(
+    selectedProjectIds: Set<EntityId>,
+    selectedActivityTypes: Set<ActivityType>,
+    fromDate: string | null,
+    toDate: string | null,
+): ActivityLogSearchParams | undefined {
+    const params: ActivityLogSearchParams = {};
+    let hasFilter = false;
+
+    if (selectedProjectIds.size > 0) {
+        params.targetType = 'PROJECT';
+        params.targetIds = [...selectedProjectIds];
+        hasFilter = true;
+    }
+    if (selectedActivityTypes.size > 0) {
+        params.activityType = [...selectedActivityTypes];
+        hasFilter = true;
+    }
+    if (fromDate) {
+        params.fromDate = fromDate;
+        if (toDate && toDate !== fromDate) {
+            params.toDate = toDate;
+        }
+        hasFilter = true;
+    }
+
+    return hasFilter ? params : undefined;
+}
 
 const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
     const [profileVersion, setProfileVersion] = useState(0);
@@ -56,9 +83,21 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
     const [hasNext, setHasNext] = useState(false);
     const [nextCursor, setNextCursor] = useState<EntityId | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [projectFilter, setProjectFilter] = useState<ProjectFilter>('all');
-    const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
-    const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+    const [selectedProjectIds, setSelectedProjectIds] = useState<Set<EntityId>>(() => new Set());
+    const [selectedActivityTypes, setSelectedActivityTypes] = useState<Set<ActivityType>>(() => new Set());
+    const [fromDate, setFromDate] = useState<string | null>(null);
+    const [toDate, setToDate] = useState<string | null>(null);
+
+    const projectOptions = useMemo(
+        () => projects.map(project => ({ value: project.id, label: project.name })),
+        [projects],
+    );
+
+    const searchParams = useMemo(
+        () => buildSearchParams(selectedProjectIds, selectedActivityTypes, fromDate, toDate),
+        [selectedProjectIds, selectedActivityTypes, fromDate, toDate],
+    );
+    const searchKey = activityLogSearchKey(searchParams);
 
     useEffect(() => {
         let active = true;
@@ -79,8 +118,11 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
         let active = true;
         setLoading(true);
         setLoadMoreStatus('idle');
+        setItems([]);
+        setHasNext(false);
+        setNextCursor(null);
 
-        void fetchActivityLogs()
+        void fetchActivityLogs(undefined, ACTIVITY_LOG_PAGE_SIZE, searchParams)
             .then(page => {
                 if (!active) return;
                 setItems(page.content);
@@ -102,13 +144,13 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
         return () => {
             active = false;
         };
-    }, []);
+    }, [searchKey, searchParams]);
 
     const handleLoadMore = useCallback(() => {
         if (nextCursor == null || loadMoreStatus === 'loading') return;
 
         setLoadMoreStatus('loading');
-        void fetchActivityLogs(nextCursor)
+        void fetchActivityLogs(nextCursor, ACTIVITY_LOG_PAGE_SIZE, searchParams)
             .then(page => {
                 setItems(prev => {
                     const existingIds = new Set(prev.map(item => item.id));
@@ -123,7 +165,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
                 setError(err instanceof Error ? err.message : '활동 내역을 더 불러오지 못했습니다.');
                 setLoadMoreStatus('failed');
             });
-    }, [loadMoreStatus, nextCursor]);
+    }, [loadMoreStatus, nextCursor, searchParams]);
 
     const loadMoreSentinelRef = useInfiniteScroll(
         !loading && hasNext,
@@ -133,32 +175,15 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
         scrollBodyRef,
     );
 
-    const filtered = useMemo(() => {
-        const now = new Date();
-        const todayKey = now.toISOString().slice(0, 10);
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
-        return items.filter(entry => {
-            if (projectFilter !== 'all' && !matchesActivityProjectFilter(entry, projectFilter)) {
-                return false;
-            }
-            if (activityFilter !== 'all' && entry.activityType !== activityFilter) return false;
-            const created = new Date(entry.createdAt);
-            if (dateFilter === 'today' && entry.createdAt.slice(0, 10) !== todayKey) return false;
-            if (dateFilter === 'week' && created < weekAgo) return false;
-            return true;
-        });
-    }, [items, projectFilter, activityFilter, dateFilter]);
-
     const grouped = useMemo(() => {
         const map = new Map<string, ActivityLogEntry[]>();
-        for (const entry of filtered) {
+        for (const entry of items) {
             const key = entry.createdAt.slice(0, 10);
             if (!map.has(key)) map.set(key, []);
             map.get(key)!.push(entry);
         }
         return [...map.entries()].sort(([a], [b]) => b.localeCompare(a));
-    }, [filtered]);
+    }, [items]);
 
     const exportMarkdown = () => {
         const exportedAt = new Date().toLocaleString('ko-KR');
@@ -166,7 +191,7 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
             '# HabitFlow 활동 보고',
             '',
             `-보낸 시각: ${exportedAt}`,
-            `- 총 ${filtered.length}건`,
+            `- 총 ${items.length}건`,
             '',
         ];
 
@@ -209,47 +234,28 @@ const ActivityLogView: React.FC<ActivityLogViewProps> = ({ projects }) => {
                             <option value="all">모든 작업 영역</option>
                         </select>
                     </label>
-                    <label className="activity-filter">
-                        <span className="activity-filter-icon" aria-hidden>#</span>
-                        <select
-                            value={String(projectFilter)}
-                            onChange={e => {
-                                const v = e.target.value;
-                                setProjectFilter(v === 'all' ? 'all' : v);
-                            }}
-                        >
-                            <option value="all">모든 프로젝트</option>
-                            {projects.map(p => (
-                                <option key={p.id} value={String(p.id)}>
-                                    {p.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label className="activity-filter">
-                        <span className="activity-filter-icon" aria-hidden>≡</span>
-                        <select
-                            value={activityFilter}
-                            onChange={e => setActivityFilter(e.target.value as ActivityFilter)}
-                        >
-                            {ACTIVITY_FILTER_OPTIONS.map(opt => (
-                                <option key={opt.value} value={opt.value}>
-                                    {opt.label}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label className="activity-filter">
-                        <span className="activity-filter-icon" aria-hidden>📅</span>
-                        <select
-                            value={dateFilter}
-                            onChange={e => setDateFilter(e.target.value as DateFilter)}
-                        >
-                            <option value="all">모든 날짜</option>
-                            <option value="today">오늘</option>
-                            <option value="week">지난 7일</option>
-                        </select>
-                    </label>
+                    <ActivityLogCheckboxFilter
+                        icon="#"
+                        allLabel="모든 프로젝트"
+                        options={projectOptions}
+                        selected={selectedProjectIds}
+                        onChange={setSelectedProjectIds}
+                    />
+                    <ActivityLogCheckboxFilter
+                        icon="≡"
+                        allLabel="모든 활동"
+                        options={ACTIVITY_FILTER_OPTIONS}
+                        selected={selectedActivityTypes}
+                        onChange={setSelectedActivityTypes}
+                    />
+                    <ActivityLogDateRangePicker
+                        fromDate={fromDate}
+                        toDate={toDate}
+                        onChange={({ fromDate: nextFrom, toDate: nextTo }) => {
+                            setFromDate(nextFrom);
+                            setToDate(nextTo);
+                        }}
+                    />
                 </div>
             </header>
 
