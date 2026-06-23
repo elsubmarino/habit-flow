@@ -11,7 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Getter
-@Table(name="attachments")
+@Table(name="attachments",indexes = {@Index(name = "idx_attachments_comment",columnList = "comment_id")})
 public class Attachment extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
