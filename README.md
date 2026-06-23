@@ -5,19 +5,18 @@
 
 - **목적:** 대용량 트래픽 병목 제어 및 모던 백엔드(Spring Boot 3.x / JPA) 기술 내재화
 ---
-- ## 핵심 트러블슈팅 및 성능 최적화
+## 핵심 트러블슈팅 및 성능 최적화
 
 단순한 기능 구현을 넘어, 데이터베이스의 실행 계획(EXPLAIN)을 분석하고 대용량 트래픽 환경을 고려한 아키텍처 개선에 집중했습니다.
 
 ### 1. 커버링 인덱스 페이징을 통한 조회 성능 극대화 (Filesort 제거)
-* **문제 상황 (Before):** 다중 프로젝트의 테스크 목록을 커서 페이징으로 조회할 때, `ORDER BY`와 다중 조건(`IN` 절)으로 인해 인덱스를 타지 못하고 5만 건의 데이터를 메모리에 올려 정렬하는 `Using filesort` 대참사 발생.
+* **문제 상황 (Before):** 다중 프로젝트의 태스크 목록을 커서 페이징으로 조회할 때, `ORDER BY`와 다중 조건(`IN` 절)으로 인해 인덱스를 타지 못하고 5만 건의 데이터를 메모리에 올려 정렬하는 `Using filesort` 대참사 발생.
 * **해결 과정:**
   * 조인(JOIN)으로 인해 DB 옵티마이저가 드라이빙 테이블을 잘못 잡는 문제를 파악.
   * 쿼리를 2단계로 분리(지연 조인 패턴 적용). 1차 쿼리에서 조인을 끊고 조건에 맞는 타겟 ID 21개만 커버링 인덱스로 0.001초 만에 추출.
   * 2차 쿼리에서 추출한 ID를 `IN` 절로 넘겨 `type: const` 및 `ref` 로 상세 데이터를 가볍게 조립.
-* **결과 (After):** 
-  *  **개선 전:** 5만 건 Table Full Scan 및 디스크 정렬 발생
-  *  **개선 후:** Index Range Scan으로 타겟 모수 5건으로 압축. 디스크 I/O를 원천 차단하여 조회 성능 압도적 개선.
+* **결과 (After):** * **개선 전:** 5만 건 Table Full Scan 및 디스크 정렬 발생
+  * **개선 후:** Index Range Scan으로 타겟 모수 5건으로 압축. 디스크 I/O를 원천 차단하여 조회 성능 압도적 개선.
 
 ### 2. Spring Security 비동기 스레드 컨텍스트 증발 이슈 해결
 * **문제 상황:** SSE(Server-Sent Events) 실시간 알림 연결 타임아웃(50초) 시, Tomcat 비동기 스레드에 JWT 인증 컨텍스트가 전파되지 않아 엉뚱한 `Access Denied(403)` 예외와 로그 노이즈 발생.
@@ -41,8 +40,7 @@
 |ORM / Query | Spring Data JPA, QueryDSL | 동적 커서 페이징 처리 및 컴파일 타임의 타입 안정성 확보|
 |보안 | Spring Security, JWT | 무상태(Stateless) 기반의 빠르고 확장성 있는 인증/인가 처리|
 |보안 | Hashids | DB의 Auto Increment PK 노출을 막고 IDOR 해킹 공격 원천 차단 |
-|실시간 | SSE(Server-Sent Events) | 테스크 알림 등 서버 -> 클라이언트 단방향 실시간 푸시 최적화
-
+|실시간 | SSE(Server-Sent Events) | 태스크 알림 등 서버 -> 클라이언트 단방향 실시간 푸시 최적화|
 
 ### 로컬 개발 & 인프라 아키텍처
 
@@ -60,8 +58,9 @@
 - **컨테이너 배포:** Docker 이미지 빌드 및 AWS EC2 인스턴스 환경으로의 배포
 - **웹 서버:** Nginx 리버스 프록시 도입 및 Let's Encrypt를 통한 HTTPS 보안 적용
 
-- **현재 진행 상황 (26년 6월 기준)** - **[Core]** Spring Security + JWT 무상태 인증 및 도메인 모델링 완료
-  - **[Query]** QueryDSL 다중 조건 동적 쿼리 및 `default_batch_fetch_size` 최적화 완료
-  - **[Performance]** 더미 데이터(Task 10만, Log 50만) Bulk Insert 및 JMeter 1만 동시 접속 부하 테스트 환경 구축 완료
-  - **[Troubleshooting]** 트래픽 동시성 제어를 위한 Redis 분산 락 도입
-  - **[Next]** Fetch Join 기반 N+1 완전 해소 및 AWS 프리티어 배포 예정 (7월 완료 목표)
+### 현재 진행 상황 (26년 6월 기준)
+- **[Core]** Spring Security + JWT 무상태 인증 및 도메인 모델링 완료
+- **[Query]** QueryDSL 다중 조건 동적 쿼리 및 `default_batch_fetch_size` 최적화 완료
+- **[Performance]** 더미 데이터(Task 10만, Log 50만) Bulk Insert 및 JMeter 1만 동시 접속 부하 테스트 환경 구축 완료
+- **[Troubleshooting]** 트래픽 동시성 제어를 위한 Redis 분산 락 도입
+- **[Next]** Fetch Join 기반 N+1 완전 해소 및 AWS 프리티어 배포 예정 (7월 완료 목표)
