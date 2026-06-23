@@ -1304,21 +1304,40 @@ export const addSubtask = createAsyncThunk(
         description,
         projectId,
         dueDate,
+        dueTime24,
+        hasTime,
+        recurrenceLabel,
+        labelIds,
+        file,
+        priority,
     }: {
         habitId: EntityId;
         name: string;
         description: string;
         projectId?: EntityId | null;
         dueDate?: string | null;
+        dueTime24?: string | null;
+        hasTime?: boolean;
+        recurrenceLabel?: string | null;
+        labelIds?: EntityId[];
+        file?: File | null;
+        priority?: 1 | 2 | 3 | 4;
     }, { dispatch }) => {
+        const recurrence = repeatLabelToRecurrence(recurrenceLabel, dueDate);
         const task = await taskApi.createTask({
             name,
             description,
             parentId: habitId,
             projectId: projectId ?? null,
             dueDate: dueDate ?? null,
+            dueTime24,
+            hasTime,
+            labelIds: labelIds ?? [],
+            file: file ?? null,
+            priorityType: priorityToApi(priority),
+            ...recurrence,
         });
-        void dispatch(invalidateSidebarAggregates({ projects: true, nav: true }));
+        void dispatch(invalidateSidebarAggregates({ projects: true, labels: true, nav: true }));
         return {
             habitId,
             subtask: {
