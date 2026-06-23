@@ -1,5 +1,7 @@
-# habit-flow (현재 고도화 진행 중)
-> 트래픽 확장성과 데이터 정합성을 고려한 B2C 일정/습관 관리 백엔드 아키텍처 구축
+# habit-flow : B2C 일정/습관 관리 백엔드 아키텍처
+<img width="381" height="610" alt="Image" src="https://github.com/user-attachments/assets/e2a4b0fa-8c23-4f3f-a746-36a07a9c8fa8" />
+
+트래픽 확장성과 데이터 정합성을 고려한 B2C 일정/습관 관리 백엔드 아키텍처 구축
 
 - **목적:** 대용량 트래픽 병목 제어 및 모던 백엔드(Spring Boot 3.x / JPA) 기술 내재화
 ---
@@ -8,12 +10,13 @@
 단순한 기능 구현을 넘어, 데이터베이스의 실행 계획(EXPLAIN)을 분석하고 대용량 트래픽 환경을 고려한 아키텍처 개선에 집중했습니다.
 
 ### 1. 커버링 인덱스 페이징을 통한 조회 성능 극대화 (Filesort 제거)
-* **문제 상황 (Before):** * 다중 프로젝트의 테스크 목록을 커서 페이징으로 조회할 때, `ORDER BY`와 다중 조건(`IN` 절)으로 인해 인덱스를 타지 못하고 5만 건의 데이터를 메모리에 올려 정렬하는 `Using filesort` 대참사 발생.
+* **문제 상황 (Before):** 다중 프로젝트의 테스크 목록을 커서 페이징으로 조회할 때, `ORDER BY`와 다중 조건(`IN` 절)으로 인해 인덱스를 타지 못하고 5만 건의 데이터를 메모리에 올려 정렬하는 `Using filesort` 대참사 발생.
 * **해결 과정:**
   * 조인(JOIN)으로 인해 DB 옵티마이저가 드라이빙 테이블을 잘못 잡는 문제를 파악.
   * 쿼리를 2단계로 분리(지연 조인 패턴 적용). 1차 쿼리에서 조인을 끊고 조건에 맞는 타겟 ID 21개만 커버링 인덱스로 0.001초 만에 추출.
   * 2차 쿼리에서 추출한 ID를 `IN` 절로 넘겨 `type: const` 및 `ref` 로 상세 데이터를 가볍게 조립.
-* **결과 (After):** *  **개선 전:** 5만 건 Table Full Scan 및 디스크 정렬 발생
+* **결과 (After):** 
+  *  **개선 전:** 5만 건 Table Full Scan 및 디스크 정렬 발생
   *  **개선 후:** Index Range Scan으로 타겟 모수 5건으로 압축. 디스크 I/O를 원천 차단하여 조회 성능 압도적 개선.
 
 ### 2. Spring Security 비동기 스레드 컨텍스트 증발 이슈 해결
@@ -29,18 +32,16 @@
   * `task_id`를 기반으로 고유한 Lock Key를 생성하여, 첫 번째 요청이 처리되는 동안 후속 중복 요청은 대기(또는 즉시 실패/Idempotency)하도록 AOP 기반의 커스텀 어노테이션(`@DistributedLock`) 구현.
 * **결과:** 다중 서버 환경 및 초당 수백 건의 동시 요청 상황에서도 데이터 정합성 100% 보장 및 부수 로직(통계, 포인트 연산 등)의 중복 실행 원천 차단.
 
-<img width="381" height="610" alt="Image" src="https://github.com/user-attachments/assets/e2a4b0fa-8c23-4f3f-a746-36a07a9c8fa8" />
-
 |항목|기술|도입 배경 및 근거|
 |---|---|---------------|
 |언어|Java 17|레코드(Record)를 활용한 DTO 불변성 보장 및 최신 문법 활용|
 |프레임워크|Spring Boot 3.5.14 | Spring Security 6 호환 및 웹 애플리케이션의 견고한 생태계|
 |데이터베이스|MariaDB 10.11 | 커버링 인덱스를 활용한 페이징 쿼리 최적화 및 안정적인 RDBMS|
 |Cache/Lock | Redis (Redisson) | 분산 락(Distributed Lock)을 활용한 동시성 제어 및 병목 해소|
-|ORM / Query | Spring Data JPA, QueryDSL | 동적 커서 펭리징 처리 및 컴파일 타임의 타입 안정성 확보|
-|보안 | Spring Security, JWT | 무상태(Stateless 기반의 빠르고 확장성 있는 인증/인가 처리|
+|ORM / Query | Spring Data JPA, QueryDSL | 동적 커서 페이징 처리 및 컴파일 타임의 타입 안정성 확보|
+|보안 | Spring Security, JWT | 무상태(Stateless) 기반의 빠르고 확장성 있는 인증/인가 처리|
 |보안 | Hashids | DB의 Auto Increment PK 노출을 막고 IDOR 해킹 공격 원천 차단 |
-|실시간 | SSE(Server-Sent Events) | 테스크 알림 등 서버 -> 클라이언트 단방향 실시간 푸시 취적화
+|실시간 | SSE(Server-Sent Events) | 테스크 알림 등 서버 -> 클라이언트 단방향 실시간 푸시 최적화
 
 
 ### 로컬 개발 & 인프라 아키텍처
@@ -59,7 +60,7 @@
 - **컨테이너 배포:** Docker 이미지 빌드 및 AWS EC2 인스턴스 환경으로의 배포
 - **웹 서버:** Nginx 리버스 프록시 도입 및 Let's Encrypt를 통한 HTTPS 보안 적용
 
-- **현재 진행 상황 (24년 6월 기준)** - **[Core]** Spring Security + JWT 무상태 인증 및 도메인 모델링 완료
+- **현재 진행 상황 (26년 6월 기준)** - **[Core]** Spring Security + JWT 무상태 인증 및 도메인 모델링 완료
   - **[Query]** QueryDSL 다중 조건 동적 쿼리 및 `default_batch_fetch_size` 최적화 완료
   - **[Performance]** 더미 데이터(Task 10만, Log 50만) Bulk Insert 및 JMeter 1만 동시 접속 부하 테스트 환경 구축 완료
   - **[Troubleshooting]** 트래픽 동시성 제어를 위한 Redis 분산 락 도입
