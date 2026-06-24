@@ -54,9 +54,7 @@
 
 ### 향후 인프라 고도화 계획 (To-Be)
 
-- **CI/CD 파이프라인:** GitHub Actions를 활용한 테스트 및 빌드 자동화
 - **컨테이너 배포:** Docker 이미지 빌드 및 AWS EC2 인스턴스 환경으로의 배포
-- **웹 서버:** Nginx 리버스 프록시 도입 및 Let's Encrypt를 통한 HTTPS 보안 적용
 
 ### 현재 진행 상황 (26년 6월 기준)
 - **[Core]** Spring Security + JWT 무상태 인증 및 도메인 모델링 완료
