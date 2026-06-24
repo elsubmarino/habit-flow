@@ -35,7 +35,7 @@
 |---|---|---------------|
 |언어|Java 17||
 |프레임워크|Spring Boot 3.5.14 | |
-|데이터베이스|MariaDB 10.11 | 커버링 인덱스를 활용한 페이징 쿼리 최적화 및 안정적인 RDBMS|
+|데이터베이스|MariaDB 10.11 | |
 |Cache/Lock | Redis (Redisson) | 분산 락(Distributed Lock)을 활용한 동시성 제어 및 병목 해소|
 |ORM / Query | Spring Data JPA, QueryDSL | 동적 커서 페이징 처리 및 컴파일 타임의 타입 안정성 확보|
 |보안 | Spring Security, JWT | 무상태(Stateless) 기반의 빠르고 확장성 있는 인증/인가 처리|
