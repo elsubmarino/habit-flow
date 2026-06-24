@@ -15,31 +15,31 @@
   * 조인(JOIN)으로 인해 DB 옵티마이저가 드라이빙 테이블을 잘못 잡는 문제를 파악.
   * 쿼리를 2단계로 분리(지연 조인 패턴 적용). 1차 쿼리에서 조인을 끊고 조건에 맞는 타겟 ID 21개만 커버링 인덱스로 0.001초 만에 추출.
   * 2차 쿼리에서 추출한 ID를 `IN` 절로 넘겨 `type: const` 및 `ref` 로 상세 데이터를 가볍게 조립.
-* **결과 (After):** * **개선 전:** 5만 건 Table Full Scan 및 디스크 정렬 발생
-  * **개선 후:** Index Range Scan으로 타겟 모수 5건으로 압축. 디스크 I/O를 원천 차단하여 조회 성능 압도적 개선.
+* **결과 (After):** * **개선 전:** Table Full Scan 및 디스크 정렬 발생
+  * **개선 후:** Index Range Scan으로 타겟 모수 5건으로 압축. 디스크 I/O를 원천 차단하여 조회 성능 개선.
 
 ### 2. Spring Security 비동기 스레드 컨텍스트 증발 이슈 해결
 * **문제 상황:** SSE(Server-Sent Events) 실시간 알림 연결 타임아웃(50초) 시, Tomcat 비동기 스레드에 JWT 인증 컨텍스트가 전파되지 않아 엉뚱한 `Access Denied(403)` 예외와 로그 노이즈 발생.
 * **해결 과정:** Security 설정에서 `DispatcherType.ASYNC` 타입의 요청을 시큐리티 필터 체인에서 통과(`permitAll`)시키도록 구조 변경 및 SseEmitter 타임아웃 콜백 로직 안전장치 구현.
-* **결과:** 의미 없는 403 에러 로그 완전 소멸 및 좀비 커넥션으로 인한 메모리 누수(OOM) 완벽 방어.
+* **결과:** 의미 없는 403 에러 로그를 제거하고, 좀비 커넥션으로 인한 메모리 누수(OOM) 가능성을 차단
 
 ### 3. Redisson 분산 락을 활용한 동시성 이슈(따닥) 완벽 제어
 * **문제 상황:** 사용자의 네트워크 지연 및 중복 클릭(따닥)으로 인해 `toggleCompletion` API가 동시에 여러 번 호출될 경우, 통계 데이터 및 상태 업데이트 로직에 Race Condition이 발생하여 데이터 무결성이 깨지는 위험 발견.
 * **해결 과정:**
   * DB 락(Pessimistic/Optimistic)과 Redis 기반 락을 비교 분석. 
-  * 스핀 락(Spin Lock)으로 인한 Redis 부하를 방지하기 위해, Pub/Sub 방식을 지원하는 **Redisson 분산 락**을 도입.
+  * Redis Redisson을 활용한 분산 락(Distributed Lock)을 적용하여, 다중 서버 환경에서 중복 클릭(따닥)으로 인한 데이터 무결성 문제 방지.
   * `task_id`를 기반으로 고유한 Lock Key를 생성하여, 첫 번째 요청이 처리되는 동안 후속 중복 요청은 대기(또는 즉시 실패/Idempotency)하도록 AOP 기반의 커스텀 어노테이션(`@DistributedLock`) 구현.
 * **결과:** 다중 서버 환경 및 초당 수백 건의 동시 요청 상황에서도 데이터 정합성 100% 보장 및 부수 로직(통계, 포인트 연산 등)의 중복 실행 원천 차단.
 
 |항목|기술|도입 배경 및 근거|
 |---|---|---------------|
-|언어|Java 17|레코드(Record)를 활용한 DTO 불변성 보장|
-|프레임워크|Spring Boot 3.5.14 | Spring Security 6 호환 및 웹 애플리케이션의 견고한 생태계|
+|언어|Java 17||
+|프레임워크|Spring Boot 3.5.14 | |
 |데이터베이스|MariaDB 10.11 | 커버링 인덱스를 활용한 페이징 쿼리 최적화 및 안정적인 RDBMS|
 |Cache/Lock | Redis (Redisson) | 분산 락(Distributed Lock)을 활용한 동시성 제어 및 병목 해소|
 |ORM / Query | Spring Data JPA, QueryDSL | 동적 커서 페이징 처리 및 컴파일 타임의 타입 안정성 확보|
 |보안 | Spring Security, JWT | 무상태(Stateless) 기반의 빠르고 확장성 있는 인증/인가 처리|
-|보안 | Hashids | DB의 Auto Increment PK 노출을 막고 IDOR 해킹 공격 원천 차단 |
+|보안 | Hashids | DB의 Auto Increment PK를 URL에 직접 노출하지 않도록 Hashids를 활용한 난독화(Obfuscation) 적용 |
 |실시간 | SSE(Server-Sent Events) | 태스크 알림 등 서버 -> 클라이언트 단방향 실시간 푸시 최적화|
 
 ### 로컬 개발 & 인프라 아키텍처
