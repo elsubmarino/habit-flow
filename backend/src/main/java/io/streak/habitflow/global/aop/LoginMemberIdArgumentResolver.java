@@ -1,7 +1,6 @@
 package io.streak.habitflow.global.aop;
 
 import io.streak.habitflow.global.security.dto.UserPrincipal;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
@@ -21,9 +20,8 @@ public class LoginMemberIdArgumentResolver implements HandlerMethodArgumentResol
                 Long.class.equals(parameter.getParameterType());
     }
 
-    @Nullable
     @Override
-    public Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer, NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
+    public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer, NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication == null || !authentication.isAuthenticated() ||
             "anonymousUser".equals(authentication.getPrincipal())){

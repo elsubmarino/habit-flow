@@ -6,11 +6,7 @@ import io.streak.habitflow.domain.task.entity.Task;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
-
 public interface TaskRepository extends JpaRepository<Task,Long>, TaskRepositoryCustom {
-    List<Task> findByProjectId(Long projectId);
-
     long countByProject(Project project);
     long countByProjectAndMember(Project project, Member member);
 

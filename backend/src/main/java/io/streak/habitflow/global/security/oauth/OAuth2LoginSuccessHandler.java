@@ -58,7 +58,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         String targetUrl = UriComponentsBuilder
                 .fromUriString("http://localhost:3000/oauth2/redirect")
-                //.queryParam("token",accessToken)
+                .queryParam("token",accessToken)
                 .build()
                 .toString();
 

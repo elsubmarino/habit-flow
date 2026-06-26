@@ -41,6 +41,12 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
 
     @Override
     public List<ProjectSummaryQuery> findByMemberId(Long memberId) {
+        List<Long> projectIds = queryFactory
+                .select(projectMember.project.id)
+                .from(projectMember)
+                .where(projectMember.member.id.eq(memberId))
+                .fetch();
+
         return queryFactory
                 .select(Projections.constructor(
                         ProjectSummaryQuery.class,
@@ -53,7 +59,9 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                 .from(project)
                 .leftJoin(task).on(task.project.eq(project)
                         .and(task.completed.eq(false)))
-                .innerJoin(projectMember).on(projectMember.project.eq(project).and(projectMember.member.id.eq(memberId)))
+                .where(
+                        project.id.in(projectIds)
+                )
                 .groupBy(project.id)
                 .orderBy(project.sortOrder.asc())
                 .fetch();

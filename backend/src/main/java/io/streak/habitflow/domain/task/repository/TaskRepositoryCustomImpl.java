@@ -5,13 +5,13 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.task.dto.query.TaskSearchSummaryQuery;
 import io.streak.habitflow.domain.task.dto.query.TaskSummaryQuery;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.QTask;
-import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.CursorDirection;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
@@ -73,7 +73,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         .from(task)
                         .leftJoin(task.project,project)
                         .where(
-                                task.project.id.in(ids),
+                                task.project.id.in(ids).or(task.project.isNull().and(task.member.id.eq(memberId))),
                                 task.name.contains(keyword)
                         )
                         .limit(pageable.getPageSize())
@@ -221,14 +221,10 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .where(projectMember.member.id.eq(memberId))
                 .fetch();
 
-        if(projectIds.isEmpty()) {
-            return new ArrayList<>();
-        }
-
         List<Long> ids = queryFactory
                 .select(task.id)
                 .from(task)
-                .where( task.project.id.in(projectIds),
+                .where( task.project.id.in(projectIds).or(task.project.id.isNull()) ,
                         task.parent.isNull(),
                         task.completed.eq(false),
                         filterTypeEq(searchCondition.taskFilterType()),
@@ -483,16 +479,6 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public Optional<Task> findByIdWithProject(Long taskId) {
-        return Optional.ofNullable(queryFactory
-                .selectFrom(task)
-                .leftJoin(task.project, project).fetchJoin()
-                .innerJoin(projectMember).on(projectMember.project.eq(project)).fetchJoin()
-                .where(task.id.eq(taskId))
-                .fetchOne());
-    }
-
-    @Override
     public List<TaskResponse.UpcomingDateCount> countUpcomingTasksByDate(Long memberId, LocalDateTime fromDate, LocalDateTime toDate) {
         List<Long> projectIds = queryFactory
                 .select(projectMember.project.id)
@@ -547,22 +533,30 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .select(task.count())
                 .from(task)
                 .where(
+                        task.project.isNull(),
+                        task.parent.isNull(),
                         task.member.id.eq(memberId),
                         task.completed.eq(false),
-                        task.parent.isNull(),
                         filterTypeEqForCount(TaskFilterType.INBOX)
                 )
                 .fetchOne();
         Long todayTasksCount = queryFactory
                 .select(task.count())
                 .from(task)
-                .innerJoin(task.project,project)
-                .innerJoin(projectMember).on(projectMember.project.eq(project))
                 .where(
-                        projectMember.member.id.eq(memberId),
                         task.completed.eq(false),
                         task.parent.isNull(),
-                        filterTypeEqForCount(TaskFilterType.TODAY)
+                        filterTypeEqForCount(TaskFilterType.TODAY),
+                        task.project.isNull().and(task.member.id.eq(memberId))
+                                .or(task.project.isNotNull().and(
+                                        JPAExpressions.selectOne()
+                                                .from(projectMember)
+                                                .where(
+                                                        projectMember.project.id.eq(task.project.id),
+                                                        projectMember.member.id.eq(memberId)
+                                                )
+                                                .exists()
+                                ))
                 )
                 .fetchOne();
         return new TaskResponse.SidebarTasksCount(inboxTasksCount != null ? inboxTasksCount : 0L
