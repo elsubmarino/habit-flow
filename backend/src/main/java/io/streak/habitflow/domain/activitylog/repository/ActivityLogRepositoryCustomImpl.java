@@ -61,10 +61,6 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
         return null;
     }
 
-    private BooleanExpression memberIdsIn(List<Long> memberIds){
-        return (memberIds == null || memberIds.isEmpty() ? null : activityLog.member.id.in(memberIds));
-    }
-
     private BooleanExpression targetDateEq(LocalDate fromDate, LocalDate toDate){
         LocalDateTime fromDateTime;
         LocalDateTime toDateTime;

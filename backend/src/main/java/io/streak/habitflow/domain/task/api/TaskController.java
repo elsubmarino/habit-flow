@@ -70,9 +70,9 @@ public class TaskController {
     @PatchMapping("/{taskId}/labels")
     @Operation(summary = "라벨 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "라벨 업데이트 성공")})
-    public ResponseEntity<TaskResponse.Detail> updateLabels(@PathVariable RoutingId taskId,
-                                                       @RequestBody @Valid TaskRequest.UpdateLabel request,
-                                                       @LoginMemberId Long loginMemberId) {
+    public ResponseEntity<TaskResponse.Detail> updateTaskLabels(@PathVariable RoutingId taskId,
+                                                                @RequestBody @Valid TaskRequest.UpdateLabel request,
+                                                                @LoginMemberId Long loginMemberId) {
         long realTaskId = taskId.value();
         return ResponseEntity.ok(taskService.updateTaskLabels(realTaskId, request.labelIds(), loginMemberId));
     }
@@ -109,7 +109,7 @@ public class TaskController {
     @GetMapping("/sidebar-count")
     @Operation(summary = "사이드바 오늘,다음에 해당하는 카운트 수 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "사이드바 오늘,다음에 해당하는 카운트 수 조회 성공")})
-    public ResponseEntity<TaskResponse.SidebarTasksCount> getSidebarCount(@LoginMemberId Long loginMemberId) {
+    public ResponseEntity<TaskResponse.SidebarTasksCount> getSidebarTaskCount(@LoginMemberId Long loginMemberId) {
         return ResponseEntity.ok(taskService.getSidebarTaskCount(loginMemberId));
     }
 
@@ -218,7 +218,7 @@ public class TaskController {
     }
 
     @GetMapping("/upcoming/summary")
-    public ResponseEntity<List<TaskResponse.UpcomingDateCount>> getUpcomingSummary(
+    public ResponseEntity<List<TaskResponse.UpcomingDateCount>> getUpcomingDateCounts(
             @LoginMemberId Long loginMemberId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fromDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime toDate
@@ -231,10 +231,10 @@ public class TaskController {
     @GetMapping("/labels/{labelId}")
     @Operation(summary = "라벨별 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "라벨별 테스크 조회 성공")})
-    public ResponseEntity<TaskResponse.SummarySlice> getTasks(@LoginMemberId Long loginMemberId,
-                                                               @PathVariable RoutingId labelId,
-                                                              @ModelAttribute @Valid TaskRequest.Cursor cursor,
-                                                              @PageableDefault(size = PageSizeConstants.CURSOR_PAGING_SMALL) Pageable pageable){
+    public ResponseEntity<TaskResponse.SummarySlice> getTasksByLabel(@LoginMemberId Long loginMemberId,
+                                                                     @PathVariable RoutingId labelId,
+                                                                     @ModelAttribute @Valid TaskRequest.Cursor cursor,
+                                                                     @PageableDefault(size = PageSizeConstants.CURSOR_PAGING_SMALL) Pageable pageable){
         TaskResponse.SummarySlice summarySlice = taskService.getTasksByLabel(labelId.value(),loginMemberId,pageable,cursor);
         return ResponseEntity.ok(summarySlice);
     }

@@ -47,7 +47,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskSearchSummaryQuery> searchKeyword(String keyword, Long memberId, Pageable pageable) {
+    public List<TaskSearchSummaryQuery> searchByKeyword(String keyword, Long memberId, Pageable pageable) {
 
         List<Long> ids = queryFactory
                 .select(projectMember.project.id)
@@ -112,10 +112,10 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
             return new ArrayList<>();
         }
 
-        return getTaskListQueries(ids);
+        return findTaskSummariesByIds(ids);
     }
 
-    public List<TaskSummaryQuery> getTaskListQueries(List<Long> ids) {
+    public List<TaskSummaryQuery> findTaskSummariesByIds(List<Long> ids) {
         if(ids == null || ids.isEmpty()){
             return Collections.emptyList();
         }
@@ -248,7 +248,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
             return new ArrayList<>();
         }
 
-        return getTaskListQueries(ids);
+        return findTaskSummariesByIds(ids);
     }
 
     @Override
@@ -585,7 +585,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskSummaryQuery> findByLabel(Long labelId, Pageable pageable, Long loginMemberId) {
+    public List<TaskSummaryQuery> findTasksByLabelId(Long labelId, Pageable pageable, Long loginMemberId) {
         List<Long> ids =  queryFactory
                 .select(task.id)
                 .from(taskLabel)

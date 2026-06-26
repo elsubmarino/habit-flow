@@ -12,14 +12,14 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TaskRepositoryCustom {
-    List<TaskSearchSummaryQuery> searchKeyword(String keyword, Long memberId, Pageable pageable);
+    List<TaskSearchSummaryQuery> searchByKeyword(String keyword, Long memberId, Pageable pageable);
     List<TaskSummaryQuery> searchTasksByCondition(TaskRequest.SearchCondition searchCondition, TaskRequest.Cursor cursor, Long memberId, Pageable pageable);
     List<TaskSummaryQuery> searchInboxTasks(TaskRequest.SearchCondition searchCondition, TaskRequest.Cursor cursor, Long memberId, Pageable pageable);
     List<TaskSummaryQuery> findTasksByProject(Long projectId, Long memberId, Pageable pageable);
     TaskResponse.SidebarTasksCount countSidebarTasks(Long memberId);
     Optional<Task> findByIdWithProject(Long taskId);
     List<TaskResponse.UpcomingDateCount>countUpcomingTasksByDate(Long memberId, LocalDateTime fromDate, LocalDateTime toDate);
-    List<TaskSummaryQuery> getTaskListQueries(List<Long> ids);
+    List<TaskSummaryQuery> findTaskSummariesByIds(List<Long> ids);
     boolean existsByIdAndHasAccess(Long taskId, Long memberId);
-    List<TaskSummaryQuery> findByLabel(Long labelId, Pageable pageable, Long loginMemberId);
+    List<TaskSummaryQuery> findTasksByLabelId(Long labelId, Pageable pageable, Long loginMemberId);
 }

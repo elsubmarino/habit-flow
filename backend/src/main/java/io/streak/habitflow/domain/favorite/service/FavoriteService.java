@@ -15,9 +15,9 @@ public class FavoriteService {
     private final FavoriteRepository favoriteRepository;
     private final HashidsProvider hashidsProvider;
 
-    public List<FavoriteResponse.Summary> getFavoriteListByMemberId(Long memberId){
+    public List<FavoriteResponse.Summary> getFavorites(Long memberId){
 
-        List<FavoriteSummaryQuery> favoriteListQueries = favoriteRepository.findByMemberId(memberId);
+        List<FavoriteSummaryQuery> favoriteListQueries = favoriteRepository.findFavoritesByMemberId(memberId);
         return favoriteListQueries.stream()
                 .map(query->{
                     String encodedTargetId = hashidsProvider.encode(query.targetId());

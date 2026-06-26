@@ -45,7 +45,7 @@ public class LabelController {
             @RequestParam(value = "lastLabelId",required = false) RoutingId lastLabelId,
             @PageableDefault(size= PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
         Long realLastLabelId = (lastLabelId != null) ? lastLabelId.value() : null;
-        return ResponseEntity.ok(labelService.getLabels(realLastLabelId,loginMemberId,pageable));
+        return ResponseEntity.ok(labelService.getLabelPage(realLastLabelId,loginMemberId,pageable));
     }
 
     @GetMapping("/{labelId}")

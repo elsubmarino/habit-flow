@@ -43,7 +43,7 @@ public final class ProjectResponse {
                     .color(project.getColor())
                     .layoutType(project.getLayoutType())
                     .accessType(project.getAccessType())
-                    .parentId(project.getParentIdOrNull())
+                    .parentId(project.getParentId())
                     .parentName(project.getParentNameOrNull())
                     .favorite(favorite);
             return builder.build();

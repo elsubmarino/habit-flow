@@ -21,7 +21,7 @@ import static io.streak.habitflow.domain.task.entity.QTaskLabel.taskLabel;
 public class FavoriteRepositoryCustomImpl implements FavoriteRepositoryCustom {
     private final JPAQueryFactory queryFactory;
     @Override
-    public List<FavoriteSummaryQuery> findByMemberId(Long memberId) {
+    public List<FavoriteSummaryQuery> findFavoritesByMemberId(Long memberId) {
         QTask subTask = new QTask("subTask");
 
         return queryFactory

@@ -27,9 +27,9 @@ public class IntegratedSearchService {
 
     public IntegratedResponse.Search searchAll(String keyword, Long memberId, Pageable pageable) {
 
-        List<ProjectSearchSummaryQuery> projectListResponses = projectRepository.searchKeyword(keyword, memberId, pageable);
-        List<TaskSearchSummaryQuery> taskResponses = taskRepository.searchKeyword(keyword, memberId, pageable);
-        List<LabelSummaryQuery> labelListResponses = labelRepository.searchKeyword(keyword,memberId, pageable);
+        List<ProjectSearchSummaryQuery> projectListResponses = projectRepository.searchByKeyword(keyword, memberId, pageable);
+        List<TaskSearchSummaryQuery> taskResponses = taskRepository.searchByKeyword(keyword, memberId, pageable);
+        List<LabelSummaryQuery> labelListResponses = labelRepository.searchByKeyword(keyword,memberId, pageable);
         List<LabelResponse.Summary> summaries = labelListResponses.stream()
                 .map(label->{
                     String encodedId = hashidsProvider.encode(label.id());

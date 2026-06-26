@@ -27,7 +27,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
     private final HashidsProvider hashidsProvider;
 
     @Override
-    public List<LabelSummaryQuery> searchKeyword(String name, Long memberId, Pageable pageable) {
+    public List<LabelSummaryQuery> searchByKeyword(String name, Long memberId, Pageable pageable) {
         return queryFactory
                 .select(Projections.constructor(
                         LabelSummaryQuery.class,
@@ -46,7 +46,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
     }
 
     @Override
-    public List<Label> searchLabelsByCondition(Long labelId, Long memberId, Pageable pageable) {
+    public List<Label> findLabelsByMemberWithCursor(Long labelId, Long memberId, Pageable pageable) {
         return queryFactory
                 .selectFrom(label)
                 .where(
@@ -64,7 +64,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
     }
 
     @Override
-    public Map<Long, List<LabelResponse.Summary>> findLabelsByTaskIds(List<Long> taskIds) {
+    public Map<Long, List<LabelResponse.Summary>> findLabelSummariesByTaskIds(List<Long> taskIds) {
         if(taskIds == null || taskIds.isEmpty()){
             return Collections.emptyMap();
         }
@@ -101,7 +101,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
     }
 
     @Override
-    public List<LabelSummaryQuery> findByTask(Long taskId) {
+    public List<LabelSummaryQuery> findLabelSummariesByTaskId(Long taskId) {
         return queryFactory
                 .select(Projections.constructor(LabelSummaryQuery.class,
                         label.id,

@@ -22,7 +22,7 @@ public class ActivityLogEventListener {
     public void handleChanged(TaskChangedEvent taskChangedEvent) {
         log.info("[Async Event Check] 현재 쓰레드 : {} -> 로그 저장 시작", Thread.currentThread().getName());
 
-        activityLogService.create(taskChangedEvent);
+        activityLogService.recordTaskChange(taskChangedEvent);
     }
 
 }

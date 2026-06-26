@@ -64,7 +64,7 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenDto reissue(String refreshToken) {
+    public TokenDto refreshTokens(String refreshToken) {
         if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw new BadCredentialsException("만료되거나 올바르지 않은 Refresh Token 입니다.");
         }

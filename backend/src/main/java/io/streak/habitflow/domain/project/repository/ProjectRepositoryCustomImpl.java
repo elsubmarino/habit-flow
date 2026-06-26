@@ -19,7 +19,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<ProjectSearchSummaryQuery> searchKeyword(String keyword, Long memberId, Pageable pageable) {
+    public List<ProjectSearchSummaryQuery> searchByKeyword(String keyword, Long memberId, Pageable pageable) {
         return queryFactory
                 .select(
                         Projections.constructor(

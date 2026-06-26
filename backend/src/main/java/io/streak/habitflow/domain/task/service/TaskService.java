@@ -83,7 +83,7 @@ public class TaskService {
         Member member = memberRepository.getReferenceById(memberId);
 
         Task parentTask = null;
-        parentTask = getTask(request, parentTask);
+        parentTask = resolveParentTask(request, parentTask);
 
         Project project = null;
         if(request.projectId() != null){
@@ -195,7 +195,7 @@ public class TaskService {
         return taskMapper.toDetail(savedTask, encodedId, labelSummaryResponses);
     }
 
-    private Task getTask(TaskRequest.Create request, Task parentTask) {
+    private Task resolveParentTask(TaskRequest.Create request, Task parentTask) {
         if(request.parentId() != null){
             parentTask = taskRepository.findById(hashidsProvider.decode(request.parentId()))
                     .orElseThrow(()-> new EntityNotFoundException("존재하지 않는 테스크입니다."));
@@ -263,7 +263,7 @@ public class TaskService {
         }
 
         List<Long> taskIds = tasks.stream().map(TaskSummaryQuery::id).toList();
-        Map<Long, List<LabelResponse.Summary>> labelMap = labelRepository.findLabelsByTaskIds(taskIds);
+        Map<Long, List<LabelResponse.Summary>> labelMap = labelRepository.findLabelSummariesByTaskIds(taskIds);
 
         List<TaskResponse.Summary> taskSummaryResponses = tasks.stream()
                 .map(task-> {
@@ -325,7 +325,7 @@ public class TaskService {
         }
 
         List<Long> taskIds = tasks.stream().map(TaskSummaryQuery::id).toList();
-        Map<Long, List<LabelResponse.Summary>> labelMap = labelRepository.findLabelsByTaskIds(taskIds);
+        Map<Long, List<LabelResponse.Summary>> labelMap = labelRepository.findLabelSummariesByTaskIds(taskIds);
 
         List<TaskResponse.Summary> taskSummaryResponses = tasks.stream()
                 .map(task-> {
@@ -370,7 +370,7 @@ public class TaskService {
         Task task = taskRepository.getOrThrow(taskId);
         String encodedId = hashidsProvider.encode(task.getId());
 
-        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
             String labelEncodedId = hashidsProvider.encode(label.id());
             return LabelResponse.Summary.of(label,labelEncodedId);
@@ -443,8 +443,8 @@ public class TaskService {
             ));
         }
 
-        List<TaskSummaryQuery> taskSummaryQueries = taskRepository.getTaskListQueries(List.of(taskId));
-        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<TaskSummaryQuery> taskSummaryQueries = taskRepository.findTaskSummariesByIds(List.of(taskId));
+        List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
             String encodedId = hashidsProvider.encode(label.id());
             return LabelResponse.Summary.of(label,encodedId);
@@ -508,7 +508,7 @@ public class TaskService {
                 request.recurrenceDayOfMonth(),
                 request.timeSpecified()
         );
-        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
             String encodedId = hashidsProvider.encode(label.id());
             return LabelResponse.Summary.of(label,encodedId);
@@ -572,7 +572,7 @@ public class TaskService {
                         changeSets
                 ));
             }
-            List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+            List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
             List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
                 String encodedId = hashidsProvider.encode(label.id());
                 return LabelResponse.Summary.of(label,encodedId);
@@ -592,7 +592,7 @@ public class TaskService {
     public TaskResponse.Detail updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
-        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
             String encodedId = hashidsProvider.encode(label.id());
             return LabelResponse.Summary.of(label,encodedId);
@@ -626,7 +626,7 @@ public class TaskService {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
 
-        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
             String encodedId = hashidsProvider.encode(label.id());
             return LabelResponse.Summary.of(label,encodedId);
@@ -656,7 +656,7 @@ public class TaskService {
     public TaskResponse.Detail updateProject(Long taskId, Long projectId, Long memberId){
         Task task = taskRepository.findById(taskId)
                 .orElseThrow();
-        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
             String encodedId = hashidsProvider.encode(label.id());
             return LabelResponse.Summary.of(label,encodedId);
@@ -693,12 +693,12 @@ public class TaskService {
     @Transactional
     public TaskResponse.Summary updateSortOrder(Long taskId, TaskRequest.UpdateSortOrder updateSortOrder, Long memberId){
         Task task = taskRepository.getReferenceById(taskId);
-        List<LabelSummaryQuery> taskLabels = labelRepository.findByTask(task.getId());
+        List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
             String encodedId = hashidsProvider.encode(label.id());
             return LabelResponse.Summary.of(label,encodedId);
         }).toList();
-        List<TaskSummaryQuery> taskSummaryQueries = taskRepository.getTaskListQueries(List.of(taskId));
+        List<TaskSummaryQuery> taskSummaryQueries = taskRepository.findTaskSummariesByIds(List.of(taskId));
         String encodedId = hashidsProvider.encode(task.getId());
 
         if(Objects.equals(task.getSortOrder(), updateSortOrder.sortOrder())){
@@ -712,7 +712,7 @@ public class TaskService {
     public TaskResponse.SummarySlice getTasksByLabel(Long labelId, Long loginMemberId, Pageable pageable
                                                     ,TaskRequest.Cursor cursor){
         int pageSize = pageable.getPageSize();
-        List<TaskSummaryQuery> tasks = taskRepository.findByLabel(labelId,pageable,loginMemberId);
+        List<TaskSummaryQuery> tasks = taskRepository.findTasksByLabelId(labelId,pageable,loginMemberId);
 
         boolean hasNext;
         boolean hasPrev;
@@ -732,7 +732,7 @@ public class TaskService {
         }
 
         List<Long> taskIds = tasks.stream().map(TaskSummaryQuery::id).toList();
-        Map<Long, List<LabelResponse.Summary>> labelMap = labelRepository.findLabelsByTaskIds(taskIds);
+        Map<Long, List<LabelResponse.Summary>> labelMap = labelRepository.findLabelSummariesByTaskIds(taskIds);
 
         List<TaskResponse.Summary> taskSummaryResponses = tasks.stream()
                 .map(task-> {

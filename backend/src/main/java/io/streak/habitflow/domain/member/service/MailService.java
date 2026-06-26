@@ -114,7 +114,7 @@ public class MailService {
         return "TRUE".equals(isVerified);
     }
 
-    public void removeVerifiedStatus(String email){
+    public void clearEmailVerification(String email){
         redisTemplate.delete(VERIFIED_PREFIX+email);
     }
 

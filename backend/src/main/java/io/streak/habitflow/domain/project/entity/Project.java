@@ -53,7 +53,7 @@ public class Project  extends BaseTimeEntity {
         return this.parent != null ? this.parent.getName() : null;
     }
 
-    public Long getParentIdOrNull(){
+    public Long getParentId(){
         return this.parent != null ? this.parent.getId() : null;
     }
 }

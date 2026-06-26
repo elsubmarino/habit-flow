@@ -77,7 +77,7 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> reissue(
             @CookieValue(value="refreshToken") String refreshToken,
             HttpServletResponse response){
-        TokenDto tokenDto = authService.reissue(refreshToken);
+        TokenDto tokenDto = authService.refreshTokens(refreshToken);
         tokenCookieManager.addRefreshTokenCookie(response,tokenDto.refreshToken());
 
         return ResponseEntity.ok(Map.of("accessToken",tokenDto.accessToken()));

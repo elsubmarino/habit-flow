@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface ProjectRepositoryCustom {
-    List<ProjectSearchSummaryQuery> searchKeyword(String keyword, Long memberId, Pageable pageable);
+    List<ProjectSearchSummaryQuery> searchByKeyword(String keyword, Long memberId, Pageable pageable);
     List<ProjectSummaryQuery> findByMemberId(Long memberId);
     Long findMaxSortOrder(Long memberId, Long parentId);
 }

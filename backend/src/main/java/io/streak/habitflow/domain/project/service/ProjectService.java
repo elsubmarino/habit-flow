@@ -115,7 +115,7 @@ public class ProjectService {
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public ProjectResponse.Detail updateProject(ProjectRequest.Create request, Long projectId, Long memberId) {
+    public ProjectResponse.Detail updateProject(ProjectRequest.Update request, Long projectId, Long memberId) {
         Project project =  projectRepository.getOrThrow(projectId);
         String oldProjectName = project.getName();
 
@@ -217,7 +217,7 @@ public class ProjectService {
     }
 
     public List<ProjectResponse.Summary> searchProjects(String keyword, Long memberId, Pageable pageable) {
-        List<ProjectSearchSummaryQuery> projectListQueries = projectRepository.searchKeyword(keyword,memberId, pageable);
+        List<ProjectSearchSummaryQuery> projectListQueries = projectRepository.searchByKeyword(keyword,memberId, pageable);
         return projectListQueries.stream()
                 .map(query->{
                     String encodedId = hashidsProvider.encode(query.id());
@@ -228,7 +228,7 @@ public class ProjectService {
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public void invite(ProjectRequest.Invite inviteRequest, Long projectId, Long memberId){
+    public void inviteMembers(ProjectRequest.Invite inviteRequest, Long projectId, Long memberId){
         Project project = projectRepository.getOrThrow(projectId);
         Member inviter = memberRepository.getOrThrow(memberId);
 

@@ -39,7 +39,7 @@ public class MemberService {
                 .build();
         Member result = memberRepository.save(member);
 
-        mailService.removeVerifiedStatus(request.email());
+        mailService.clearEmailVerification(request.email());
         String encodedId = hashidsProvider.encode(result.getId());
         return MemberResponse.Detail.to(result,encodedId);
     }

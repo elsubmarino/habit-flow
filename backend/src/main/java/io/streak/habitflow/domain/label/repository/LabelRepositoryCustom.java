@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface LabelRepositoryCustom {
-    List<LabelSummaryQuery> searchKeyword(String name, Long memberId, Pageable pageable);
-    List<Label> searchLabelsByCondition(Long labelId, Long memberId, Pageable pageable);
-    Map<Long, List<LabelResponse.Summary>> findLabelsByTaskIds(List<Long> taskIds);
-    List<LabelSummaryQuery> findByTask(Long taskId);
+    List<LabelSummaryQuery> searchByKeyword(String name, Long memberId, Pageable pageable);
+    List<Label> findLabelsByMemberWithCursor(Long labelId, Long memberId, Pageable pageable);
+    Map<Long, List<LabelResponse.Summary>> findLabelSummariesByTaskIds(List<Long> taskIds);
+    List<LabelSummaryQuery> findLabelSummariesByTaskId(Long taskId);
 }

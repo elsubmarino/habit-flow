@@ -92,11 +92,11 @@ public class ProjectController {
 
     @PostMapping("/{projectId}/invitation")
     @Operation(summary = "프로젝트 초대 이메일 발송")
-    public ResponseEntity<Void> invite(@LoginMemberId Long loginMemberId,
-                                       @RequestBody ProjectRequest.Invite request,
-                                       @PathVariable RoutingId projectId){
+    public ResponseEntity<Void> inviteMembers(@LoginMemberId Long loginMemberId,
+                                              @RequestBody ProjectRequest.Invite request,
+                                              @PathVariable RoutingId projectId){
         Long realProjectId = projectId.value();
-        projectService.invite(request, realProjectId, loginMemberId);
+        projectService.inviteMembers(request, realProjectId, loginMemberId);
         return ResponseEntity.noContent().build();
     }
 

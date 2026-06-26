@@ -24,6 +24,6 @@ public class FavoriteController {
     @ApiResponses({@ApiResponse(responseCode = "200", description = "즐겨찾기 조회 성공")})
     @GetMapping
     public ResponseEntity<List<FavoriteResponse.Summary>> getFavorites(@LoginMemberId Long loginMemberId) {
-        return ResponseEntity.ok(favoriteService.getFavoriteListByMemberId(loginMemberId));
+        return ResponseEntity.ok(favoriteService.getFavorites(loginMemberId));
     }
 }

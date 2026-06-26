@@ -28,7 +28,7 @@ public class ActivityLogService {
     private final HashidsProvider hashidsProvider;
 
     @Transactional
-    public void create(TaskChangedEvent taskChangedEvent) {
+    public void recordTaskChange(TaskChangedEvent taskChangedEvent) {
         Member owner = memberRepository.getReferenceById(taskChangedEvent.memberId());
 
         ActivityLog activityLog = ActivityLog.builder()
