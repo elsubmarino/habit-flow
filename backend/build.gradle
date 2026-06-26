@@ -2,7 +2,6 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.14'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'org.jetbrains.kotlin.jvm'
 }
 
 group = 'io.streak'
@@ -56,7 +55,6 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     testImplementation 'com.h2database:h2' // 추가
     testRuntimeOnly 'com.h2database:h2'
 }
