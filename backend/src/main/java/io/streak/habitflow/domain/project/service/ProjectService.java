@@ -238,7 +238,7 @@ public class ProjectService {
         for(String email: inviteEmails){
             memberRepository.findByEmail(email).ifPresent(targetMember->{
                 if(projectMemberRepository.existsByProjectAndMember(project,targetMember)){
-                    throw new IllegalArgumentException(email+" 님은 이미 프로젝트 멤버입니다.");
+                    throw new IllegalStateException(email+" 님은 이미 프로젝트 멤버입니다.");
                 }
             });
 
@@ -274,7 +274,7 @@ public class ProjectService {
         String redisKey = INVITE_TOKEN_PREFIX+token;
         String redisValue = redisTemplate.opsForValue().get(redisKey);
         if(redisValue == null){
-            throw new IllegalArgumentException("만료되었거나 유효하지 않은 초대 링크입니다.");
+            throw new EntityNotFoundException ("만료되었거나 유효하지 않은 초대 링크입니다.");
         }
 
         String[]parts = redisValue.split(":");

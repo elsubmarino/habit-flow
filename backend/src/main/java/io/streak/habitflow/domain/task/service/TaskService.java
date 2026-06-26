@@ -201,7 +201,7 @@ public class TaskService {
                     .orElseThrow(()-> new EntityNotFoundException("존재하지 않는 테스크입니다."));
 
             if(parentTask.getSubTasks().size() >= 4){
-                throw new AccessDeniedException("하위 테스크는 최대 4개 까지만 생성할 수 있습니다.");
+                throw new IllegalArgumentException("하위 테스크는 최대 4개 까지만 생성할 수 있습니다.");
             }
         }
         return parentTask;
@@ -412,8 +412,7 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     @DistributedLock(key = "#taskId")
     public TaskResponse.Summary toggleCompletion(Long taskId, Long memberId){
-        Task task = taskRepository.findById(taskId)
-                 .orElseThrow();
+        Task task = taskRepository.getOrThrow(taskId);
 
         boolean nextCompletion = !task.isCompleted();
         task.updateCompleted(nextCompletion);
@@ -495,8 +494,7 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
     public TaskResponse.Detail updateTaskDueDate(Long taskId, TaskRequest.UpdateDueDate request, Long memberId){
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow();
+        Task task = taskRepository.getOrThrow(taskId);
 
         LocalDateTime oldDueDate = task.getDueDate();
         boolean isChanged = task.updateSchedule(
@@ -590,8 +588,7 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
     public TaskResponse.Detail updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow();
+        Task task = taskRepository.getOrThrow(taskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
             String encodedId = hashidsProvider.encode(label.id());
@@ -623,8 +620,7 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
     public TaskResponse.Detail updateTaskLabels(Long taskId, List<String> labelIds, Long memberId){
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow();
+        Task task = taskRepository.getOrThrow(taskId);
 
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
@@ -654,8 +650,7 @@ public class TaskService {
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
     public TaskResponse.Detail updateProject(Long taskId, Long projectId, Long memberId){
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow();
+        Task task = taskRepository.getOrThrow(taskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
             String encodedId = hashidsProvider.encode(label.id());

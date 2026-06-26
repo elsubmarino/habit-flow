@@ -2,20 +2,24 @@ package io.streak.habitflow.global.error.dto;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.net.BindException;
 
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class, MethodArgumentNotValidException.class, BindException.class, ConstraintViolationException.class})
     public ResponseEntity<ErrorResponse> handleBadRequestException(RuntimeException ex, HttpServletRequest request) {
         log.warn("[비지니스 규격 경고] -> Path: {}, Message: {}",request.getRequestURI(), ex.getMessage());
 

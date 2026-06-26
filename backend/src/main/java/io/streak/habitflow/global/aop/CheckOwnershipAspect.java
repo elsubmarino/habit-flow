@@ -14,6 +14,7 @@ import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.global.util.HashidsProvider;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
@@ -91,7 +92,7 @@ public class CheckOwnershipAspect {
 
     public void checkTaskOwner(Long taskId, Long memberId){
         if(!taskRepository.existsById(taskId)){
-            throw new AccessDeniedException("존재하지 않는 테스크입니다.");
+            throw new EntityNotFoundException("존재하지 않는 테스크입니다.");
         }
 
         if(!taskRepository.existsByIdAndHasAccess(taskId,memberId)){

@@ -10,8 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -36,7 +36,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         String email = oAuth2User.getAttribute("email");
 
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new BadCredentialsException("존재하지 않는 회원입니다."));
+                .orElseThrow(() -> new OAuth2AuthenticationException("존재하지 않는 회원입니다."));
 
         String accessToken = jwtTokenProvider.createAccessToken(email,member.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(email,member.getId());
