@@ -29,7 +29,7 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
                 .selectFrom(activityLog)
                 .leftJoin(activityLog.member, member).fetchJoin()
                 .where(
-                        memberIdIn(memberIds),
+                        activityLog.member.id.eq(memberId),
                         activityTypeIn(search.activityType()),
                         ltActivityLogId(activityLogId),
                         targetTypeEq(search.targetType(),targetIds),

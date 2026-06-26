@@ -50,10 +50,11 @@ public class MemberService {
     public MemberResponse.Detail updateMember(Long memberId,MemberRequest.Update  request,Long loginMemberId){
         Member member = memberRepository.getOrThrow(memberId);
         String encodedId = hashidsProvider.encode(member.getId());
-        if(request.password().equals(member.getPassword())){
+        String encodedPassword =  passwordEncoder.encode(request.password());
+        if(encodedPassword.matches(member.getPassword())){
             return MemberResponse.Detail.to(member,encodedId);
         }
-        member.updateMember(request.password());
+        member.updateMember(encodedPassword);
         return MemberResponse.Detail.to(member,encodedId);
     }
 

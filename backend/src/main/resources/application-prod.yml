@@ -18,7 +18,7 @@ spring:
       maximum-pool-size: 50
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
@@ -37,11 +37,6 @@ jwt:
 file:
   upload:
     dir: ./uploads
-decorator:
-  datasource:
-    p6spy:
-      enable-logging: true
-      multiline: true
 springdoc:
   packages-to-scan: io.streak.habitflow.domain
   default-consumes-media-type: application/json

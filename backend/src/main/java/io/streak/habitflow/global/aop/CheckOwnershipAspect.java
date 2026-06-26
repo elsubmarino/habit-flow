@@ -55,6 +55,7 @@ public class CheckOwnershipAspect {
         Long notificationId = null;
         Long projectId = null;
         Long labelId = null;
+        Long memberId = null;
         TaskRequest.Create request = null;
 
         for(int i=0;i<parameterNames.length;i++){
@@ -63,7 +64,8 @@ public class CheckOwnershipAspect {
             else if("loginMemberId".equals(parameterNames[i])) loginMemberId = (Long)args[i];
             else if("notificationId".equals(parameterNames[i])) notificationId = (Long)args[i];
             else if("projectId".equals(parameterNames[i])) projectId = (Long)args[i];
-            else if("labelId".equals(parameterNames[i])) labelId = (Long)args[i];
+            else if("projectId".equals(parameterNames[i])) projectId = (Long)args[i];
+            else if("memberId".equals(parameterNames[i])) memberId = (Long)args[i];
             else if(args[i] instanceof TaskRequest.Create)request = (TaskRequest.Create)args[i];
 
         }
@@ -79,7 +81,7 @@ public class CheckOwnershipAspect {
             }else if("COMMENT".equals(domainType) && commentId != null && loginMemberId != null){
                 checkCommentOwner(commentId,loginMemberId);
             }else if("MEMBER".equals(domainType) && loginMemberId != null){
-                checkMemberOwner(loginMemberId,loginMemberId);
+                checkMemberOwner(loginMemberId,memberId);
             }else if("NOTIFICATION".equals(domainType) && notificationId != null && loginMemberId != null){
                 checkNotificationOwner(notificationId,loginMemberId);
             }else if("PROJECT".equals(domainType) && projectId != null && loginMemberId != null) {

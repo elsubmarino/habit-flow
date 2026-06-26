@@ -37,6 +37,7 @@ public class CommentService {
     private final HashidsProvider hashidsProvider;
 
     @Transactional
+    @CheckOwnership(type="TASK")
     public CommentResponse.Detail createComment(CommentRequest.Create request, MultipartFile file, Long memberId) {
         Long realTaskId = hashidsProvider.decode(request.taskId());
         Member member = memberRepository.getReferenceById(memberId);
@@ -75,6 +76,7 @@ public class CommentService {
         return CommentResponse.Detail.of(result,encodedId);
     }
 
+    @CheckOwnership(type="TASK")
     public List<CommentResponse.Detail> getComments(Long taskId) {
         Task task = taskRepository.getOrThrow(taskId);
         List<Comment> comments = commentRepository.findByTaskIdWithAttachments(task.getId());
