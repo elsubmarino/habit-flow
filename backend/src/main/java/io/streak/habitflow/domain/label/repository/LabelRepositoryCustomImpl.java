@@ -27,7 +27,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
     private final HashidsProvider hashidsProvider;
 
     @Override
-    public List<LabelSummaryQuery> searchByKeyword(String name, Long memberId, Pageable pageable) {
+    public List<LabelSummaryQuery> searchByKeyword(String keyword, Long memberId, Pageable pageable) {
         return queryFactory
                 .select(Projections.constructor(
                         LabelSummaryQuery.class,
@@ -39,7 +39,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
                 .from(label)
                 .where(
                         label.member.id.eq(memberId),
-                        label.name.contains(name)
+                        label.name.contains(keyword)
                 )
                 .limit(pageable.getPageSize())
                 .fetch();

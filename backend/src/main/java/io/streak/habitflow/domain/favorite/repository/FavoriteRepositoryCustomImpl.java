@@ -5,8 +5,8 @@ import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.favorite.dto.query.FavoriteSummaryQuery;
-import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.task.entity.QTask;
+import io.streak.habitflow.global.common.type.TargetType;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;

@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.member.service;
+package io.streak.habitflow.domain.auth.service;
 
 import io.streak.habitflow.domain.member.dto.request.MemberRequest;
 import io.streak.habitflow.domain.member.entity.Member;

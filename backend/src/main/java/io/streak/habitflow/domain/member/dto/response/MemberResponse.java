@@ -24,7 +24,7 @@ public final class MemberResponse{
                     .id(encodedId)
                     .name(member.getName())
                     .email(member.getEmail())
-                    .role(member.getRole().name())
+                    .role(member.getMemberRole().name())
                     .build();
         }
     }

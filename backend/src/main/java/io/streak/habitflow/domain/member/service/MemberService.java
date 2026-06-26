@@ -4,7 +4,7 @@ import io.streak.habitflow.domain.member.dto.request.MemberRequest;
 import io.streak.habitflow.domain.member.dto.response.MemberResponse;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.member.type.Role;
+import io.streak.habitflow.domain.member.type.MemberRole;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,7 @@ public class MemberService {
                 .email(request.email())
                 .name(request.name())
                 .password(passwordEncoder.encode(request.password()))
-                .role(Role.USER)
+                .memberRole(MemberRole.USER)
                 .build();
         Member result = memberRepository.save(member);
 

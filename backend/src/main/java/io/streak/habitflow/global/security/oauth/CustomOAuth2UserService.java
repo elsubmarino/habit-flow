@@ -2,7 +2,7 @@ package io.streak.habitflow.global.security.oauth;
 
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.member.type.Role;
+import io.streak.habitflow.domain.member.type.MemberRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -33,11 +33,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                         Member.builder()
                                 .email(email)
                                 .name(name)
-                                .role(Role.USER)
+                                .memberRole(MemberRole.USER)
                                 .build()
                 ));
         return new DefaultOAuth2User(
-                Collections.singleton(new SimpleGrantedAuthority(member.getRole().getKey())),
+                Collections.singleton(new SimpleGrantedAuthority(member.getMemberRole().getKey())),
                 attributes,
                 "email"
         );

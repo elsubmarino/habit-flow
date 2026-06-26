@@ -2,7 +2,6 @@ package io.streak.habitflow.domain.label.service;
 
 import io.streak.habitflow.domain.favorite.entity.Favorite;
 import io.streak.habitflow.domain.favorite.repository.FavoriteRepository;
-import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.label.dto.request.LabelRequest;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.entity.Label;
@@ -10,6 +9,7 @@ import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.global.aop.CheckOwnership;
+import io.streak.habitflow.global.common.type.TargetType;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

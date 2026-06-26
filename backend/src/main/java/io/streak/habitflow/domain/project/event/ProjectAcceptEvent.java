@@ -1,11 +1,11 @@
 package io.streak.habitflow.domain.project.event;
 
 public record ProjectAcceptEvent(
-        Long ProjectId,
+        Long projectId,
         String projectName,
-        Long InviteeId,
-        String InviteeName,
-        Long InviterId,
-        String InviterName
+        Long inviteeId,
+        String inviteeName,
+        Long inviterId,
+        String inviterName
 ) {
 }

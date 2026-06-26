@@ -1,6 +1,6 @@
 package io.streak.habitflow.global.aop;
 
-import io.streak.habitflow.global.common.AopForTransaction;
+import io.streak.habitflow.global.aop.transactionTemplate.AopForTransaction;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

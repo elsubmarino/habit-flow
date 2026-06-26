@@ -21,9 +21,9 @@ public class IntegratedSearchController {
 
     @GetMapping
     @Operation(summary = "통합 검색")
-    public ResponseEntity<IntegratedResponse.Search> searchAll(@RequestParam("keyword") String keyword,
-                                                               @LoginMemberId Long loginMemberId,
-                                                               @PageableDefault(size=5) Pageable pageable) {
+    public ResponseEntity<IntegratedResponse.SearchResult> searchAll(@RequestParam("keyword") String keyword,
+                                                                     @LoginMemberId Long loginMemberId,
+                                                                     @PageableDefault(size=5) Pageable pageable) {
         return ResponseEntity.ok(integratedSearchService.searchAll(keyword,loginMemberId,pageable));
     }
 }

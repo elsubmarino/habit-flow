@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface LabelRepositoryCustom {
-    List<LabelSummaryQuery> searchByKeyword(String name, Long memberId, Pageable pageable);
+    List<LabelSummaryQuery> searchByKeyword(String keyword, Long memberId, Pageable pageable);
     List<Label> findLabelsByMemberWithCursor(Long labelId, Long memberId, Pageable pageable);
     Map<Long, List<LabelResponse.Summary>> findLabelSummariesByTaskIds(List<Long> taskIds);
     List<LabelSummaryQuery> findLabelSummariesByTaskId(Long taskId);

@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.favorite.dto.response;
 
 import io.streak.habitflow.domain.favorite.dto.query.FavoriteSummaryQuery;
-import io.streak.habitflow.domain.favorite.type.TargetType;
+import io.streak.habitflow.global.common.type.TargetType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 

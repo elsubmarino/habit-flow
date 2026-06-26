@@ -238,5 +238,4 @@ public class TaskController {
         TaskResponse.SummarySlice summarySlice = taskService.getTasksByLabel(labelId.value(),loginMemberId,pageable,cursor);
         return ResponseEntity.ok(summarySlice);
     }
-
 }

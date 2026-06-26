@@ -32,7 +32,7 @@ public class NotificationEventListener {
     @Transactional
     @EventListener
     public void handleProjectInvitation(ProjectInvitationEvent projectInvitationEvent){
-        Member inviter = memberRepository.getReferenceById(projectInvitationEvent.InviterId());
+        Member inviter = memberRepository.getReferenceById(projectInvitationEvent.inviterId());
         List<Notification> notificationBatch = new ArrayList<>();
         for(ProjectInvitationEvent.MemberInfo memberInfo: projectInvitationEvent.invitees()){
             Member receiver = memberRepository.getReferenceById(memberInfo.id());
@@ -40,7 +40,7 @@ public class NotificationEventListener {
             notificationBatch.add(Notification.builder()
                     .receiver(receiver)
                     .actor(inviter)
-                    .targetId(projectInvitationEvent.ProjectId())
+                    .targetId(projectInvitationEvent.projectId())
                     .notificationType(NotificationType.PROJECT)
                     .activityType(ActivityType.INVITED)
                     .customMessage(inviter.getName()+" 님이 ["+projectInvitationEvent.projectName()+"] 프로젝트에 당신을 초대했습니다.")
@@ -66,16 +66,16 @@ public class NotificationEventListener {
     @Transactional
     @EventListener
     public void handleProjectAccept(ProjectAcceptEvent projectAcceptEvent){
-        Member inviter = memberRepository.getReferenceById(projectAcceptEvent.InviterId());
-        Member invitee = memberRepository.getReferenceById(projectAcceptEvent.InviteeId());
+        Member inviter = memberRepository.getReferenceById(projectAcceptEvent.inviterId());
+        Member invitee = memberRepository.getReferenceById(projectAcceptEvent.inviteeId());
 
         Notification notification = Notification.builder()
                 .receiver(inviter)
                 .actor(invitee)
-                .targetId(projectAcceptEvent.ProjectId())
+                .targetId(projectAcceptEvent.projectId())
                 .notificationType(NotificationType.PROJECT)
                 .activityType(ActivityType.JOINED)
-                .customMessage(projectAcceptEvent.InviteeName()+" 님이 ["+projectAcceptEvent.projectName()+"] 프로젝트에 합류했습니다")
+                .customMessage(projectAcceptEvent.inviteeName()+" 님이 ["+projectAcceptEvent.projectName()+"] 프로젝트에 합류했습니다")
                 .isConfirmed(false)
                 .build();
 

@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.activitylog.dto;
+package io.streak.habitflow.domain.activitylog.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

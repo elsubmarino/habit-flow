@@ -3,7 +3,7 @@ package io.streak.habitflow.domain.activitylog.entity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.streak.habitflow.domain.activitylog.dto.ChangeSet;
+import io.streak.habitflow.domain.activitylog.vo.ChangeSet;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

@@ -1,4 +1,4 @@
-package io.streak.habitflow.global.common;
+package io.streak.habitflow.global.aop.transactionTemplate;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.springframework.stereotype.Component;

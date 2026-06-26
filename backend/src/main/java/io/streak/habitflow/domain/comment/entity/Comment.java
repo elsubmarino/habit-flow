@@ -1,6 +1,5 @@
 package io.streak.habitflow.domain.comment.entity;
 
-import io.streak.habitflow.domain.attachment.entity.Attachment;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.global.common.entity.BaseTimeEntity;

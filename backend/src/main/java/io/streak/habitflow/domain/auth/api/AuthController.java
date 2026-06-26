@@ -1,7 +1,7 @@
-package io.streak.habitflow.domain.member.api;
+package io.streak.habitflow.domain.auth.api;
 
+import io.streak.habitflow.domain.auth.service.AuthService;
 import io.streak.habitflow.domain.member.dto.request.MemberRequest;
-import io.streak.habitflow.domain.member.service.AuthService;
 import io.streak.habitflow.domain.member.service.MailService;
 import io.streak.habitflow.domain.member.service.MemberService;
 import io.streak.habitflow.global.security.dto.TokenDto;

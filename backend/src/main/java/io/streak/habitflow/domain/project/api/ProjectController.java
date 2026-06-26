@@ -57,7 +57,7 @@ public class ProjectController {
 
     @PutMapping("/{projectId}")
     @Operation(summary = "프로젝트 업데이트")
-    public ResponseEntity<ProjectResponse.Detail> updateProject(@RequestBody ProjectRequest.Create request,
+    public ResponseEntity<ProjectResponse.Detail> updateProject(@RequestBody ProjectRequest.Update request,
                                                  @PathVariable RoutingId projectId,
                                                  @LoginMemberId Long loginMemberId) {
         Long realProjectId = projectId.value();

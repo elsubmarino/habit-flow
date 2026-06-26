@@ -1,8 +1,8 @@
 package io.streak.habitflow.domain.favorite.entity;
 
-import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.global.common.entity.BaseCreatedTimeEntity;
+import io.streak.habitflow.global.common.type.TargetType;
 import jakarta.persistence.*;
 import lombok.*;
 

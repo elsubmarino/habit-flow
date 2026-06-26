@@ -3,7 +3,7 @@ package io.streak.habitflow.global.security;
 import io.streak.habitflow.global.security.jwt.JwtAuthenticationFilter;
 import io.streak.habitflow.global.security.jwt.JwtTokenProvider;
 import io.streak.habitflow.global.security.oauth.CustomOAuth2UserService;
-import io.streak.habitflow.global.security.oauth.HttpCookieOauth2AuthorizationRequestRepository;
+import io.streak.habitflow.global.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
 import io.streak.habitflow.global.security.oauth.OAuth2LoginSuccessHandler;
 import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,7 @@ public class SecurityConfig {
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final RedisTemplate<String, Object> redisTemplate;
-    private final HttpCookieOauth2AuthorizationRequestRepository httpCookieOauth2AuthorizationRequestRepository;
+    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOauth2AuthorizationRequestRepository;
 
     @Bean
     public PasswordEncoder passwordEncoder() {

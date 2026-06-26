@@ -12,7 +12,7 @@ import java.util.Objects;
 
 public final class IntegratedResponse {
     @Builder
-    public record Search(
+    public record SearchResult(
             @Schema(description = "검색된 프로젝트의 리스트")
             List<ProjectResponse.Summary> projects,
 
@@ -22,7 +22,7 @@ public final class IntegratedResponse {
             @Schema(description = "검색된 라벨의 리스트")
             List<LabelResponse.Summary> labels
     ){
-        public Search{
+        public SearchResult {
             projects = Objects.requireNonNullElse(projects, new ArrayList<>());
             tasks = Objects.requireNonNullElse(tasks, new ArrayList<>());
             labels = Objects.requireNonNullElse(labels, new ArrayList<>());

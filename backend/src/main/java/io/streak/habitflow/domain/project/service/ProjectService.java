@@ -1,9 +1,8 @@
 package io.streak.habitflow.domain.project.service;
 
-import io.streak.habitflow.domain.activitylog.dto.ChangeSet;
+import io.streak.habitflow.domain.activitylog.vo.ChangeSet;
 import io.streak.habitflow.domain.favorite.entity.Favorite;
 import io.streak.habitflow.domain.favorite.repository.FavoriteRepository;
-import io.streak.habitflow.domain.favorite.type.TargetType;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.member.service.MailService;
@@ -20,6 +19,7 @@ import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
+import io.streak.habitflow.global.common.type.TargetType;
 import io.streak.habitflow.global.util.HashidsProvider;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -104,7 +104,7 @@ public class ProjectService {
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 project.getId(),
                 memberId,
-                io.streak.habitflow.domain.task.type.TargetType.PROJECT,
+                io.streak.habitflow.global.common.type.TargetType.PROJECT,
                 ActivityType.ADDED,
                 project.getName(),
                 Collections.emptyList()
@@ -163,7 +163,7 @@ public class ProjectService {
             applicationEventPublisher.publishEvent(new TaskChangedEvent(
                     project.getId(),
                     memberId,
-                    io.streak.habitflow.domain.task.type.TargetType.PROJECT,
+                    io.streak.habitflow.global.common.type.TargetType.PROJECT,
                     ActivityType.UPDATED,
                     request.name(),
                     changeSets
@@ -208,7 +208,7 @@ public class ProjectService {
         applicationEventPublisher.publishEvent(new TaskChangedEvent(
                 project.getId(),
                 memberId,
-                io.streak.habitflow.domain.task.type.TargetType.PROJECT,
+                io.streak.habitflow.global.common.type.TargetType.PROJECT,
                 ActivityType.DELETED,
                 project.getName(),
                 Collections.emptyList()

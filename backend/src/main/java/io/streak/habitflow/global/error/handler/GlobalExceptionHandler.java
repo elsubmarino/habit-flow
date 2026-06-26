@@ -1,5 +1,6 @@
-package io.streak.habitflow.global.error.dto;
+package io.streak.habitflow.global.error.handler;
 
+import io.streak.habitflow.global.error.dto.ErrorResponse;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;

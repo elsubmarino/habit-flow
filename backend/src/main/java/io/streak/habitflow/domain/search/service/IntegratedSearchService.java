@@ -25,7 +25,7 @@ public class IntegratedSearchService {
     private final TaskRepository taskRepository;
     private final HashidsProvider hashidsProvider;
 
-    public IntegratedResponse.Search searchAll(String keyword, Long memberId, Pageable pageable) {
+    public IntegratedResponse.SearchResult searchAll(String keyword, Long memberId, Pageable pageable) {
 
         List<ProjectSearchSummaryQuery> projectListResponses = projectRepository.searchByKeyword(keyword, memberId, pageable);
         List<TaskSearchSummaryQuery> taskResponses = taskRepository.searchByKeyword(keyword, memberId, pageable);
@@ -37,7 +37,7 @@ public class IntegratedSearchService {
                 })
                 .toList();
 
-        return IntegratedResponse.Search.builder()
+        return IntegratedResponse.SearchResult.builder()
                 .projects(projectListResponses.stream().map(response->{
                     String encodedId = hashidsProvider.encode(response.id());
                     return ProjectResponse.Summary.ofSearch(response,encodedId);

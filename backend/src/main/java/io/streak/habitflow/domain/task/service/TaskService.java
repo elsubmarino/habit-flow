@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.task.service;
 
-import io.streak.habitflow.domain.activitylog.dto.ChangeSet;
-import io.streak.habitflow.domain.attachment.entity.Attachment;
+import io.streak.habitflow.domain.activitylog.vo.ChangeSet;
+import io.streak.habitflow.domain.comment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.label.dto.query.LabelSummaryQuery;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
@@ -22,11 +22,11 @@ import io.streak.habitflow.domain.task.mapper.TaskMapper;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.domain.task.type.CursorDirection;
-import io.streak.habitflow.domain.task.type.TargetType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.DistributedLock;
 import io.streak.habitflow.global.common.RoutingId;
+import io.streak.habitflow.global.common.type.TargetType;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
 import io.streak.habitflow.global.util.HashidsProvider;

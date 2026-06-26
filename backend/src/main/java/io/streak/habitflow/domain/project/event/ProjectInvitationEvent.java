@@ -3,10 +3,10 @@ package io.streak.habitflow.domain.project.event;
 import java.util.List;
 
 public record ProjectInvitationEvent(
-        Long ProjectId,
+        Long projectId,
         String projectName,
-        Long InviterId,
-        String InviterName,
+        Long inviterId,
+        String inviterName,
         List<MemberInfo> invitees
 ) {
     public record MemberInfo(Long id, String name){

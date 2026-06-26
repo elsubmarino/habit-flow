@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.member.entity;
 
-import io.streak.habitflow.domain.member.type.Role;
+import io.streak.habitflow.domain.member.type.MemberRole;
 import io.streak.habitflow.global.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,7 +25,7 @@ public class Member extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role;
+    private MemberRole memberRole;
 
     public void updateMember(String password){
         this.password=password;
