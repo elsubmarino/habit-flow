@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.member.service;
 
+import io.streak.habitflow.global.error.exception.TooManyRequestsException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -51,7 +52,7 @@ public class MailService {
         String isLimited = redisTemplate.opsForValue().get(limitKey);
         if("LOCK".equals(isLimited)){
             log.warn("[Rate Limit 차단] 단 시간 내 이메일 중복 요청 발생 -> Email: {}",email);
-            throw new IllegalStateException("인증번호는 1분에 한 번만 요청할 수 있습니다. 잠시 후 다시 시도해주세요.");
+            throw new TooManyRequestsException("인증번호는 1분에 한 번만 요청할 수 있습니다. 잠시 후 다시 시도해주세요.");
         }
         redisTemplate.opsForValue().set(
                 limitKey,

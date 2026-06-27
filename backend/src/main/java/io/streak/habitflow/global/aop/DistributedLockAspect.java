@@ -42,7 +42,8 @@ public class DistributedLockAspect {
             //락 획득 성공 시, 트랜잭션 새로 열어서 실제 비지니스 로직 실행 및 커밋까지 완료
             return aopForTransaction.proceed(joinPoint);
         }catch(InterruptedException e){
-            throw new RuntimeException(e);
+            Thread.currentThread().interrupt();
+            throw new LockAcquisitionException("락 대기 중 인터럽트가 발생했습니다.");
         }finally{
             //비지니스 로직과 DB 커밋이 완전히 끝난 후 안전하게 레디스 락 해제
             if(rLock.isHeldByCurrentThread()){

@@ -6,11 +6,13 @@ import io.streak.habitflow.global.security.oauth.CustomOAuth2UserService;
 import io.streak.habitflow.global.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
 import io.streak.habitflow.global.security.oauth.OAuth2LoginSuccessHandler;
 import jakarta.servlet.DispatcherType;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -69,6 +71,16 @@ public class SecurityConfig {
                         .successHandler(oAuth2LoginSuccessHandler)
                         .failureUrl("/api/auth/fail")
                 )
+                .exceptionHandling(ex->ex
+                        .authenticationEntryPoint((request,response,authException)->{
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                        })
+                        .accessDeniedHandler((request,response,accessDeniedException)->{
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                        })
+                );
         ;
         return http.build();
     }

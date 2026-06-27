@@ -1,10 +1,12 @@
 package io.streak.habitflow.global.error.handler;
 
 import io.streak.habitflow.global.error.dto.ErrorResponse;
+import io.streak.habitflow.global.error.exception.ConflictException;
+import io.streak.habitflow.global.error.exception.FileStorageException;
 import io.streak.habitflow.global.error.exception.LockAcquisitionException;
+import io.streak.habitflow.global.error.exception.TooManyRequestsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -64,9 +66,14 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    @ExceptionHandler({BindException.class, ConstraintViolationException.class})
-    public ResponseEntity<ErrorResponse> handleBindException(Exception ex, HttpServletRequest request) {
-        log.warn("[요청 검증 실패] -> Path: {}, Message: {}", request.getRequestURI(), ex.getMessage());
+    @ExceptionHandler({BindException.class})
+    public ResponseEntity<ErrorResponse> handleBindException(BindException ex, HttpServletRequest request) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(error->error.getField()+": "+error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+        if(message.isBlank()) {
+            message = "요청 값이 올바르지 않습니다.";
+        }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponse.of(
                         HttpStatus.BAD_REQUEST.value(),
@@ -154,5 +161,35 @@ public class GlobalExceptionHandler {
                         "서버 내부 에러가 발생했습니다. 시스템 관리자에게 문의하세요.",
                         request.getRequestURI()
                 ));
+    }
+
+    @ExceptionHandler(FileStorageException.class)
+    public ResponseEntity<ErrorResponse> handleFileStorageException(FileStorageException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorResponse.of(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        HttpStatus.INTERNAL_SERVER_ERROR.name(),
+                        ex.getMessage(),
+                        request.getRequestURI()));
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of(
+                        HttpStatus.CONTINUE.value(),
+                        HttpStatus.CONTINUE.name(),
+                        ex.getMessage(),
+                        request.getRequestURI()));
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ErrorResponse> handleTooManyRequestsException(TooManyRequestsException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(ErrorResponse.of(
+                        HttpStatus.TOO_MANY_REQUESTS.value(),
+                        HttpStatus.TOO_MANY_REQUESTS.name(),
+                        ex.getMessage(),
+                        request.getRequestURI()));
     }
 }

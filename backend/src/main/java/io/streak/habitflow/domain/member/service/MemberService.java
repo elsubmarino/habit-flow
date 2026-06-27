@@ -6,6 +6,7 @@ import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.member.type.MemberRole;
 import io.streak.habitflow.global.aop.CheckOwnership;
+import io.streak.habitflow.global.error.exception.ConflictException;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,7 +29,7 @@ public class MemberService {
         }
 
         if(memberRepository.findByEmail(request.email()).isPresent()){
-            throw new IllegalArgumentException("이미 가입된 이메일입니다.");
+            throw new ConflictException("이미 가입된 이메일입니다.");
         }
 
         Member member = Member.builder()

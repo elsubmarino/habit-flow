@@ -1,5 +1,6 @@
 package io.streak.habitflow.global.infra.file;
 
+import io.streak.habitflow.global.error.exception.FileStorageException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,7 +46,7 @@ public class FileStorageServiceImpl implements FileStorageService {
 
 
         }catch(IOException e){
-            throw new RuntimeException("파일 저장 중 오류가 발생했습니다.",e);
+            throw new FileStorageException("파일 저장 중 오류가 발생했습니다.",e);
         }
     }
 }
