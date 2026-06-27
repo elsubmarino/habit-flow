@@ -1,6 +1,7 @@
 package io.streak.habitflow.global.aop;
 
 import io.streak.habitflow.global.aop.transactionTemplate.AopForTransaction;
+import io.streak.habitflow.global.error.exception.LockAcquisitionException;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -11,7 +12,6 @@ import org.redisson.api.RedissonClient;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import javax.naming.ServiceUnavailableException;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
@@ -36,7 +36,7 @@ public class DistributedLockAspect {
             //레디스 분산 락 획득 시도 (waitTime 동안 대기, leaseTime 지나면 자동 소멸)
             boolean available = rLock.tryLock(distributedLock.waitTime(), distributedLock.leaseTime(), TimeUnit.SECONDS);
             if(!available){
-                throw new ServiceUnavailableException("락 획득 실패 - 트래픽 초과");
+                throw new LockAcquisitionException("락 획득 실패 - 트래픽 초과");
             }
 
             //락 획득 성공 시, 트랜잭션 새로 열어서 실제 비지니스 로직 실행 및 커밋까지 완료

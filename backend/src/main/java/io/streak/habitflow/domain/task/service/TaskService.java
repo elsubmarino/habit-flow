@@ -660,8 +660,7 @@ public class TaskService {
 
         Project project = null;
         if(projectId != null) {
-            project = projectRepository.findById(projectId)
-                    .orElseThrow();
+            project = projectRepository.getOrThrow(projectId);
             String oldProjectName = project.getName();
             task.updateProject(project);
 

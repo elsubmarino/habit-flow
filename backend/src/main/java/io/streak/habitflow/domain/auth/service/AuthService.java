@@ -77,7 +77,8 @@ public class AuthService {
             redisTemplate.delete(redisKey);
             throw new BadCredentialsException("토큰 오염이 감지되었습니다. 보안을 위해 모든 세션을 만료합니다.");
         }
-        Member member = memberRepository.findByEmail(email).orElseThrow();
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new BadCredentialsException("가입되지 않은 이메일입니다."));
         String newAccessToken = jwtTokenProvider.createAccessToken(member.getEmail(), member.getId());
 
         //RTR(Refresh Token Rotation

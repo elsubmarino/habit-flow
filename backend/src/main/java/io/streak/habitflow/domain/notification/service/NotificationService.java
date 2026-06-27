@@ -41,8 +41,7 @@ public class NotificationService {
     @CheckOwnership(type="NOTIFICATION")
     @SuppressWarnings("unused")
     public NotificationResponse.Summary markNotificationAsRead(Long notificationId, NotificationRequest.Create request, Long memberId) {
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow();
+        Notification notification = notificationRepository.getOrThrow(notificationId);
         notification.markAsRead(request.isConfirmed());
         String encodedId = hashidsProvider.encode(notification.getId());
         String encodedReceiverId = hashidsProvider.encode(notification.getReceiver().getId());
