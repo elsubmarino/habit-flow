@@ -46,12 +46,12 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
     }
 
     @Override
-    public List<Label> findLabelsByMemberWithCursor(Long labelId, Long memberId, Pageable pageable) {
+    public List<Label> findLabelsByMemberWithCursor(Long lastLabelId, Long memberId, Pageable pageable) {
         return queryFactory
                 .selectFrom(label)
                 .where(
                         label.member.id.eq(memberId),
-                        ltLabelId(labelId)
+                        ltLabelId(lastLabelId)
                 )
                 .orderBy(label.id.desc())
                 .limit(pageable.getPageSize()+1)

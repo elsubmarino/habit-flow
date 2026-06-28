@@ -13,4 +13,6 @@ public final class NotificationRequest {
             boolean isConfirmed,
             String customMessage
     ){}
+
+    public record ConfirmRead(boolean confirmed) {}
 }

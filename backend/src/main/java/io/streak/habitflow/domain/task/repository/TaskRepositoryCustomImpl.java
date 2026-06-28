@@ -81,7 +81,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskSummaryQuery> findTasksByProject(Long projectId, Long memberId, Pageable pageable) {
+    public List<TaskSummaryQuery> findTaskSummariesByProject(Long projectId, Long memberId, Pageable pageable) {
 
         List<Long> projectIds = queryFactory
                 .select(projectMember.project.id)
@@ -479,7 +479,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskResponse.UpcomingDateCount> countUpcomingTasksByDate(Long memberId, LocalDateTime fromDate, LocalDateTime toDate) {
+    public List<TaskResponse.UpcomingDateCount> findUpcomingTaskCountsByDate(Long memberId, LocalDateTime fromDate, LocalDateTime toDate) {
         List<Long> projectIds = queryFactory
                 .select(projectMember.project.id)
                 .from(projectMember)
@@ -528,7 +528,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public TaskResponse.SidebarTasksCount countSidebarTasks(Long memberId) {
+    public TaskResponse.SidebarTasksCount findSidebarTaskCounts(Long memberId) {
         Long inboxTasksCount = queryFactory
                 .select(task.count())
                 .from(task)
@@ -579,7 +579,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskSummaryQuery> findTasksByLabelId(Long labelId, Pageable pageable, Long loginMemberId) {
+    public List<TaskSummaryQuery> findTaskSummariesByLabelId(Long labelId, Pageable pageable, Long loginMemberId) {
         List<Long> ids =  queryFactory
                 .select(task.id)
                 .from(taskLabel)

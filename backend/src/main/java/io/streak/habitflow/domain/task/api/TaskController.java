@@ -80,12 +80,12 @@ public class TaskController {
     @PatchMapping("/{taskId}/project")
     @Operation(summary = "테스크가 속한 프로젝트 이동")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크가 속한 프로젝트 이동 성공")})
-    public ResponseEntity<TaskResponse.Detail> updateProject(@PathVariable RoutingId taskId,
+    public ResponseEntity<TaskResponse.Detail> moveTaskToProject(@PathVariable RoutingId taskId,
                                                       @RequestBody @Valid TaskRequest.UpdateProject request,
                                                       @LoginMemberId Long loginMemberId) {
         Long realTaskId = taskId.value();
         Long realProjectId = hashidsProvider.decode(request.projectId());
-        return ResponseEntity.ok(taskService.updateProject(realTaskId, realProjectId, loginMemberId));
+        return ResponseEntity.ok(taskService.moveTaskToProject(realTaskId, realProjectId, loginMemberId));
     }
 
     @DeleteMapping("/{taskId}")
@@ -133,7 +133,7 @@ public class TaskController {
                 TaskFilterType.INBOX
         );
 
-        return ResponseEntity.ok(taskService.getInboxTasks(searchCondition, cursor, loginMemberId,pageable));
+        return ResponseEntity.ok(taskService.searchTasks(searchCondition, cursor, loginMemberId,pageable));
     }
 
     @GetMapping("/today")
@@ -145,7 +145,7 @@ public class TaskController {
         TaskRequest.SearchCondition searchCondition = new TaskRequest.SearchCondition(
                 TaskFilterType.TODAY
         );
-        return ResponseEntity.ok(taskService.getTasks(searchCondition,cursor,memberId, pageable));
+        return ResponseEntity.ok(taskService.searchTasks(searchCondition,cursor,memberId, pageable));
     }
 
     @GetMapping("/overdue")
@@ -158,7 +158,7 @@ public class TaskController {
                 TaskFilterType.OVERDUE
         );
 
-        return ResponseEntity.ok(taskService.getTasks(searchCondition,cursor, loginMemberId, pageable));
+        return ResponseEntity.ok(taskService.searchTasks(searchCondition,cursor, loginMemberId, pageable));
     }
 
 
@@ -176,7 +176,7 @@ public class TaskController {
                 toDate
         );
 
-        return ResponseEntity.ok(taskService.getTasks(searchCondition,cursor, loginMemberId, pageable));
+        return ResponseEntity.ok(taskService.searchTasks(searchCondition,cursor, loginMemberId, pageable));
     }
 
     @PatchMapping("/{taskId}/due-date")

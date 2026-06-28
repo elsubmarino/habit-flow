@@ -8,7 +8,7 @@ import io.streak.habitflow.domain.comment.repository.CommentRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.task.entity.Task;
-import io.streak.habitflow.domain.task.event.TaskChangedEvent;
+import io.streak.habitflow.domain.task.event.ActivityRecordedEvent;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
@@ -63,7 +63,7 @@ public class CommentService {
 
         Comment result = commentRepository.save(comment);
 
-        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+        applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 task.getId(),
                 memberId,
                 TargetType.COMMENT,
@@ -108,7 +108,7 @@ public class CommentService {
         Comment comment  =commentRepository.getReferenceById(commentId);
         commentRepository.deleteById(commentId);
         Task task = comment.getTask();
-        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+        applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 task.getId(),
                 memberId,
                 TargetType.COMMENT,

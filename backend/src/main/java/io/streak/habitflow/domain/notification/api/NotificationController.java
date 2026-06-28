@@ -34,11 +34,11 @@ public class NotificationController {
 
     @PutMapping("/{notificationId}/confirm")
     @Operation(summary = "알림 확인")
-    public ResponseEntity<NotificationResponse.Summary> markNotificationAsRead(@PathVariable RoutingId notificationId,
-                                                            @RequestBody NotificationRequest.Create request,
-                                                            @LoginMemberId Long loginMemberId) {
+    public ResponseEntity<NotificationResponse.Summary> confirmNotification(@PathVariable RoutingId notificationId,
+                                                                            @RequestBody NotificationRequest.ConfirmRead request,
+                                                                            @LoginMemberId Long loginMemberId) {
         long realNotificationId = notificationId.value();
-        return ResponseEntity.ok(notificationService.markNotificationAsRead(realNotificationId, request, loginMemberId));
+        return ResponseEntity.ok(notificationService.confirmNotification(realNotificationId, request, loginMemberId));
     }
 
     @GetMapping(value="/subscribe",produces= MediaType.TEXT_EVENT_STREAM_VALUE)

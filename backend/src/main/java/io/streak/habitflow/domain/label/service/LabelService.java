@@ -107,10 +107,10 @@ public class LabelService {
         return LabelResponse.Detail.of(label, request.favorite(),encodedId);
     }
 
-    public Slice<LabelResponse.Summary> getLabelPage(Long labelId, Long memberId, Pageable pageable) {
+    public Slice<LabelResponse.Summary> getLabels(Long lastLabelId, Long memberId, Pageable pageable) {
         int pageSize = pageable.getPageSize();
 
-        List<Label> labels = labelRepository.findLabelsByMemberWithCursor(labelId,memberId,pageable);
+        List<Label> labels = labelRepository.findLabelsByMemberWithCursor(lastLabelId,memberId,pageable);
 
         boolean hasNext = false;
         if(labels.size() > pageSize){

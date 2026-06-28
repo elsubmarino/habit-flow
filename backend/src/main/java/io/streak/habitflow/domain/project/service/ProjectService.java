@@ -16,7 +16,7 @@ import io.streak.habitflow.domain.project.event.ProjectAcceptEvent;
 import io.streak.habitflow.domain.project.event.ProjectInvitationEvent;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.domain.task.event.TaskChangedEvent;
+import io.streak.habitflow.domain.task.event.ActivityRecordedEvent;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.common.type.TargetType;
@@ -101,7 +101,7 @@ public class ProjectService {
         }
 
 
-        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+        applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 project.getId(),
                 memberId,
                 io.streak.habitflow.global.common.type.TargetType.PROJECT,
@@ -160,7 +160,7 @@ public class ProjectService {
         if(request.name() != null && !request.name().equals(oldProjectName)){
             List<ChangeSet> changeSets = new ArrayList<>();
             changeSets.add(new ChangeSet("name",oldProjectName,request.name()));
-            applicationEventPublisher.publishEvent(new TaskChangedEvent(
+            applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                     project.getId(),
                     memberId,
                     io.streak.habitflow.global.common.type.TargetType.PROJECT,
@@ -185,7 +185,7 @@ public class ProjectService {
     }
 
     public List<ProjectResponse.Summary> getProjectsByMember(Long memberId) {
-        List<ProjectSummaryQuery> projectListQueries = projectRepository.findByMemberId(memberId);
+        List<ProjectSummaryQuery> projectListQueries = projectRepository.findProjectSummariesByMemberId(memberId);
         return projectListQueries.stream()
                 .map(query ->{
                     String encodedId = hashidsProvider.encode(query.id());
@@ -205,7 +205,7 @@ public class ProjectService {
         favoriteRepository.deleteByTargetTypeAndTargetId(TargetType.PROJECT, projectId);
         projectRepository.deleteById(projectId);
 
-        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+        applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 project.getId(),
                 memberId,
                 io.streak.habitflow.global.common.type.TargetType.PROJECT,
@@ -326,7 +326,7 @@ public class ProjectService {
     @Transactional
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public void deleteProjectMember(Long projectId,Long memberId, ProjectRequest.DeleteMember request) {
+    public void deleteProjectMember(Long projectId,Long loginMemberId, ProjectRequest.DeleteMember request) {
         Project project = projectRepository.getOrThrow(projectId);
         Long realMemberId = hashidsProvider.decode(request.memberId());
         Member member = memberRepository.getReferenceById(realMemberId);

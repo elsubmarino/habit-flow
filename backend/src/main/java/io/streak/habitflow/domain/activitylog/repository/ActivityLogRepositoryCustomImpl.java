@@ -23,15 +23,15 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<ActivityLog> searchActivityLogsByCondition(Long activityLogId, Long memberId, Pageable pageable, ActivityLogRequest.Search search,
-                                                           List<Long> memberIds, List<Long> targetIds) {
+    public List<ActivityLog> findActivityLogsBeforeId(Long lastActivityLogId, Long memberId, Pageable pageable, ActivityLogRequest.Search search,
+                                                      List<Long> memberIds, List<Long> targetIds) {
         return queryFactory
                 .selectFrom(activityLog)
                 .leftJoin(activityLog.member, member).fetchJoin()
                 .where(
                         activityLog.member.id.eq(memberId),
                         activityTypeIn(search.activityType()),
-                        ltActivityLogId(activityLogId),
+                        ltActivityLogId(lastActivityLogId),
                         targetTypeEq(search.targetType(),targetIds),
                         targetDateEq(search.fromDate(),search.toDate())
                 )

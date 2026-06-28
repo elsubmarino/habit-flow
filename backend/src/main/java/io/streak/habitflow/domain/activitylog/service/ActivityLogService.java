@@ -7,7 +7,7 @@ import io.streak.habitflow.domain.activitylog.mapper.ActivityLogMapper;
 import io.streak.habitflow.domain.activitylog.repository.ActivityLogRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.task.event.TaskChangedEvent;
+import io.streak.habitflow.domain.task.event.ActivityRecordedEvent;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -28,17 +28,17 @@ public class ActivityLogService {
     private final HashidsProvider hashidsProvider;
 
     @Transactional
-    public void recordTaskChange(TaskChangedEvent taskChangedEvent) {
-        Member owner = memberRepository.getReferenceById(taskChangedEvent.memberId());
+    public void recordActivity(ActivityRecordedEvent activityRecordedEvent) {
+        Member owner = memberRepository.getReferenceById(activityRecordedEvent.memberId());
 
         ActivityLog activityLog = ActivityLog.builder()
                 .member(owner)
                 .actor(owner)
-                .targetId(taskChangedEvent.targetId())
-                .targetType(taskChangedEvent.targetType())
-                .activityType(taskChangedEvent.activityType())
-                .targetName(taskChangedEvent.targetName())
-                .changes(taskChangedEvent.changes())
+                .targetId(activityRecordedEvent.targetId())
+                .targetType(activityRecordedEvent.targetType())
+                .activityType(activityRecordedEvent.activityType())
+                .targetName(activityRecordedEvent.targetName())
+                .changes(activityRecordedEvent.changes())
                 .build();
 
         activityLogRepository.save(activityLog);
@@ -58,7 +58,7 @@ public class ActivityLogService {
                     .map(hashidsProvider::decode).toList();   
         }
 
-        List<ActivityLog> activityLogs = activityLogRepository.searchActivityLogsByCondition(lastActivityLogId, memberId, pageable,search,
+        List<ActivityLog> activityLogs = activityLogRepository.findActivityLogsBeforeId(lastActivityLogId, memberId, pageable,search,
                 memberIds,targetIds);
 
         boolean hasNext = false;

@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.activitylog.listener;
 
 import io.streak.habitflow.domain.activitylog.service.ActivityLogService;
-import io.streak.habitflow.domain.task.event.TaskChangedEvent;
+import io.streak.habitflow.domain.task.event.ActivityRecordedEvent;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +19,10 @@ public class ActivityLogEventListener {
 
     @Async("activityLogExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleChanged(TaskChangedEvent taskChangedEvent) {
+    public void handleActivityRecorded(ActivityRecordedEvent activityRecordedEvent) {
         log.info("[Async Event Check] 현재 쓰레드 : {} -> 로그 저장 시작", Thread.currentThread().getName());
 
-        activityLogService.recordTaskChange(taskChangedEvent);
+        activityLogService.recordActivity(activityRecordedEvent);
     }
 
 }

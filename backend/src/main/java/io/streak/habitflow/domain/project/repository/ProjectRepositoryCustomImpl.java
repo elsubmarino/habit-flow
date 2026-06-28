@@ -40,7 +40,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
     }
 
     @Override
-    public List<ProjectSummaryQuery> findByMemberId(Long memberId) {
+    public List<ProjectSummaryQuery> findProjectSummariesByMemberId(Long memberId) {
         List<Long> projectIds = queryFactory
                 .select(projectMember.project.id)
                 .from(projectMember)

@@ -48,8 +48,8 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "회원 로그인")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 로그인 성공")})
-    public ResponseEntity<Map<String, String>> loginMember(@RequestBody MemberRequest.Login request,
-                                                           HttpServletResponse httpServletResponse){
+    public ResponseEntity<Map<String, String>> login(@RequestBody MemberRequest.Login request,
+                                                     HttpServletResponse httpServletResponse){
         TokenDto tokenDto = authService.login(request);
         tokenCookieManager.addRefreshTokenCookie(httpServletResponse,tokenDto.refreshToken());
         return ResponseEntity.ok(Map.of("accessToken", tokenDto.accessToken()));
@@ -74,7 +74,7 @@ public class AuthController {
 
     @PostMapping("/reissue")
     @Operation(summary = "토큰 재발급")
-    public ResponseEntity<Map<String, String>> reissue(
+    public ResponseEntity<Map<String, String>> refreshTokens(
             @CookieValue(value="refreshToken") String refreshToken,
             HttpServletResponse response){
         TokenDto tokenDto = authService.refreshTokens(refreshToken);

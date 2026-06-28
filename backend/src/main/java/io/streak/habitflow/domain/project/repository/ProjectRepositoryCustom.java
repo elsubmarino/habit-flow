@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface ProjectRepositoryCustom {
     List<ProjectSearchSummaryQuery> searchByKeyword(String keyword, Long memberId, Pageable pageable);
-    List<ProjectSummaryQuery> findByMemberId(Long memberId);
+    List<ProjectSummaryQuery> findProjectSummariesByMemberId(Long memberId);
     Long findMaxSortOrder(Long memberId, Long parentId);
 }

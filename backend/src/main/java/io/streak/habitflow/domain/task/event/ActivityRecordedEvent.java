@@ -6,7 +6,7 @@ import io.streak.habitflow.global.common.type.TargetType;
 
 import java.util.List;
 
-public record TaskChangedEvent(
+public record ActivityRecordedEvent(
         Long targetId,
         Long memberId,
         TargetType targetType,

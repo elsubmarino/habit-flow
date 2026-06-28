@@ -17,11 +17,12 @@ import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.entity.TaskLabel;
-import io.streak.habitflow.domain.task.event.TaskChangedEvent;
+import io.streak.habitflow.domain.task.event.ActivityRecordedEvent;
 import io.streak.habitflow.domain.task.mapper.TaskMapper;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.domain.task.type.CursorDirection;
+import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.DistributedLock;
@@ -66,7 +67,7 @@ public class TaskService {
     public void deleteTask(Long taskId, Long memberId){
         Task task = taskRepository.getOrThrow(taskId);
         taskRepository.deleteById(taskId);
-        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+        applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 taskId,
                 memberId,
                 TargetType.TASK,
@@ -175,7 +176,7 @@ public class TaskService {
 
         Task savedTask = taskRepository.save(task);
 
-        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+        applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 savedTask.getId(),
                 memberId,
                 TargetType.TASK,
@@ -226,7 +227,7 @@ public class TaskService {
     public Slice<TaskResponse.Summary> getTasksByProject(Long projectId, Long memberId, Pageable pageable){
         int pageSize = pageable.getPageSize();
 
-        List<TaskSummaryQuery> tasks = taskRepository.findTasksByProject(projectId,memberId,pageable);
+        List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByProject(projectId,memberId,pageable);
 
         boolean hasNext = false;
         if(tasks.size() > pageSize){
@@ -240,72 +241,12 @@ public class TaskService {
         return new SliceImpl<>(taskSummaryResponses,pageable,hasNext);
     }
 
-    public TaskResponse.SummarySlice getTasks(TaskRequest.SearchCondition searchCondition,
+    public TaskResponse.SummarySlice searchTasks(TaskRequest.SearchCondition searchCondition,
                                               TaskRequest.Cursor cursor, Long memberId, Pageable pageable){
+        List<TaskSummaryQuery> tasks = searchCondition.taskFilterType() == TaskFilterType.INBOX
+                ? taskRepository.searchInboxTasks(searchCondition, cursor, memberId, pageable)
+                : taskRepository.searchTasksByCondition(searchCondition, cursor, memberId, pageable);
         int pageSize = pageable.getPageSize();
-        List<TaskSummaryQuery> tasks = taskRepository.searchTasksByCondition(searchCondition, cursor, memberId, pageable);
-
-        boolean hasNext;
-        boolean hasPrev;
-
-        if(cursor != null && cursor.direction() == CursorDirection.PREV){
-            hasPrev = tasks.size() > pageSize;
-            if(hasPrev){
-                tasks = tasks.subList(tasks.size() - pageSize, tasks.size());
-            }
-            hasNext = cursor.lastTaskId() != null;
-        }else{
-            hasNext=  tasks.size() > pageSize;
-            if(hasNext){
-                tasks=tasks.subList(0, pageSize);
-            }
-            hasPrev = cursor != null && cursor.lastTaskId() != null;
-        }
-
-        List<Long> taskIds = tasks.stream().map(TaskSummaryQuery::id).toList();
-        Map<Long, List<LabelResponse.Summary>> labelMap = labelRepository.findLabelSummariesByTaskIds(taskIds);
-
-        List<TaskResponse.Summary> taskSummaryResponses = tasks.stream()
-                .map(task-> {
-                            String encodedId = hashidsProvider.encode(task.id());
-                            return TaskResponse.Summary.of(task,encodedId,
-                                    labelMap.getOrDefault(task.id(), new ArrayList<>()));
-                        }
-                )
-                .toList();
-
-        TaskRequest.Cursor nextCursor = null;
-        TaskRequest.Cursor prevCursor = null;
-
-        if(!tasks.isEmpty()){
-            TaskSummaryQuery first = tasks.get(0);
-            TaskSummaryQuery last = tasks.get(tasks.size()-1);
-
-            if(hasNext){
-                nextCursor = TaskRequest.Cursor.next(
-                        last.dueDate(),
-                        last.taskPriorityType(),
-                        last.sortOrder(),
-                        hashidsProvider.encode(last.id())
-                );
-            }
-            if(hasPrev){
-                prevCursor = TaskRequest.Cursor.prev(
-                        first.dueDate(),
-                        first.taskPriorityType(),
-                        first.sortOrder(),
-                        hashidsProvider.encode(first.id())
-                );
-            }
-        }
-
-        return new TaskResponse.SummarySlice(taskSummaryResponses,hasNext,hasPrev,nextCursor,prevCursor);
-    }
-
-    public TaskResponse.SummarySlice getInboxTasks(TaskRequest.SearchCondition searchCondition,
-                                              TaskRequest.Cursor cursor, Long memberId, Pageable pageable){
-        int pageSize = pageable.getPageSize();
-        List<TaskSummaryQuery> tasks = taskRepository.searchInboxTasks(searchCondition, cursor, memberId, pageable);
 
         boolean hasNext;
         boolean hasPrev;
@@ -394,7 +335,7 @@ public class TaskService {
         }
 
         if(!changes.isEmpty()) {
-            applicationEventPublisher.publishEvent(new TaskChangedEvent(
+            applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                     task.getId(),
                     memberId,
                     TargetType.TASK,
@@ -422,7 +363,7 @@ public class TaskService {
 
             task.updateDueDate(nextDueDate);
 
-            applicationEventPublisher.publishEvent(new TaskChangedEvent(
+            applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                     taskId,
                     memberId,
                     TargetType.TASK,
@@ -432,7 +373,7 @@ public class TaskService {
         }else{
             ActivityType activityType = nextCompletion ? ActivityType.COMPLETED : ActivityType.UNCOMPLETED;
 
-            applicationEventPublisher.publishEvent(new TaskChangedEvent(
+            applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                     task.getId(),
                     memberId,
                     TargetType.TASK,
@@ -453,7 +394,7 @@ public class TaskService {
     }
 
     public TaskResponse.SidebarTasksCount getSidebarTaskCount(Long memberId){
-        return taskRepository.countSidebarTasks(memberId);
+        return taskRepository.findSidebarTaskCounts(memberId);
     }
 
     private LocalDateTime calculateNextInstanceDate(LocalDateTime currentDueDate, Task task){
@@ -521,7 +462,7 @@ public class TaskService {
             String toDate = (request.dueDate() != null)? request.timeSpecified() ? request.dueDate().toString()
                     :request.dueDate().toLocalDate().toString():null;
             changeSets.add(new ChangeSet("dueDate",fromDate,toDate));
-            applicationEventPublisher.publishEvent(new TaskChangedEvent(
+            applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                     task.getId(),
                     memberId,
                     TargetType.TASK,
@@ -561,7 +502,7 @@ public class TaskService {
                         :request.dueDate().toLocalDate().toString():null;
                 changeSets.add(new ChangeSet("dueDate",fromDate,toDate));
 
-                applicationEventPublisher.publishEvent(new TaskChangedEvent(
+                applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                         task.getId(),
                         memberId,
                         TargetType.TASK,
@@ -604,7 +545,7 @@ public class TaskService {
         List<ChangeSet>  changeSets = new ArrayList<>();
         changeSets.add(new ChangeSet("priority",oldTaskPriorityType.name(), taskPriorityType.name()));
 
-        applicationEventPublisher.publishEvent(new TaskChangedEvent(
+        applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 task.getId(),
                 memberId,
                 TargetType.TASK,
@@ -649,7 +590,7 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updateProject(Long taskId, Long projectId, Long memberId){
+    public TaskResponse.Detail moveTaskToProject(Long taskId, Long projectId, Long memberId){
         Task task = taskRepository.getOrThrow(taskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
@@ -667,7 +608,7 @@ public class TaskService {
             List<ChangeSet>  changeSets = new ArrayList<>();
             changeSets.add(new ChangeSet("projectName",oldProjectName,project.getName()));
 
-            applicationEventPublisher.publishEvent(new TaskChangedEvent(
+            applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                     task.getId(),
                     memberId,
                     TargetType.TASK,
@@ -681,7 +622,7 @@ public class TaskService {
     }
 
     public List<TaskResponse.UpcomingDateCount> getUpcomingDateCounts(Long memberId, LocalDateTime fromDate, LocalDateTime toDate){
-        return taskRepository.countUpcomingTasksByDate(memberId, fromDate, toDate);
+        return taskRepository.findUpcomingTaskCountsByDate(memberId, fromDate, toDate);
     }
 
     @Transactional
@@ -706,7 +647,7 @@ public class TaskService {
     public TaskResponse.SummarySlice getTasksByLabel(Long labelId, Long loginMemberId, Pageable pageable
                                                     ,TaskRequest.Cursor cursor){
         int pageSize = pageable.getPageSize();
-        List<TaskSummaryQuery> tasks = taskRepository.findTasksByLabelId(labelId,pageable,loginMemberId);
+        List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByLabelId(labelId,pageable,loginMemberId);
 
         boolean hasNext;
         boolean hasPrev;
