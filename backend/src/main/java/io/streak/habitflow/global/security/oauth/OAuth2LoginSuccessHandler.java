@@ -11,13 +11,14 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -35,8 +36,13 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = oAuth2User.getAttribute("email");
 
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new OAuth2AuthenticationException("존재하지 않는 회원입니다."));
+        Member member = memberRepository.findByEmail(email).orElse(null);
+        if (member == null) {
+            getRedirectStrategy().sendRedirect(request, response,
+                    "http://localhost:3000/oauth2/redirect?error=" +
+                            URLEncoder.encode("존재하지 않는 회원입니다.", StandardCharsets.UTF_8));
+            return;
+        }
 
         String accessToken = jwtTokenProvider.createAccessToken(email,member.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(email,member.getId());

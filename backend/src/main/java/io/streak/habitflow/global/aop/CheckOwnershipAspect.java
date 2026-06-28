@@ -13,14 +13,14 @@ import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.util.HashidsProvider;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
@@ -40,7 +40,7 @@ public class CheckOwnershipAspect {
     private final HashidsProvider hashidsProvider;
 
     @Before("@annotation(CheckOwnership) || @annotation(CheckOwnerships)")
-    public void validateOwnership(JoinPoint joinPoint) throws AccessDeniedException {
+    public void validateOwnership(JoinPoint joinPoint) {
         MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
         Method method = methodSignature.getMethod();
 
@@ -94,39 +94,39 @@ public class CheckOwnershipAspect {
 
     public void checkTaskOwner(Long taskId, Long memberId){
         if(!taskRepository.existsById(taskId)){
-            throw new EntityNotFoundException("존재하지 않는 테스크입니다.");
+            throw new BusinessException(ErrorCode.NOT_FOUND);
         }
 
         if(!taskRepository.existsByIdAndHasAccess(taskId,memberId)){
-            throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
     }
 
     public void checkCommentOwner(Long commentId, Long memberId){
         Comment comment = commentRepository.getOrThrow(commentId);
         if(!comment.getMember().getId().equals(memberId)){
-            throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
     }
 
     public void checkLabelOwner(Long labelId, Long memberId){
         Label label = labelRepository.getOrThrow(labelId);
         if(!label.getMember().getId().equals(memberId)){
-            throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
     }
 
     public void checkMemberOwner(Long loginMemberId, Long memberId){
         Member member = memberRepository.getOrThrow(memberId);
         if(!member.getId().equals(loginMemberId)){
-            throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
     }
 
     public void checkNotificationOwner(Long notificationId, Long memberId){
         Notification notification = notificationRepository.getOrThrow(notificationId);
         if(!notification.getReceiver().getId().equals(memberId)){
-            throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
     }
 
@@ -135,7 +135,7 @@ public class CheckOwnershipAspect {
         Member member = memberRepository.getReferenceById(memberId);
         boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
         if(!isMember){
-            throw new AccessDeniedException("해당 자원에 대한 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
     }
 }

@@ -1,8 +1,9 @@
 package io.streak.habitflow.global.aop;
 
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import org.springframework.core.MethodParameter;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -25,7 +26,7 @@ public class LoginMemberIdArgumentResolver implements HandlerMethodArgumentResol
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication == null || !authentication.isAuthenticated() ||
             "anonymousUser".equals(authentication.getPrincipal())){
-            throw new AuthenticationCredentialsNotFoundException("로그인이 필요한 서비스입니다.");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
         return userPrincipal.getMemberId();

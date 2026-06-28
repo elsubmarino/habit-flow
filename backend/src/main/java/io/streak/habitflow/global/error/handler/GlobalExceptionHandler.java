@@ -1,195 +1,94 @@
 package io.streak.habitflow.global.error.handler;
 
+import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.dto.ErrorResponse;
-import io.streak.habitflow.global.error.exception.ConflictException;
-import io.streak.habitflow.global.error.exception.FileStorageException;
-import io.streak.habitflow.global.error.exception.LockAcquisitionException;
-import io.streak.habitflow.global.error.exception.TooManyRequestsException;
-import jakarta.persistence.EntityNotFoundException;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({
-            IllegalArgumentException.class,
-            IllegalStateException.class,
-            HttpMessageNotReadableException.class,
-            MethodArgumentTypeMismatchException.class
-    })
-    public ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException ex, HttpServletRequest request) {
-        log.warn("[비즈니스 규격 경고] -> Path: {}, Message: {}", request.getRequestURI(), ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler({BusinessException.class})
+    public ResponseEntity<ErrorResponse> handleBusinessException(
+            BusinessException ex, HttpServletRequest request) {
+        ErrorCode code = ex.getErrorCode();
+        if (code.getStatus().is5xxServerError()) {
+            log.error("[{}] path={}", code.getCode(), request.getRequestURI(), ex);
+        } else {
+            log.warn("[{}] path={}, message={}", code.getCode(), request.getRequestURI(), ex.getMessage());
+        }
+        return ResponseEntity.status(code.getStatus())
                 .body(ErrorResponse.of(
-                        HttpStatus.BAD_REQUEST.value(),
-                        HttpStatus.BAD_REQUEST.name(),
-                        ex.getMessage(),
+                        code.getStatus().value(),
+                        code.getCode(),
+                        ex.getClientMessage(),
                         request.getRequestURI()
                 ));
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException ex,
-            HttpServletRequest request
-    ) {
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ErrorResponse> handleBindException(
+            BindException ex, HttpServletRequest request) {
         String message = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .map(e -> e.getField() + ": " + e.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+        if (message.isBlank()) message = "요청 값이 올바르지 않습니다.";
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(400, "VALIDATION_FAILED", message, request.getRequestURI()));
+    }
+
+    @ExceptionHandler({
+            HttpMessageNotReadableException.class,
+            MethodArgumentTypeMismatchException.class
+    })
+    public ResponseEntity<ErrorResponse> handleMalformedRequest(
+            Exception ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(400, "BAD_REQUEST",
+                        "요청 형식이 올바르지 않습니다.", request.getRequestURI()));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            ConstraintViolationException ex, HttpServletRequest request) {
+        String message = ex.getConstraintViolations().stream()
+                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                .collect(Collectors.joining(", "));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(400, "VALIDATION_FAILED", message, request.getRequestURI()));
+    }
+
+    @ExceptionHandler({MethodArgumentNotValidException.class})
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(e -> e.getField() + ": " + e.getDefaultMessage())
                 .collect(Collectors.joining(", "));
         if (message.isBlank()) {
             message = "요청 값이 올바르지 않습니다.";
         }
-        log.warn("[요청 검증 실패] -> Path: {}, Message: {}", request.getRequestURI(), message);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(
-                        HttpStatus.BAD_REQUEST.value(),
-                        HttpStatus.BAD_REQUEST.name(),
-                        message,
-                        request.getRequestURI()
-                ));
-    }
-
-    @ExceptionHandler({BindException.class})
-    public ResponseEntity<ErrorResponse> handleBindException(BindException ex, HttpServletRequest request) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-                .map(error->error.getField()+": "+error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
-        if(message.isBlank()) {
-            message = "요청 값이 올바르지 않습니다.";
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of(
-                        HttpStatus.BAD_REQUEST.value(),
-                        HttpStatus.BAD_REQUEST.name(),
-                        ex.getMessage(),
-                        request.getRequestURI()
-                ));
-    }
-
-    @ExceptionHandler({EntityNotFoundException.class, NoSuchElementException.class})
-    public ResponseEntity<ErrorResponse> handleNotFoundException(RuntimeException ex, HttpServletRequest request) {
-        log.warn("[데이터 조회 실패] -> Path: {}, Message: {}", request.getRequestURI(), ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ErrorResponse.of(
-                        HttpStatus.NOT_FOUND.value(),
-                        HttpStatus.NOT_FOUND.name(),
-                        ex.getMessage() != null ? ex.getMessage() : "요청한 리소스를 찾을 수 없습니다.",
-                        request.getRequestURI()
-                ));
-    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
-            AccessDeniedException ex,
-            HttpServletRequest request
-    ) {
-        log.warn("[보안 무단 침입 차단] -> Path: {}, Message: {}", request.getRequestURI(), ex.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ErrorResponse.of(
-                        HttpStatus.FORBIDDEN.value(),
-                        HttpStatus.FORBIDDEN.name(),
-                        ex.getMessage(),
-                        request.getRequestURI()
-                ));
-    }
-
-    @ExceptionHandler({BadCredentialsException.class, OAuth2AuthenticationException.class})
-    public ResponseEntity<ErrorResponse> handleUnauthorized(RuntimeException ex, HttpServletRequest request) {
-        log.warn("[인증 실패] -> Path: {}, Message: {}", request.getRequestURI(), ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ErrorResponse.of(
-                        HttpStatus.UNAUTHORIZED.value(),
-                        HttpStatus.UNAUTHORIZED.name(),
-                        ex.getMessage(),
-                        request.getRequestURI()
-                ));
-    }
-
-    @ExceptionHandler(AuthenticationCredentialsNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleAuthException(
-            AuthenticationCredentialsNotFoundException ex,
-            HttpServletRequest request
-    ) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ErrorResponse.of(
-                        HttpStatus.UNAUTHORIZED.value(),
-                        HttpStatus.UNAUTHORIZED.name(),
-                        ex.getMessage(),
-                        request.getRequestURI()
-                ));
-    }
-
-    @ExceptionHandler(LockAcquisitionException.class)
-    public ResponseEntity<ErrorResponse> handleLockAcquisition(
-            LockAcquisitionException ex,
-            HttpServletRequest request
-    ) {
-        log.warn("[락 획득 실패] -> Path: {}, Message: {}", request.getRequestURI(), ex.getMessage());
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                .body(ErrorResponse.of(
-                        HttpStatus.SERVICE_UNAVAILABLE.value(),
-                        HttpStatus.SERVICE_UNAVAILABLE.name(),
-                        ex.getMessage(),
-                        request.getRequestURI()
-                ));
+                .body(ErrorResponse.of(400, "VALIDATION_FAILED", message, request.getRequestURI()));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex, HttpServletRequest request) {
-        log.error("[시스템 내부 오류 발생] -> Path: {}, Message: {}", request.getRequestURI(), ex.getMessage(), ex);
+        log.error("[INTERNAL_ERROR] path={}", request.getRequestURI(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ErrorResponse.of(
-                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        HttpStatus.INTERNAL_SERVER_ERROR.name(),
-                        "서버 내부 에러가 발생했습니다. 시스템 관리자에게 문의하세요.",
-                        request.getRequestURI()
-                ));
-    }
-
-    @ExceptionHandler(FileStorageException.class)
-    public ResponseEntity<ErrorResponse> handleFileStorageException(FileStorageException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ErrorResponse.of(
-                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        HttpStatus.INTERNAL_SERVER_ERROR.name(),
-                        ex.getMessage(),
-                        request.getRequestURI()));
-    }
-
-    @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ErrorResponse> handleConflictException(ConflictException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ErrorResponse.of(
-                        HttpStatus.CONTINUE.value(),
-                        HttpStatus.CONTINUE.name(),
-                        ex.getMessage(),
-                        request.getRequestURI()));
-    }
-
-    @ExceptionHandler(TooManyRequestsException.class)
-    public ResponseEntity<ErrorResponse> handleTooManyRequestsException(TooManyRequestsException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .body(ErrorResponse.of(
-                        HttpStatus.TOO_MANY_REQUESTS.value(),
-                        HttpStatus.TOO_MANY_REQUESTS.name(),
-                        ex.getMessage(),
-                        request.getRequestURI()));
+                .body(ErrorResponse.of(500, "INTERNAL_SERVER_ERROR",
+                        "서버 내부 에러가 발생했습니다.", request.getRequestURI()));
     }
 }

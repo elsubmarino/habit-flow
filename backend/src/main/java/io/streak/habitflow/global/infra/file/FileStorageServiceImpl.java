@@ -1,6 +1,7 @@
 package io.streak.habitflow.global.infra.file;
 
-import io.streak.habitflow.global.error.exception.FileStorageException;
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,7 +20,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     @Override
     public FileDto upload(MultipartFile file) {
         if(file.isEmpty()){
-            throw new IllegalArgumentException("업로드할 파일이 없습니다.");
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
         try{
@@ -46,7 +47,7 @@ public class FileStorageServiceImpl implements FileStorageService {
 
 
         }catch(IOException e){
-            throw new FileStorageException("파일 저장 중 오류가 발생했습니다.",e);
+            throw new BusinessException(ErrorCode.FILE_STORAGE_FAILED, "파일 저장 중 오류가 발생했습니다.", e);
         }
     }
 }

@@ -1,18 +1,18 @@
 package io.streak.habitflow.global.security;
 
+import io.streak.habitflow.global.error.SecurityErrorWriter;
 import io.streak.habitflow.global.security.jwt.JwtAuthenticationFilter;
 import io.streak.habitflow.global.security.jwt.JwtTokenProvider;
 import io.streak.habitflow.global.security.oauth.CustomOAuth2UserService;
 import io.streak.habitflow.global.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
 import io.streak.habitflow.global.security.oauth.OAuth2LoginSuccessHandler;
 import jakarta.servlet.DispatcherType;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -38,6 +38,7 @@ public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final RedisTemplate<String, Object> redisTemplate;
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOauth2AuthorizationRequestRepository;
+    private final SecurityErrorWriter securityErrorWriter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -60,8 +61,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,"/api/members").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, redisTemplate),
-                UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(
+                        new JwtAuthenticationFilter(jwtTokenProvider, redisTemplate, securityErrorWriter),
+                        UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(endpoint -> endpoint
                                 .authorizationRequestRepository(httpCookieOauth2AuthorizationRequestRepository))
@@ -69,16 +71,25 @@ public class SecurityConfig {
                                 .userService(customOAuth2UserService)
                         )
                         .successHandler(oAuth2LoginSuccessHandler)
-                        .failureUrl("/api/auth/fail")
+                        .failureHandler((request, response, exception) -> {
+                            String message = exception.getMessage() != null
+                                    ? exception.getMessage()
+                                    : "소셜 로그인에 실패했습니다.";
+                            securityErrorWriter.write(request, response, HttpStatus.UNAUTHORIZED, message);
+                        })
                 )
                 .exceptionHandling(ex->ex
                         .authenticationEntryPoint((request,response,authException)->{
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            String message = authException.getMessage() != null
+                                    ? authException.getMessage()
+                                    : "로그인이 필요합니다.";
+                            securityErrorWriter.write(request, response, HttpStatus.UNAUTHORIZED, message);
                         })
                         .accessDeniedHandler((request,response,accessDeniedException)->{
-                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            String message = accessDeniedException.getMessage() != null
+                                    ? accessDeniedException.getMessage()
+                                    : "접근 권한이 없습니다.";
+                            securityErrorWriter.write(request, response, HttpStatus.FORBIDDEN, message);
                         })
                 );
         ;

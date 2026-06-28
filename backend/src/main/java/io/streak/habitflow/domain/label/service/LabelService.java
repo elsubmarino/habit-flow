@@ -10,12 +10,13 @@ import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.common.type.TargetType;
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,7 +79,7 @@ public class LabelService {
         Member member = memberRepository.getReferenceById(memberId);
 
         if(!label.getMember().getId().equals(memberId)) {
-            throw new AccessDeniedException("수정 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
         if(request.favorite()) {
@@ -132,7 +133,7 @@ public class LabelService {
         Label label = labelRepository.getOrThrow(labelId);
 
         if(!label.getMember().getId().equals(memberId)) {
-            throw new AccessDeniedException("삭제 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
         labelRepository.deleteById(labelId);
     }

@@ -1,5 +1,7 @@
 package io.streak.habitflow.global.util;
 
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.hashids.Hashids;
 import org.springframework.stereotype.Component;
@@ -18,7 +20,7 @@ public class HashidsProvider {
         if(hash==null|| hash.isBlank()) return null;
         long[] decoded = hashids.decode(hash);
         if(decoded.length == 0){
-            throw new IllegalArgumentException("유요하지 앟은 식별자 포맷입니다.");
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
         return decoded[0];
     }

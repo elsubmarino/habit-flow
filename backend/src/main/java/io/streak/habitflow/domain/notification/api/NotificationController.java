@@ -5,6 +5,8 @@ import io.streak.habitflow.domain.notification.dto.response.NotificationResponse
 import io.streak.habitflow.domain.notification.service.NotificationService;
 import io.streak.habitflow.global.aop.LoginMemberId;
 import io.streak.habitflow.global.common.RoutingId;
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.infra.sse.SseEmitters;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +48,7 @@ public class NotificationController {
         try{
             emitter.send(SseEmitter.event().name("connect").data("connected!"));
         }catch(IOException e){
-            throw new RuntimeException("SSE 최초 연결 더미 데이터 전송 실패",e);
+            throw new BusinessException(ErrorCode.SSE_CONNECTION_FAILED);
         }
         sseEmitters.add(loginMemberId, emitter);
         return ResponseEntity.ok(emitter);

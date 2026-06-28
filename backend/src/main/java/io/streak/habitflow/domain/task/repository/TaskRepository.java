@@ -3,7 +3,8 @@ package io.streak.habitflow.domain.task.repository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.task.entity.Task;
-import jakarta.persistence.EntityNotFoundException;
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TaskRepository extends JpaRepository<Task,Long>, TaskRepositoryCustom {
@@ -11,6 +12,6 @@ public interface TaskRepository extends JpaRepository<Task,Long>, TaskRepository
     long countByProjectAndMember(Project project, Member member);
 
     default Task getOrThrow(Long taskId) {
-        return findById(taskId).orElseThrow(()->new EntityNotFoundException("존재하지 않는 테스크입니다."));
+        return findById(taskId).orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
     }
 }

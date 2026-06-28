@@ -84,19 +84,26 @@ public class JwtTokenProvider {
     }
 
     public boolean validateToken(String token){
-        try{
+        return validateTokenResult(token) == JwtValidationResult.VALID;
+    }
+
+    public JwtValidationResult validateTokenResult(String token) {
+        try {
             Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
-            return true;
-        }catch(SecurityException |MalformedJwtException e){
-            log.info("잘못된 JWT 서명입니다.");
-        }catch(ExpiredJwtException e){
+            return JwtValidationResult.VALID;
+        } catch (ExpiredJwtException e) {
             log.info("만료된 JWT 토큰입니다.");
-        }catch(UnsupportedJwtException e){
+            return JwtValidationResult.EXPIRED;
+        } catch (MalformedJwtException e) {
+            log.info("잘못된 JWT 서명입니다.");
+            return JwtValidationResult.MALFORMED;
+        } catch (UnsupportedJwtException e) {
             log.info("지원되지 않는 JWT 토큰입니다.");
-        }catch(IllegalArgumentException e){
+            return JwtValidationResult.UNSUPPORTED;
+        } catch (SecurityException | IllegalArgumentException e) {
             log.info("JWT 토큰이 잘못되었습니다.");
+            return JwtValidationResult.INVALID;
         }
-        return false;
     }
 
     public String getEmail(String refreshToken){
@@ -106,5 +113,9 @@ public class JwtTokenProvider {
                 .parseClaimsJws(refreshToken)
                 .getBody()
                 .getSubject();
+    }
+
+    public enum JwtValidationResult {
+        VALID, EXPIRED, INVALID, UNSUPPORTED, MALFORMED
     }
 }

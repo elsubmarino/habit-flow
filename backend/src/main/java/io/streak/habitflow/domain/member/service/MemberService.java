@@ -6,7 +6,8 @@ import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.member.type.MemberRole;
 import io.streak.habitflow.global.aop.CheckOwnership;
-import io.streak.habitflow.global.error.exception.ConflictException;
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,11 +26,11 @@ public class MemberService {
     @Transactional
     public MemberResponse.Detail createMember(MemberRequest.SignUp request){
         if(!mailService.isVerifiedEmail(request.email())){
-            throw new IllegalStateException("이메일 본인 인증이 완료되지 않았습니다.");
+            throw new BusinessException(ErrorCode.UNVERIFIED_EMAIL);
         }
 
         if(memberRepository.findByEmail(request.email()).isPresent()){
-            throw new ConflictException("이미 가입된 이메일입니다.");
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
         Member member = Member.builder()

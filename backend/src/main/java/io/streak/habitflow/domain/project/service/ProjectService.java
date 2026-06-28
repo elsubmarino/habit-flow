@@ -20,13 +20,13 @@ import io.streak.habitflow.domain.task.event.TaskChangedEvent;
 import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.common.type.TargetType;
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.util.HashidsProvider;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,7 +56,7 @@ public class ProjectService {
 
         long projectCount = projectMemberRepository.countByMember(member);
         if (projectCount > 500) {
-            throw new IllegalArgumentException("보유하고 있는 프로젝트가 500개 이상이므로 더 이상 생성할 수 없습니다.");
+            throw new BusinessException(ErrorCode.PROJECT_LIMIT_EXCEEDED);
         }
 
         Long maxSortOrder = projectRepository.findMaxSortOrder(memberId, request.parentId());
@@ -71,7 +71,7 @@ public class ProjectService {
 
         if(request.parentId() != null){
             Project parentProject = projectRepository.findById(request.parentId())
-                    .orElseThrow(()->new EntityNotFoundException("부모 프로젝트가 존재하지 않습니다."));
+                    .orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
             projectBuilder.parent(parentProject);
         }
 
@@ -124,7 +124,7 @@ public class ProjectService {
         Project parentProject = null;
         if(request.parentId() != null){
             parentProject = projectRepository.findById(request.parentId())
-                    .orElseThrow(()->new EntityNotFoundException("부모 프로젝트가 존재하지 않습니다."));
+                    .orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
         }
 
         if(request.favorite()){
@@ -238,7 +238,7 @@ public class ProjectService {
         for(String email: inviteEmails){
             memberRepository.findByEmail(email).ifPresent(targetMember->{
                 if(projectMemberRepository.existsByProjectAndMember(project,targetMember)){
-                    throw new IllegalStateException(email+" 님은 이미 프로젝트 멤버입니다.");
+                    throw new BusinessException(ErrorCode.DUPLICATE_PROJECT_MEMBER, email + " 님은...");
                 }
             });
 
@@ -274,7 +274,7 @@ public class ProjectService {
         String redisKey = INVITE_TOKEN_PREFIX+token;
         String redisValue = redisTemplate.opsForValue().get(redisKey);
         if(redisValue == null){
-            throw new EntityNotFoundException ("만료되었거나 유효하지 않은 초대 링크입니다.");
+            throw new BusinessException(ErrorCode.INVITE_LINK_EXPIRED);
         }
 
         String[]parts = redisValue.split(":");
@@ -285,7 +285,7 @@ public class ProjectService {
 
         Member loginMember = memberRepository.getOrThrow(loginMemberId);
         if(!loginMember.getEmail().equals(targetEmail)){
-            throw new AccessDeniedException("본인에게 온 초대장만 수락할 수 있습니다.");
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
         Project project = projectRepository.getOrThrow(projectId);

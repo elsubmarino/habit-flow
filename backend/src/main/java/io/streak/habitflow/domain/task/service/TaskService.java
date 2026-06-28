@@ -27,17 +27,17 @@ import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.DistributedLock;
 import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.common.type.TargetType;
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
 import io.streak.habitflow.global.util.HashidsProvider;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -88,15 +88,15 @@ public class TaskService {
         Project project = null;
         if(request.projectId() != null){
             project = projectRepository.findById(hashidsProvider.decode(request.projectId()))
-                    .orElseThrow(()->new EntityNotFoundException("존재하지 않는 프로젝트입니다."));
+                    .orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
             long projectCount = taskRepository.countByProject(project);
             if (projectCount > 500) {
-                throw new IllegalArgumentException("해당 프로젝트에 테스크를 500개까지 보유할 수 있습니다.");
+                throw new BusinessException(ErrorCode.TASK_LIMIT_EXCEEDED);
             }
 
             boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
             if(!isMember){
-                throw new AccessDeniedException("해당 프로젝트에 대한 접근 권한이 없습니다.");
+                throw new BusinessException(ErrorCode.ACCESS_DENIED);
             }
         }else if(parentTask != null){
             project = parentTask.getProject();
@@ -104,7 +104,7 @@ public class TaskService {
             //관리함인 경우 유저별 500개까지
             long projectCount = taskRepository.countByProjectAndMember(project,member);
             if (projectCount > 500) {
-                throw new IllegalArgumentException("해당 프로젝트에 테스크를 500개까지 보유할 수 있습니다.");
+                throw new BusinessException(ErrorCode.TASK_LIMIT_EXCEEDED);
             }
         }
 
@@ -143,7 +143,7 @@ public class TaskService {
                     .toList();
             List<Label> labels = labelRepository.findAllById(realLabelIds);
             if(labels.size() != request.labelIds().size()){
-                throw new EntityNotFoundException("존재하지 않는 라벨이 있습니다.");
+                throw new BusinessException(ErrorCode.INVALID_LABEL);
             }
             List<TaskLabel> taskLabels = labels.stream()
                     .map(label -> TaskLabel.builder()
@@ -198,10 +198,10 @@ public class TaskService {
     private Task resolveParentTask(TaskRequest.Create request, Task parentTask) {
         if(request.parentId() != null){
             parentTask = taskRepository.findById(hashidsProvider.decode(request.parentId()))
-                    .orElseThrow(()-> new EntityNotFoundException("존재하지 않는 테스크입니다."));
+                    .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND));
 
             if(parentTask.getSubTasks().size() >= 4){
-                throw new IllegalArgumentException("하위 테스크는 최대 4개 까지만 생성할 수 있습니다.");
+                throw new BusinessException(ErrorCode.SUB_TASK_LIMIT_EXCEEDED);
             }
         }
         return parentTask;

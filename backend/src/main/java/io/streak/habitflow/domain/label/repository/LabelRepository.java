@@ -1,7 +1,8 @@
 package io.streak.habitflow.domain.label.repository;
 
 import io.streak.habitflow.domain.label.entity.Label;
-import jakarta.persistence.EntityNotFoundException;
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -12,6 +13,6 @@ public interface LabelRepository extends JpaRepository<Label, Long>, LabelReposi
 
     default Label getOrThrow(Long labelId){
         return this.findById(labelId)
-                .orElseThrow(()->new EntityNotFoundException("존재하지 않는 라벨입니다."));
+                .orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
     }
 }

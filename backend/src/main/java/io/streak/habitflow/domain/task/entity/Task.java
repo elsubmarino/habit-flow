@@ -5,6 +5,8 @@ import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.common.entity.BaseTimeEntity;
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -155,7 +157,7 @@ public class Task extends BaseTimeEntity {
 
     public void validateRecurrence(){
         if(recurring && (recurrenceRule == null || recurrenceRule.isBlank())) {
-            throw new IllegalArgumentException("반복 일정을 설정할 경우 반복 규칙이 필수입니다.");
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
     }
 

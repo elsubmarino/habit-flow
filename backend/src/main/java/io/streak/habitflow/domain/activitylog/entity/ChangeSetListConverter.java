@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.streak.habitflow.domain.activitylog.vo.ChangeSet;
+import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.exception.BusinessException;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
@@ -22,7 +24,7 @@ public class ChangeSetListConverter implements AttributeConverter<List<ChangeSet
         try{
             return objectMapper.writeValueAsString(attribute);
         }catch(JsonProcessingException e){
-            throw new RuntimeException("ChangeSet -> JSON 직렬화 실패: "+e.getMessage());
+            throw new BusinessException(ErrorCode.DATA_CONVERSION_FAILED, "ChangeSet 직렬화 실패", e);
         }
     }
 
@@ -34,7 +36,7 @@ public class ChangeSetListConverter implements AttributeConverter<List<ChangeSet
         try{
             return objectMapper.readValue(dbData, new TypeReference<List<ChangeSet>>(){});
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("JSON -> ChangeSet 역직렬화 실패: "+e.getMessage(),e);
+            throw new BusinessException(ErrorCode.DATA_CONVERSION_FAILED, "ChangeSet 역직렬화 실패", e);
         }
     }
 }
