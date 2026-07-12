@@ -2,8 +2,8 @@ package io.streak.habitflow.domain.notification.entity;
 
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.notification.type.NotificationType;
-import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.common.entity.BaseCreatedTimeEntity;
+import io.streak.habitflow.global.common.type.ActivityType;
 import jakarta.persistence.*;
 import lombok.*;
 

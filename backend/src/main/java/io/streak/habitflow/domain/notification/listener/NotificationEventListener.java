@@ -6,9 +6,9 @@ import io.streak.habitflow.domain.notification.dto.response.NotificationResponse
 import io.streak.habitflow.domain.notification.entity.Notification;
 import io.streak.habitflow.domain.notification.repository.NotificationRepository;
 import io.streak.habitflow.domain.notification.type.NotificationType;
-import io.streak.habitflow.domain.project.event.ProjectAcceptEvent;
+import io.streak.habitflow.domain.project.event.ProjectAcceptedEvent;
 import io.streak.habitflow.domain.project.event.ProjectInvitationEvent;
-import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.infra.sse.SseEmitters;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
@@ -65,17 +65,17 @@ public class NotificationEventListener {
     @Async("activityLogExecutor")
     @Transactional
     @EventListener
-    public void handleProjectAccept(ProjectAcceptEvent projectAcceptEvent){
-        Member inviter = memberRepository.getReferenceById(projectAcceptEvent.inviterId());
-        Member invitee = memberRepository.getReferenceById(projectAcceptEvent.inviteeId());
+    public void handleProjectAccepted(ProjectAcceptedEvent projectAcceptedEvent){
+        Member inviter = memberRepository.getReferenceById(projectAcceptedEvent.inviterId());
+        Member invitee = memberRepository.getReferenceById(projectAcceptedEvent.inviteeId());
 
         Notification notification = Notification.builder()
                 .receiver(inviter)
                 .actor(invitee)
-                .targetId(projectAcceptEvent.projectId())
+                .targetId(projectAcceptedEvent.projectId())
                 .notificationType(NotificationType.PROJECT)
                 .activityType(ActivityType.JOINED)
-                .customMessage(projectAcceptEvent.inviteeName()+" 님이 ["+projectAcceptEvent.projectName()+"] 프로젝트에 합류했습니다")
+                .customMessage(projectAcceptedEvent.inviteeName()+" 님이 ["+ projectAcceptedEvent.projectName()+"] 프로젝트에 합류했습니다")
                 .isConfirmed(false)
                 .build();
 

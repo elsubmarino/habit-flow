@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.comment.service;
 
+import io.streak.habitflow.domain.activitylog.event.ActivityRecordedEvent;
 import io.streak.habitflow.domain.comment.dto.request.CommentRequest;
 import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.comment.entity.Attachment;
@@ -8,10 +9,9 @@ import io.streak.habitflow.domain.comment.repository.CommentRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.task.entity.Task;
-import io.streak.habitflow.domain.task.event.ActivityRecordedEvent;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
-import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
+import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.common.type.TargetType;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;

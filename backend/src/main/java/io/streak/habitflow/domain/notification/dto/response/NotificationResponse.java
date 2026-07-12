@@ -2,7 +2,7 @@ package io.streak.habitflow.domain.notification.dto.response;
 
 import io.streak.habitflow.domain.notification.entity.Notification;
 import io.streak.habitflow.domain.notification.type.NotificationType;
-import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.global.common.type.ActivityType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 

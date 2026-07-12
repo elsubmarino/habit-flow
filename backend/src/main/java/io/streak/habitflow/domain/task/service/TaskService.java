@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.task.service;
 
+import io.streak.habitflow.domain.activitylog.event.ActivityRecordedEvent;
 import io.streak.habitflow.domain.activitylog.vo.ChangeSet;
 import io.streak.habitflow.domain.comment.entity.Attachment;
 import io.streak.habitflow.domain.comment.entity.Comment;
@@ -17,16 +18,15 @@ import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.entity.TaskLabel;
-import io.streak.habitflow.domain.task.event.ActivityRecordedEvent;
 import io.streak.habitflow.domain.task.mapper.TaskMapper;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
-import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.domain.task.type.CursorDirection;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.DistributedLock;
 import io.streak.habitflow.global.common.RoutingId;
+import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.common.type.TargetType;
 import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.exception.BusinessException;
@@ -87,6 +87,7 @@ public class TaskService {
         parentTask = resolveParentTask(request, parentTask);
 
         Project project = null;
+        Long maxSortOrder = 0L;
         if(request.projectId() != null){
             project = projectRepository.findById(hashidsProvider.decode(request.projectId()))
                     .orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
@@ -99,6 +100,7 @@ public class TaskService {
             if(!isMember){
                 throw new BusinessException(ErrorCode.ACCESS_DENIED);
             }
+            maxSortOrder = projectRepository.findMaxSortOrder(memberId, project.getId());
         }else if(parentTask != null){
             project = parentTask.getProject();
         }else {
@@ -109,8 +111,10 @@ public class TaskService {
             }
         }
 
-        String redisKey="TASK_MAX_SORT:"+request.projectId();
-        Long nextSortOrder = redisTemplate.opsForValue().increment(redisKey, 1024L);
+        //String redisKey="TASK_MAX_SORT:"+request.projectId();
+        //Long nextSortOrder = redisTemplate.opsForValue().increment(redisKey, 1024L);
+        
+        Long nextOrderOrder = maxSortOrder + 1024L;
 
         Task task = Task.builder()
                 .name(request.name())
@@ -129,7 +133,7 @@ public class TaskService {
                 .dueDate(request.dueDate())
                 .timeSpecified(request.timeSpecified())
                 .comments(new ArrayList<>())
-                .sortOrder(nextSortOrder)
+                .sortOrder(nextOrderOrder)
                 .build();
 
         task.validateRecurrence();

@@ -1,7 +1,7 @@
 package io.streak.habitflow.domain.notification.dto.request;
 
 import io.streak.habitflow.domain.notification.type.NotificationType;
-import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.global.common.type.ActivityType;
 import lombok.Builder;
 
 public final class NotificationRequest {

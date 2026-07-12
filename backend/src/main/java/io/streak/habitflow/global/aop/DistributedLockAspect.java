@@ -1,6 +1,6 @@
 package io.streak.habitflow.global.aop;
 
-import io.streak.habitflow.global.aop.transactionTemplate.AopForTransaction;
+import io.streak.habitflow.global.aop.transaction.AopForTransaction;
 import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.exception.BusinessException;
 import lombok.RequiredArgsConstructor;

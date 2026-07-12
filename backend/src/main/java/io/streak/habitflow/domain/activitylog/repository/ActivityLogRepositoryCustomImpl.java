@@ -4,7 +4,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogRequest;
 import io.streak.habitflow.domain.activitylog.entity.ActivityLog;
-import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.common.type.TargetType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

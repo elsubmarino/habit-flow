@@ -1,9 +1,7 @@
 package io.streak.habitflow.domain.auth.api;
 
+import io.streak.habitflow.domain.auth.dto.request.AuthRequest;
 import io.streak.habitflow.domain.auth.service.AuthService;
-import io.streak.habitflow.domain.member.dto.request.MemberRequest;
-import io.streak.habitflow.domain.member.service.MailService;
-import io.streak.habitflow.domain.member.service.MemberService;
 import io.streak.habitflow.global.security.dto.TokenDto;
 import io.streak.habitflow.global.security.dto.UserPrincipal;
 import io.streak.habitflow.global.security.jwt.TokenCookieManager;
@@ -24,31 +22,29 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private final MemberService memberService;
     private final AuthService authService;
     private final TokenCookieManager tokenCookieManager;
-    private final MailService mailService;
 
     @PostMapping("/email/send-code")
     @Operation(summary = "이메일 인증번호 발송")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "이메일 인증번호 발송 성공")})
-    public ResponseEntity<Void> sendAuthCode(@RequestBody @Valid MemberRequest.SendAuthCode request){
-        mailService.sendAuthCode(request.email());
+    public ResponseEntity<Void> sendAuthCode(@RequestBody @Valid AuthRequest.SendAuthCode request){
+        authService.sendAuthCode(request.email());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/email/verify-code")
     @Operation(summary = "이메일 인증번호 확인")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "이메일 인증번호 확인 성공")})
-    public ResponseEntity<Void> verifyAuthCode(@RequestBody @Valid MemberRequest.VerifyAuthCode request){
-        mailService.verifyAuthCode(request.email(), request.code());
+    public ResponseEntity<Void> verifyAuthCode(@RequestBody @Valid AuthRequest.VerifyAuthCode request){
+        authService.verifyAuthCode(request.email(), request.code());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/login")
     @Operation(summary = "회원 로그인")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 로그인 성공")})
-    public ResponseEntity<Map<String, String>> login(@RequestBody MemberRequest.Login request,
+    public ResponseEntity<Map<String, String>> login(@RequestBody AuthRequest.Login request,
                                                      HttpServletResponse httpServletResponse){
         TokenDto tokenDto = authService.login(request);
         tokenCookieManager.addRefreshTokenCookie(httpServletResponse,tokenDto.refreshToken());

@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.member.service;
 
+import io.streak.habitflow.domain.auth.service.AuthService;
 import io.streak.habitflow.domain.member.dto.request.MemberRequest;
 import io.streak.habitflow.domain.member.dto.response.MemberResponse;
 import io.streak.habitflow.domain.member.entity.Member;
@@ -20,12 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
-    private final MailService mailService;
+    private final AuthService authService;
     private final HashidsProvider hashidsProvider;
 
     @Transactional
     public MemberResponse.Detail createMember(MemberRequest.SignUp request){
-        if(!mailService.isVerifiedEmail(request.email())){
+        if(!authService.isVerifiedEmail(request.email())){
             throw new BusinessException(ErrorCode.UNVERIFIED_EMAIL);
         }
 
@@ -41,7 +42,7 @@ public class MemberService {
                 .build();
         Member result = memberRepository.save(member);
 
-        mailService.clearEmailVerification(request.email());
+        authService.clearEmailVerification(request.email());
         String encodedId = hashidsProvider.encode(result.getId());
         return MemberResponse.Detail.to(result,encodedId);
     }

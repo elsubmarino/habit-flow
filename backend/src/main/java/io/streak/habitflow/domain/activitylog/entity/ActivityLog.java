@@ -2,8 +2,8 @@ package io.streak.habitflow.domain.activitylog.entity;
 
 import io.streak.habitflow.domain.activitylog.vo.ChangeSet;
 import io.streak.habitflow.domain.member.entity.Member;
-import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.common.entity.BaseCreatedTimeEntity;
+import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.common.type.TargetType;
 import jakarta.persistence.*;
 import lombok.*;

@@ -1,6 +1,6 @@
 package io.streak.habitflow.domain.activitylog.dto.request;
 
-import io.streak.habitflow.domain.task.type.ActivityType;
+import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.common.type.TargetType;
 
 import java.time.LocalDate;

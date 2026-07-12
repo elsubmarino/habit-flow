@@ -19,4 +19,5 @@ public interface TaskRepositoryCustom {
     List<TaskSummaryQuery> findTaskSummariesByIds(List<Long> ids);
     boolean existsByIdAndHasAccess(Long taskId, Long memberId);
     List<TaskSummaryQuery> findTaskSummariesByLabelId(Long labelId, Pageable pageable, Long loginMemberId);
+    Long findMaxSortOrder(Long memberId, Long projectId);
 }

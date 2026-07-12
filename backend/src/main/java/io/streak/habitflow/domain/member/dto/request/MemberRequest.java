@@ -1,27 +1,12 @@
 package io.streak.habitflow.domain.member.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 public final class MemberRequest {
-    public record Login(
-            @NotBlank(message = "이메일을 입력하세요.")
-            @Email
-            @Pattern(
-                    regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$",
-                    message = "올바른 이메일 형식이 아닙니다."
-            )
-            @Size(max = 100, message = "이메일은 100자를 초과할 수 없습니다.")
-            @Schema(description = "로그인할 이메일 주소", requiredMode = Schema.RequiredMode.REQUIRED, example = "asdf@asdf.com")
-            String email,
-
-            @Size(max = 100, message = "패스워드는 100자를 초과할 수 없습니다.")
-            @NotBlank(message = "패스워드를 입력하세요.")
-            @Schema(description = "로그인 시 필요한 패스워드", requiredMode = Schema.RequiredMode.REQUIRED)
-            String password
-    ) {
-    }
-
     public record SignUp(
             @NotBlank(message = "비밀번호는 필수입니다.")
             @Schema(description = "회원가입 시 필요한 패스워드", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -61,14 +46,4 @@ public final class MemberRequest {
             String id
     ) {
     }
-
-    public record SendAuthCode(
-            @NotBlank @Email String email
-    ) {
-    }
-
-    public record VerifyAuthCode(
-            @NotBlank @Email String email,
-            @NotBlank @Size(min = 6, max = 6) String code
-    ){}
 }

@@ -1,27 +1,27 @@
 package io.streak.habitflow.domain.project.service;
 
+import io.streak.habitflow.domain.activitylog.event.ActivityRecordedEvent;
 import io.streak.habitflow.domain.activitylog.vo.ChangeSet;
 import io.streak.habitflow.domain.favorite.entity.Favorite;
 import io.streak.habitflow.domain.favorite.repository.FavoriteRepository;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
-import io.streak.habitflow.domain.member.service.MailService;
 import io.streak.habitflow.domain.project.dto.query.ProjectSearchSummaryQuery;
 import io.streak.habitflow.domain.project.dto.query.ProjectSummaryQuery;
 import io.streak.habitflow.domain.project.dto.request.ProjectRequest;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.entity.Project;
 import io.streak.habitflow.domain.project.entity.ProjectMember;
-import io.streak.habitflow.domain.project.event.ProjectAcceptEvent;
+import io.streak.habitflow.domain.project.event.ProjectAcceptedEvent;
 import io.streak.habitflow.domain.project.event.ProjectInvitationEvent;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.domain.task.event.ActivityRecordedEvent;
-import io.streak.habitflow.domain.task.type.ActivityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
+import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.common.type.TargetType;
 import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.exception.BusinessException;
+import io.streak.habitflow.global.infra.mail.MailService;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -300,7 +300,7 @@ public class ProjectService {
 
         redisTemplate.delete(redisKey);
 
-        applicationEventPublisher.publishEvent(new ProjectAcceptEvent(
+        applicationEventPublisher.publishEvent(new ProjectAcceptedEvent(
                 project.getId(),
                 project.getName(),
                 loginMember.getId(),

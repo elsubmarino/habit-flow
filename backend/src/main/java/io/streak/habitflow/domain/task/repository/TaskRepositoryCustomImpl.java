@@ -684,5 +684,16 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 })
                 .toList();
     }
+
+    @Override
+    public Long findMaxSortOrder(Long memberId, Long projectId) {
+        return queryFactory
+                .select(task.sortOrder.max().coalesce(0L))
+                .from(task)
+                .where(
+                        task.member.id.eq(memberId)
+                )
+                .fetchOne();
+    }
 }
 
