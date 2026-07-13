@@ -40,7 +40,7 @@ public class NotificationService {
     @Transactional
     @CheckOwnership(type="NOTIFICATION")
     @SuppressWarnings("unused")
-    public NotificationResponse.Summary confirmNotification(Long notificationId, NotificationRequest.ConfirmRead request, Long memberId) {
+    public NotificationResponse.Summary confirmNotification(Long notificationId, NotificationRequest.ConfirmRead request, Long loginMemberId) {
         Notification notification = notificationRepository.getOrThrow(notificationId);
         notification.updateConfirmed(request.confirmed());
         String encodedId = hashidsProvider.encode(notification.getId());

@@ -10,12 +10,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 public class FileStorageServiceImpl implements FileStorageService {
     @Value("${file.upload.dir}")
     private String uploadDir;
+
+    private static final Set<String> ALLOWED = Set.of("image/jpeg", "image/png", "image/webp");
 
     @Override
     public FileDto upload(MultipartFile file) {
@@ -31,13 +34,24 @@ public class FileStorageServiceImpl implements FileStorageService {
             }
 
             String originalFileName = file.getOriginalFilename();
-            String extension =  originalFileName.substring(originalFileName.lastIndexOf("."));
-            String saveFileName = UUID.randomUUID().toString() + "." + extension;
+
+            String contentType = file.getContentType();
+            if (contentType == null || !ALLOWED.contains(contentType)) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST);
+            }
+            String ext = switch (contentType) {
+                case "image/jpeg" -> ".jpg";
+                case "image/png" -> ".png";
+                default -> ".webp";
+            };
+            String saveFileName = UUID.randomUUID() + ext;
 
             Path targetLocation = uploadPath.resolve(saveFileName);
             file.transferTo(targetLocation.toFile());
 
             String fileUrl = "/uploads/" + saveFileName;
+
+
 
             return FileDto.builder()
                     .originalFileName(originalFileName)

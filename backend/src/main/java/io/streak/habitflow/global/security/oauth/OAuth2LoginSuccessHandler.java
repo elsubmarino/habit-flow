@@ -64,10 +64,16 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         String targetUrl = UriComponentsBuilder
                 .fromUriString("http://localhost:3000/oauth2/redirect")
-                .queryParam("token",accessToken)
                 .build()
                 .toString();
 
+        ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge(1800).build();
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }

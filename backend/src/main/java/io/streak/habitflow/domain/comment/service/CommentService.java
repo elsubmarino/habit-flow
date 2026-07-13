@@ -38,9 +38,9 @@ public class CommentService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public CommentResponse.Detail createComment(CommentRequest.Create request, MultipartFile file, Long memberId) {
+    public CommentResponse.Detail createComment(Long taskId, CommentRequest.Create request, MultipartFile file, Long loginMemberId) {
         Long realTaskId = hashidsProvider.decode(request.taskId());
-        Member member = memberRepository.getReferenceById(memberId);
+        Member member = memberRepository.getReferenceById(loginMemberId);
 
         Task task = taskRepository.getOrThrow(realTaskId);
 
@@ -65,7 +65,7 @@ public class CommentService {
 
         applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 task.getId(),
-                memberId,
+                loginMemberId,
                 TargetType.COMMENT,
                 ActivityType.ADDED,
                 task.getName(),
@@ -77,7 +77,7 @@ public class CommentService {
     }
 
     @CheckOwnership(type="TASK")
-    public List<CommentResponse.Detail> getComments(Long taskId) {
+    public List<CommentResponse.Detail> getComments(Long taskId, Long loginMemberId) {
         Task task = taskRepository.getOrThrow(taskId);
         List<Comment> comments = commentRepository.findByTaskIdWithAttachments(task.getId());
         return comments.stream()
@@ -91,7 +91,7 @@ public class CommentService {
     @Transactional
     @CheckOwnership(type="COMMENT")
     @SuppressWarnings("unused")
-    public CommentResponse.Detail updateComment(Long commentId, CommentRequest.Update request, Long memberId) {
+    public CommentResponse.Detail updateComment(Long commentId, CommentRequest.Update request, Long loginMemberId) {
         Comment comment = commentRepository.getOrThrow(commentId);
         if(comment.getContent().equals(request.content())){
             return CommentResponse.Detail.of(comment,request.content());
@@ -104,13 +104,13 @@ public class CommentService {
     @Transactional
     @CheckOwnership(type="COMMENT")
     @SuppressWarnings("unused")
-    public void deleteComment(Long commentId, Long memberId){
+    public void deleteComment(Long commentId, Long loginMemberId){
         Comment comment  =commentRepository.getReferenceById(commentId);
         commentRepository.deleteById(commentId);
         Task task = comment.getTask();
         applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 task.getId(),
-                memberId,
+                loginMemberId,
                 TargetType.COMMENT,
                 ActivityType.DELETED,
                 task.getName(),

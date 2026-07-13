@@ -3,7 +3,6 @@ package io.streak.habitflow.domain.label.api;
 import io.streak.habitflow.domain.label.dto.request.LabelRequest;
 import io.streak.habitflow.domain.label.dto.response.LabelResponse;
 import io.streak.habitflow.domain.label.service.LabelService;
-import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.LoginMemberId;
 import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.common.constant.PageSizeConstants;
@@ -50,7 +49,6 @@ public class LabelController {
 
     @GetMapping("/{labelId}")
     @Operation(summary = "라벨 상세 조회")
-    @CheckOwnership(type="LABEL")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "라벨 상세 조회 성공")})
     public ResponseEntity<LabelResponse.Detail> getLabelById(@PathVariable RoutingId labelId,
                                                       @LoginMemberId Long loginMemberId) {
@@ -60,7 +58,6 @@ public class LabelController {
 
     @PutMapping("/{labelId}")
     @Operation(summary = "라벨 업데이트")
-    @CheckOwnership(type="LABEL")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "라벨 업데이트 성공")})
     public ResponseEntity<LabelResponse.Detail> updateLabel(@PathVariable RoutingId labelId,
                                              @LoginMemberId Long loginMemberId,
@@ -71,7 +68,6 @@ public class LabelController {
 
     @DeleteMapping("/{labelId}")
     @Operation(summary = "라벨 삭제")
-    @CheckOwnership(type="LABEL")
     @ApiResponses({@ApiResponse(responseCode = "204", description = "라벨 삭제 성공")})
     public ResponseEntity<Void> deleteLabel(@PathVariable RoutingId labelId,
                                             @LoginMemberId Long loginMemberId) {

@@ -71,7 +71,10 @@ public class ProjectService {
 
         if(request.parentId() != null){
             Project parentProject = projectRepository.findById(request.parentId())
-                    .orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
+                    .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+            if (!projectMemberRepository.existsByProjectAndMember(parentProject, member)) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            }
             projectBuilder.parent(parentProject);
         }
 
@@ -115,16 +118,16 @@ public class ProjectService {
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public ProjectResponse.Detail updateProject(ProjectRequest.Update request, Long projectId, Long memberId) {
+    public ProjectResponse.Detail updateProject(ProjectRequest.Update request, Long projectId, Long loginMemberId) {
         Project project =  projectRepository.getOrThrow(projectId);
         String oldProjectName = project.getName();
 
-        Member member = memberRepository.getReferenceById(memberId);
+        Member member = memberRepository.getReferenceById(loginMemberId);
 
-        Project parentProject = null;
-        if(request.parentId() != null){
-            parentProject = projectRepository.findById(request.parentId())
-                    .orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
+        Project parentProject = projectRepository.findById(request.parentId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+        if (!projectMemberRepository.existsByProjectAndMember(parentProject, member)) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
         if(request.favorite()){
@@ -162,7 +165,7 @@ public class ProjectService {
             changeSets.add(new ChangeSet("name",oldProjectName,request.name()));
             applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                     project.getId(),
-                    memberId,
+                    loginMemberId,
                     io.streak.habitflow.global.common.type.TargetType.PROJECT,
                     ActivityType.UPDATED,
                     request.name(),
@@ -172,6 +175,7 @@ public class ProjectService {
         return ProjectResponse.Detail.of(project,request.favorite(),encodedId);
     }
 
+    @CheckOwnership(type="PROJECT")
     public ProjectResponse.Detail getProjectById(Long projectId, Long memberId) {
        Project project = projectRepository.getOrThrow(projectId);
        boolean isFavorite = false;
@@ -199,7 +203,7 @@ public class ProjectService {
     @Transactional
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public void deleteProject(Long projectId, Long memberId) {
+    public void deleteProject(Long projectId, Long loginMemberId) {
         Project project = projectRepository.getReferenceById(projectId);
         projectMemberRepository.deleteByProjectId(projectId);
         favoriteRepository.deleteByTargetTypeAndTargetId(TargetType.PROJECT, projectId);
@@ -207,7 +211,7 @@ public class ProjectService {
 
         applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 project.getId(),
-                memberId,
+                loginMemberId,
                 io.streak.habitflow.global.common.type.TargetType.PROJECT,
                 ActivityType.DELETED,
                 project.getName(),
@@ -228,9 +232,9 @@ public class ProjectService {
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public void inviteMembers(ProjectRequest.Invite inviteRequest, Long projectId, Long memberId){
+    public void inviteMembers(ProjectRequest.Invite inviteRequest, Long projectId, Long loginMemberId){
         Project project = projectRepository.getOrThrow(projectId);
-        Member inviter = memberRepository.getOrThrow(memberId);
+        Member inviter = memberRepository.getOrThrow(loginMemberId);
 
         List<String> inviteEmails  = inviteRequest.emails();
         if(inviteEmails == null || inviteEmails.isEmpty()) return;
@@ -312,7 +316,7 @@ public class ProjectService {
 
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public List<ProjectResponse.Member> getProjectMembers(Long projectId,Long memberId) {
+    public List<ProjectResponse.Member> getProjectMembers(Long projectId,Long loginMemberId) {
         Project project = projectRepository.getOrThrow(projectId);
         List<ProjectMember> projectMembers = projectMemberRepository.findByProject(project);
         return projectMembers.stream()
@@ -335,7 +339,7 @@ public class ProjectService {
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public ProjectResponse.Summary updateSortOrder(Long projectId, ProjectRequest.UpdateSortOrder updateSortOrder, Long memberId){
+    public ProjectResponse.Summary updateSortOrder(Long projectId, ProjectRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
         Project project = projectRepository.getReferenceById(projectId);
         String encodedId = hashidsProvider.encode(project.getId());
 

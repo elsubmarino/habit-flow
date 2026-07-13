@@ -101,9 +101,10 @@ public class TaskController {
     @GetMapping("/{taskId}/comments")
     @Operation(summary = "테스크에 속한 댓글 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크에 속한 댓글 조회 성공")})
-    public ResponseEntity<List<CommentResponse.Detail>> getComments(@PathVariable RoutingId taskId) {
+    public ResponseEntity<List<CommentResponse.Detail>> getComments(@PathVariable RoutingId taskId,
+                                                                    @LoginMemberId Long loginMemberId) {
         long realTaskId = taskId.value();
-        return ResponseEntity.ok(commentService.getComments(realTaskId));
+        return ResponseEntity.ok(commentService.getComments(realTaskId,loginMemberId));
     }
 
     @GetMapping("/sidebar-count")

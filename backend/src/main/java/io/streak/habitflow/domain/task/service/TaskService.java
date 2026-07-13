@@ -64,12 +64,12 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public void deleteTask(Long taskId, Long memberId){
+    public void deleteTask(Long taskId, Long loginMemberId){
         Task task = taskRepository.getOrThrow(taskId);
         taskRepository.deleteById(taskId);
         applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 taskId,
-                memberId,
+                loginMemberId,
                 TargetType.TASK,
                 ActivityType.DELETED,
                 task.getName(),
@@ -79,9 +79,9 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="SUB_TASK")
-    public TaskResponse.Detail createTask(TaskRequest.Create request, MultipartFile file, Long memberId){
+    public TaskResponse.Detail createTask(TaskRequest.Create request, MultipartFile file, Long loginMemberId){
 
-        Member member = memberRepository.getReferenceById(memberId);
+        Member member = memberRepository.getReferenceById(loginMemberId);
 
         Task parentTask = null;
         parentTask = resolveParentTask(request, parentTask);
@@ -100,7 +100,7 @@ public class TaskService {
             if(!isMember){
                 throw new BusinessException(ErrorCode.ACCESS_DENIED);
             }
-            maxSortOrder = projectRepository.findMaxSortOrder(memberId, project.getId());
+            maxSortOrder = projectRepository.findMaxSortOrder(loginMemberId, project.getId());
         }else if(parentTask != null){
             project = parentTask.getProject();
         }else {
@@ -182,7 +182,7 @@ public class TaskService {
 
         applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 savedTask.getId(),
-                memberId,
+                loginMemberId,
                 TargetType.TASK,
                 ActivityType.ADDED,
                 savedTask.getName(),
@@ -213,7 +213,7 @@ public class TaskService {
     }
 
     @CheckOwnership(type="TASK")
-    public TaskResponse.Detail getTaskById(Long taskId, Long memberId){
+    public TaskResponse.Detail getTaskById(Long taskId, Long loginMemberId){
         Task task = taskRepository.getReferenceById(taskId);
 
         List<LabelResponse.Summary> labelSummaryResponses = task.getTaskLabels().stream()
@@ -228,10 +228,10 @@ public class TaskService {
     }
 
     @CheckOwnership(type="PROJECT")
-    public Slice<TaskResponse.Summary> getTasksByProject(Long projectId, Long memberId, Pageable pageable){
+    public Slice<TaskResponse.Summary> getTasksByProject(Long projectId, Long loginMemberId, Pageable pageable){
         int pageSize = pageable.getPageSize();
 
-        List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByProject(projectId,memberId,pageable);
+        List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByProject(projectId,loginMemberId,pageable);
 
         boolean hasNext = false;
         if(tasks.size() > pageSize){
@@ -311,7 +311,7 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public TaskResponse.Detail updateTask(Long taskId, TaskRequest.Update request, Long memberId){
+    public TaskResponse.Detail updateTask(Long taskId, TaskRequest.Update request, Long loginMemberId){
         Task task = taskRepository.getOrThrow(taskId);
         String encodedId = hashidsProvider.encode(task.getId());
 
@@ -341,7 +341,7 @@ public class TaskService {
         if(!changes.isEmpty()) {
             applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                     task.getId(),
-                    memberId,
+                    loginMemberId,
                     TargetType.TASK,
                     ActivityType.UPDATED,
                     task.getName(),
@@ -356,7 +356,7 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @DistributedLock(key = "#taskId")
-    public TaskResponse.Summary toggleCompletion(Long taskId, Long memberId){
+    public TaskResponse.Summary toggleCompletion(Long taskId, Long loginMemberId){
         Task task = taskRepository.getOrThrow(taskId);
 
         boolean nextCompletion = !task.isCompleted();
@@ -369,7 +369,7 @@ public class TaskService {
 
             applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                     taskId,
-                    memberId,
+                    loginMemberId,
                     TargetType.TASK,
                     ActivityType.COMPLETED,
                     task.getName(),
@@ -379,7 +379,7 @@ public class TaskService {
 
             applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                     task.getId(),
-                    memberId,
+                    loginMemberId,
                     TargetType.TASK,
                     activityType,
                     task.getName(),
@@ -438,7 +438,7 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updateTaskDueDate(Long taskId, TaskRequest.UpdateDueDate request, Long memberId){
+    public TaskResponse.Detail updateTaskDueDate(Long taskId, TaskRequest.UpdateDueDate request, Long loginMemberId){
         Task task = taskRepository.getOrThrow(taskId);
 
         LocalDateTime oldDueDate = task.getDueDate();
@@ -468,7 +468,7 @@ public class TaskService {
             changeSets.add(new ChangeSet("dueDate",fromDate,toDate));
             applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                     task.getId(),
-                    memberId,
+                    loginMemberId,
                     TargetType.TASK,
                     ActivityType.UPDATED,
                     task.getName(),
@@ -484,6 +484,12 @@ public class TaskService {
     @SuppressWarnings("unused")
     public List<TaskResponse.Detail> updateTaskDueDateBatch(TaskRequest.UpdateDueDateBatch request, Long memberId){
         List<Long> realTaskIds = request.taskIds().stream().map(RoutingId::value).toList();
+        for (Long id : realTaskIds) {
+            if (!taskRepository.existsByIdAndHasAccess(id, memberId)) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            }
+        }
+
         List<Task> tasks = taskRepository.findAllById(realTaskIds);
         List<TaskResponse.Detail> responseList = new ArrayList<>();
 
@@ -532,7 +538,7 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long memberId){
+    public TaskResponse.Detail updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long loginMemberId){
         Task task = taskRepository.getOrThrow(taskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
@@ -551,7 +557,7 @@ public class TaskService {
 
         applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 task.getId(),
-                memberId,
+                loginMemberId,
                 TargetType.TASK,
                 ActivityType.UPDATED,
                 task.getName(),
@@ -564,7 +570,7 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updateTaskLabels(Long taskId, List<String> labelIds, Long memberId){
+    public TaskResponse.Detail updateTaskLabels(Long taskId, List<String> labelIds, Long loginMemberId){
         Task task = taskRepository.getOrThrow(taskId);
 
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
@@ -594,7 +600,7 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail moveTaskToProject(Long taskId, Long projectId, Long memberId){
+    public TaskResponse.Detail moveTaskToProject(Long taskId, Long projectId, Long loginMemberId){
         Task task = taskRepository.getOrThrow(taskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
@@ -614,7 +620,7 @@ public class TaskService {
 
             applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                     task.getId(),
-                    memberId,
+                    loginMemberId,
                     TargetType.TASK,
                     ActivityType.MOVED,
                     task.getName(),
@@ -630,6 +636,7 @@ public class TaskService {
     }
 
     @Transactional
+    @CheckOwnership(type="TASK")
     public TaskResponse.Summary updateSortOrder(Long taskId, TaskRequest.UpdateSortOrder updateSortOrder, Long memberId){
         Task task = taskRepository.getReferenceById(taskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());

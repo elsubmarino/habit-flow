@@ -60,11 +60,12 @@ public class LabelService {
         return LabelResponse.Detail.of(savedLabel, request.favorite(),encodedId);
     }
 
-    public LabelResponse.Detail getLabelById(Long labelId, Long memberId) {
+    @CheckOwnership(type="LABEL")
+    public LabelResponse.Detail getLabelById(Long labelId, Long loginMemberId) {
         Label label = labelRepository.getOrThrow(labelId);
         boolean isFavorite = false;
         Optional<Favorite> favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(
-                memberId,TargetType.LABEL, label.getId());
+                loginMemberId,TargetType.LABEL, label.getId());
         if(favorite.isPresent()){
             isFavorite = true;
         }
@@ -72,13 +73,14 @@ public class LabelService {
         return LabelResponse.Detail.of(label,isFavorite,encodedId);
     }
 
+    @CheckOwnership(type="LABEL")
     @Transactional
-    public LabelResponse.Detail updateLabel(Long labelId, LabelRequest.Update request, Long memberId) {
+    public LabelResponse.Detail updateLabel(Long labelId, LabelRequest.Update request, Long loginMemberId) {
         Label label = labelRepository.getOrThrow(labelId);
 
-        Member member = memberRepository.getReferenceById(memberId);
+        Member member = memberRepository.getReferenceById(loginMemberId);
 
-        if(!label.getMember().getId().equals(memberId)) {
+        if(!label.getMember().getId().equals(loginMemberId)) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
@@ -128,11 +130,12 @@ public class LabelService {
         return new SliceImpl<>(labelResponses, pageable, hasNext);
     }
 
+    @CheckOwnership(type="LABEL")
     @Transactional
-    public void deleteLabel(Long labelId, Long memberId){
+    public void deleteLabel(Long labelId, Long loginMemberId){
         Label label = labelRepository.getOrThrow(labelId);
 
-        if(!label.getMember().getId().equals(memberId)) {
+        if(!label.getMember().getId().equals(loginMemberId)) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
         labelRepository.deleteById(labelId);
@@ -140,12 +143,12 @@ public class LabelService {
 
     @Transactional
     @CheckOwnership(type="LABEL")
-    public LabelResponse.Summary updateSortOrder(Long labelId, LabelRequest.UpdateSortOrder updateSortOrder, Long memberId){
+    public LabelResponse.Summary updateSortOrder(Long labelId, LabelRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
         Label label = labelRepository.getReferenceById(labelId);
         String encodedId = hashidsProvider.encode(label.getId());
 
         Favorite favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(
-                memberId,TargetType.LABEL,label.getId()
+                loginMemberId,TargetType.LABEL,label.getId()
         ).orElse(null);
 
         if(Objects.equals(label.getSortOrder(), updateSortOrder.sortOrder())){

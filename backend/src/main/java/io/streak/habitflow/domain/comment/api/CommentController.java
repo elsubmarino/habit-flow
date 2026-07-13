@@ -32,7 +32,7 @@ public class CommentController {
             @RequestPart(value="file",required = false) MultipartFile file,
             @RequestPart("commentRequest") @Valid CommentRequest.Create request) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body( commentService.createComment(request,file,loginMemberId));
+                .body( commentService.createComment(hashidsProvider.decode(request.taskId()),request,file,loginMemberId));
     }
 
     @PutMapping("/{commentId}")

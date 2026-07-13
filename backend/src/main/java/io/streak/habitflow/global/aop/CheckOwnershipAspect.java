@@ -64,10 +64,9 @@ public class CheckOwnershipAspect {
             else if("loginMemberId".equals(parameterNames[i])) loginMemberId = (Long)args[i];
             else if("notificationId".equals(parameterNames[i])) notificationId = (Long)args[i];
             else if("projectId".equals(parameterNames[i])) projectId = (Long)args[i];
-            else if("projectId".equals(parameterNames[i])) projectId = (Long)args[i];
+            else if("labelId".equals(parameterNames[i])) labelId = (Long)args[i];
             else if("memberId".equals(parameterNames[i])) memberId = (Long)args[i];
             else if(args[i] instanceof TaskRequest.Create)request = (TaskRequest.Create)args[i];
-
         }
 
         for(CheckOwnership checkOwnership: checkOwnerships){
