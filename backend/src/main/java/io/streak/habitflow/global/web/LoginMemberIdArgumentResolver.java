@@ -1,4 +1,4 @@
-package io.streak.habitflow.global.aop;
+package io.streak.habitflow.global.web;
 
 import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.exception.BusinessException;

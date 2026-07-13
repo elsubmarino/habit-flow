@@ -6,7 +6,7 @@ import io.streak.habitflow.domain.label.repository.LabelRepository;
 import io.streak.habitflow.domain.project.dto.query.ProjectSearchSummaryQuery;
 import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.domain.search.dto.response.IntegratedResponse;
+import io.streak.habitflow.domain.search.dto.response.SearchResponse;
 import io.streak.habitflow.domain.task.dto.query.TaskSearchSummaryQuery;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
@@ -25,7 +25,7 @@ public class IntegratedSearchService {
     private final TaskRepository taskRepository;
     private final HashidsProvider hashidsProvider;
 
-    public IntegratedResponse.SearchResult searchAll(String keyword, Long memberId, Pageable pageable) {
+    public SearchResponse.SearchResult searchAll(String keyword, Long memberId, Pageable pageable) {
 
         List<ProjectSearchSummaryQuery> projectListResponses = projectRepository.searchByKeyword(keyword, memberId, pageable);
         List<TaskSearchSummaryQuery> taskResponses = taskRepository.searchByKeyword(keyword, memberId, pageable);
@@ -37,7 +37,7 @@ public class IntegratedSearchService {
                 })
                 .toList();
 
-        return IntegratedResponse.SearchResult.builder()
+        return SearchResponse.SearchResult.builder()
                 .projects(projectListResponses.stream().map(response->{
                     String encodedId = hashidsProvider.encode(response.id());
                     return ProjectResponse.Summary.ofSearch(response,encodedId);

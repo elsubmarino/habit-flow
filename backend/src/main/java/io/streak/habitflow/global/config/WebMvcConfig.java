@@ -1,6 +1,6 @@
 package io.streak.habitflow.global.config;
 
-import io.streak.habitflow.global.aop.LoginMemberIdArgumentResolver;
+import io.streak.habitflow.global.web.LoginMemberIdArgumentResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

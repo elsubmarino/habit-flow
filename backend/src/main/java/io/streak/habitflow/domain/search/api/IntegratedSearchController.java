@@ -1,8 +1,8 @@
 package io.streak.habitflow.domain.search.api;
 
-import io.streak.habitflow.domain.search.dto.response.IntegratedResponse;
+import io.streak.habitflow.domain.search.dto.response.SearchResponse;
 import io.streak.habitflow.domain.search.service.IntegratedSearchService;
-import io.streak.habitflow.global.aop.LoginMemberId;
+import io.streak.habitflow.global.web.LoginMemberId;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -21,9 +21,9 @@ public class IntegratedSearchController {
 
     @GetMapping
     @Operation(summary = "통합 검색")
-    public ResponseEntity<IntegratedResponse.SearchResult> searchAll(@RequestParam("keyword") String keyword,
-                                                                     @LoginMemberId Long loginMemberId,
-                                                                     @PageableDefault(size=5) Pageable pageable) {
+    public ResponseEntity<SearchResponse.SearchResult> searchAll(@RequestParam("keyword") String keyword,
+                                                                 @LoginMemberId Long loginMemberId,
+                                                                 @PageableDefault(size=5) Pageable pageable) {
         return ResponseEntity.ok(integratedSearchService.searchAll(keyword,loginMemberId,pageable));
     }
 }

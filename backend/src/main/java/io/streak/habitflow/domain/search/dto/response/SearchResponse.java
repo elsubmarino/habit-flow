@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public final class IntegratedResponse {
+public final class SearchResponse {
     @Builder
     public record SearchResult(
             @Schema(description = "검색된 프로젝트의 리스트")

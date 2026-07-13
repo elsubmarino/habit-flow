@@ -2,7 +2,7 @@ package io.streak.habitflow.domain.favorite.api;
 
 import io.streak.habitflow.domain.favorite.dto.response.FavoriteResponse;
 import io.streak.habitflow.domain.favorite.service.FavoriteService;
-import io.streak.habitflow.global.aop.LoginMemberId;
+import io.streak.habitflow.global.web.LoginMemberId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
