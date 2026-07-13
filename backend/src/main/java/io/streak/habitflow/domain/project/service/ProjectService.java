@@ -176,11 +176,11 @@ public class ProjectService {
     }
 
     @CheckOwnership(type="PROJECT")
-    public ProjectResponse.Detail getProjectById(Long projectId, Long memberId) {
+    public ProjectResponse.Detail getProjectById(Long projectId, Long loginMemberId) {
        Project project = projectRepository.getOrThrow(projectId);
        boolean isFavorite = false;
        Optional<Favorite> favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(
-               memberId, TargetType.PROJECT, project.getId());
+               loginMemberId, TargetType.PROJECT, project.getId());
        if(favorite.isPresent()){
            isFavorite = true;
        }

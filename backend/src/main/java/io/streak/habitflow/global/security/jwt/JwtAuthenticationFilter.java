@@ -1,5 +1,6 @@
 package io.streak.habitflow.global.security.jwt;
 
+import io.jsonwebtoken.Claims;
 import io.streak.habitflow.global.error.SecurityErrorWriter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -53,6 +54,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     "로그아웃된 토큰입니다. 다시 로그인해주세요.");
             return;
         }
+
+        Claims claims = jwtTokenProvider.getClaims(token); // 또는 parseClaims 헬퍼
+        if (!"ACCESS".equals(claims.get("tokenType", String.class))) {
+            securityErrorWriter.write(request, response, HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다.");
+            return;
+        }
+
         Authentication authentication = jwtTokenProvider.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         filterChain.doFilter(request, response);

@@ -1,9 +1,11 @@
 package io.streak.habitflow.domain.auth.service;
 
+import io.jsonwebtoken.Claims;
 import io.streak.habitflow.domain.auth.dto.request.AuthRequest;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.global.error.ErrorCode;
+import io.streak.habitflow.global.error.SecurityErrorWriter;
 import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.infra.mail.MailService;
 import io.streak.habitflow.global.security.dto.TokenDto;
@@ -35,6 +37,7 @@ public class AuthService {
     private static final String AUTH_CODE_PREFIX = "AUTH_CODE:";
     private static final String VERIFIED_PREFIX ="VERIFIED:";
     private static final long VERIFIED_EXPIRATION_MINUTES = 30L;
+    private final SecurityErrorWriter securityErrorWriter;
 
     @Transactional
     public TokenDto login(AuthRequest.Login request){
@@ -90,6 +93,12 @@ public class AuthService {
             redisTemplate.delete(redisKey);
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
+
+        Claims claims = jwtTokenProvider.getClaims(refreshToken); // 또는 parseClaims 헬퍼
+        if (!"REFRESH".equals(claims.get("tokenType", String.class))) {
+            throw new BusinessException(ErrorCode.UNAUTHORIZED);
+        }
+
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "유효하지 않은 토큰입니다."));
         String newAccessToken = jwtTokenProvider.createAccessToken(member.getEmail(), member.getId());

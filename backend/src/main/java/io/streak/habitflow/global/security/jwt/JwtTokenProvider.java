@@ -37,15 +37,15 @@ public class JwtTokenProvider {
 
     public String createAccessToken(String email, Long memberId){
         long tokenValidityInMilliseconds = 1000L * 60 * 30;
-        return buildToken(email, memberId, tokenValidityInMilliseconds);
+        return buildToken(email, memberId, tokenValidityInMilliseconds, "ACCESS");
     }
 
     public String createRefreshToken(String email, Long memberId){
         long tokenValidityInMilliseconds = 1000L * 60 * 60 * 24 * 14;
-        return buildToken(email, memberId, tokenValidityInMilliseconds);
+        return buildToken(email, memberId, tokenValidityInMilliseconds, "REFRESH");
     }
 
-    public String buildToken(String email, Long memberId, long validityTime){
+    public String buildToken(String email, Long memberId, long validityTime, String tokenType){
         Instant now = Instant.now(clock);
         Instant validity = now.plusMillis(validityTime);
 
@@ -53,6 +53,7 @@ public class JwtTokenProvider {
                 .setSubject(email)
                 .claim("memberId",memberId)
                 .claim("role","ROLE_USER")
+                .claim("tokenType",tokenType)
                 .setIssuedAt(Date.from(now))
                 .setExpiration(Date.from(validity))
                 .signWith(secretKey, SignatureAlgorithm.HS256)
@@ -117,5 +118,13 @@ public class JwtTokenProvider {
 
     public enum JwtValidationResult {
         VALID, EXPIRED, INVALID, UNSUPPORTED, MALFORMED
+    }
+
+    public Claims getClaims(String token){
+        return Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 }

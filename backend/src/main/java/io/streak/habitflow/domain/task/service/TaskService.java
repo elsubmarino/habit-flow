@@ -637,7 +637,7 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public TaskResponse.Summary updateSortOrder(Long taskId, TaskRequest.UpdateSortOrder updateSortOrder, Long memberId){
+    public TaskResponse.Summary updateSortOrder(Long taskId, TaskRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
         Task task = taskRepository.getReferenceById(taskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{

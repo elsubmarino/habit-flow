@@ -71,21 +71,39 @@ public class CheckOwnershipAspect {
 
         for(CheckOwnership checkOwnership: checkOwnerships){
             String domainType = checkOwnership.type();
-            if("TASK".equals(domainType) && taskId != null && loginMemberId != null){
+            if("TASK".equals(domainType)){
+                if(taskId == null || loginMemberId == null){
+                    throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
                 checkTaskOwner(taskId,loginMemberId);
             }else if("SUB_TASK".equals(domainType)){
                 if(request != null && request.parentId() != null && loginMemberId != null){
                     checkTaskOwner(hashidsProvider.decode(request.parentId()),loginMemberId);
                 }
-            }else if("COMMENT".equals(domainType) && commentId != null && loginMemberId != null){
+            }else if("COMMENT".equals(domainType)){
+                if(commentId == null || loginMemberId == null){
+                    throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
                 checkCommentOwner(commentId,loginMemberId);
-            }else if("MEMBER".equals(domainType) && loginMemberId != null){
+            }else if("MEMBER".equals(domainType)){
+                if(loginMemberId == null){
+                    throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
                 checkMemberOwner(loginMemberId,memberId);
-            }else if("NOTIFICATION".equals(domainType) && notificationId != null && loginMemberId != null){
+            }else if("NOTIFICATION".equals(domainType)){
+                if(notificationId == null || loginMemberId == null){
+                    throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
                 checkNotificationOwner(notificationId,loginMemberId);
-            }else if("PROJECT".equals(domainType) && projectId != null && loginMemberId != null) {
+            }else if("PROJECT".equals(domainType)) {
+                if(projectId == null || loginMemberId == null){
+                    throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
                 checkProjectOwner(projectId, loginMemberId);
-            }else if("LABEL".equals(domainType) && labelId != null && loginMemberId != null){
+            }else if("LABEL".equals(domainType)){
+                if(labelId == null || loginMemberId == null){
+                    throw new BusinessException(ErrorCode.ACCESS_DENIED);
+                }
                 checkLabelOwner(labelId,loginMemberId);
             }
         }
