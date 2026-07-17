@@ -1,6 +1,6 @@
 package io.streak.habitflow.global.aop;
 
-import io.streak.habitflow.global.aop.transaction.AopForTransaction;
+import io.streak.habitflow.global.aop.transaction.RequiresNewTransactionExecutor;
 import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +22,9 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class DistributedLockAspect {
     private final RedissonClient rediSsonClient;
-    private final AopForTransaction aopForTransaction; //트랜잭션 분리용 헬퍼 컴포넌트
+    private final RequiresNewTransactionExecutor transactionExecutor; //트랜잭션 분리용 헬퍼 컴포넌트
 
-    @Around("@annotation(distributedLock))")
+    @Around("@annotation(distributedLock)")
     public Object lock(ProceedingJoinPoint joinPoint, DistributedLock distributedLock) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
@@ -41,7 +41,7 @@ public class DistributedLockAspect {
             }
 
             //락 획득 성공 시, 트랜잭션 새로 열어서 실제 비지니스 로직 실행 및 커밋까지 완료
-            return aopForTransaction.proceed(joinPoint);
+            return transactionExecutor.execute(joinPoint);
         }catch(InterruptedException e){
             Thread.currentThread().interrupt();
             throw new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED, "락 대기 중 인터럽트가 발생했습니다.");
