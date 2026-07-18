@@ -11,9 +11,11 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.core.annotation.Order;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -23,14 +25,20 @@ import java.util.concurrent.TimeUnit;
 public class DistributedLockAspect {
     private final RedissonClient rediSsonClient;
     private final RequiresNewTransactionExecutor transactionExecutor; //트랜잭션 분리용 헬퍼 컴포넌트
+    private static final ExpressionParser PARSER = new SpelExpressionParser();
+
+    private String parseKey(String spel, String[] paramNames, Object[] args) {
+        StandardEvaluationContext ctx = new StandardEvaluationContext();
+        for (int i = 0; i < paramNames.length; i++) ctx.setVariable(paramNames[i], args[i]);
+        return String.valueOf(PARSER.parseExpression(spel).getValue(ctx));
+    }
 
     @Around("@annotation(distributedLock)")
     public Object lock(ProceedingJoinPoint joinPoint, DistributedLock distributedLock) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        Method method = signature.getMethod();
-
         //SpEL 인터프리터 등을 활용해 메서드 인자에서 key 값을 파싱함
-        String lockKey = "LOCK:"+distributedLock.key();
+        String lockKey = "LOCK:" + parseKey(distributedLock.key(),
+                signature.getParameterNames(), joinPoint.getArgs());
         RLock rLock = rediSsonClient.getLock(lockKey);
 
         try{

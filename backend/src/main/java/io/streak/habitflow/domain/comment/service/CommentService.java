@@ -93,11 +93,11 @@ public class CommentService {
     @SuppressWarnings("unused")
     public CommentResponse.Detail updateComment(Long commentId, CommentRequest.Update request, Long loginMemberId) {
         Comment comment = commentRepository.getOrThrow(commentId);
+        String encodedId = hashidsProvider.encode(comment.getId());
         if(comment.getContent().equals(request.content())){
-            return CommentResponse.Detail.of(comment,request.content());
+            return CommentResponse.Detail.of(comment,encodedId);
         }
         comment.updateContent(request.content());
-        String encodedId = hashidsProvider.encode(comment.getId());
         return CommentResponse.Detail.of(comment,encodedId);
     }
 

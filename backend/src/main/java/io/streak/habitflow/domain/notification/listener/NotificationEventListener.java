@@ -15,7 +15,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +32,8 @@ public class NotificationEventListener {
     private final HashidsProvider hashidsProvider;
 
     @Async("activityLogExecutor")
-    @Transactional
-    @EventListener
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleProjectInvitation(ProjectInvitationEvent projectInvitationEvent){
         Member inviter = memberRepository.getReferenceById(projectInvitationEvent.inviterId());
         List<Notification> notificationBatch = new ArrayList<>();

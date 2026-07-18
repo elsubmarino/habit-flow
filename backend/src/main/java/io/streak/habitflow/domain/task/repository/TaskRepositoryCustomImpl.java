@@ -695,5 +695,19 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 )
                 .fetchOne();
     }
-}
 
+    @Override
+    public long countAccessibleTasks(List<Long> taskIds, Long memberId) {
+        Long count = queryFactory
+                .select(task.id.countDistinct())
+                .from(task)
+                .leftJoin(task.project, project)
+                .leftJoin(projectMember).on(projectMember.project.eq(project))
+                .where(
+                        task.id.in(taskIds),
+                        task.member.id.eq(memberId).or(projectMember.member.id.eq(memberId))
+                )
+                .fetchOne();
+        return count != null ? count : 0L;
+    }
+}

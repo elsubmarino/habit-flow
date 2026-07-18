@@ -68,3 +68,5 @@ springdoc:
 hashids:
   salt: "io.streak.habitflow.secret.salt.2026"
   min-length: 8
+app:
+  frontend-base-url: "http://localhost:3000"

@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -29,6 +30,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     private final RedisTemplate<String, Object> redisTemplate;
     private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOauth2AuthorizationRequestRepository;
 
+    @Value("${app.frontend-base-url}")
+    private String frontendBaseUrl;
+
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         httpCookieOauth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
@@ -39,7 +43,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         Member member = memberRepository.findByEmail(email).orElse(null);
         if (member == null) {
             getRedirectStrategy().sendRedirect(request, response,
-                    "http://localhost:3000/oauth2/redirect?error=" +
+                    frontendBaseUrl+"/oauth2/redirect?error=" +
                             URLEncoder.encode("존재하지 않는 회원입니다.", StandardCharsets.UTF_8));
             return;
         }
@@ -63,7 +67,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         String targetUrl = UriComponentsBuilder
-                .fromUriString("http://localhost:3000/oauth2/redirect")
+                .fromUriString(frontendBaseUrl+"/oauth2/redirect")
                 .build()
                 .toString();
 

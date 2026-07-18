@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface TaskRepository extends JpaRepository<Task,Long>, TaskRepositoryCustom {
     long countByProject(Project project);
     long countByProjectAndMember(Project project, Member member);
+    long countByProjectIsNullAndMember(Member member);
 
     default Task getOrThrow(Long taskId) {
         return findById(taskId).orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));

@@ -13,23 +13,27 @@ public class SseEmitters {
     private final Map<Long, SseEmitter> emitters = new ConcurrentHashMap<>();
 
     public SseEmitter add(Long memberId, SseEmitter emitter){
-        this.emitters.put(memberId,emitter);
+        // 덮어쓰기 전 이전 emitter를 받아서 명시적으로 종료
+        SseEmitter old = this.emitters.put(memberId, emitter);
+        if (old != null) {
+            old.complete();
+        }
         log.info("[SSE 연결 완료] -> memberId : {}, 현재 연결 수 : {}", memberId, emitters.size());
 
         emitter.onCompletion(()->{
-            this.emitters.remove(memberId);
+            this.emitters.remove(memberId, emitter);
             log.info("[SSE 만료 청소] -> memberId: {}",memberId);
         });
 
         emitter.onTimeout(()->{
             emitter.complete();
-            this.emitters.remove(memberId);
+            this.emitters.remove(memberId, emitter);
             log.info("[SSE 타임아웃 청소] -> memberId: {}",memberId);
         });
 
         emitter.onError((e)->{
             emitter.completeWithError(e);
-            this.emitters.remove(memberId);
+            this.emitters.remove(memberId, emitter);
             log.info("[SSE 에러 발생] -> memberId: {}",memberId);
         });
 

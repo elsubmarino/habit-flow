@@ -17,7 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -38,6 +38,8 @@ public class AuthService {
     private static final String VERIFIED_PREFIX ="VERIFIED:";
     private static final long VERIFIED_EXPIRATION_MINUTES = 30L;
     private final SecurityErrorWriter securityErrorWriter;
+
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     @Transactional
     public TokenDto login(AuthRequest.Login request){
@@ -117,17 +119,17 @@ public class AuthService {
     public void sendAuthCode(String email){
         String limitKey = MAIL_LIMIT_PREFIX + email;
 
-        String isLimited = redisTemplate.opsForValue().get(limitKey);
-        if("LOCK".equals(isLimited)){
-            log.warn("[Rate Limit 차단] 단 시간 내 이메일 중복 요청 발생 -> Email: {}",email);
-            throw new BusinessException(ErrorCode.MAIL_RATE_LIMIT);
-        }
-        redisTemplate.opsForValue().set(
+        // GET 후 SET → 원자적 SETNX 한 번으로 교체
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(
                 limitKey,
                 "LOCK",
                 MAIL_LIMIT_SECONDS,
                 TimeUnit.SECONDS
         );
+        if (!Boolean.TRUE.equals(acquired)) {
+            log.warn("[Rate Limit 차단] 단 시간 내 이메일 중복 요청 발생 -> Email: {}", email);
+            throw new BusinessException(ErrorCode.MAIL_RATE_LIMIT);
+        }
 
         String authCode = generateRandomCode();
 
@@ -143,8 +145,7 @@ public class AuthService {
     }
 
     private String generateRandomCode(){
-        Random random = new Random();
-        int code = 100000 + random.nextInt(900000); // 100000 ~ 999999
+        int code = 100000 + RANDOM.nextInt(900000); // 100000 ~ 999999
         return String.valueOf(code);
     }
 

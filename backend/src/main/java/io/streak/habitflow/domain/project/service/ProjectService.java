@@ -124,10 +124,13 @@ public class ProjectService {
 
         Member member = memberRepository.getReferenceById(loginMemberId);
 
-        Project parentProject = projectRepository.findById(request.parentId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-        if (!projectMemberRepository.existsByProjectAndMember(parentProject, member)) {
-            throw new BusinessException(ErrorCode.ACCESS_DENIED);
+        Project parentProject = null;
+        if (request.parentId() != null) {
+            parentProject = projectRepository.findById(request.parentId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+            if (!projectMemberRepository.existsByProjectAndMember(parentProject, member)) {
+                throw new BusinessException(ErrorCode.ACCESS_DENIED);
+            }
         }
 
         if(request.favorite()){
@@ -146,11 +149,12 @@ public class ProjectService {
         }
 
         String encodedId = hashidsProvider.encode(project.getId());
+        Long currentParentId = project.getParent() != null ? project.getParent().getId() : null;
         if(request.name().equals(project.getName()) &&
                 request.color().equals(project.getColor()) &&
                 request.accessType() == project.getAccessType() &&
                 request.layoutType() == project.getLayoutType() &&
-                request.parentId() != null && Objects.equals(request.parentId(),project.getParent().getId())){
+                request.parentId() != null && Objects.equals(request.parentId(),currentParentId)){
             return ProjectResponse.Detail.of(project,request.favorite(),encodedId);
         }
 
@@ -239,23 +243,26 @@ public class ProjectService {
         List<String> inviteEmails  = inviteRequest.emails();
         if(inviteEmails == null || inviteEmails.isEmpty()) return;
 
+        // 1단계: 검증만 — 여기서 예외가 나도 아무 부수효과가 없음
         for(String email: inviteEmails){
             memberRepository.findByEmail(email).ifPresent(targetMember->{
                 if(projectMemberRepository.existsByProjectAndMember(project,targetMember)){
                     throw new BusinessException(ErrorCode.DUPLICATE_PROJECT_MEMBER, email + " 님은...");
                 }
             });
+        }
 
-            String InvitationToken = UUID.randomUUID().toString();
+        // 2단계: 전원 검증 통과 후에만 토큰 저장 + 메일 발송
+        for(String email : inviteEmails){
+            String invitationToken = UUID.randomUUID().toString();
             String redisValue = project.getId()+":"+email+":"+inviter.getId()+":"+inviter.getName();
             redisTemplate.opsForValue().set(
-                    INVITE_TOKEN_PREFIX + InvitationToken,
+                    INVITE_TOKEN_PREFIX + invitationToken,
                     redisValue,
                     INVITE_EXPIRATION_HOURS,
                     TimeUnit.HOURS
             );
-
-            mailService.sendProjectInvitationMail(email, project.getName(), inviter.getName(), InvitationToken);
+            mailService.sendProjectInvitationMail(email, project.getName(), inviter.getName(), invitationToken);
         }
 
         List<Member> inviteMembers = memberRepository.findByEmailIn(inviteEmails);
@@ -292,6 +299,12 @@ public class ProjectService {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
+        // 검증 통과 후 토큰을 원자적으로 소비 — 동시 요청 중 하나만 여기를 통과함
+        String consumed = redisTemplate.opsForValue().getAndDelete(redisKey);
+        if(consumed == null){
+            throw new BusinessException(ErrorCode.INVITE_LINK_EXPIRED);
+        }
+
         Project project = projectRepository.getOrThrow(projectId);
 
         if(!projectMemberRepository.existsByProjectAndMember(project, loginMember)){
@@ -301,8 +314,6 @@ public class ProjectService {
                     .build();
             projectMemberRepository.save(projectMember);
         }
-
-        redisTemplate.delete(redisKey);
 
         applicationEventPublisher.publishEvent(new ProjectAcceptedEvent(
                 project.getId(),

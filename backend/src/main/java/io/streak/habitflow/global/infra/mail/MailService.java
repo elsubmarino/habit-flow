@@ -2,6 +2,7 @@ package io.streak.habitflow.global.infra.mail;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
@@ -19,9 +20,12 @@ public class MailService {
     private static final String VERIFIED_PREFIX ="VERIFIED:";
     private static final String MAIL_LIMIT_PREFIX ="MAIL_LIMIT:";
 
+    @Value("${app.frontend-base-url}")
+    private String frontendBaseUrl;
+
     @Async("mailExecutor")
     public void sendProjectInvitationMail(String email, String projectName, String inviterName, String invitationToken){
-        String acceptLink = "http://localhost:3000/projects/invite?token="+invitationToken;
+        String acceptLink = frontendBaseUrl+"/projects/invite?token="+invitationToken;
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
         message.setSubject("[HabitFlow] "+inviterName+"님이 "+projectName+"' 프로젝트에 초대했습니다.");

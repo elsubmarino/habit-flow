@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.task.service;
 
+import io.streak.habitflow.domain.activitylog.event.ActivitiesRecordedEvent;
 import io.streak.habitflow.domain.activitylog.event.ActivityRecordedEvent;
 import io.streak.habitflow.domain.activitylog.vo.ChangeSet;
 import io.streak.habitflow.domain.comment.entity.Attachment;
@@ -105,8 +106,8 @@ public class TaskService {
             project = parentTask.getProject();
         }else {
             //관리함인 경우 유저별 500개까지
-            long projectCount = taskRepository.countByProjectAndMember(project,member);
-            if (projectCount > 500) {
+            long inboxCount = taskRepository.countByProjectIsNullAndMember(member);
+            if (inboxCount > 500) {
                 throw new BusinessException(ErrorCode.TASK_LIMIT_EXCEEDED);
             }
         }
@@ -216,12 +217,10 @@ public class TaskService {
     public TaskResponse.Detail getTaskById(Long taskId, Long loginMemberId){
         Task task = taskRepository.getReferenceById(taskId);
 
-        List<LabelResponse.Summary> labelSummaryResponses = task.getTaskLabels().stream()
-                .map(taskLabel -> {
-                    String encodedId = hashidsProvider.encode(taskLabel.getId());
-                    return LabelResponse.Summary.of(taskLabel.getLabel(),encodedId);
-                })
-                .toList();
+        List<LabelResponse.Summary> labelSummaryResponses =
+                labelRepository.findLabelSummariesByTaskId(taskId).stream()
+                        .map(l -> LabelResponse.Summary.of(l, hashidsProvider.encode(l.id())))
+                        .toList();
 
         String encodedId = hashidsProvider.encode(task.getId());
         return taskMapper.toDetail(task, encodedId, labelSummaryResponses);
@@ -321,9 +320,9 @@ public class TaskService {
             return LabelResponse.Summary.of(label,labelEncodedId);
         }).toList();
 
-        if(request.name().equals(task.getName()) &&
-            request.description().equals(task.getDescription())){
-            return taskMapper.toDetail(task,encodedId,summaries);
+        if (Objects.equals(request.name(), task.getName()) &&
+                Objects.equals(request.description(), task.getDescription())) {
+            return taskMapper.toDetail(task, encodedId, summaries);
         }
 
         List<ChangeSet> changes = new ArrayList<>();
@@ -333,7 +332,7 @@ public class TaskService {
             task.updateName(request.name());
         }
 
-        if(request.description() != null && !task.getDescription().equals(request.description())){
+        if (request.description() != null && !Objects.equals(task.getDescription(), request.description())) {
             changes.add(new ChangeSet("description",null,null));
             task.updateDescription(request.description());
         }
@@ -484,14 +483,20 @@ public class TaskService {
     @SuppressWarnings("unused")
     public List<TaskResponse.Detail> updateTaskDueDateBatch(TaskRequest.UpdateDueDateBatch request, Long memberId){
         List<Long> realTaskIds = request.taskIds().stream().map(RoutingId::value).toList();
-        for (Long id : realTaskIds) {
-            if (!taskRepository.existsByIdAndHasAccess(id, memberId)) {
-                throw new BusinessException(ErrorCode.ACCESS_DENIED);
-            }
+
+        // 접근 검사: N회 쿼리 → 집합 쿼리 1회
+        if (taskRepository.countAccessibleTasks(realTaskIds, memberId) != realTaskIds.size()) {
+            throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
 
         List<Task> tasks = taskRepository.findAllById(realTaskIds);
+
+        // 라벨 조회: 태스크당 1회 → 배치 1회
+        Map<Long, List<LabelResponse.Summary>> labelMap =
+                labelRepository.findLabelSummariesByTaskIds(realTaskIds);
+
         List<TaskResponse.Detail> responseList = new ArrayList<>();
+        List<ActivityRecordedEvent> activityEvents = new ArrayList<>();
 
         for(Task task : tasks){
             LocalDateTime oldDueDate = task.getDueDate();
@@ -512,7 +517,8 @@ public class TaskService {
                         :request.dueDate().toLocalDate().toString():null;
                 changeSets.add(new ChangeSet("dueDate",fromDate,toDate));
 
-                applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
+                // 루프 안에서 즉시 발행하지 않고 수집만
+                activityEvents.add(new ActivityRecordedEvent(
                         task.getId(),
                         memberId,
                         TargetType.TASK,
@@ -521,16 +527,16 @@ public class TaskService {
                         changeSets
                 ));
             }
-            List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
-            List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
-                String encodedId = hashidsProvider.encode(label.id());
-                return LabelResponse.Summary.of(label,encodedId);
-            }).toList();
 
             String encodedId = hashidsProvider.encode(task.getId());
-            responseList.add(taskMapper.toDetail(task,encodedId,summaries));
+            responseList.add(taskMapper.toDetail(task,encodedId,
+                    labelMap.getOrDefault(task.getId(), List.of())));
         }
 
+        // 이벤트: 태스크당 1회 → 배치 1회 발행 (async 작업 1개만 생성됨)
+        if(!activityEvents.isEmpty()){
+            applicationEventPublisher.publishEvent(new ActivitiesRecordedEvent(activityEvents));
+        }
 
         return responseList;
     }
@@ -572,28 +578,23 @@ public class TaskService {
     @SuppressWarnings("unused")
     public TaskResponse.Detail updateTaskLabels(Long taskId, List<String> labelIds, Long loginMemberId){
         Task task = taskRepository.getOrThrow(taskId);
-
-        List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
-        List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
-            String encodedId = hashidsProvider.encode(label.id());
-            return LabelResponse.Summary.of(label,encodedId);
-        }).toList();
+        String encodedId = hashidsProvider.encode(task.getId());
+        // 빈 목록이면 라벨 전부 제거 후 빈 목록으로 응답
+        if(labelIds.isEmpty()){
+            task.getTaskLabels().clear();
+            return taskMapper.toDetail(task, encodedId, List.of());
+        }
         List<Long> realLabelIds = labelIds.stream()
                 .map(hashidsProvider::decode)
                 .toList();
-        if(labelIds.isEmpty()){
-            task.getTaskLabels().clear();
-            String encodedId = hashidsProvider.encode(task.getId());
-            return taskMapper.toDetail(task,encodedId,summaries);
-        }
-
-        List<Label> realLabels  =labelRepository.findAllById(realLabelIds);
-
+        List<Label> realLabels = labelRepository.findAllById(realLabelIds);
         task.getTaskLabels().clear();
-
-        realLabels.forEach(label-> task.addTaskLabel(TaskLabel.builder().label(label).build()));
-        String encodedId = hashidsProvider.encode(task.getId());
-        return taskMapper.toDetail(task,encodedId,summaries);
+        realLabels.forEach(label -> task.addTaskLabel(TaskLabel.builder().label(label).build()));
+        // 교체된 라벨(새 상태)로 응답 구성
+        List<LabelResponse.Summary> summaries = realLabels.stream()
+                .map(label -> LabelResponse.Summary.of(label, hashidsProvider.encode(label.getId())))
+                .toList();
+        return taskMapper.toDetail(task, encodedId, summaries);
     }
 
     @Transactional
