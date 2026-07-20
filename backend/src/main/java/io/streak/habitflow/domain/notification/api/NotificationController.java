@@ -44,7 +44,7 @@ public class NotificationController {
     @GetMapping(value="/subscribe",produces= MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "알림 구독(SSE)")
     public ResponseEntity<SseEmitter> subscribe(@LoginMemberId Long loginMemberId){
-        SseEmitter emitter = new SseEmitter(50*1000L);
+        SseEmitter emitter = new SseEmitter(1000L * 60 * 30); //30분
         try{
             emitter.send(SseEmitter.event().name("connect").data("connected!"));
         }catch(IOException e){

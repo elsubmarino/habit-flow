@@ -61,18 +61,14 @@ public class JwtTokenProvider {
     }
 
     public Long getRemainingExpiration(String token){
-        Date expiration = Jwts.parserBuilder().setSigningKey(secretKey).build()
+        Date expiration = jwtParser()
                 .parseClaimsJws(token).getBody().getExpiration();
         long now = new Date().getTime();
         return Math.max(0, expiration.getTime() - now);
     }
 
     public Authentication getAuthentication(String token){
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        Claims claims = jwtParser().parseClaimsJws(token).getBody();
 
         String email = claims.getSubject();
 
@@ -90,7 +86,7 @@ public class JwtTokenProvider {
 
     public JwtValidationResult validateTokenResult(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token);
+            jwtParser().parseClaimsJws(token);
             return JwtValidationResult.VALID;
         } catch (ExpiredJwtException e) {
             log.info("만료된 JWT 토큰입니다.");
@@ -108,9 +104,7 @@ public class JwtTokenProvider {
     }
 
     public String getEmail(String refreshToken){
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
+        return jwtParser()
                 .parseClaimsJws(refreshToken)
                 .getBody()
                 .getSubject();
@@ -121,10 +115,15 @@ public class JwtTokenProvider {
     }
 
     public Claims getClaims(String token){
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
+        return jwtParser()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    private JwtParser jwtParser(){
+        return Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .setAllowedClockSkewSeconds(30)
+                .build();
     }
 }

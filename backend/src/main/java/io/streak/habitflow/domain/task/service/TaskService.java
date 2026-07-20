@@ -42,7 +42,6 @@ import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -80,7 +79,7 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="SUB_TASK")
-    public TaskResponse.Detail createTask(TaskRequest.Create request, MultipartFile file, Long loginMemberId){
+    public TaskResponse.Detail createTask(TaskRequest.Create request, FileDto fileDto, Long loginMemberId){
 
         Member member = memberRepository.getReferenceById(loginMemberId);
 
@@ -160,9 +159,7 @@ public class TaskService {
             taskLabels.forEach(task::addTaskLabel);
         }
 
-        if(file != null && !file.isEmpty()){
-            FileDto fileDto = fileStorageService.upload(file);
-
+        if(fileDto != null){
             Comment comment = Comment.builder()
                     .content("첨부파일이 등록되었습니다.")
                     .member(member)

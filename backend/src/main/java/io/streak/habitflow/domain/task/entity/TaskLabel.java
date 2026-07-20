@@ -9,9 +9,9 @@ import lombok.*;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Table(name="task_labels",indexes = {
-        @Index(name="idx_task_labels",columnList = "task_master_id,label_id")
-})
+@Table(name="task_labels",uniqueConstraints = @UniqueConstraint(
+        name = "uk_task_label",
+        columnNames = {"task_master_id", "label_id"}))
 public class TaskLabel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

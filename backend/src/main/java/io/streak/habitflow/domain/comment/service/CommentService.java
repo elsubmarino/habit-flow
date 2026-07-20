@@ -20,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
 import java.util.List;
@@ -38,7 +37,7 @@ public class CommentService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public CommentResponse.Detail createComment(Long taskId, CommentRequest.Create request, MultipartFile file, Long loginMemberId) {
+    public CommentResponse.Detail createComment(Long taskId, CommentRequest.Create request, FileDto fileDto, Long loginMemberId) {
         Long realTaskId = hashidsProvider.decode(request.taskId());
         Member member = memberRepository.getReferenceById(loginMemberId);
 
@@ -50,9 +49,7 @@ public class CommentService {
                 .content(request.content())
                 .build();
 
-        if(file != null && !file.isEmpty()){
-            FileDto fileDto = fileStorageService.upload(file);
-
+        if(fileDto != null){
             Attachment attachment = Attachment.builder()
                     .originalFileName(fileDto.originalFileName())
                     .savedFileName((fileDto.savedFileName()))

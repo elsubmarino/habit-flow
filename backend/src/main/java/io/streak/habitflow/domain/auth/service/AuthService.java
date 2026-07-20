@@ -41,13 +41,33 @@ public class AuthService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
+    private void incrementLoginFail(String failKey) {
+        Long count = redisTemplate.opsForValue().increment(failKey);
+        if (count != null && count == 1L) {
+            redisTemplate.expire(failKey, 15, TimeUnit.MINUTES);
+        }
+    }
+
     @Transactional
     public TokenDto login(AuthRequest.Login request){
+        String failKey = "LOGIN_FAIL:" + request.email();
+        String failCount = redisTemplate.opsForValue().get(failKey);
+        if (failCount != null && Integer.parseInt(failCount) >= 5) {
+            throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS); // 또는 전용 코드
+        }
+
+
         Member member = memberRepository.findByEmail(request.email())
-                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."));
+                .orElseThrow(() -> {
+                    incrementLoginFail(failKey);
+                    return new BusinessException(ErrorCode.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.");
+                });
+
         if(!passwordEncoder.matches(request.password(),member.getPassword())){
+            incrementLoginFail(failKey);
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.");
         }
+        redisTemplate.delete(failKey);
 
         String accessToken = jwtTokenProvider.createAccessToken(member.getEmail(), member.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(member.getEmail(), member.getId());

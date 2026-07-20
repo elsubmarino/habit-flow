@@ -4,6 +4,8 @@ import io.streak.habitflow.domain.comment.dto.request.CommentRequest;
 import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.comment.service.CommentService;
 import io.streak.habitflow.global.common.RoutingId;
+import io.streak.habitflow.global.infra.file.FileDto;
+import io.streak.habitflow.global.infra.file.FileStorageService;
 import io.streak.habitflow.global.util.HashidsProvider;
 import io.streak.habitflow.global.web.LoginMemberId;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class CommentController {
     private final CommentService commentService;
     private final HashidsProvider hashidsProvider;
+    private final FileStorageService fileStorageService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "댓글 생성")
@@ -31,8 +34,12 @@ public class CommentController {
             @LoginMemberId Long loginMemberId,
             @RequestPart(value="file",required = false) MultipartFile file,
             @RequestPart("commentRequest") @Valid CommentRequest.Create request) {
+        FileDto fileDto = null;
+        if(file!=null&&!file.isEmpty()){
+            fileDto = fileStorageService.upload(file);
+        }
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body( commentService.createComment(hashidsProvider.decode(request.taskId()),request,file,loginMemberId));
+                .body(commentService.createComment(hashidsProvider.decode(request.taskId()),request,fileDto,loginMemberId));
     }
 
     @PutMapping("/{commentId}")

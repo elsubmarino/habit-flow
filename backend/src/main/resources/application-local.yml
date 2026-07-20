@@ -1,4 +1,10 @@
 spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   mail:
     host: smtp.gmail.com
     port: 587
@@ -70,3 +76,6 @@ hashids:
   min-length: 8
 app:
   frontend-base-url: "http://localhost:3000"
+  cors-allowed-origins: "http://localhost:3000"
+server:
+  shutdown: graceful
