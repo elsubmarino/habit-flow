@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -32,6 +33,9 @@ public class Task extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="task_id")
     private Long id;
+
+    @Column(nullable = false,unique = true,updatable = false)
+    private UUID publicId = UUID.randomUUID();
 
     @Column(nullable = false, length=100)
     private String name;

@@ -28,6 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -54,64 +55,57 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(request, fileDto, loginMemberId));
     }
 
-    @PutMapping("/{taskId}")
+    @PutMapping("/{publicTaskId}")
     @Operation(summary = "테스크 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 업데이트 성공")})
-    public ResponseEntity<TaskResponse.Detail> updateTask(@PathVariable RoutingId taskId,
+    public ResponseEntity<TaskResponse.Detail> updateTask(@PathVariable UUID publicTaskId,
                                            @RequestBody @Valid TaskRequest.Update request,
                                            @LoginMemberId Long loginMemberId) {
-        long realTaskId = taskId.value();
-        return ResponseEntity.ok(taskService.updateTask(realTaskId, request,loginMemberId));
+        return ResponseEntity.ok(taskService.updateTask(publicTaskId, request,loginMemberId));
     }
 
-    @PatchMapping("/{taskId}/priority")
+    @PatchMapping("/{publicTaskId}/priority")
     @Operation(summary = "우선순위 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "우선순위 업데이트 성공")})
-    public ResponseEntity<TaskResponse.Detail> updatePriority(@PathVariable RoutingId taskId,
+    public ResponseEntity<TaskResponse.Detail> updatePriority(@PathVariable UUID publicTaskId,
                                                           @RequestBody @Valid TaskRequest.UpdatePriority request,
                                                           @LoginMemberId Long loginMemberId) {
-        long realTaskId = taskId.value();
-        return ResponseEntity.ok(taskService.updatePriority(realTaskId, request.taskPriorityType(), loginMemberId));
+        return ResponseEntity.ok(taskService.updatePriority(publicTaskId, request.taskPriorityType(), loginMemberId));
     }
 
-    @PatchMapping("/{taskId}/labels")
+    @PatchMapping("/{publicTaskId}/labels")
     @Operation(summary = "라벨 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "라벨 업데이트 성공")})
-    public ResponseEntity<TaskResponse.Detail> updateTaskLabels(@PathVariable RoutingId taskId,
+    public ResponseEntity<TaskResponse.Detail> updateTaskLabels(@PathVariable UUID publicTaskId,
                                                                 @RequestBody @Valid TaskRequest.UpdateLabel request,
                                                                 @LoginMemberId Long loginMemberId) {
-        long realTaskId = taskId.value();
-        return ResponseEntity.ok(taskService.updateTaskLabels(realTaskId, request.labelIds(), loginMemberId));
+        return ResponseEntity.ok(taskService.updateTaskLabels(publicTaskId, request.labelIds(), loginMemberId));
     }
 
-    @PatchMapping("/{taskId}/project")
+    @PatchMapping("/{publicTaskId}/project")
     @Operation(summary = "테스크가 속한 프로젝트 이동")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크가 속한 프로젝트 이동 성공")})
-    public ResponseEntity<TaskResponse.Detail> moveTaskToProject(@PathVariable RoutingId taskId,
+    public ResponseEntity<TaskResponse.Detail> moveTaskToProject(@PathVariable UUID publicTaskId,
                                                       @RequestBody @Valid TaskRequest.UpdateProject request,
                                                       @LoginMemberId Long loginMemberId) {
-        Long realTaskId = taskId.value();
-        Long realProjectId = hashidsProvider.decode(request.projectId());
-        return ResponseEntity.ok(taskService.moveTaskToProject(realTaskId, realProjectId, loginMemberId));
+        return ResponseEntity.ok(taskService.moveTaskToProject(publicTaskId, request.projectPublicId(), loginMemberId));
     }
 
-    @DeleteMapping("/{taskId}")
+    @DeleteMapping("/{publicTaskId}")
     @Operation(summary = "테스크 삭제")
     @ApiResponses(value={@ApiResponse(responseCode = "204",description = "테스크 삭제 성공")})
-    public ResponseEntity<Void> deleteTask(@PathVariable RoutingId taskId,
+    public ResponseEntity<Void> deleteTask(@PathVariable UUID publicTaskId,
                                            @LoginMemberId Long loginMemberId) {
-        long realTaskId = taskId.value();
-        taskService.deleteTask(realTaskId,loginMemberId);
+        taskService.deleteTask(publicTaskId,loginMemberId);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{taskId}/comments")
+    @GetMapping("/{publicTaskId}/comments")
     @Operation(summary = "테스크에 속한 댓글 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크에 속한 댓글 조회 성공")})
-    public ResponseEntity<List<CommentResponse.Detail>> getComments(@PathVariable RoutingId taskId,
+    public ResponseEntity<List<CommentResponse.Detail>> getComments(@PathVariable UUID publicTaskId,
                                                                     @LoginMemberId Long loginMemberId) {
-        long realTaskId = taskId.value();
-        return ResponseEntity.ok(commentService.getComments(realTaskId,loginMemberId));
+        return ResponseEntity.ok(commentService.getComments(publicTaskId,loginMemberId));
     }
 
     @GetMapping("/sidebar-count")
@@ -121,13 +115,12 @@ public class TaskController {
         return ResponseEntity.ok(taskService.getSidebarTaskCount(loginMemberId));
     }
 
-    @GetMapping("/{taskId}")
+    @GetMapping("/{publicTaskId}")
     @Operation(summary = "테스크 상세 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 상세 조회 성공")})
-    public ResponseEntity<TaskResponse.Detail> getTaskById(@PathVariable RoutingId taskId,
+    public ResponseEntity<TaskResponse.Detail> getTaskById(@PathVariable UUID publicTaskId,
                                                     @LoginMemberId Long loginMemberId) {
-        long realTaskId = taskId.value();
-        return ResponseEntity.ok(taskService.getTaskById(realTaskId,loginMemberId));
+        return ResponseEntity.ok(taskService.getTaskById(publicTaskId,loginMemberId));
     }
 
 
@@ -187,14 +180,13 @@ public class TaskController {
         return ResponseEntity.ok(taskService.searchTasks(searchCondition,cursor, loginMemberId, pageable));
     }
 
-    @PatchMapping("/{taskId}/due-date")
+    @PatchMapping("/{publicTaskId}/due-date")
     @Operation(summary = "만료일 업데이트")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "만료일 업데이트 성공")})
-    public ResponseEntity<TaskResponse.Detail> updateTaskDueDate(@PathVariable RoutingId taskId,
+    public ResponseEntity<TaskResponse.Detail> updateTaskDueDate(@PathVariable UUID publicTaskId,
                                                           @RequestBody @Valid TaskRequest.UpdateDueDate request,
                                                           @LoginMemberId Long loginMemberId) {
-        long realTaskId = taskId.value();
-        return ResponseEntity.ok(taskService.updateTaskDueDate(realTaskId, request, loginMemberId));
+        return ResponseEntity.ok(taskService.updateTaskDueDate(publicTaskId, request, loginMemberId));
     }
 
     @PatchMapping("/due-date-batch")
@@ -206,14 +198,13 @@ public class TaskController {
         return ResponseEntity.ok(taskService.updateTaskDueDateBatch(request, loginMemberId));
     }
 
-    @PatchMapping("/{taskId}/sort-order")
+    @PatchMapping("/{publicTaskId}/sort-order")
     @Operation(summary = "정렬순서 변경")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "정렬순서 변경 성공")})
-    public ResponseEntity<TaskResponse.Summary> updateSortOrder(@PathVariable RoutingId taskId,
+    public ResponseEntity<TaskResponse.Summary> updateSortOrder(@PathVariable UUID publicTaskId,
                                                   @RequestBody @Valid TaskRequest.UpdateSortOrder request,
                                                   @LoginMemberId Long loginMemberId) {
-        long realTaskId = taskId.value();
-        return ResponseEntity.ok(taskService.updateSortOrder(realTaskId, request, loginMemberId));
+        return ResponseEntity.ok(taskService.updateSortOrder(publicTaskId, request, loginMemberId));
     }
 
     @PatchMapping("/{taskId}/toggle")

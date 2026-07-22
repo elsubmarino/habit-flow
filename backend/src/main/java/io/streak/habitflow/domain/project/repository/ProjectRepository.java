@@ -8,14 +8,21 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public interface ProjectRepository extends JpaRepository<Project, Long>, ProjectRepositoryCustom {
     @Query("SELECT pu.project FROM ProjectMember pu WHERE pu.member.email = :email")
     List<Project> findByMemberEmail(@Param("email") String email);
 
     List<Project> findByNameContaining(String name);
+    Optional<Project> findByPublicId(UUID publicId);
 
     default Project getOrThrow(Long projectId){
         return findById(projectId).orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
+    }
+
+    default Project getOrThrowByProjectId(UUID publicId){
+        return findByPublicId(publicId).orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
     }
 }

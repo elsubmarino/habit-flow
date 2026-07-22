@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public final class TaskRequest {
     public record Create(
@@ -156,7 +157,7 @@ public final class TaskRequest {
 
     public record UpdateProject(
             @Schema(description = "변경할 프로젝트 아아디")
-            String projectId
+            UUID projectPublicId
     ){}
 
     public record Update(

@@ -1,14 +1,19 @@
 package io.streak.habitflow.global.util;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.util.SerializationUtils;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 
+import java.io.IOException;
 import java.util.Base64;
 import java.util.Optional;
 
 public class CookieUtils {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     public static Optional<Cookie> getCookie(HttpServletRequest request, String cookieName) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null && cookies.length > 0) {
@@ -43,13 +48,23 @@ public class CookieUtils {
         }
     }
 
-    public static String serialize(Object object){
-        return Base64.getUrlEncoder()
-                .encodeToString(SerializationUtils.serialize(object));
+    public static String serialize(OAuth2AuthorizationRequest request){
+        try {
+            return Base64.getUrlEncoder().encodeToString(MAPPER.writeValueAsBytes(request));
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
-    public static <T> T deserialize(Cookie cookie, Class<T> cls){
-        return cls.cast(SerializationUtils.deserialize(
-                Base64.getUrlDecoder().decode(cookie.getValue())));
+    public static OAuth2AuthorizationRequest deserialize(Cookie cookie){
+        try {
+            return MAPPER.readValue(
+                    Base64.getUrlDecoder().decode(cookie.getValue()),
+                    OAuth2AuthorizationRequest.class);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
+
+
 }

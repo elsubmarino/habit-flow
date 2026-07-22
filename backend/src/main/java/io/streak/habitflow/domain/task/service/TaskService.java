@@ -64,11 +64,11 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public void deleteTask(Long taskId, Long loginMemberId){
-        Task task = taskRepository.getOrThrow(taskId);
-        taskRepository.deleteById(taskId);
+    public void deleteTask(UUID publicTaskId, Long loginMemberId){
+        Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
+        taskRepository.deleteById(task.getId());
         applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
-                taskId,
+                task.getId(),
                 loginMemberId,
                 TargetType.TASK,
                 ActivityType.DELETED,
@@ -211,16 +211,16 @@ public class TaskService {
     }
 
     @CheckOwnership(type="TASK")
-    public TaskResponse.Detail getTaskById(Long taskId, Long loginMemberId){
-        Task task = taskRepository.getReferenceById(taskId);
+    public TaskResponse.Detail getTaskById(UUID publicTaskId, Long loginMemberId){
+        Task task = taskRepository.findByPublicId(publicTaskId)
+                .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND));
 
         List<LabelResponse.Summary> labelSummaryResponses =
-                labelRepository.findLabelSummariesByTaskId(taskId).stream()
+                labelRepository.findLabelSummariesByTaskId(task.getId()).stream()
                         .map(l -> LabelResponse.Summary.of(l, hashidsProvider.encode(l.id())))
                         .toList();
 
-        String encodedId = hashidsProvider.encode(task.getId());
-        return taskMapper.toDetail(task, encodedId, labelSummaryResponses);
+        return taskMapper.toDetail(task, task.getPublicId().toString(), labelSummaryResponses);
     }
 
     @CheckOwnership(type="PROJECT")
@@ -307,9 +307,8 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public TaskResponse.Detail updateTask(Long taskId, TaskRequest.Update request, Long loginMemberId){
-        Task task = taskRepository.getOrThrow(taskId);
-        String encodedId = hashidsProvider.encode(task.getId());
+    public TaskResponse.Detail updateTask(UUID publicTaskId, TaskRequest.Update request, Long loginMemberId){
+        Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
 
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
@@ -319,7 +318,7 @@ public class TaskService {
 
         if (Objects.equals(request.name(), task.getName()) &&
                 Objects.equals(request.description(), task.getDescription())) {
-            return taskMapper.toDetail(task, encodedId, summaries);
+            return taskMapper.toDetail(task, task.getPublicId().toString(), summaries);
         }
 
         List<ChangeSet> changes = new ArrayList<>();
@@ -346,7 +345,7 @@ public class TaskService {
         }
 
 
-        return taskMapper.toDetail(task,encodedId,summaries);
+        return taskMapper.toDetail(task,task.getPublicId().toString(),summaries);
     }
 
     @Transactional
@@ -434,8 +433,8 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updateTaskDueDate(Long taskId, TaskRequest.UpdateDueDate request, Long loginMemberId){
-        Task task = taskRepository.getOrThrow(taskId);
+    public TaskResponse.Detail updateTaskDueDate(UUID publicTaskId, TaskRequest.UpdateDueDate request, Long loginMemberId){
+        Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
 
         LocalDateTime oldDueDate = task.getDueDate();
         boolean isChanged = task.updateSchedule(
@@ -449,8 +448,7 @@ public class TaskService {
         );
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
-            String encodedId = hashidsProvider.encode(label.id());
-            return LabelResponse.Summary.of(label,encodedId);
+            return LabelResponse.Summary.of(label,task.getPublicId().toString());
         }).toList();
         if(!isChanged){
             String encodedId = hashidsProvider.encode(task.getId());
@@ -472,8 +470,7 @@ public class TaskService {
             ));
         }
 
-        String encodedId = hashidsProvider.encode(task.getId());
-        return taskMapper.toDetail(task,encodedId,summaries);
+        return taskMapper.toDetail(task,task.getPublicId().toString(),summaries);
     }
 
     @Transactional
@@ -541,16 +538,14 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updatePriority(Long taskId, TaskPriorityType taskPriorityType, Long loginMemberId){
-        Task task = taskRepository.getOrThrow(taskId);
+    public TaskResponse.Detail updatePriority(UUID publicTaskId, TaskPriorityType taskPriorityType, Long loginMemberId){
+        Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
-            String encodedId = hashidsProvider.encode(label.id());
-            return LabelResponse.Summary.of(label,encodedId);
+            return LabelResponse.Summary.of(label,task.getPublicId().toString());
         }).toList();
-        String encodedId = hashidsProvider.encode(task.getId());
         if(task.getTaskPriorityType() == taskPriorityType){
-            return taskMapper.toDetail(task,encodedId,summaries);
+            return taskMapper.toDetail(task,task.getPublicId().toString(),summaries);
         }
         TaskPriorityType oldTaskPriorityType = task.getTaskPriorityType();
         task.updatePriorityType(taskPriorityType);
@@ -567,19 +562,18 @@ public class TaskService {
                 changeSets
         ));
 
-        return taskMapper.toDetail(task,encodedId,summaries);
+        return taskMapper.toDetail(task,task.getPublicId().toString(),summaries);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updateTaskLabels(Long taskId, List<String> labelIds, Long loginMemberId){
-        Task task = taskRepository.getOrThrow(taskId);
-        String encodedId = hashidsProvider.encode(task.getId());
+    public TaskResponse.Detail updateTaskLabels(UUID publicTaskId, List<String> labelIds, Long loginMemberId){
+        Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         // 빈 목록이면 라벨 전부 제거 후 빈 목록으로 응답
         if(labelIds.isEmpty()){
             task.getTaskLabels().clear();
-            return taskMapper.toDetail(task, encodedId, List.of());
+            return taskMapper.toDetail(task, task.getPublicId().toString(), List.of());
         }
         List<Long> realLabelIds = labelIds.stream()
                 .map(hashidsProvider::decode)
@@ -591,25 +585,23 @@ public class TaskService {
         List<LabelResponse.Summary> summaries = realLabels.stream()
                 .map(label -> LabelResponse.Summary.of(label, hashidsProvider.encode(label.getId())))
                 .toList();
-        return taskMapper.toDetail(task, encodedId, summaries);
+        return taskMapper.toDetail(task, task.getPublicId().toString(), summaries);
     }
 
     @Transactional
     @CheckOwnership(type="TASK")
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail moveTaskToProject(Long taskId, Long projectId, Long loginMemberId){
-        Task task = taskRepository.getOrThrow(taskId);
+    public TaskResponse.Detail moveTaskToProject(UUID publicTaskId, UUID publicProjectId, Long loginMemberId){
+        Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
-            String encodedId = hashidsProvider.encode(label.id());
-            return LabelResponse.Summary.of(label,encodedId);
+            return LabelResponse.Summary.of(label,task.getPublicId().toString());
         }).toList();
-        String encodedId = hashidsProvider.encode(task.getId());
 
         Project project = null;
-        if(projectId != null) {
-            project = projectRepository.getOrThrow(projectId);
+        if(publicProjectId != null) {
+            project = projectRepository.getOrThrowByProjectId(publicProjectId);
             String oldProjectName = project.getName();
             task.updateProject(project);
 
@@ -626,7 +618,7 @@ public class TaskService {
             ));
         }
 
-        return taskMapper.toDetail(task,encodedId,summaries);
+        return taskMapper.toDetail(task,task.getPublicId().toString(),summaries);
     }
 
     public List<TaskResponse.UpcomingDateCount> getUpcomingDateCounts(Long memberId, LocalDateTime fromDate, LocalDateTime toDate){

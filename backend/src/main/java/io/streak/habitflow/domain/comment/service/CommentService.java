@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -74,13 +75,12 @@ public class CommentService {
     }
 
     @CheckOwnership(type="TASK")
-    public List<CommentResponse.Detail> getComments(Long taskId, Long loginMemberId) {
-        Task task = taskRepository.getOrThrow(taskId);
+    public List<CommentResponse.Detail> getComments(UUID publicTaskId, Long loginMemberId) {
+        Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<Comment> comments = commentRepository.findByTaskIdWithAttachments(task.getId());
         return comments.stream()
                 .map(comment->{
-                    String encodedId = hashidsProvider.encode(comment.getId());
-                    return CommentResponse.Detail.of(comment,encodedId);
+                    return CommentResponse.Detail.of(comment,task.getPublicId().toString());
                 })
                 .toList();
     }

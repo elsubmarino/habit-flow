@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
 import java.security.Key;
 import java.time.Clock;
 import java.time.Instant;
@@ -50,13 +51,13 @@ public class JwtTokenProvider {
         Instant validity = now.plusMillis(validityTime);
 
         return Jwts.builder()
-                .setSubject(email)
+                .subject(email)
                 .claim("memberId",memberId)
                 .claim("role","ROLE_USER")
                 .claim("tokenType",tokenType)
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(validity))
-                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(validity))
+                .signWith(secretKey)
                 .compact();
     }
 
@@ -105,8 +106,8 @@ public class JwtTokenProvider {
 
     public String getEmail(String refreshToken){
         return jwtParser()
-                .parseClaimsJws(refreshToken)
-                .getBody()
+                .parseSignedClaims(refreshToken)
+                .getPayload()
                 .getSubject();
     }
 
@@ -116,14 +117,14 @@ public class JwtTokenProvider {
 
     public Claims getClaims(String token){
         return jwtParser()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private JwtParser jwtParser(){
-        return Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .setAllowedClockSkewSeconds(30)
+        return Jwts.parser()
+                .verifyWith((SecretKey)secretKey)
+                .clockSkewSeconds(30)
                 .build();
     }
 }
