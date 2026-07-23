@@ -15,7 +15,6 @@ public interface TaskRepository extends JpaRepository<Task,Long>, TaskRepository
     long countByProjectAndMember(Project project, Member member);
     long countByProjectIsNullAndMember(Member member);
     Optional<Task> findByPublicId(UUID publicTaskId);
-    boolean existsByPublicIdAndHasAccess(UUID publicTaskId, Long memberId);
 
     default Task getOrThrow(Long taskId) {
         return findById(taskId).orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
