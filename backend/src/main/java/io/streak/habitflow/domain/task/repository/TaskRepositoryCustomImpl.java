@@ -579,11 +579,11 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskSummaryQuery> findTaskSummariesByLabelId(Long labelId, Pageable pageable, Long loginMemberId) {
+    public List<TaskSummaryQuery> findTaskSummariesByLabelId(UUID publicLabelId, Pageable pageable, Long loginMemberId) {
         List<Long> ids =  queryFactory
                 .select(task.id)
                 .from(taskLabel)
-                .where(taskLabel.label.id.eq(labelId))
+                .where(taskLabel.label.publicId.eq(publicLabelId))
                 .fetch();
         if(ids == null || ids.isEmpty()){
             return Collections.emptyList();

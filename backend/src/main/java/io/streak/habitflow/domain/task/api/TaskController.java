@@ -6,7 +6,6 @@ import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
-import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.common.constant.PageSizeConstants;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
@@ -207,13 +206,12 @@ public class TaskController {
         return ResponseEntity.ok(taskService.updateSortOrder(publicTaskId, request, loginMemberId));
     }
 
-    @PatchMapping("/{taskId}/toggle")
+    @PatchMapping("/{publicTaskId}/toggle")
     @Operation(summary = "테스크 토글(완료/미완료)")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 토글(완료/미완료) 성공")})
     public ResponseEntity<TaskResponse.Summary> toggleCompletion(@LoginMemberId Long loginMemberId,
-                                                         @PathVariable RoutingId taskId) {
-        long realTaskId = taskId.value();
-        return ResponseEntity.ok(taskService.toggleCompletion(realTaskId,loginMemberId));
+                                                         @PathVariable UUID publicTaskId) {
+        return ResponseEntity.ok(taskService.toggleCompletion(publicTaskId,loginMemberId));
     }
 
     @GetMapping("/upcoming/summary")
@@ -227,14 +225,14 @@ public class TaskController {
         );
     }
 
-    @GetMapping("/labels/{labelId}")
+    @GetMapping("/labels/{publicLabelId}")
     @Operation(summary = "라벨별 테스크 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "라벨별 테스크 조회 성공")})
     public ResponseEntity<TaskResponse.SummarySlice> getTasksByLabel(@LoginMemberId Long loginMemberId,
-                                                                     @PathVariable RoutingId labelId,
+                                                                     @PathVariable UUID publicLabelId,
                                                                      @ModelAttribute @Valid TaskRequest.Cursor cursor,
                                                                      @PageableDefault(size = PageSizeConstants.CURSOR_PAGING_SMALL) Pageable pageable){
-        TaskResponse.SummarySlice summarySlice = taskService.getTasksByLabel(labelId.value(),loginMemberId,pageable,cursor);
+        TaskResponse.SummarySlice summarySlice = taskService.getTasksByLabel(publicLabelId,loginMemberId,pageable,cursor);
         return ResponseEntity.ok(summarySlice);
     }
 }

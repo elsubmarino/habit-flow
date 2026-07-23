@@ -350,9 +350,9 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    @DistributedLock(key = "#taskId")
-    public TaskResponse.Summary toggleCompletion(Long taskId, Long loginMemberId){
-        Task task = taskRepository.getOrThrow(taskId);
+    @DistributedLock(key = "#publicTaskId")
+    public TaskResponse.Summary toggleCompletion(UUID publicTaskId, Long loginMemberId){
+        Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
 
         boolean nextCompletion = !task.isCompleted();
         task.updateCompleted(nextCompletion);
@@ -363,7 +363,7 @@ public class TaskService {
             task.updateDueDate(nextDueDate);
 
             applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
-                    taskId,
+                    task.getId(),
                     loginMemberId,
                     TargetType.TASK,
                     ActivityType.COMPLETED,
@@ -382,14 +382,12 @@ public class TaskService {
             ));
         }
 
-        List<TaskSummaryQuery> taskSummaryQueries = taskRepository.findTaskSummariesByIds(List.of(taskId));
+        List<TaskSummaryQuery> taskSummaryQueries = taskRepository.findTaskSummariesByIds(List.of(task.getId()));
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
-            String encodedId = hashidsProvider.encode(label.id());
-            return LabelResponse.Summary.of(label,encodedId);
+            return LabelResponse.Summary.of(label,task.getPublicId().toString());
         }).toList();
-        String encodedId = hashidsProvider.encode(task.getId());
-        return TaskResponse.Summary.of(taskSummaryQueries.get(0),encodedId,summaries);
+        return TaskResponse.Summary.of(taskSummaryQueries.get(0),task.getPublicId().toString(),summaries);
     }
 
     public TaskResponse.SidebarTasksCount getSidebarTaskCount(Long memberId){
@@ -627,28 +625,26 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public TaskResponse.Summary updateSortOrder(Long taskId, TaskRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
-        Task task = taskRepository.getReferenceById(taskId);
+    public TaskResponse.Summary updateSortOrder(UUID publicTaskId, TaskRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
+        Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
-            String encodedId = hashidsProvider.encode(label.id());
-            return LabelResponse.Summary.of(label,encodedId);
+            return LabelResponse.Summary.of(label,task.getPublicId().toString());
         }).toList();
-        List<TaskSummaryQuery> taskSummaryQueries = taskRepository.findTaskSummariesByIds(List.of(taskId));
-        String encodedId = hashidsProvider.encode(task.getId());
+        List<TaskSummaryQuery> taskSummaryQueries = taskRepository.findTaskSummariesByIds(List.of(task.getId()));
 
         if(Objects.equals(task.getSortOrder(), updateSortOrder.sortOrder())){
-            return TaskResponse.Summary.of(taskSummaryQueries.get(0),encodedId,summaries);
+            return TaskResponse.Summary.of(taskSummaryQueries.get(0),task.getPublicId().toString(),summaries);
         }
         task.updateSortOrder(updateSortOrder.sortOrder());
 
-        return TaskResponse.Summary.of(taskSummaryQueries.get(0),encodedId,summaries);
+        return TaskResponse.Summary.of(taskSummaryQueries.get(0),task.getPublicId().toString(),summaries);
     }
 
-    public TaskResponse.SummarySlice getTasksByLabel(Long labelId, Long loginMemberId, Pageable pageable
+    public TaskResponse.SummarySlice getTasksByLabel(UUID publicLabelId, Long loginMemberId, Pageable pageable
                                                     ,TaskRequest.Cursor cursor){
         int pageSize = pageable.getPageSize();
-        List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByLabelId(labelId,pageable,loginMemberId);
+        List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByLabelId(publicLabelId,pageable,loginMemberId);
 
         boolean hasNext;
         boolean hasPrev;

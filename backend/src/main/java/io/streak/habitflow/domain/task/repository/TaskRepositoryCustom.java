@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 public interface TaskRepositoryCustom {
     List<TaskSearchSummaryQuery> searchByKeyword(String keyword, Long memberId, Pageable pageable);
@@ -18,7 +19,7 @@ public interface TaskRepositoryCustom {
     List<TaskResponse.UpcomingDateCount> findUpcomingTaskCountsByDate(Long memberId, LocalDateTime fromDate, LocalDateTime toDate);
     List<TaskSummaryQuery> findTaskSummariesByIds(List<Long> ids);
     boolean existsByIdAndHasAccess(Long taskId, Long memberId);
-    List<TaskSummaryQuery> findTaskSummariesByLabelId(Long labelId, Pageable pageable, Long loginMemberId);
+    List<TaskSummaryQuery> findTaskSummariesByLabelId(UUID publicLabelId, Pageable pageable, Long loginMemberId);
     Long findMaxSortOrder(Long memberId, Long projectId);
     long countAccessibleTasks(List<Long> taskIds, Long memberId);
 
