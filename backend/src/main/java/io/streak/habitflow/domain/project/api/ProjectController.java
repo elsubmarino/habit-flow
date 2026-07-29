@@ -5,7 +5,6 @@ import io.streak.habitflow.domain.project.dto.response.ProjectResponse;
 import io.streak.habitflow.domain.project.service.ProjectService;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
-import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.common.constant.PageSizeConstants;
 import io.streak.habitflow.global.web.LoginMemberId;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -41,12 +41,11 @@ public class ProjectController {
                 .body(projectService.createProject(request, loginMemberId));
     }
 
-    @GetMapping("/{projectId}")
+    @GetMapping("/{publicProjectId}")
     @Operation(summary = "프로젝트 상세 조회")
-    public ResponseEntity<ProjectResponse.Detail> getProjectById(@PathVariable RoutingId projectId,
+    public ResponseEntity<ProjectResponse.Detail> getProjectById(@PathVariable UUID publicProjectId,
                                                           @LoginMemberId Long loginMemberId) {
-        Long realProjectId = projectId.value();
-        return ResponseEntity.ok(projectService.getProjectById(realProjectId,loginMemberId));
+        return ResponseEntity.ok(projectService.getProjectByPublicId(publicProjectId,loginMemberId));
     }
 
     @GetMapping
@@ -55,31 +54,28 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.getProjectsByMember(loginMemberId));
     }
 
-    @PutMapping("/{projectId}")
+    @PutMapping("/{publicProjectId}")
     @Operation(summary = "프로젝트 업데이트")
     public ResponseEntity<ProjectResponse.Detail> updateProject(@RequestBody ProjectRequest.Update request,
-                                                 @PathVariable RoutingId projectId,
+                                                 @PathVariable UUID publicProjectId,
                                                  @LoginMemberId Long loginMemberId) {
-        Long realProjectId = projectId.value();
-        return ResponseEntity.ok(projectService.updateProject(request,realProjectId,loginMemberId));
+        return ResponseEntity.ok(projectService.updateProject(request,publicProjectId,loginMemberId));
     }
 
-    @DeleteMapping("/{projectId}")
+    @DeleteMapping("/{publicProjectId}")
     @Operation(summary = "프로젝트 삭제")
-    public ResponseEntity<Void> deleteProject(@PathVariable RoutingId projectId,
+    public ResponseEntity<Void> deleteProject(@PathVariable UUID publicProjectId,
                                               @LoginMemberId Long loginMemberId) {
-        Long realProjectId = projectId.value();
-        projectService.deleteProject(realProjectId,loginMemberId);
+        projectService.deleteProject(publicProjectId,loginMemberId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{projectId}/tasks")
     @Operation(summary = "프로젝트에 딸린 테스크 조회")
-    public ResponseEntity<Slice<TaskResponse.Summary>> getTasksByProject(@PathVariable RoutingId projectId,
+    public ResponseEntity<Slice<TaskResponse.Summary>> getTasksByProject(@PathVariable UUID projectId,
                                                                          @LoginMemberId Long loginMemberId,
                                                                          @PageableDefault(size= PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
-        Long realProjectId = projectId.value();
-        return ResponseEntity.ok(taskService.getTasksByProject(realProjectId, loginMemberId, pageable));
+        return ResponseEntity.ok(taskService.getTasksByProject(projectId, loginMemberId, pageable));
     }
 
     @GetMapping("/search")
@@ -90,13 +86,12 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.searchProjects(keyword,loginMemberId,pageable));
     }
 
-    @PostMapping("/{projectId}/invitation")
+    @PostMapping("/{publicProjectID}/invitation")
     @Operation(summary = "프로젝트 초대 이메일 발송")
     public ResponseEntity<Void> inviteMembers(@LoginMemberId Long loginMemberId,
                                               @RequestBody ProjectRequest.Invite request,
-                                              @PathVariable RoutingId projectId){
-        Long realProjectId = projectId.value();
-        projectService.inviteMembers(request, realProjectId, loginMemberId);
+                                              @PathVariable UUID publicProjectID){
+        projectService.inviteMembers(request, publicProjectID, loginMemberId);
         return ResponseEntity.noContent().build();
     }
 
@@ -108,33 +103,30 @@ public class ProjectController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{projectId}/members")
+    @GetMapping("/{publicProjectId}/members")
     @Operation(summary = "프로젝트 참여 회원 보기")
     public ResponseEntity<List<ProjectResponse.Member>> getProjectMembers(@LoginMemberId Long loginMemberId,
-                                                                   @PathVariable RoutingId projectId){
-        Long realProjectId = projectId.value();
-        List<ProjectResponse.Member> list =  projectService.getProjectMembers(realProjectId,loginMemberId);
+                                                                   @PathVariable UUID publicProjectId){
+        List<ProjectResponse.Member> list =  projectService.getProjectMembers(publicProjectId,loginMemberId);
         return ResponseEntity.ok(list);
     }
 
-    @DeleteMapping("/{projectId}/members")
+    @DeleteMapping("/{publicProjectId}/members")
     @Operation(summary = "프로젝트에서 해당 멤버 제거")
     @ApiResponses(value={@ApiResponse(responseCode = "204",description = "프로젝트에서 해당 멤버 제거 성공")})
     public ResponseEntity<Void> deleteProjectMember(@LoginMemberId Long loginMemberId,
                                                                           @RequestBody ProjectRequest.DeleteMember request,
-                                                                          @PathVariable RoutingId projectId){
-        Long realProjectId = projectId.value();
-        projectService.deleteProjectMember(realProjectId,loginMemberId, request);
+                                                                          @PathVariable UUID publicProjectId){
+        projectService.deleteProjectMember(publicProjectId,loginMemberId, request);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/{projectId}/sort-order")
+    @PatchMapping("/{publicProjectId}/sort-order")
     @Operation(summary = "정렬순서 변경")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "정렬순서 변경 성공")})
-    public ResponseEntity<ProjectResponse.Summary> updateSortOrder(@PathVariable RoutingId projectId,
+    public ResponseEntity<ProjectResponse.Summary> updateSortOrder(@PathVariable UUID publicProjectId,
                                                                  @RequestBody @Valid ProjectRequest.UpdateSortOrder request,
                                                                  @LoginMemberId Long loginMemberId) {
-        long realProjectId = projectId.value();
-        return ResponseEntity.ok(projectService.updateSortOrder(realProjectId, request, loginMemberId));
+        return ResponseEntity.ok(projectService.updateSortOrder(publicProjectId, request, loginMemberId));
     }
 }

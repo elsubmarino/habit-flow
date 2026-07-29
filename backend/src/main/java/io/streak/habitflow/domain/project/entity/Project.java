@@ -20,6 +20,7 @@ public class Project  extends BaseTimeEntity {
     @Column(name="project_id")
     private Long id;
 
+    @Builder.Default
     @Column(nullable = false, unique = true, updatable = false)
     private UUID publicId = UUID.randomUUID();
 
@@ -33,7 +34,7 @@ public class Project  extends BaseTimeEntity {
     private LayoutType layoutType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name = "parent_id")
     private Project parent;
 
     private Long sortOrder;

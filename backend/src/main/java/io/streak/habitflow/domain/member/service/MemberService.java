@@ -15,6 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -43,28 +45,25 @@ public class MemberService {
         Member result = memberRepository.save(member);
 
         authService.clearEmailVerification(request.email());
-        String encodedId = hashidsProvider.encode(result.getId());
-        return MemberResponse.Detail.to(result,encodedId);
+        return MemberResponse.Detail.to(result,result.getPublicId().toString());
     }
 
     @Transactional
     @CheckOwnership(type = "MEMBER")
     @SuppressWarnings("unused")
-    public MemberResponse.Detail updateMember(Long memberId,MemberRequest.Update  request,Long loginMemberId){
-        Member member = memberRepository.getOrThrow(memberId);
-        String encodedId = hashidsProvider.encode(member.getId());
+    public MemberResponse.Detail updateMember(UUID publicMemberId, MemberRequest.Update  request, Long loginMemberId){
+        Member member = memberRepository.getOrThrowByPublicId(publicMemberId);
         if (!request.name().equals(member.getName())) {
             member.updateName(request.name());
         }
         if (!passwordEncoder.matches(request.password(), member.getPassword())) {
             member.updatePassword(passwordEncoder.encode(request.password()));
         }
-        return MemberResponse.Detail.to(member,encodedId);
+        return MemberResponse.Detail.to(member,member.getPublicId().toString());
     }
 
     public MemberResponse.Detail getMember(Long memberId){
         Member member = memberRepository.getOrThrow(memberId);
-        String encodedId = hashidsProvider.encode(member.getId());
-        return MemberResponse.Detail.to(member,encodedId);
+        return MemberResponse.Detail.to(member,member.getPublicId().toString());
     }
 }

@@ -5,6 +5,8 @@ import io.streak.habitflow.global.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -17,8 +19,12 @@ public class Attachment extends BaseTimeEntity {
     @Column(name="attachment_id")
     private Long id;
 
+    @Builder.Default
+    @Column(nullable = false,unique = true,updatable = false)
+    private UUID publicId = UUID.randomUUID();
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="comment_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name="comment_id")
     private Comment comment;
 
     @Column(nullable = false)

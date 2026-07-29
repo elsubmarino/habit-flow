@@ -44,7 +44,7 @@
 //
 //    private Member testMember;
 //    private UserPrincipal userPrincipal;
-//    private Long memberId;
+//    private Long publicMemberId;
 //
 //
 //    @BeforeEach
@@ -53,7 +53,7 @@
 //                .password("1234")
 //                .build();
 //        Member savedMember = memberRepository.save(testMember);
-//        this.memberId = savedMember.getId();
+//        this.publicMemberId = savedMember.getId();
 //    }
 //
 //    @Test
@@ -68,7 +68,7 @@
 //
 //        given(taskMasterRepository.searchTaskInfo(taskId)).willReturn(Optional.of(testTaskMaster));
 //
-//        TaskResponse response = taskService.getTaskById(taskId, memberId);
+//        TaskResponse response = taskService.getTaskById(taskId, publicMemberId);
 //
 //        assertThat(response).isNotNull();
 //        assertThat(response.getName()).isEqualTo("조회할 업무");
@@ -83,7 +83,7 @@
 //
 //        given(taskMasterRepository.searchTaskInfo(invalidTaskId)).willReturn(Optional.empty());
 //
-//        assertThatThrownBy(() -> taskService.getTaskById(invalidTaskId, memberId))
+//        assertThatThrownBy(() -> taskService.getTaskById(invalidTaskId, publicMemberId))
 //                .isInstanceOf(IllegalArgumentException.class)
 //                .hasMessage("해당 테스크가 존재하지 않습니다.");
 //
@@ -94,10 +94,10 @@
 //    @DisplayName("부모 ID가 주어지면 서브테스크가 성공적으로 생성되고 연결된다.")
 //    void createSubTask_Success() {
 //        // given: 상황 셋업
-//        Long parentId = 1L;
+//        Long publicParentId = 1L;
 //        TaskCreateRequest request = TaskCreateRequest.builder()
 //                .name("하위 업무 추가")
-//                .parentId(parentId)
+//                .publicParentId(publicParentId)
 //                .build();
 //
 //        TaskMaster parentTaskMaster = TaskMaster.builder()
@@ -105,17 +105,17 @@
 //                .member(testMember)
 //                .build();
 //
-//        given(memberRepository.findById(memberId)).willReturn(Optional.of(testMember));
-//        given(taskMasterRepository.findById(parentId)).willReturn(Optional.of(parentTaskMaster));
+//        given(memberRepository.findById(publicMemberId)).willReturn(Optional.of(testMember));
+//        given(taskMasterRepository.findById(publicParentId)).willReturn(Optional.of(parentTaskMaster));
 //
 //        TaskMaster savedTaskMaster = TaskMaster.builder().name("하위 업무 추가").parent(parentTaskMaster).member(testMember).build();
 //        given(taskMasterRepository.save(any(TaskMaster.class))).willReturn(savedTaskMaster);
 //
-//        TaskResponse response = taskService.createTask(request, null, memberId);
+//        TaskResponse response = taskService.createTask(request, null, publicMemberId);
 //
 //        assertThat(response).isNotNull();
 //
-//        verify(taskMasterRepository).findById(parentId);
+//        verify(taskMasterRepository).findById(publicParentId);
 //        verify(taskMasterRepository).save(any(TaskMaster.class));
 //
 //        ArgumentCaptor<TaskMaster> taskCaptor = ArgumentCaptor.forClass(TaskMaster.class);
@@ -135,12 +135,12 @@
 //                .description("내용")
 //                .build();
 //
-//        given(memberRepository.findById(memberId)).willReturn(Optional.of(testMember));
+//        given(memberRepository.findById(publicMemberId)).willReturn(Optional.of(testMember));
 //
 //        TaskMaster savedTaskMaster = TaskMaster.builder().name("테스트 업무").member(testMember).build();
 //        given(taskMasterRepository.save(any(TaskMaster.class))).willReturn(savedTaskMaster);
 //
-//        TaskResponse response = taskService.createTask(request, null, memberId);
+//        TaskResponse response = taskService.createTask(request, null, publicMemberId);
 //
 //        assertThat(response).isNotNull();
 //        verify(taskMasterRepository).save(any(TaskMaster.class));
@@ -166,14 +166,14 @@
 //                .fileUrl("/uploads/uuid-test.png")
 //                .build();
 //
-//        given(memberRepository.findById(memberId)).willReturn(Optional.of(testMember));
+//        given(memberRepository.findById(publicMemberId)).willReturn(Optional.of(testMember));
 //
 //        TaskMaster savedTaskMaster = TaskMaster.builder().name("파일 첨부 업무").member(testMember).build();
 //        given(taskMasterRepository.save(any(TaskMaster.class))).willReturn(savedTaskMaster);
 //
 //        given(fileStorageService.upload(mockFile)).willReturn(mockFileDto);
 //
-//        TaskResponse response = taskService.createTask(request, mockFile, memberId);
+//        TaskResponse response = taskService.createTask(request, mockFile, publicMemberId);
 //
 //        assertThat(response).isNotNull();
 //        verify(taskMasterRepository).save(any(TaskMaster.class));

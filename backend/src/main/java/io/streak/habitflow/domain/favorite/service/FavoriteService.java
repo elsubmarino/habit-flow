@@ -20,8 +20,8 @@ public class FavoriteService {
         List<FavoriteSummaryQuery> favoriteListQueries = favoriteRepository.findFavoritesByMemberId(memberId);
         return favoriteListQueries.stream()
                 .map(query->{
-                    String encodedTargetId = hashidsProvider.encode(query.targetId());
-                    String encodeId = hashidsProvider.encode(query.id());
+                    String encodedTargetId = query.targetPublicId() != null ? query.targetPublicId().toString() : null;
+                    String encodeId =  query.publicId().toString();
                     return FavoriteResponse.Summary.to(query,encodedTargetId,encodeId);
                 })
                 .toList();

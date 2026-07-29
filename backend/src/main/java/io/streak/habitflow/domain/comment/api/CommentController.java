@@ -3,7 +3,6 @@ package io.streak.habitflow.domain.comment.api;
 import io.streak.habitflow.domain.comment.dto.request.CommentRequest;
 import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.comment.service.CommentService;
-import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
 import io.streak.habitflow.global.util.HashidsProvider;
@@ -18,6 +17,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -39,26 +40,24 @@ public class CommentController {
             fileDto = fileStorageService.upload(file);
         }
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(commentService.createComment(hashidsProvider.decode(request.taskId()),request,fileDto,loginMemberId));
+                .body(commentService.createComment(request.publicTaskId(),request,fileDto,loginMemberId));
     }
 
-    @PutMapping("/{commentId}")
+    @PutMapping("/{publicCommentId}")
     @Operation(summary = "댓글 업데이트")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "댓글 업데이트 성공")})
-    public ResponseEntity<CommentResponse.Detail> updateComment(@PathVariable RoutingId commentId,
+    public ResponseEntity<CommentResponse.Detail> updateComment(@PathVariable UUID publicCommentId,
                                                  @LoginMemberId Long loginMemberId,
                                                  @RequestBody CommentRequest.Update request) {
-        Long realCommentId = commentId.value();
-        return ResponseEntity.ok(commentService.updateComment(realCommentId, request, loginMemberId));
+        return ResponseEntity.ok(commentService.updateComment(publicCommentId, request, loginMemberId));
     }
 
-    @DeleteMapping("/{commentId}")
+    @DeleteMapping("/{publicCommentId}")
     @Operation(summary = "댓글 삭제")
     @ApiResponses({@ApiResponse(responseCode = "204", description = "댓글 삭제 성공")})
-    public ResponseEntity<Void> deleteComment(@PathVariable RoutingId commentId,
+    public ResponseEntity<Void> deleteComment(@PathVariable UUID publicCommentId,
                                               @LoginMemberId Long loginMemberId) {
-        Long realCommentId = commentId.value();
-        commentService.deleteComment(realCommentId,loginMemberId);
+        commentService.deleteComment(publicCommentId,loginMemberId);
         return ResponseEntity.noContent().build();
     }
 

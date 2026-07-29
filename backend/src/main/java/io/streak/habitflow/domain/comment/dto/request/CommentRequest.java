@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.util.UUID;
+
 public final class CommentRequest {
     public record Create(
             @NotBlank(message = "내용은 필수 입력 항목입니다.")
@@ -14,7 +16,7 @@ public final class CommentRequest {
 
             @NotNull
             @Schema(description = "댓글이 속한 TASK ID", requiredMode = Schema.RequiredMode.REQUIRED)
-            String taskId
+            UUID publicTaskId
     ){}
     public record Update(
             @NotNull

@@ -18,23 +18,23 @@ public class SseEmitters {
         if (old != null) {
             old.complete();
         }
-        log.info("[SSE 연결 완료] -> memberId : {}, 현재 연결 수 : {}", memberId, emitters.size());
+        log.info("[SSE 연결 완료] -> publicMemberId : {}, 현재 연결 수 : {}", memberId, emitters.size());
 
         emitter.onCompletion(()->{
             this.emitters.remove(memberId, emitter);
-            log.info("[SSE 만료 청소] -> memberId: {}",memberId);
+            log.info("[SSE 만료 청소] -> publicMemberId: {}",memberId);
         });
 
         emitter.onTimeout(()->{
             emitter.complete();
             this.emitters.remove(memberId, emitter);
-            log.info("[SSE 타임아웃 청소] -> memberId: {}",memberId);
+            log.info("[SSE 타임아웃 청소] -> publicMemberId: {}",memberId);
         });
 
         emitter.onError((e)->{
             emitter.completeWithError(e);
             this.emitters.remove(memberId, emitter);
-            log.info("[SSE 에러 발생] -> memberId: {}",memberId);
+            log.info("[SSE 에러 발생] -> publicMemberId: {}",memberId);
         });
 
         return emitter;
@@ -47,9 +47,9 @@ public class SseEmitters {
                 emitter.send(SseEmitter.event()
                         .name("notification")
                         .data(data));
-                log.info("[SSE 실시간 알림 푸시 성공] -> memberId: {}",memberId);
+                log.info("[SSE 실시간 알림 푸시 성공] -> publicMemberId: {}",memberId);
             }catch(Exception e){
-                log.warn("[SSE 송신 실패로 인한 연결 해제] -> memberId: {}",memberId);
+                log.warn("[SSE 송신 실패로 인한 연결 해제] -> publicMemberId: {}",memberId);
                 emitters.remove(memberId);
             }
         }

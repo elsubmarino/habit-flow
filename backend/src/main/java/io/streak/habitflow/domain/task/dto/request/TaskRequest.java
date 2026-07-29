@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.streak.habitflow.domain.task.type.CursorDirection;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
-import io.streak.habitflow.global.common.RoutingId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -37,10 +36,10 @@ public final class TaskRequest {
             TaskPriorityType taskPriorityType,
 
             @Schema(description = "소속 프로젝트 ID (소속 없을 시에 null 넘기면 인박스로 진입)")
-            String projectId,
+            UUID publicProjectId,
 
             @Schema(description = "부모 테스크 ID (하위 테스크 생성 시에 필수 채움)")
-            String parentId,
+            UUID publicParentId,
 
             @Size(max=10,message = "라벨은 최대 10개까지만 매핑할 수 있습니다.")
             @Schema(description = "매핑할 라벨 ID 리스트 (최대 10개)")
@@ -111,7 +110,7 @@ public final class TaskRequest {
 
     public record UpdateDueDateBatch(
             @NotEmpty(message = "업데이트할 테스크 ID 목록은 필수입니다.")
-            List<RoutingId> taskIds,
+            List<UUID> taskIds,
 
             @JsonFormat(shape = JsonFormat.Shape.STRING,pattern = "yyyy-MM-dd'T'HH:mm:ss")
             @Schema(description = "마감 기한 일시 (yyyy-MM-dd'T'HH:mm:ss)",pattern="yyyy-MM-dd'T'HH:mm:ss",examples = "2026-06-19T23:59:59")
@@ -157,7 +156,7 @@ public final class TaskRequest {
 
     public record UpdateProject(
             @Schema(description = "변경할 프로젝트 아아디")
-            UUID projectPublicId
+            java.util.UUID projectPublicId
     ){}
 
     public record Update(

@@ -112,14 +112,13 @@ public class ProjectService {
                 project.getName(),
                 Collections.emptyList()
         ));
-        String encodedId = hashidsProvider.encode(savedProject.getId());
-        return ProjectResponse.Detail.of(savedProject, request.favorite(),encodedId);
+        return ProjectResponse.Detail.of(savedProject, request.favorite(),savedProject.getPublicId().toString());
     }
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public ProjectResponse.Detail updateProject(ProjectRequest.Update request, Long projectId, Long loginMemberId) {
-        Project project =  projectRepository.getOrThrow(projectId);
+    public ProjectResponse.Detail updateProject(ProjectRequest.Update request, UUID publicProjectId, Long loginMemberId) {
+        Project project =  projectRepository.getOrThrowByProjectId(publicProjectId);
         String oldProjectName = project.getName();
 
         Member member = memberRepository.getReferenceById(loginMemberId);
@@ -148,14 +147,13 @@ public class ProjectService {
             favoriteRepository.deleteByMemberIdAndTargetTypeAndTargetId(member.getId(),TargetType.PROJECT,project.getId());
         }
 
-        String encodedId = hashidsProvider.encode(project.getId());
         Long currentParentId = project.getParent() != null ? project.getParent().getId() : null;
         if(request.name().equals(project.getName()) &&
                 request.color().equals(project.getColor()) &&
                 request.accessType() == project.getAccessType() &&
                 request.layoutType() == project.getLayoutType() &&
                 request.parentId() != null && Objects.equals(request.parentId(),currentParentId)){
-            return ProjectResponse.Detail.of(project,request.favorite(),encodedId);
+            return ProjectResponse.Detail.of(project,request.favorite(),project.getPublicId().toString());
         }
 
         project.updateProject(request.name(),
@@ -176,28 +174,26 @@ public class ProjectService {
                     changeSets
             ));
         }
-        return ProjectResponse.Detail.of(project,request.favorite(),encodedId);
+        return ProjectResponse.Detail.of(project,request.favorite(),project.getPublicId().toString());
     }
 
     @CheckOwnership(type="PROJECT")
-    public ProjectResponse.Detail getProjectById(Long projectId, Long loginMemberId) {
-       Project project = projectRepository.getOrThrow(projectId);
+    public ProjectResponse.Detail getProjectByPublicId(UUID publicProjectId, Long loginMemberId) {
+       Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
        boolean isFavorite = false;
        Optional<Favorite> favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(
                loginMemberId, TargetType.PROJECT, project.getId());
        if(favorite.isPresent()){
            isFavorite = true;
        }
-       String encodedId = hashidsProvider.encode(project.getId());
-       return ProjectResponse.Detail.of(project,isFavorite,encodedId);
+       return ProjectResponse.Detail.of(project,isFavorite,project.getPublicId().toString());
     }
 
     public List<ProjectResponse.Summary> getProjectsByMember(Long memberId) {
         List<ProjectSummaryQuery> projectListQueries = projectRepository.findProjectSummariesByMemberId(memberId);
         return projectListQueries.stream()
                 .map(query ->{
-                    String encodedId = hashidsProvider.encode(query.id());
-                    return ProjectResponse.Summary.of(query,encodedId);
+                    return ProjectResponse.Summary.of(query,query.publicId().toString());
                 })
                 .toList();
     }
@@ -207,11 +203,11 @@ public class ProjectService {
     @Transactional
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public void deleteProject(Long projectId, Long loginMemberId) {
-        Project project = projectRepository.getReferenceById(projectId);
-        projectMemberRepository.deleteByProjectId(projectId);
-        favoriteRepository.deleteByTargetTypeAndTargetId(TargetType.PROJECT, projectId);
-        projectRepository.deleteById(projectId);
+    public void deleteProject(UUID publicProjectId, Long loginMemberId) {
+        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
+        projectMemberRepository.deleteByProjectId(project.getId());
+        favoriteRepository.deleteByTargetTypeAndTargetId(TargetType.PROJECT, project.getId());
+        projectRepository.deleteById(project.getId());
 
         applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 project.getId(),
@@ -228,16 +224,15 @@ public class ProjectService {
         List<ProjectSearchSummaryQuery> projectListQueries = projectRepository.searchByKeyword(keyword,memberId, pageable);
         return projectListQueries.stream()
                 .map(query->{
-                    String encodedId = hashidsProvider.encode(query.id());
-                    return ProjectResponse.Summary.ofSearch(query,encodedId);
+                    return ProjectResponse.Summary.ofSearch(query,query.publicId().toString());
                 })
                 .toList();
     }
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public void inviteMembers(ProjectRequest.Invite inviteRequest, Long projectId, Long loginMemberId){
-        Project project = projectRepository.getOrThrow(projectId);
+    public void inviteMembers(ProjectRequest.Invite inviteRequest, UUID publicProjectID, Long loginMemberId){
+        Project project = projectRepository.getOrThrowByProjectId(publicProjectID);
         Member inviter = memberRepository.getOrThrow(loginMemberId);
 
         List<String> inviteEmails  = inviteRequest.emails();
@@ -327,13 +322,12 @@ public class ProjectService {
 
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public List<ProjectResponse.Member> getProjectMembers(Long projectId,Long loginMemberId) {
-        Project project = projectRepository.getOrThrow(projectId);
+    public List<ProjectResponse.Member> getProjectMembers(UUID publicProjectId,Long loginMemberId) {
+        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
         List<ProjectMember> projectMembers = projectMemberRepository.findByProject(project);
         return projectMembers.stream()
                 .map(projectMember->{
-                    String encodedMemberId = hashidsProvider.encode(projectMember.getMember().getId());
-                    return ProjectResponse.Member.of(projectMember,encodedMemberId);
+                    return ProjectResponse.Member.of(projectMember,projectMember.getMember().getPublicId().toString());
                 })
                 .toList();
     }
@@ -341,24 +335,22 @@ public class ProjectService {
     @Transactional
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public void deleteProjectMember(Long projectId,Long loginMemberId, ProjectRequest.DeleteMember request) {
-        Project project = projectRepository.getOrThrow(projectId);
-        Long realMemberId = hashidsProvider.decode(request.memberId());
-        Member member = memberRepository.getReferenceById(realMemberId);
+    public void deleteProjectMember(UUID publicProjectId,Long loginMemberId, ProjectRequest.DeleteMember request) {
+        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
+        Member member = memberRepository.getOrThrowByPublicId(request.publicMemberId());
         projectMemberRepository.deleteByProjectAndMember(project,member);
     }
 
     @Transactional
     @CheckOwnership(type="PROJECT")
-    public ProjectResponse.Summary updateSortOrder(Long projectId, ProjectRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
-        Project project = projectRepository.getReferenceById(projectId);
-        String encodedId = hashidsProvider.encode(project.getId());
+    public ProjectResponse.Summary updateSortOrder(UUID publicProjectID, ProjectRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
+        Project project = projectRepository.getOrThrowByProjectId(publicProjectID);
 
         if(Objects.equals(project.getSortOrder(), updateSortOrder.sortOrder())){
-            return ProjectResponse.Summary.of(project, encodedId);
+            return ProjectResponse.Summary.of(project, project.getPublicId().toString());
         }
         project.updateSortOrder(updateSortOrder.sortOrder());
 
-        return ProjectResponse.Summary.of(project, encodedId);
+        return ProjectResponse.Summary.of(project, project.getPublicId().toString());
     }
 }

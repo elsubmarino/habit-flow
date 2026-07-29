@@ -7,6 +7,7 @@ import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.exception.BusinessException;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,6 +16,9 @@ public interface TaskRepository extends JpaRepository<Task,Long>, TaskRepository
     long countByProjectAndMember(Project project, Member member);
     long countByProjectIsNullAndMember(Member member);
     Optional<Task> findByPublicId(UUID publicTaskId);
+    List<Long> findIdByPublicIdIn(List<UUID> publicTaskIds);
+
+    boolean existsByPublicId(UUID publicId);
 
     default Task getOrThrow(Long taskId) {
         return findById(taskId).orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));

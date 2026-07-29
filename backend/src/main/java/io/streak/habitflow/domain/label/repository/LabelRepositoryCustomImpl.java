@@ -32,6 +32,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
                 .select(Projections.constructor(
                         LabelSummaryQuery.class,
                         label.id,
+                        label.publicId,
                         label.name,
                         label.color,
                         label.sortOrder
@@ -72,6 +73,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
         List<Tuple> results = queryFactory
                 .select(taskLabel.task.id,
                         label.id,
+                        label.publicId,
                         label.name,
                         label.color,
                         label.sortOrder)
@@ -88,7 +90,7 @@ public class LabelRepositoryCustomImpl implements LabelRepositoryCustom {
                                     long safeSortOrder = (dbSortOrder != null) ? dbSortOrder : 0L;
 
                                     return LabelResponse.Summary.builder()
-                                            .id(hashidsProvider.encode(row.get(label.id)))
+                                            .id(Objects.requireNonNull(row.get(label.publicId)).toString())
                                             .name(row.get(label.name))
                                             .color(row.get(label.color))
                                             .sortOrder(safeSortOrder)

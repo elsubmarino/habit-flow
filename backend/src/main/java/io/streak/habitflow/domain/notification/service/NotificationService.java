@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,15 +25,11 @@ public class NotificationService {
 
     public List<NotificationResponse.Summary> getNotifications(Long memberId) {
         Member receiver = memberRepository.getReferenceById(memberId);
-        String encodedReceiverId = hashidsProvider.encode(receiver.getId());
         List<Notification> notifications = notificationRepository.findByReceiver(receiver);
         return notifications.stream()
                 .map(response->{
-                    String encodedId = hashidsProvider.encode(response.getId());
-                    String encodedActorId = hashidsProvider.encode(response.getActor().getId());
-                    String encodedTargetId = hashidsProvider.encode(response.getTargetId());
-                    return NotificationResponse.Summary.of(response,encodedId,encodedReceiverId,
-                            encodedActorId,encodedTargetId);
+                    return NotificationResponse.Summary.of(response,response.getPublicId().toString(),receiver.getPublicId().toString(),
+                            response.getActor().getPublicId().toString(),response.getTargetPublicId().toString());
                 })
                 .toList();
     }
@@ -40,14 +37,10 @@ public class NotificationService {
     @Transactional
     @CheckOwnership(type="NOTIFICATION")
     @SuppressWarnings("unused")
-    public NotificationResponse.Summary confirmNotification(Long notificationId, NotificationRequest.ConfirmRead request, Long loginMemberId) {
-        Notification notification = notificationRepository.getOrThrow(notificationId);
+    public NotificationResponse.Summary confirmNotification(UUID publicId, NotificationRequest.ConfirmRead request, Long loginMemberId) {
+        Notification notification = notificationRepository.getOrThrowByPublicId(publicId);
         notification.updateConfirmed(request.confirmed());
-        String encodedId = hashidsProvider.encode(notification.getId());
-        String encodedReceiverId = hashidsProvider.encode(notification.getReceiver().getId());
-        String encodedActorId = hashidsProvider.encode(notification.getActor().getId());
-        String encodedTargetId = hashidsProvider.encode(notification.getTargetId());
-        return NotificationResponse.Summary.of(notification,encodedId,encodedReceiverId,
-                encodedActorId,encodedTargetId);
+        return NotificationResponse.Summary.of(notification,notification.getPublicId().toString(),notification.getReceiver().getPublicId().toString(),
+                notification.getActor().getPublicId().toString(),notification.getTargetPublicId().toString());
     }
 }

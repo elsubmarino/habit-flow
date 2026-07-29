@@ -3,7 +3,6 @@ package io.streak.habitflow.domain.notification.api;
 import io.streak.habitflow.domain.notification.dto.request.NotificationRequest;
 import io.streak.habitflow.domain.notification.dto.response.NotificationResponse;
 import io.streak.habitflow.domain.notification.service.NotificationService;
-import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.infra.sse.SseEmitters;
@@ -17,6 +16,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -32,13 +32,12 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.getNotifications(loginMemberId));
     }
 
-    @PutMapping("/{notificationId}/confirm")
+    @PutMapping("/{publicNotificationId}/confirm")
     @Operation(summary = "알림 확인")
-    public ResponseEntity<NotificationResponse.Summary> confirmNotification(@PathVariable RoutingId notificationId,
+    public ResponseEntity<NotificationResponse.Summary> confirmNotification(@PathVariable UUID publicNotificationId,
                                                                             @RequestBody NotificationRequest.ConfirmRead request,
                                                                             @LoginMemberId Long loginMemberId) {
-        long realNotificationId = notificationId.value();
-        return ResponseEntity.ok(notificationService.confirmNotification(realNotificationId, request, loginMemberId));
+        return ResponseEntity.ok(notificationService.confirmNotification(publicNotificationId, request, loginMemberId));
     }
 
     @GetMapping(value="/subscribe",produces= MediaType.TEXT_EVENT_STREAM_VALUE)

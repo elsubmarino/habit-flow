@@ -58,7 +58,7 @@ public class NotificationEventListener {
         for(Notification notification: notifications){
             if(notification.getActivityType() == ActivityType.INVITED){
                 sseEmitters.sendToMember(notification.getReceiver().getId()
-                        , NotificationResponse.Summary.of(notification,hashidsProvider.encode(notification.getId())
+                        , NotificationResponse.Summary.of(notification,notification.getPublicId().toString()
                                 ,null,null,null));
             }
         }
@@ -86,7 +86,7 @@ public class NotificationEventListener {
 
         if(notification.getActivityType() == ActivityType.JOINED){
             sseEmitters.sendToMember(notification.getReceiver().getId()
-                    , NotificationResponse.Summary.of(notification,hashidsProvider.encode(notification.getId()),null,null,null));
+                    , NotificationResponse.Summary.of(notification,notification.getPublicId().toString(),null,null,null));
         }
 
     }

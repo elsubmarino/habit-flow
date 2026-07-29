@@ -32,19 +32,16 @@ public class IntegratedSearchService {
         List<LabelSummaryQuery> labelListResponses = labelRepository.searchByKeyword(keyword,memberId, pageable);
         List<LabelResponse.Summary> summaries = labelListResponses.stream()
                 .map(label->{
-                    String encodedId = hashidsProvider.encode(label.id());
-                    return LabelResponse.Summary.of(label,encodedId);
+                    return LabelResponse.Summary.of(label,label.publicId().toString());
                 })
                 .toList();
 
         return SearchResponse.SearchResult.builder()
                 .projects(projectListResponses.stream().map(response->{
-                    String encodedId = hashidsProvider.encode(response.id());
-                    return ProjectResponse.Summary.ofSearch(response,encodedId);
+                    return ProjectResponse.Summary.ofSearch(response,response.publicId().toString());
                 }).toList())
                 .tasks(taskResponses.stream().map(response->{
-                    String encodedId = hashidsProvider.encode(response.id());
-                    return TaskResponse.Summary.of(response,encodedId);
+                    return TaskResponse.Summary.of(response,response.publicId().toString());
                 }).toList())
                 .labels(summaries)
                 .build();

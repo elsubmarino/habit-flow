@@ -6,6 +6,8 @@ import io.streak.habitflow.global.common.type.TargetType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Getter
 @AllArgsConstructor
@@ -18,8 +20,12 @@ public class Favorite extends BaseCreatedTimeEntity {
     @Column(name="favorite_id")
     private Long id;
 
+    @Builder.Default
+    @Column(nullable = false,unique = true,updatable = false)
+    private UUID publicId = UUID.randomUUID();
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name = "member_id")
     private Member member;
 
     @Enumerated(EnumType.STRING)

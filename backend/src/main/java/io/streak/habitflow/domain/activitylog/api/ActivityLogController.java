@@ -3,7 +3,6 @@ package io.streak.habitflow.domain.activitylog.api;
 import io.streak.habitflow.domain.activitylog.dto.request.ActivityLogRequest;
 import io.streak.habitflow.domain.activitylog.dto.response.ActivityLogResponse;
 import io.streak.habitflow.domain.activitylog.service.ActivityLogService;
-import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.common.constant.PageSizeConstants;
 import io.streak.habitflow.global.util.HashidsProvider;
 import io.streak.habitflow.global.web.LoginMemberId;
@@ -17,6 +16,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/activity-logs")
@@ -28,10 +29,9 @@ public class ActivityLogController {
     @Operation(summary = "액티비티 로그 조회")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "액티비티 로그 조회 성공")})
     public ResponseEntity<Slice<ActivityLogResponse.Summary>> getActivityLogs(@LoginMemberId Long loginMemberId,
-                                                                              @RequestParam(value = "lastActivityLogId",required = false) RoutingId lastActivityLogId,
+                                                                              @RequestParam(value = "lastActivityLogPublicId",required = false) UUID lastActivityLogPublicId,
                                                                               @ModelAttribute ActivityLogRequest.Search search,
                                                                               @PageableDefault(size= PageSizeConstants.CURSOR_PAGING_NORMAL) Pageable pageable) {
-        Long realLastActivityLogId = lastActivityLogId != null ? lastActivityLogId.value() : null;
-        return ResponseEntity.ok(activityLogService.getActivityLogs(realLastActivityLogId,loginMemberId,pageable,search));
+        return ResponseEntity.ok(activityLogService.getActivityLogs(lastActivityLogPublicId,loginMemberId,pageable,search));
     }
 }

@@ -27,12 +27,12 @@ public class TaskMapper {
                 .recurring(task.isRecurring())
                 .dueTime(task.isTimeSpecified()?task.getDueDate().toLocalTime():null)
                 .subTasks(task.getSubTasks().stream()
-                        .map(subTask-> TaskResponse.Detail.fromSimpleSubTask(subTask,hashidsProvider.encode(subTask.getId())))
+                        .map(subTask-> TaskResponse.Detail.fromSimpleSubTask(subTask,subTask.getPublicId().toString()))
                         .toList());
 
 
         if(task.getProject() != null){
-            builder.projectId(hashidsProvider.encode(task.getProject().getId()))
+            builder.projectId(task.getProject().getPublicId().toString())
                     .projectName(task.getProject().getName())
                     .projectColor(task.getProject().getColor());
         }else{
@@ -42,11 +42,11 @@ public class TaskMapper {
         }
 
         if(task.getMember() != null){
-            builder.userId(hashidsProvider.encode(task.getMember().getId()));
+            builder.userId(task.getMember().getPublicId().toString());
         }
 
         if(task.getParent() != null){
-            builder.parentId(hashidsProvider.encode(task.getParent().getId()));
+            builder.parentId(task.getParent().getPublicId().toString());
         }
 
 

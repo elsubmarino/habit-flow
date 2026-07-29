@@ -12,6 +12,7 @@ import io.streak.habitflow.domain.task.dto.query.TaskSummaryQuery;
 import io.streak.habitflow.domain.task.dto.request.TaskRequest;
 import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.entity.QTask;
+import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.type.CursorDirection;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
@@ -37,6 +38,7 @@ import static io.streak.habitflow.domain.task.entity.QTaskLabel.taskLabel;
 public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     private final JPAQueryFactory queryFactory;
     private final HashidsProvider hashidsProvider;
+    private final TaskRepository taskRepository;
 
     private BooleanExpression nameContains(String name) {
         return StringUtils.hasText(name) ? task.name.contains(name) : null;
@@ -81,14 +83,14 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskSummaryQuery> findTaskSummariesByProject(Long projectId, Long memberId, Pageable pageable) {
+    public List<TaskSummaryQuery> findTaskSummariesByProject(UUID publicProjectId, Long memberId, Pageable pageable) {
 
         List<Long> projectIds = queryFactory
                 .select(projectMember.project.id)
                 .from(projectMember)
                 .where(
                         projectMember.member.id.eq(memberId),
-                        projectMember.project.id.eq(projectId))
+                        projectMember.project.publicId.eq(publicProjectId))
                 .fetch();
 
         List<Long> ids = queryFactory
@@ -123,6 +125,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         List<Tuple> mainTasks = queryFactory
                 .select(
                         task.id,
+                        task.publicId,
                         task.name,
                         task.description,
                         task.taskPriorityType,
@@ -195,6 +198,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                     Long taskId = row.get(task.id);
                     return new TaskSummaryQuery(
                             taskId,
+                            row.get(task.publicId),
                             row.get(task.name),
                             row.get(task.description),
                             row.get(task.taskPriorityType),
@@ -342,6 +346,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                     Long taskId = row.get(task.id);
                     return new TaskSummaryQuery(
                             taskId,
+                            row.get(task.publicId),
                             row.get(task.name),
                             row.get(task.description),
                             row.get(task.taskPriorityType),
@@ -365,7 +370,9 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         LocalDateTime lastDue = cursor.lastDueDate();
         TaskPriorityType lastPriority = cursor.lastPriorityType();
         Long lastSortOrder = cursor.lastSortOrder();
-        Long lastTaskId = hashidsProvider.decode(cursor.lastTaskId());
+        Long lastTaskId = taskRepository.findByPublicId(UUID.fromString(cursor.lastTaskId()))
+                .map(Task::getId)
+                .orElse(null);
 
         if (cursor.direction() == CursorDirection.PREV) {
             // asc 정렬 기준으로 "커서 이전" 행
@@ -579,6 +586,21 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
+    public boolean existsByPublicIdAndHasAccess(UUID publicId, Long memberId) {
+        Integer fetchOne =  queryFactory
+                .selectOne()
+                .from(task)
+                .leftJoin(task.project,project)
+                .leftJoin(projectMember).on(projectMember.project.eq(project))
+                .where(
+                        task.publicId.eq(publicId),
+                        (task.member.id.eq(memberId).or(projectMember.member.id.eq(memberId))
+                        ))
+                .fetchFirst();
+        return fetchOne != null;
+    }
+
+    @Override
     public List<TaskSummaryQuery> findTaskSummariesByLabelId(UUID publicLabelId, Pageable pageable, Long loginMemberId) {
         List<Long> ids =  queryFactory
                 .select(task.id)
@@ -592,6 +614,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         List<Tuple> mainTasks = queryFactory
                 .select(
                         task.id,
+                        task.publicId,
                         task.name,
                         task.description,
                         task.taskPriorityType,
@@ -669,6 +692,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                     Long taskId = row.get(task.id);
                     return new TaskSummaryQuery(
                             taskId,
+                            row.get(task.publicId),
                             row.get(task.name),
                             row.get(task.description),
                             row.get(task.taskPriorityType),

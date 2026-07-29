@@ -14,19 +14,19 @@ public class ActivityLogMapper {
         ActivityLogResponse.ActorInfo actorInfo = null;
         if(activityLog.getActor() != null){
             actorInfo = ActivityLogResponse.ActorInfo.builder()
-                    .id(hashidsProvider.encode(activityLog.getActor().getId()))
+                    .id(activityLog.getActor().getPublicId().toString())
                     .name(activityLog.getActor().getName())
                     .build();
         }
 
         ActivityLogResponse.TargetInfo targetInfo = ActivityLogResponse.TargetInfo.builder()
                 .type(activityLog.getTargetType())
-                .id(hashidsProvider.encode(activityLog.getTargetId()))
+                .id(activityLog.getTargetPublicId().toString())
                 .name(activityLog.getTargetName())
                 .build();
 
         return ActivityLogResponse.Summary.builder()
-                .id(hashidsProvider.encode(activityLog.getId()))
+                .id(activityLog.getPublicId().toString())
                 .activityType(activityLog.getActivityType())
                 .actor(actorInfo)
                 .target(targetInfo)

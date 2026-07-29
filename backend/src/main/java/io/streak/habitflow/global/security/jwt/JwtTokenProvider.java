@@ -52,7 +52,7 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .subject(email)
-                .claim("memberId",memberId)
+                .claim("publicMemberId",memberId)
                 .claim("role","ROLE_USER")
                 .claim("tokenType",tokenType)
                 .issuedAt(Date.from(now))
@@ -73,7 +73,7 @@ public class JwtTokenProvider {
 
         String email = claims.getSubject();
 
-        Long memberId = claims.get("memberId", Long.class);
+        Long memberId = claims.get("publicMemberId", Long.class);
         String role = claims.get("role", String.class);
 
         UserPrincipal userPrincipal = new UserPrincipal(memberId, email, role);

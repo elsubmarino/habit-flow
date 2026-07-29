@@ -38,11 +38,10 @@ public class CommentService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public CommentResponse.Detail createComment(Long taskId, CommentRequest.Create request, FileDto fileDto, Long loginMemberId) {
-        Long realTaskId = hashidsProvider.decode(request.taskId());
+    public CommentResponse.Detail createComment(UUID publicTaskId, CommentRequest.Create request, FileDto fileDto, Long loginMemberId) {
         Member member = memberRepository.getReferenceById(loginMemberId);
 
-        Task task = taskRepository.getOrThrow(realTaskId);
+        Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
 
         Comment comment = Comment.builder()
                 .member(member)
@@ -70,8 +69,7 @@ public class CommentService {
                 Collections.emptyList()
         ));
 
-        String encodedId = hashidsProvider.encode(result.getId());
-        return CommentResponse.Detail.of(result,encodedId);
+        return CommentResponse.Detail.of(result,result.getPublicId().toString());
     }
 
     @CheckOwnership(type="TASK")
@@ -88,22 +86,21 @@ public class CommentService {
     @Transactional
     @CheckOwnership(type="COMMENT")
     @SuppressWarnings("unused")
-    public CommentResponse.Detail updateComment(Long commentId, CommentRequest.Update request, Long loginMemberId) {
-        Comment comment = commentRepository.getOrThrow(commentId);
-        String encodedId = hashidsProvider.encode(comment.getId());
+    public CommentResponse.Detail updateComment(UUID publicCommentId, CommentRequest.Update request, Long loginMemberId) {
+        Comment comment = commentRepository.getOrThrowByPublicId(publicCommentId);
         if(comment.getContent().equals(request.content())){
-            return CommentResponse.Detail.of(comment,encodedId);
+            return CommentResponse.Detail.of(comment,comment.getPublicId().toString());
         }
         comment.updateContent(request.content());
-        return CommentResponse.Detail.of(comment,encodedId);
+        return CommentResponse.Detail.of(comment,comment.getPublicId().toString());
     }
 
     @Transactional
     @CheckOwnership(type="COMMENT")
     @SuppressWarnings("unused")
-    public void deleteComment(Long commentId, Long loginMemberId){
-        Comment comment  =commentRepository.getReferenceById(commentId);
-        commentRepository.deleteById(commentId);
+    public void deleteComment(UUID publicCommentId, Long loginMemberId){
+        Comment comment = commentRepository.getOrThrowByPublicId(publicCommentId);
+        commentRepository.deleteById(comment.getId());
         Task task = comment.getTask();
         applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
                 task.getId(),

@@ -24,6 +24,7 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.util.UUID;
 
 
 @Aspect
@@ -49,106 +50,106 @@ public class CheckOwnershipAspect {
         String[]parameterNames = methodSignature.getParameterNames();
         Object[]args=joinPoint.getArgs();
 
-        Long taskId = null;
-        Long commentId = null;
+        UUID publicTaskId = null;
+        UUID publicCommentId = null;
         Long loginMemberId = null;
-        Long notificationId = null;
-        Long projectId = null;
-        Long labelId = null;
-        Long memberId = null;
+        UUID publicNotificationId = null;
+        UUID publicProjectId = null;
+        UUID publicLabelId = null;
+        UUID publicMemberId = null;
         TaskRequest.Create request = null;
 
         for(int i=0;i<parameterNames.length;i++){
-            if("taskId".equals(parameterNames[i])) taskId = (Long)args[i];
-            else if("commentId".equals(parameterNames[i])) commentId = (Long)args[i];
+            if("publicTaskId".equals(parameterNames[i])) publicTaskId = (UUID) args[i];
+            else if("publicCommentId".equals(parameterNames[i])) publicCommentId = (UUID)args[i];
             else if("loginMemberId".equals(parameterNames[i])) loginMemberId = (Long)args[i];
-            else if("notificationId".equals(parameterNames[i])) notificationId = (Long)args[i];
-            else if("projectId".equals(parameterNames[i])) projectId = (Long)args[i];
-            else if("labelId".equals(parameterNames[i])) labelId = (Long)args[i];
-            else if("memberId".equals(parameterNames[i])) memberId = (Long)args[i];
+            else if("publicNotificationId".equals(parameterNames[i])) publicNotificationId = (UUID)args[i];
+            else if("publicProjectId".equals(parameterNames[i])) publicProjectId = (UUID)args[i];
+            else if("publicLabelId".equals(parameterNames[i])) publicLabelId = (UUID)args[i];
+            else if("publicMemberId".equals(parameterNames[i])) publicMemberId = (UUID)args[i];
             else if(args[i] instanceof TaskRequest.Create)request = (TaskRequest.Create)args[i];
         }
 
         for(CheckOwnership checkOwnership: checkOwnerships){
             String domainType = checkOwnership.type();
             if("TASK".equals(domainType)){
-                if(taskId == null || loginMemberId == null){
+                if(publicTaskId == null || loginMemberId == null){
                     throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
-                checkTaskOwner(taskId,loginMemberId);
+                checkTaskOwner(publicTaskId,loginMemberId);
             }else if("SUB_TASK".equals(domainType)){
-                if(request != null && request.parentId() != null && loginMemberId != null){
-                    checkTaskOwner(hashidsProvider.decode(request.parentId()),loginMemberId);
+                if(request != null && request.publicParentId() != null && loginMemberId != null){
+                    checkTaskOwner(request.publicParentId(),loginMemberId);
                 }
             }else if("COMMENT".equals(domainType)){
-                if(commentId == null || loginMemberId == null){
+                if(publicCommentId == null || loginMemberId == null){
                     throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
-                checkCommentOwner(commentId,loginMemberId);
+                checkCommentOwner(publicCommentId,loginMemberId);
             }else if("MEMBER".equals(domainType)){
                 if(loginMemberId == null){
                     throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
-                checkMemberOwner(loginMemberId,memberId);
+                checkMemberOwner(publicMemberId,loginMemberId);
             }else if("NOTIFICATION".equals(domainType)){
-                if(notificationId == null || loginMemberId == null){
+                if(publicNotificationId == null || loginMemberId == null){
                     throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
-                checkNotificationOwner(notificationId,loginMemberId);
+                checkNotificationOwner(publicNotificationId,loginMemberId);
             }else if("PROJECT".equals(domainType)) {
-                if(projectId == null || loginMemberId == null){
+                if(publicProjectId == null || loginMemberId == null){
                     throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
-                checkProjectOwner(projectId, loginMemberId);
+                checkProjectOwner(publicProjectId, loginMemberId);
             }else if("LABEL".equals(domainType)){
-                if(labelId == null || loginMemberId == null){
+                if(publicLabelId == null || loginMemberId == null){
                     throw new BusinessException(ErrorCode.ACCESS_DENIED);
                 }
-                checkLabelOwner(labelId,loginMemberId);
+                checkLabelOwner(publicLabelId,loginMemberId);
             }
         }
     }
 
-    public void checkTaskOwner(Long taskId, Long memberId){
-        if(!taskRepository.existsById(taskId)){
+    public void checkTaskOwner(UUID publicTaskId, Long memberId){
+        if(!taskRepository.existsByPublicId(publicTaskId)){
             throw new BusinessException(ErrorCode.NOT_FOUND);
         }
 
-        if(!taskRepository.existsByIdAndHasAccess(taskId,memberId)){
+        if(!taskRepository.existsByPublicIdAndHasAccess(publicTaskId,memberId)){
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
     }
 
-    public void checkCommentOwner(Long commentId, Long memberId){
-        Comment comment = commentRepository.getOrThrow(commentId);
+    public void checkCommentOwner(UUID publicCommentId, Long memberId){
+        Comment comment = commentRepository.getOrThrowByPublicId(publicCommentId);
         if(!comment.getMember().getId().equals(memberId)){
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
     }
 
-    public void checkLabelOwner(Long labelId, Long memberId){
-        Label label = labelRepository.getOrThrow(labelId);
+    public void checkLabelOwner(UUID publicLabelId, Long memberId){
+        Label label = labelRepository.getOrThrowByPublicId(publicLabelId);
         if(!label.getMember().getId().equals(memberId)){
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
     }
 
-    public void checkMemberOwner(Long loginMemberId, Long memberId){
+    public void checkMemberOwner(UUID publicMemberId, Long memberId){
         Member member = memberRepository.getOrThrow(memberId);
-        if(!member.getId().equals(loginMemberId)){
+        if(!member.getPublicId().equals(publicMemberId)){
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
     }
 
-    public void checkNotificationOwner(Long notificationId, Long memberId){
-        Notification notification = notificationRepository.getOrThrow(notificationId);
+    public void checkNotificationOwner(UUID publicNotificationId, Long memberId){
+        Notification notification = notificationRepository.getOrThrowByPublicId(publicNotificationId);
         if(!notification.getReceiver().getId().equals(memberId)){
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
     }
 
-    public void checkProjectOwner(Long projectId, Long memberId){
-        Project project = projectRepository.getOrThrow(projectId);
+    public void checkProjectOwner(UUID publicProjectId, Long memberId){
+        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
         Member member = memberRepository.getReferenceById(memberId);
         boolean isMember = projectMemberRepository.existsByProjectAndMember(project, member);
         if(!isMember){

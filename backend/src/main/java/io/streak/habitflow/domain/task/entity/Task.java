@@ -34,6 +34,7 @@ public class Task extends BaseTimeEntity {
     @Column(name="task_id")
     private Long id;
 
+    @Builder.Default
     @Column(nullable = false,unique = true,updatable = false)
     private UUID publicId = UUID.randomUUID();
 
@@ -50,15 +51,15 @@ public class Task extends BaseTimeEntity {
     private Long sortOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="member_id", nullable = false,foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name="member_id", nullable = false)
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="project_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name="project_id")
     private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="parent_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name="parent_id")
     private Task parent;
 
     @OneToMany(mappedBy = "parent",cascade = CascadeType.ALL)

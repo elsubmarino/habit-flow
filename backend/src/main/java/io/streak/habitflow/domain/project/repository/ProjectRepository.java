@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +18,8 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
 
     List<Project> findByNameContaining(String name);
     Optional<Project> findByPublicId(UUID publicId);
+
+    List<Project> findAllByPublicId(Collection<UUID> publicId);
 
     default Project getOrThrow(Long projectId){
         return findById(projectId).orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));

@@ -21,6 +21,7 @@ public class Label  extends BaseTimeEntity {
     @Column(name="label_id")
     private Long id;
 
+    @Builder.Default
     @Column(nullable = false, unique = true,updatable = false)
     private UUID publicId = UUID.randomUUID();
 
@@ -29,7 +30,7 @@ public class Label  extends BaseTimeEntity {
     private long sortOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="member_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name="member_id")
     private Member member;
 
     public void updateLabel(String name, String color){

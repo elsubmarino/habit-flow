@@ -7,10 +7,7 @@ import io.streak.habitflow.domain.favorite.dto.query.FavoriteSummaryQuery;
 import io.streak.habitflow.global.common.type.TargetType;
 import lombok.RequiredArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static io.streak.habitflow.domain.favorite.entity.QFavorite.favorite;
 import static io.streak.habitflow.domain.label.entity.QLabel.label;
@@ -26,12 +23,17 @@ public class FavoriteRepositoryCustomImpl implements FavoriteRepositoryCustom {
 
         List<Tuple> favorites = queryFactory
                 .select(favorite.id,
+                        favorite.publicId,
                         favorite.targetId,
                         favorite.targetType,
                         new CaseBuilder()
                                 .when(favorite.targetType.eq(TargetType.PROJECT)).then(project.name)
                                 .when(favorite.targetType.eq(TargetType.LABEL)).then(label.name)
-                                .otherwise("알 수 없는 즐겨찾기").as("targetName")
+                                .otherwise("알 수 없는 즐겨찾기").as("targetName"),
+                        new CaseBuilder()
+                                .when(favorite.targetType.eq(TargetType.PROJECT)).then(project.publicId)
+                                .when(favorite.targetType.eq(TargetType.LABEL)).then(label.publicId)
+                                .otherwise((UUID) null).as("targetPublicId")
                 )
                 .from(favorite)
                 .leftJoin(project).on(favorite.targetType.eq(TargetType.PROJECT).and(project.id.eq(favorite.targetId)))
@@ -106,7 +108,9 @@ public class FavoriteRepositoryCustomImpl implements FavoriteRepositoryCustom {
                 count = labelTaskCounts.getOrDefault(targetId, 0L);
             }
 
-            result.add(new FavoriteSummaryQuery(id, targetId, targetName, type, count));
+            UUID favoritePublicId = row.get(favorite.publicId);
+            UUID targetPublicId = row.get(4,UUID.class);
+            result.add(new FavoriteSummaryQuery(id, favoritePublicId,targetId,targetPublicId, targetName, type, count));
         }
         return result;
     }

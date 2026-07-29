@@ -5,6 +5,8 @@ import io.streak.habitflow.global.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -16,6 +18,10 @@ public class Member extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="member_id")
     private Long id;
+
+    @Builder.Default
+    @Column(nullable = false,unique = true,updatable = false)
+    private UUID publicId = UUID.randomUUID();
 
     private String name;
     private String password;

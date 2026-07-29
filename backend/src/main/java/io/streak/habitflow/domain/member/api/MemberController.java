@@ -3,7 +3,6 @@ package io.streak.habitflow.domain.member.api;
 import io.streak.habitflow.domain.member.dto.request.MemberRequest;
 import io.streak.habitflow.domain.member.dto.response.MemberResponse;
 import io.streak.habitflow.domain.member.service.MemberService;
-import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.web.LoginMemberId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -12,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -35,13 +36,12 @@ public class MemberController {
                 .body(memberService.createMember(request));
     }
 
-    @PutMapping("/{memberId}")
+    @PutMapping("/{publicMemberId}")
     @Operation(summary = "회원 정보 업데이트")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 정보 업데이트 성공")})
-    public ResponseEntity<MemberResponse.Detail> updateMember(@PathVariable RoutingId memberId,
+    public ResponseEntity<MemberResponse.Detail> updateMember(@PathVariable UUID publicMemberId,
                                                @RequestBody MemberRequest.Update request,
                                                @LoginMemberId Long loginMemberId){
-        long realMemberId = memberId.value();
-        return ResponseEntity.ok(memberService.updateMember(realMemberId,request,loginMemberId));
+        return ResponseEntity.ok(memberService.updateMember(publicMemberId,request,loginMemberId));
     }
 }

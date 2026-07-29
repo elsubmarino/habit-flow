@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public final class ProjectRequest {
     public record Create(
@@ -80,6 +81,6 @@ public final class ProjectRequest {
     }
 
     public record DeleteMember(
-            String memberId
+            UUID publicMemberId
     ){}
 }

@@ -26,7 +26,6 @@ import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
 import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.DistributedLock;
-import io.streak.habitflow.global.common.RoutingId;
 import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.common.type.TargetType;
 import io.streak.habitflow.global.error.ErrorCode;
@@ -64,7 +63,7 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public void deleteTask(UUID publicTaskId, Long loginMemberId){
+    public void deleteTask(java.util.UUID publicTaskId, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         taskRepository.deleteById(task.getId());
         applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
@@ -88,8 +87,8 @@ public class TaskService {
 
         Project project = null;
         Long maxSortOrder = 0L;
-        if(request.projectId() != null){
-            project = projectRepository.findById(hashidsProvider.decode(request.projectId()))
+        if(request.publicProjectId() != null){
+            project = projectRepository.findByPublicId(request.publicProjectId())
                     .orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
             long projectCount = taskRepository.countByProject(project);
             if (projectCount > 500) {
@@ -111,7 +110,7 @@ public class TaskService {
             }
         }
 
-        //String redisKey="TASK_MAX_SORT:"+request.projectId();
+        //String redisKey="TASK_MAX_SORT:"+request.publicProjectId();
         //Long nextSortOrder = redisTemplate.opsForValue().increment(redisKey, 1024L);
         
         Long nextOrderOrder = maxSortOrder + 1024L;
@@ -191,16 +190,15 @@ public class TaskService {
                 .stream()
                 .map(taskLabel -> {
                     Label realLabel = taskLabel.getLabel();
-                    return LabelResponse.Summary.of(realLabel, hashidsProvider.encode(realLabel.getId()));
+                    return LabelResponse.Summary.of(realLabel, realLabel.getPublicId().toString());
                 })
                 .toList();
-        String encodedId = hashidsProvider.encode(savedTask.getId());
-        return taskMapper.toDetail(savedTask, encodedId, labelSummaryResponses);
+        return taskMapper.toDetail(savedTask, savedTask.getPublicId().toString(), labelSummaryResponses);
     }
 
     private Task resolveParentTask(TaskRequest.Create request, Task parentTask) {
-        if(request.parentId() != null){
-            parentTask = taskRepository.findById(hashidsProvider.decode(request.parentId()))
+        if(request.publicParentId() != null){
+            parentTask = taskRepository.findByPublicId(request.publicParentId())
                     .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND));
 
             if(parentTask.getSubTasks().size() >= 4){
@@ -211,23 +209,23 @@ public class TaskService {
     }
 
     @CheckOwnership(type="TASK")
-    public TaskResponse.Detail getTaskById(UUID publicTaskId, Long loginMemberId){
+    public TaskResponse.Detail getTaskById(java.util.UUID publicTaskId, Long loginMemberId){
         Task task = taskRepository.findByPublicId(publicTaskId)
                 .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND));
 
         List<LabelResponse.Summary> labelSummaryResponses =
                 labelRepository.findLabelSummariesByTaskId(task.getId()).stream()
-                        .map(l -> LabelResponse.Summary.of(l, hashidsProvider.encode(l.id())))
+                        .map(l -> LabelResponse.Summary.of(l, l.publicId().toString()))
                         .toList();
 
         return taskMapper.toDetail(task, task.getPublicId().toString(), labelSummaryResponses);
     }
 
     @CheckOwnership(type="PROJECT")
-    public Slice<TaskResponse.Summary> getTasksByProject(Long projectId, Long loginMemberId, Pageable pageable){
+    public Slice<TaskResponse.Summary> getTasksByProject(UUID publicProjectId, Long loginMemberId, Pageable pageable){
         int pageSize = pageable.getPageSize();
 
-        List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByProject(projectId,loginMemberId,pageable);
+        List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByProject(publicProjectId,loginMemberId,pageable);
 
         boolean hasNext = false;
         if(tasks.size() > pageSize){
@@ -236,7 +234,7 @@ public class TaskService {
         }
         List<TaskResponse.Summary> taskSummaryResponses =  tasks.stream()
                 .map(task-> TaskResponse.Summary.of(task,
-                        hashidsProvider.encode(task.id()), new ArrayList<>()))
+                        task.publicId().toString(), new ArrayList<>()))
                 .toList();
         return new SliceImpl<>(taskSummaryResponses,pageable,hasNext);
     }
@@ -270,8 +268,7 @@ public class TaskService {
 
         List<TaskResponse.Summary> taskSummaryResponses = tasks.stream()
                 .map(task-> {
-                            String encodedId = hashidsProvider.encode(task.id());
-                            return TaskResponse.Summary.of(task,encodedId,
+                            return TaskResponse.Summary.of(task,task.publicId().toString(),
                                     labelMap.getOrDefault(task.id(), new ArrayList<>()));
                         }
                 )
@@ -289,7 +286,7 @@ public class TaskService {
                         last.dueDate(),
                         last.taskPriorityType(),
                         last.sortOrder(),
-                        hashidsProvider.encode(last.id())
+                        last.publicId().toString()
                 );
             }
             if(hasPrev){
@@ -297,7 +294,7 @@ public class TaskService {
                         first.dueDate(),
                         first.taskPriorityType(),
                         first.sortOrder(),
-                        hashidsProvider.encode(first.id())
+                        first.publicId().toString()
                 );
             }
         }
@@ -307,13 +304,12 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public TaskResponse.Detail updateTask(UUID publicTaskId, TaskRequest.Update request, Long loginMemberId){
+    public TaskResponse.Detail updateTask(java.util.UUID publicTaskId, TaskRequest.Update request, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
 
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
-            String labelEncodedId = hashidsProvider.encode(label.id());
-            return LabelResponse.Summary.of(label,labelEncodedId);
+            return LabelResponse.Summary.of(label,label.publicId().toString());
         }).toList();
 
         if (Objects.equals(request.name(), task.getName()) &&
@@ -351,7 +347,7 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @DistributedLock(key = "#publicTaskId")
-    public TaskResponse.Summary toggleCompletion(UUID publicTaskId, Long loginMemberId){
+    public TaskResponse.Summary toggleCompletion(java.util.UUID publicTaskId, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
 
         boolean nextCompletion = !task.isCompleted();
@@ -431,7 +427,7 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updateTaskDueDate(UUID publicTaskId, TaskRequest.UpdateDueDate request, Long loginMemberId){
+    public TaskResponse.Detail updateTaskDueDate(java.util.UUID publicTaskId, TaskRequest.UpdateDueDate request, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
 
         LocalDateTime oldDueDate = task.getDueDate();
@@ -449,8 +445,7 @@ public class TaskService {
             return LabelResponse.Summary.of(label,task.getPublicId().toString());
         }).toList();
         if(!isChanged){
-            String encodedId = hashidsProvider.encode(task.getId());
-            return taskMapper.toDetail(task,encodedId,summaries);
+            return taskMapper.toDetail(task,task.getPublicId().toString(),summaries);
         }
         if(!Objects.equals(oldDueDate, request.dueDate())){
             List<ChangeSet> changeSets = new ArrayList<>();
@@ -474,7 +469,7 @@ public class TaskService {
     @Transactional
     @SuppressWarnings("unused")
     public List<TaskResponse.Detail> updateTaskDueDateBatch(TaskRequest.UpdateDueDateBatch request, Long memberId){
-        List<Long> realTaskIds = request.taskIds().stream().map(RoutingId::value).toList();
+        List<Long> realTaskIds = taskRepository.findIdByPublicIdIn(request.taskIds());
 
         // 접근 검사: N회 쿼리 → 집합 쿼리 1회
         if (taskRepository.countAccessibleTasks(realTaskIds, memberId) != realTaskIds.size()) {
@@ -520,8 +515,7 @@ public class TaskService {
                 ));
             }
 
-            String encodedId = hashidsProvider.encode(task.getId());
-            responseList.add(taskMapper.toDetail(task,encodedId,
+            responseList.add(taskMapper.toDetail(task,task.getPublicId().toString(),
                     labelMap.getOrDefault(task.getId(), List.of())));
         }
 
@@ -536,7 +530,7 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updatePriority(UUID publicTaskId, TaskPriorityType taskPriorityType, Long loginMemberId){
+    public TaskResponse.Detail updatePriority(java.util.UUID publicTaskId, TaskPriorityType taskPriorityType, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
@@ -566,7 +560,7 @@ public class TaskService {
     @Transactional
     @CheckOwnership(type="TASK")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail updateTaskLabels(UUID publicTaskId, List<String> labelIds, Long loginMemberId){
+    public TaskResponse.Detail updateTaskLabels(java.util.UUID publicTaskId, List<String> labelIds, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         // 빈 목록이면 라벨 전부 제거 후 빈 목록으로 응답
         if(labelIds.isEmpty()){
@@ -581,7 +575,7 @@ public class TaskService {
         realLabels.forEach(label -> task.addTaskLabel(TaskLabel.builder().label(label).build()));
         // 교체된 라벨(새 상태)로 응답 구성
         List<LabelResponse.Summary> summaries = realLabels.stream()
-                .map(label -> LabelResponse.Summary.of(label, hashidsProvider.encode(label.getId())))
+                .map(label -> LabelResponse.Summary.of(label, label.getPublicId().toString()))
                 .toList();
         return taskMapper.toDetail(task, task.getPublicId().toString(), summaries);
     }
@@ -590,7 +584,7 @@ public class TaskService {
     @CheckOwnership(type="TASK")
     @CheckOwnership(type="PROJECT")
     @SuppressWarnings("unused")
-    public TaskResponse.Detail moveTaskToProject(UUID publicTaskId, UUID publicProjectId, Long loginMemberId){
+    public TaskResponse.Detail moveTaskToProject(java.util.UUID publicTaskId, java.util.UUID publicProjectId, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
@@ -625,7 +619,7 @@ public class TaskService {
 
     @Transactional
     @CheckOwnership(type="TASK")
-    public TaskResponse.Summary updateSortOrder(UUID publicTaskId, TaskRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
+    public TaskResponse.Summary updateSortOrder(java.util.UUID publicTaskId, TaskRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
@@ -641,8 +635,8 @@ public class TaskService {
         return TaskResponse.Summary.of(taskSummaryQueries.get(0),task.getPublicId().toString(),summaries);
     }
 
-    public TaskResponse.SummarySlice getTasksByLabel(UUID publicLabelId, Long loginMemberId, Pageable pageable
-                                                    ,TaskRequest.Cursor cursor){
+    public TaskResponse.SummarySlice getTasksByLabel(java.util.UUID publicLabelId, Long loginMemberId, Pageable pageable
+                                                    , TaskRequest.Cursor cursor){
         int pageSize = pageable.getPageSize();
         List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByLabelId(publicLabelId,pageable,loginMemberId);
 
@@ -668,8 +662,7 @@ public class TaskService {
 
         List<TaskResponse.Summary> taskSummaryResponses = tasks.stream()
                 .map(task-> {
-                            String encodedId = hashidsProvider.encode(task.id());
-                            return TaskResponse.Summary.of(task,encodedId,
+                            return TaskResponse.Summary.of(task,task.publicId().toString(),
                                     labelMap.getOrDefault(task.id(), new ArrayList<>()));
                         }
                 )
@@ -687,7 +680,7 @@ public class TaskService {
                         last.dueDate(),
                         last.taskPriorityType(),
                         last.sortOrder(),
-                        hashidsProvider.encode(last.id())
+                        last.publicId().toString()
                 );
             }
             if(hasPrev){
@@ -695,7 +688,7 @@ public class TaskService {
                         first.dueDate(),
                         first.taskPriorityType(),
                         first.sortOrder(),
-                        hashidsProvider.encode(first.id())
+                        first.publicId().toString()
                 );
             }
         }

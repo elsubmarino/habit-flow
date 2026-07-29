@@ -10,6 +10,7 @@ import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -25,15 +26,23 @@ public class ActivityLog extends BaseCreatedTimeEntity {
     @Column(name="activity_log_id")
     private Long id;
 
+    @Builder.Default
+    @Column(nullable = false, unique = true,updatable = false)
+    private UUID publicId = UUID.randomUUID();
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name = "member_id")
     private Member member;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="actor_id",foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    @JoinColumn(name="actor_id")
     private Member actor;
 
     private Long targetId;
+
+    @Builder.Default
+    @Column(nullable = false, unique = true,updatable = false)
+    private UUID targetPublicId = UUID.randomUUID();
 
     @Enumerated(EnumType.STRING)
     @Column(length = 50)

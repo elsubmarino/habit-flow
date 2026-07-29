@@ -25,6 +25,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                         Projections.constructor(
                                 ProjectSearchSummaryQuery.class,
                                 project.id,
+                                project.publicId,
                                 project.name,
                                 project.color,
                                 project.sortOrder
@@ -51,6 +52,7 @@ public class ProjectRepositoryCustomImpl implements ProjectRepositoryCustom {
                 .select(Projections.constructor(
                         ProjectSummaryQuery.class,
                         project.id,
+                        project.publicId,
                         project.name,
                         project.color,
                         task.count(),

@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -56,27 +57,25 @@ public class LabelService {
                     savedLabel.getId()
             ).orElseGet(()->favoriteRepository.save(favorite));
         }
-        String encodedId = hashidsProvider.encode(savedLabel.getId());
-        return LabelResponse.Detail.of(savedLabel, request.favorite(),encodedId);
+        return LabelResponse.Detail.of(savedLabel, request.favorite(),savedLabel.getPublicId().toString());
     }
 
     @CheckOwnership(type="LABEL")
-    public LabelResponse.Detail getLabelById(Long labelId, Long loginMemberId) {
-        Label label = labelRepository.getOrThrow(labelId);
+    public LabelResponse.Detail getLabelById(UUID publicLabelId, Long loginMemberId) {
+        Label label = labelRepository.getOrThrowByPublicId(publicLabelId);
         boolean isFavorite = false;
         Optional<Favorite> favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(
                 loginMemberId,TargetType.LABEL, label.getId());
         if(favorite.isPresent()){
             isFavorite = true;
         }
-        String encodedId = hashidsProvider.encode(label.getId());
-        return LabelResponse.Detail.of(label,isFavorite,encodedId);
+        return LabelResponse.Detail.of(label,isFavorite,label.getPublicId().toString());
     }
 
     @CheckOwnership(type="LABEL")
     @Transactional
-    public LabelResponse.Detail updateLabel(Long labelId, LabelRequest.Update request, Long loginMemberId) {
-        Label label = labelRepository.getOrThrow(labelId);
+    public LabelResponse.Detail updateLabel(UUID publicLabelId, LabelRequest.Update request, Long loginMemberId) {
+        Label label = labelRepository.getOrThrowByPublicId(publicLabelId);
 
         Member member = memberRepository.getReferenceById(loginMemberId);
 
@@ -98,19 +97,21 @@ public class LabelService {
         }else{
             favoriteRepository.deleteByMemberIdAndTargetTypeAndTargetId(member.getId(),TargetType.LABEL,label.getId());
         }
-        String encodedId = hashidsProvider.encode(label.getId());
         if(request.name().equals(label.getName()) &&
             request.color().equals(label.getColor())) {
-            return LabelResponse.Detail.of(label, request.favorite(),encodedId);
+            return LabelResponse.Detail.of(label, request.favorite(),label.getPublicId().toString());
         }
 
         label.updateLabel(request.name(),
                 request.color());
-        return LabelResponse.Detail.of(label, request.favorite(),encodedId);
+        return LabelResponse.Detail.of(label, request.favorite(),label.getPublicId().toString());
     }
 
-    public Slice<LabelResponse.Summary> getLabels(Long lastLabelId, Long memberId, Pageable pageable) {
+    public Slice<LabelResponse.Summary> getLabels(UUID lastPublicLabelId, Long memberId, Pageable pageable) {
         int pageSize = pageable.getPageSize();
+
+        Long lastLabelId = labelRepository.getOrThrowByPublicId(lastPublicLabelId)
+                .getId();
 
         List<Label> labels = labelRepository.findLabelsByMemberWithCursor(lastLabelId,memberId,pageable);
 
@@ -122,8 +123,7 @@ public class LabelService {
 
         List<LabelResponse.Summary> labelResponses =  labels.stream()
                 .map(label->{
-                    String encodedId = hashidsProvider.encode(label.getId());
-                    return LabelResponse.Summary.of(label,encodedId);
+                    return LabelResponse.Summary.of(label,label.getPublicId().toString());
                 })
                 .toList();
 
@@ -132,30 +132,29 @@ public class LabelService {
 
     @CheckOwnership(type="LABEL")
     @Transactional
-    public void deleteLabel(Long labelId, Long loginMemberId){
-        Label label = labelRepository.getOrThrow(labelId);
+    public void deleteLabel(UUID publicLabelId, Long loginMemberId){
+        Label label = labelRepository.getOrThrowByPublicId(publicLabelId);
 
         if(!label.getMember().getId().equals(loginMemberId)) {
             throw new BusinessException(ErrorCode.ACCESS_DENIED);
         }
-        labelRepository.deleteById(labelId);
+        labelRepository.deleteById(label.getId());
     }
 
     @Transactional
     @CheckOwnership(type="LABEL")
-    public LabelResponse.Summary updateSortOrder(Long labelId, LabelRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
-        Label label = labelRepository.getReferenceById(labelId);
-        String encodedId = hashidsProvider.encode(label.getId());
+    public LabelResponse.Summary updateSortOrder(UUID publicLabelId, LabelRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
+        Label label = labelRepository.getOrThrowByPublicId(publicLabelId);
 
         Favorite favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(
                 loginMemberId,TargetType.LABEL,label.getId()
         ).orElse(null);
 
         if(Objects.equals(label.getSortOrder(), updateSortOrder.sortOrder())){
-            return LabelResponse.Summary.of(label, favorite != null,encodedId);
+            return LabelResponse.Summary.of(label, favorite != null,label.getPublicId().toString());
         }
         label.updateSortOrder(updateSortOrder.sortOrder());
 
-        return LabelResponse.Summary.of(label, favorite != null,encodedId);
+        return LabelResponse.Summary.of(label, favorite != null,label.getPublicId().toString());
     }
 }
