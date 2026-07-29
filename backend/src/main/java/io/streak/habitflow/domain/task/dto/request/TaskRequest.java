@@ -156,7 +156,7 @@ public final class TaskRequest {
 
     public record UpdateProject(
             @Schema(description = "변경할 프로젝트 아아디")
-            java.util.UUID projectPublicId
+            UUID projectPublicId
     ){}
 
     public record Update(

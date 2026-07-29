@@ -6,9 +6,9 @@ import io.streak.habitflow.domain.notification.dto.request.NotificationRequest;
 import io.streak.habitflow.domain.notification.dto.response.NotificationResponse;
 import io.streak.habitflow.domain.notification.entity.Notification;
 import io.streak.habitflow.domain.notification.repository.NotificationRepository;
-import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,10 +35,9 @@ public class NotificationService {
     }
 
     @Transactional
-    @CheckOwnership(type="NOTIFICATION")
-    @SuppressWarnings("unused")
-    public NotificationResponse.Summary confirmNotification(UUID publicId, NotificationRequest.ConfirmRead request, Long loginMemberId) {
-        Notification notification = notificationRepository.getOrThrowByPublicId(publicId);
+    @PreAuthorize("@notificationAuth(#publicNotificationId)")
+    public NotificationResponse.Summary confirmNotification(UUID publicNotificationId, NotificationRequest.ConfirmRead request, Long loginMemberId) {
+        Notification notification = notificationRepository.getOrThrowByPublicId(publicNotificationId);
         notification.updateConfirmed(request.confirmed());
         return NotificationResponse.Summary.of(notification,notification.getPublicId().toString(),notification.getReceiver().getPublicId().toString(),
                 notification.getActor().getPublicId().toString(),notification.getTargetPublicId().toString());

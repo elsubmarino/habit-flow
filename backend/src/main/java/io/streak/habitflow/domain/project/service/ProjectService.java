@@ -16,7 +16,6 @@ import io.streak.habitflow.domain.project.event.ProjectAcceptedEvent;
 import io.streak.habitflow.domain.project.event.ProjectInvitationEvent;
 import io.streak.habitflow.domain.project.repository.ProjectMemberRepository;
 import io.streak.habitflow.domain.project.repository.ProjectRepository;
-import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.common.type.TargetType;
 import io.streak.habitflow.global.error.ErrorCode;
@@ -27,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -116,7 +116,7 @@ public class ProjectService {
     }
 
     @Transactional
-    @CheckOwnership(type="PROJECT")
+    @PreAuthorize("@projectAuth(#publicProjectId)")
     public ProjectResponse.Detail updateProject(ProjectRequest.Update request, UUID publicProjectId, Long loginMemberId) {
         Project project =  projectRepository.getOrThrowByProjectId(publicProjectId);
         String oldProjectName = project.getName();
@@ -177,7 +177,7 @@ public class ProjectService {
         return ProjectResponse.Detail.of(project,request.favorite(),project.getPublicId().toString());
     }
 
-    @CheckOwnership(type="PROJECT")
+    @PreAuthorize("@projectAuth(#publicProjectId)")
     public ProjectResponse.Detail getProjectByPublicId(UUID publicProjectId, Long loginMemberId) {
        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
        boolean isFavorite = false;
@@ -201,8 +201,7 @@ public class ProjectService {
 
 
     @Transactional
-    @CheckOwnership(type="PROJECT")
-    @SuppressWarnings("unused")
+    @PreAuthorize("@projectAuth(#publicProjectId)")
     public void deleteProject(UUID publicProjectId, Long loginMemberId) {
         Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
         projectMemberRepository.deleteByProjectId(project.getId());
@@ -230,9 +229,9 @@ public class ProjectService {
     }
 
     @Transactional
-    @CheckOwnership(type="PROJECT")
-    public void inviteMembers(ProjectRequest.Invite inviteRequest, UUID publicProjectID, Long loginMemberId){
-        Project project = projectRepository.getOrThrowByProjectId(publicProjectID);
+    @PreAuthorize("@projectAuth(#publicProjectId)")
+    public void inviteMembers(ProjectRequest.Invite inviteRequest, UUID publicProjectId, Long loginMemberId){
+        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
         Member inviter = memberRepository.getOrThrow(loginMemberId);
 
         List<String> inviteEmails  = inviteRequest.emails();
@@ -320,8 +319,7 @@ public class ProjectService {
         ));
     }
 
-    @CheckOwnership(type="PROJECT")
-    @SuppressWarnings("unused")
+
     public List<ProjectResponse.Member> getProjectMembers(UUID publicProjectId,Long loginMemberId) {
         Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
         List<ProjectMember> projectMembers = projectMemberRepository.findByProject(project);
@@ -333,8 +331,7 @@ public class ProjectService {
     }
 
     @Transactional
-    @CheckOwnership(type="PROJECT")
-    @SuppressWarnings("unused")
+    @PreAuthorize("@projectAuth(#publicProjectId)")
     public void deleteProjectMember(UUID publicProjectId,Long loginMemberId, ProjectRequest.DeleteMember request) {
         Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
         Member member = memberRepository.getOrThrowByPublicId(request.publicMemberId());
@@ -342,9 +339,9 @@ public class ProjectService {
     }
 
     @Transactional
-    @CheckOwnership(type="PROJECT")
-    public ProjectResponse.Summary updateSortOrder(UUID publicProjectID, ProjectRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
-        Project project = projectRepository.getOrThrowByProjectId(publicProjectID);
+    @PreAuthorize("@projectAuth(#publicProjectId)")
+    public ProjectResponse.Summary updateSortOrder(UUID publicProjectId, ProjectRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
+        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
 
         if(Objects.equals(project.getSortOrder(), updateSortOrder.sortOrder())){
             return ProjectResponse.Summary.of(project, project.getPublicId().toString());

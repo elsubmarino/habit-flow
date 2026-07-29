@@ -24,7 +24,6 @@ import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.domain.task.type.CursorDirection;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.domain.task.type.TaskPriorityType;
-import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.aop.DistributedLock;
 import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.common.type.TargetType;
@@ -39,6 +38,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,9 +61,8 @@ public class TaskService {
     private final TaskMapper taskMapper;
 
     @Transactional
-    @CheckOwnership(type="TASK")
-    @SuppressWarnings("unused")
-    public void deleteTask(java.util.UUID publicTaskId, Long loginMemberId){
+    @PreAuthorize("@taskAuth(#publicTaskId)")
+    public void deleteTask(UUID publicTaskId, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         taskRepository.deleteById(task.getId());
         applicationEventPublisher.publishEvent(new ActivityRecordedEvent(
@@ -77,7 +76,7 @@ public class TaskService {
     }
 
     @Transactional
-    @CheckOwnership(type="SUB_TASK")
+    @PreAuthorize("@taskAuth(#request.publicParentId)")
     public TaskResponse.Detail createTask(TaskRequest.Create request, FileDto fileDto, Long loginMemberId){
 
         Member member = memberRepository.getReferenceById(loginMemberId);
@@ -208,8 +207,8 @@ public class TaskService {
         return parentTask;
     }
 
-    @CheckOwnership(type="TASK")
-    public TaskResponse.Detail getTaskById(java.util.UUID publicTaskId, Long loginMemberId){
+    @PreAuthorize("@taskAuth.canAccess(#publicTaskId)")
+    public TaskResponse.Detail getTaskById(UUID publicTaskId, Long loginMemberId){
         Task task = taskRepository.findByPublicId(publicTaskId)
                 .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND));
 
@@ -221,7 +220,7 @@ public class TaskService {
         return taskMapper.toDetail(task, task.getPublicId().toString(), labelSummaryResponses);
     }
 
-    @CheckOwnership(type="PROJECT")
+    @PreAuthorize("@projectAuth(#publicProjectId)")
     public Slice<TaskResponse.Summary> getTasksByProject(UUID publicProjectId, Long loginMemberId, Pageable pageable){
         int pageSize = pageable.getPageSize();
 
@@ -303,8 +302,8 @@ public class TaskService {
     }
 
     @Transactional
-    @CheckOwnership(type="TASK")
-    public TaskResponse.Detail updateTask(java.util.UUID publicTaskId, TaskRequest.Update request, Long loginMemberId){
+    @PreAuthorize("@taskAuth(#publicTaskId)")
+    public TaskResponse.Detail updateTask(UUID publicTaskId, TaskRequest.Update request, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
 
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
@@ -345,9 +344,9 @@ public class TaskService {
     }
 
     @Transactional
-    @CheckOwnership(type="TASK")
+    @PreAuthorize("@taskAuth(#publicTaskId)")
     @DistributedLock(key = "#publicTaskId")
-    public TaskResponse.Summary toggleCompletion(java.util.UUID publicTaskId, Long loginMemberId){
+    public TaskResponse.Summary toggleCompletion(UUID publicTaskId, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
 
         boolean nextCompletion = !task.isCompleted();
@@ -425,9 +424,8 @@ public class TaskService {
     }
 
     @Transactional
-    @CheckOwnership(type="TASK")
-    @SuppressWarnings("unused")
-    public TaskResponse.Detail updateTaskDueDate(java.util.UUID publicTaskId, TaskRequest.UpdateDueDate request, Long loginMemberId){
+    @PreAuthorize("@taskAuth(#publicTaskId)")
+    public TaskResponse.Detail updateTaskDueDate(UUID publicTaskId, TaskRequest.UpdateDueDate request, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
 
         LocalDateTime oldDueDate = task.getDueDate();
@@ -528,9 +526,8 @@ public class TaskService {
     }
 
     @Transactional
-    @CheckOwnership(type="TASK")
-    @SuppressWarnings("unused")
-    public TaskResponse.Detail updatePriority(java.util.UUID publicTaskId, TaskPriorityType taskPriorityType, Long loginMemberId){
+    @PreAuthorize("@taskAuth(#publicTaskId)")
+    public TaskResponse.Detail updatePriority(UUID publicTaskId, TaskPriorityType taskPriorityType, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
@@ -558,9 +555,8 @@ public class TaskService {
     }
 
     @Transactional
-    @CheckOwnership(type="TASK")
-    @SuppressWarnings("unused")
-    public TaskResponse.Detail updateTaskLabels(java.util.UUID publicTaskId, List<String> labelIds, Long loginMemberId){
+    @PreAuthorize("@taskAuth(#publicTaskId)")
+    public TaskResponse.Detail updateTaskLabels(UUID publicTaskId, List<String> labelIds, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         // 빈 목록이면 라벨 전부 제거 후 빈 목록으로 응답
         if(labelIds.isEmpty()){
@@ -581,10 +577,8 @@ public class TaskService {
     }
 
     @Transactional
-    @CheckOwnership(type="TASK")
-    @CheckOwnership(type="PROJECT")
-    @SuppressWarnings("unused")
-    public TaskResponse.Detail moveTaskToProject(java.util.UUID publicTaskId, java.util.UUID publicProjectId, Long loginMemberId){
+    @PreAuthorize("@taskAuth(#publicTaskId)")
+    public TaskResponse.Detail moveTaskToProject(UUID publicTaskId, UUID publicProjectId, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
@@ -618,8 +612,8 @@ public class TaskService {
     }
 
     @Transactional
-    @CheckOwnership(type="TASK")
-    public TaskResponse.Summary updateSortOrder(java.util.UUID publicTaskId, TaskRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
+    @PreAuthorize("@taskAuth(#publicTaskId)")
+    public TaskResponse.Summary updateSortOrder(UUID publicTaskId, TaskRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
         List<LabelResponse.Summary> summaries = taskLabels.stream().map(label->{
@@ -635,7 +629,7 @@ public class TaskService {
         return TaskResponse.Summary.of(taskSummaryQueries.get(0),task.getPublicId().toString(),summaries);
     }
 
-    public TaskResponse.SummarySlice getTasksByLabel(java.util.UUID publicLabelId, Long loginMemberId, Pageable pageable
+    public TaskResponse.SummarySlice getTasksByLabel(UUID publicLabelId, Long loginMemberId, Pageable pageable
                                                     , TaskRequest.Cursor cursor){
         int pageSize = pageable.getPageSize();
         List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByLabelId(publicLabelId,pageable,loginMemberId);

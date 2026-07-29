@@ -6,11 +6,11 @@ import io.streak.habitflow.domain.member.dto.response.MemberResponse;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.member.type.MemberRole;
-import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,8 +49,7 @@ public class MemberService {
     }
 
     @Transactional
-    @CheckOwnership(type = "MEMBER")
-    @SuppressWarnings("unused")
+    @PreAuthorize("@memberAuth(#publicMemberId)")
     public MemberResponse.Detail updateMember(UUID publicMemberId, MemberRequest.Update  request, Long loginMemberId){
         Member member = memberRepository.getOrThrowByPublicId(publicMemberId);
         if (!request.name().equals(member.getName())) {

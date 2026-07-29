@@ -10,7 +10,6 @@ import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
-import io.streak.habitflow.global.aop.CheckOwnership;
 import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.common.type.TargetType;
 import io.streak.habitflow.global.infra.file.FileDto;
@@ -18,6 +17,7 @@ import io.streak.habitflow.global.infra.file.FileStorageService;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +37,7 @@ public class CommentService {
     private final HashidsProvider hashidsProvider;
 
     @Transactional
-    @CheckOwnership(type="TASK")
+    @PreAuthorize("@taskAuth.canAccess(#publicTaskId)")
     public CommentResponse.Detail createComment(UUID publicTaskId, CommentRequest.Create request, FileDto fileDto, Long loginMemberId) {
         Member member = memberRepository.getReferenceById(loginMemberId);
 
@@ -72,7 +72,7 @@ public class CommentService {
         return CommentResponse.Detail.of(result,result.getPublicId().toString());
     }
 
-    @CheckOwnership(type="TASK")
+    @PreAuthorize("@taskAuth.canAccess(#publicTaskId)")
     public List<CommentResponse.Detail> getComments(UUID publicTaskId, Long loginMemberId) {
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<Comment> comments = commentRepository.findByTaskIdWithAttachments(task.getId());
@@ -84,8 +84,7 @@ public class CommentService {
     }
 
     @Transactional
-    @CheckOwnership(type="COMMENT")
-    @SuppressWarnings("unused")
+    @PreAuthorize("@commentAuth.canAccess(#publicCommentId)")
     public CommentResponse.Detail updateComment(UUID publicCommentId, CommentRequest.Update request, Long loginMemberId) {
         Comment comment = commentRepository.getOrThrowByPublicId(publicCommentId);
         if(comment.getContent().equals(request.content())){
@@ -96,8 +95,7 @@ public class CommentService {
     }
 
     @Transactional
-    @CheckOwnership(type="COMMENT")
-    @SuppressWarnings("unused")
+    @PreAuthorize("@commentAuth.canAccess(#publicCommentId)")
     public void deleteComment(UUID publicCommentId, Long loginMemberId){
         Comment comment = commentRepository.getOrThrowByPublicId(publicCommentId);
         commentRepository.deleteById(comment.getId());
