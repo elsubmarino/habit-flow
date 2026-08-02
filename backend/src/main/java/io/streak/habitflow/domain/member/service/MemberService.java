@@ -10,6 +10,7 @@ import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -67,6 +68,21 @@ public class MemberService {
                 result,
                 result.getPublicId().toString()
         );
+    }
+
+    private boolean hasConstraint(Throwable throwable, String constraintName) {
+        Throwable cause = throwable;
+
+        while (cause != null) {
+            if (cause instanceof ConstraintViolationException violation) {
+                return constraintName.equalsIgnoreCase(
+                        violation.getConstraintName()
+                );
+            }
+            cause = cause.getCause();
+        }
+
+        return false;
     }
 
 
