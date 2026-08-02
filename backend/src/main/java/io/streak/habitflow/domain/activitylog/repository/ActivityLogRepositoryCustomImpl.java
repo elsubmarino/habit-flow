@@ -33,7 +33,7 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
                         activityTypeIn(search.activityType()),
                         ltActivityLogId(lastActivityLogId),
                         targetTypeEq(search.targetType(),targetIds),
-                        targetDateEq(search.fromDate(),search.toDate())
+                        createdAtInRange(search.fromDate(),search.toDate())
                 )
                 .orderBy(activityLog.id.desc())
                 .limit(pageable.getPageSize()+1)
@@ -61,7 +61,7 @@ public class ActivityLogRepositoryCustomImpl implements ActivityLogRepositoryCus
         return null;
     }
 
-    private BooleanExpression targetDateEq(LocalDate fromDate, LocalDate toDate){
+    private BooleanExpression createdAtInRange(LocalDate fromDate, LocalDate toDate){
         LocalDateTime fromDateTime;
         LocalDateTime toDateTime;
         if(fromDate == null) return null;

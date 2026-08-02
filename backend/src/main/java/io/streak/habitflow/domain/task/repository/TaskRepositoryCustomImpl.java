@@ -83,7 +83,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskSummaryQuery> findTaskSummariesByProject(UUID publicProjectId, Long memberId, Pageable pageable) {
+    public List<TaskSummaryQuery> findTaskSummariesByProjectPublicId(UUID publicProjectId, Long memberId, Pageable pageable) {
 
         List<Long> projectIds = queryFactory
                 .select(projectMember.project.id)
@@ -232,7 +232,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         task.parent.isNull(),
                         task.completed.eq(false),
                         filterTypeEq(searchCondition.taskFilterType()),
-                        dateRangeEq(searchCondition.fromDate(),searchCondition.toDate()),
+                        dueDateInRange(searchCondition.fromDate(),searchCondition.toDate()),
                         cursorCondition(cursor)
                 )
                 .orderBy(
@@ -260,7 +260,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                 .where( task.project.isNull(),
                         task.parent.isNull(),
                         task.completed.eq(false),
-                        dateRangeEq(searchCondition.fromDate(),searchCondition.toDate()),
+                        dueDateInRange(searchCondition.fromDate(),searchCondition.toDate()),
                         cursorCondition(cursor)
                 )
                 .orderBy(
@@ -473,7 +473,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
         return task.id.lt(taskId);
     }
 
-    private BooleanExpression dateRangeEq(LocalDateTime fromDate, LocalDateTime toDate){
+    private BooleanExpression dueDateInRange(LocalDateTime fromDate, LocalDateTime toDate){
         BooleanExpression expression = null;
         if(fromDate != null){
             expression = task.dueDate.goe(fromDate);
@@ -506,7 +506,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
                         task.parent.isNull(),
                         task.completed.eq(false),
                         filterTypeEq(TaskFilterType.UPCOMING),
-                        dateRangeEq(fromDate, toDate)
+                        dueDateInRange(fromDate, toDate)
                 )
                 .groupBy(
                         task.dueDate.year(),
@@ -601,7 +601,7 @@ public class TaskRepositoryCustomImpl implements TaskRepositoryCustom {
     }
 
     @Override
-    public List<TaskSummaryQuery> findTaskSummariesByLabelId(UUID publicLabelId, Pageable pageable, Long loginMemberId) {
+    public List<TaskSummaryQuery> findTaskSummariesByLabelPublicId(UUID publicLabelId, Pageable pageable, Long loginMemberId) {
         List<Long> ids =  queryFactory
                 .select(task.id)
                 .from(taskLabel)

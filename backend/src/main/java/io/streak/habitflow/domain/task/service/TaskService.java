@@ -208,7 +208,7 @@ public class TaskService {
     }
 
     @PreAuthorize("@taskAuth.canAccess(#publicTaskId)")
-    public TaskResponse.Detail getTaskById(UUID publicTaskId, Long loginMemberId){
+    public TaskResponse.Detail getTaskByPublicId(UUID publicTaskId, Long loginMemberId){
         Task task = taskRepository.findByPublicId(publicTaskId)
                 .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND));
 
@@ -224,7 +224,7 @@ public class TaskService {
     public Slice<TaskResponse.Summary> getTasksByProject(UUID publicProjectId, Long loginMemberId, Pageable pageable){
         int pageSize = pageable.getPageSize();
 
-        List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByProject(publicProjectId,loginMemberId,pageable);
+        List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByProjectPublicId(publicProjectId,loginMemberId,pageable);
 
         boolean hasNext = false;
         if(tasks.size() > pageSize){
@@ -385,7 +385,7 @@ public class TaskService {
         return TaskResponse.Summary.of(taskSummaryQueries.get(0),task.getPublicId().toString(),summaries);
     }
 
-    public TaskResponse.SidebarTasksCount getSidebarTaskCount(Long memberId){
+    public TaskResponse.SidebarTasksCount getSidebarTaskCounts(Long memberId){
         return taskRepository.findSidebarTaskCounts(memberId);
     }
 
@@ -587,7 +587,7 @@ public class TaskService {
 
         Project project = null;
         if(publicProjectId != null) {
-            project = projectRepository.getOrThrowByProjectId(publicProjectId);
+            project = projectRepository.getOrThrowByPublicId(publicProjectId);
             String oldProjectName = project.getName();
             task.updateProject(project);
 
@@ -632,7 +632,7 @@ public class TaskService {
     public TaskResponse.SummarySlice getTasksByLabel(UUID publicLabelId, Long loginMemberId, Pageable pageable
                                                     , TaskRequest.Cursor cursor){
         int pageSize = pageable.getPageSize();
-        List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByLabelId(publicLabelId,pageable,loginMemberId);
+        List<TaskSummaryQuery> tasks = taskRepository.findTaskSummariesByLabelPublicId(publicLabelId,pageable,loginMemberId);
 
         boolean hasNext;
         boolean hasPrev;

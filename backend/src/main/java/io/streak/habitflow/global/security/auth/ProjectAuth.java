@@ -18,7 +18,7 @@ public class ProjectAuth {
     private final ProjectMemberRepository projectMemberRepository;
     private final MemberRepository memberRepository;
     public boolean canAccess(UUID publicProjectId){
-        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
+        Project project = projectRepository.getOrThrowByPublicId(publicProjectId);
         Member member = memberRepository.getReferenceById(SecurityUtils.currentMemberId());
         return projectMemberRepository.existsByProjectAndMember(project,member);
     }

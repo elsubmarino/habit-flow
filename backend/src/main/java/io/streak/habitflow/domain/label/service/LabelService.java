@@ -61,7 +61,7 @@ public class LabelService {
     }
 
     @PreAuthorize("@labelAuth.canAccess(#publicLabelId)")
-    public LabelResponse.Detail getLabelById(UUID publicLabelId, Long loginMemberId) {
+    public LabelResponse.Detail getLabelByPublicId(UUID publicLabelId, Long loginMemberId) {
         Label label = labelRepository.getOrThrowByPublicId(publicLabelId);
         boolean isFavorite = false;
         Optional<Favorite> favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(

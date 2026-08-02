@@ -118,7 +118,7 @@ public class ProjectService {
     @Transactional
     @PreAuthorize("@projectAuth(#publicProjectId)")
     public ProjectResponse.Detail updateProject(ProjectRequest.Update request, UUID publicProjectId, Long loginMemberId) {
-        Project project =  projectRepository.getOrThrowByProjectId(publicProjectId);
+        Project project =  projectRepository.getOrThrowByPublicId(publicProjectId);
         String oldProjectName = project.getName();
 
         Member member = memberRepository.getReferenceById(loginMemberId);
@@ -179,7 +179,7 @@ public class ProjectService {
 
     @PreAuthorize("@projectAuth(#publicProjectId)")
     public ProjectResponse.Detail getProjectByPublicId(UUID publicProjectId, Long loginMemberId) {
-       Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
+       Project project = projectRepository.getOrThrowByPublicId(publicProjectId);
        boolean isFavorite = false;
        Optional<Favorite> favorite = favoriteRepository.findByMemberIdAndTargetTypeAndTargetId(
                loginMemberId, TargetType.PROJECT, project.getId());
@@ -203,7 +203,7 @@ public class ProjectService {
     @Transactional
     @PreAuthorize("@projectAuth(#publicProjectId)")
     public void deleteProject(UUID publicProjectId, Long loginMemberId) {
-        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
+        Project project = projectRepository.getOrThrowByPublicId(publicProjectId);
         projectMemberRepository.deleteByProjectId(project.getId());
         favoriteRepository.deleteByTargetTypeAndTargetId(TargetType.PROJECT, project.getId());
         projectRepository.deleteById(project.getId());
@@ -231,7 +231,7 @@ public class ProjectService {
     @Transactional
     @PreAuthorize("@projectAuth(#publicProjectId)")
     public void inviteMembers(ProjectRequest.Invite inviteRequest, UUID publicProjectId, Long loginMemberId){
-        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
+        Project project = projectRepository.getOrThrowByPublicId(publicProjectId);
         Member inviter = memberRepository.getOrThrow(loginMemberId);
 
         List<String> inviteEmails  = inviteRequest.emails();
@@ -321,7 +321,7 @@ public class ProjectService {
 
 
     public List<ProjectResponse.Member> getProjectMembers(UUID publicProjectId,Long loginMemberId) {
-        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
+        Project project = projectRepository.getOrThrowByPublicId(publicProjectId);
         List<ProjectMember> projectMembers = projectMemberRepository.findByProject(project);
         return projectMembers.stream()
                 .map(projectMember->{
@@ -333,7 +333,7 @@ public class ProjectService {
     @Transactional
     @PreAuthorize("@projectAuth(#publicProjectId)")
     public void deleteProjectMember(UUID publicProjectId,Long loginMemberId, ProjectRequest.DeleteMember request) {
-        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
+        Project project = projectRepository.getOrThrowByPublicId(publicProjectId);
         Member member = memberRepository.getOrThrowByPublicId(request.publicMemberId());
         projectMemberRepository.deleteByProjectAndMember(project,member);
     }
@@ -341,7 +341,7 @@ public class ProjectService {
     @Transactional
     @PreAuthorize("@projectAuth(#publicProjectId)")
     public ProjectResponse.Summary updateSortOrder(UUID publicProjectId, ProjectRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
-        Project project = projectRepository.getOrThrowByProjectId(publicProjectId);
+        Project project = projectRepository.getOrThrowByPublicId(publicProjectId);
 
         if(Objects.equals(project.getSortOrder(), updateSortOrder.sortOrder())){
             return ProjectResponse.Summary.of(project, project.getPublicId().toString());

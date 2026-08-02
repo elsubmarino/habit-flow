@@ -111,15 +111,15 @@ public class TaskController {
     @Operation(summary = "사이드바 오늘,다음에 해당하는 카운트 수 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "사이드바 오늘,다음에 해당하는 카운트 수 조회 성공")})
     public ResponseEntity<TaskResponse.SidebarTasksCount> getSidebarTaskCount(@LoginMemberId Long loginMemberId) {
-        return ResponseEntity.ok(taskService.getSidebarTaskCount(loginMemberId));
+        return ResponseEntity.ok(taskService.getSidebarTaskCounts(loginMemberId));
     }
 
     @GetMapping("/{publicTaskId}")
     @Operation(summary = "테스크 상세 조회")
     @ApiResponses(value={@ApiResponse(responseCode = "200",description = "테스크 상세 조회 성공")})
-    public ResponseEntity<TaskResponse.Detail> getTaskById(@PathVariable UUID publicTaskId,
-                                                    @LoginMemberId Long loginMemberId) {
-        return ResponseEntity.ok(taskService.getTaskById(publicTaskId,loginMemberId));
+    public ResponseEntity<TaskResponse.Detail> getTaskByPublicId(@PathVariable UUID publicTaskId,
+                                                                 @LoginMemberId Long loginMemberId) {
+        return ResponseEntity.ok(taskService.getTaskByPublicId(publicTaskId,loginMemberId));
     }
 
 

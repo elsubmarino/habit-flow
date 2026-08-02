@@ -50,9 +50,9 @@ public class LabelController {
     @GetMapping("/{publicLabelId}")
     @Operation(summary = "라벨 상세 조회")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "라벨 상세 조회 성공")})
-    public ResponseEntity<LabelResponse.Detail> getLabelById(@PathVariable UUID publicLabelId,
-                                                      @LoginMemberId Long loginMemberId) {
-        return ResponseEntity.ok(labelService.getLabelById(publicLabelId,loginMemberId));
+    public ResponseEntity<LabelResponse.Detail> getLabelByPublicId(@PathVariable UUID publicLabelId,
+                                                                   @LoginMemberId Long loginMemberId) {
+        return ResponseEntity.ok(labelService.getLabelByPublicId(publicLabelId,loginMemberId));
     }
 
     @PutMapping("/{publicLabelId}")

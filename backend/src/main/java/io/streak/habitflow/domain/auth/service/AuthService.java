@@ -41,7 +41,7 @@ public class AuthService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    private void incrementLoginFail(String failKey) {
+    private void incrementLoginFailureCount(String failKey) {
         Long count = redisTemplate.opsForValue().increment(failKey);
         if (count != null && count == 1L) {
             redisTemplate.expire(failKey, 15, TimeUnit.MINUTES);
@@ -59,12 +59,12 @@ public class AuthService {
 
         Member member = memberRepository.findByEmail(request.email())
                 .orElseThrow(() -> {
-                    incrementLoginFail(failKey);
+                    incrementLoginFailureCount(failKey);
                     return new BusinessException(ErrorCode.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.");
                 });
 
         if(!passwordEncoder.matches(request.password(),member.getPassword())){
-            incrementLoginFail(failKey);
+            incrementLoginFailureCount(failKey);
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다.");
         }
         redisTemplate.delete(failKey);

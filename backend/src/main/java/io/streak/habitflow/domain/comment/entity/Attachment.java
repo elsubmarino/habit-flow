@@ -39,7 +39,7 @@ public class Attachment extends BaseTimeEntity {
     private String contentType;
     private Long fileSize;
 
-    public void changeComment(Comment comment) {
+    public void assignComment(Comment comment) {
         this.comment = comment;
     }
 }

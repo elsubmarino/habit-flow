@@ -37,7 +37,7 @@ public class NotificationController {
     public ResponseEntity<NotificationResponse.Summary> confirmNotification(@PathVariable UUID publicNotificationId,
                                                                             @RequestBody NotificationRequest.ConfirmRead request,
                                                                             @LoginMemberId Long loginMemberId) {
-        return ResponseEntity.ok(notificationService.confirmNotification(publicNotificationId, request, loginMemberId));
+        return ResponseEntity.ok(notificationService.updateNotificationConfirmation(publicNotificationId, request, loginMemberId));
     }
 
     @GetMapping(value="/subscribe",produces= MediaType.TEXT_EVENT_STREAM_VALUE)

@@ -43,8 +43,8 @@ public class ProjectController {
 
     @GetMapping("/{publicProjectId}")
     @Operation(summary = "프로젝트 상세 조회")
-    public ResponseEntity<ProjectResponse.Detail> getProjectById(@PathVariable UUID publicProjectId,
-                                                          @LoginMemberId Long loginMemberId) {
+    public ResponseEntity<ProjectResponse.Detail> getProjectByPublicId(@PathVariable UUID publicProjectId,
+                                                                       @LoginMemberId Long loginMemberId) {
         return ResponseEntity.ok(projectService.getProjectByPublicId(publicProjectId,loginMemberId));
     }
 

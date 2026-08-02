@@ -19,13 +19,13 @@ public interface ProjectRepository extends JpaRepository<Project, Long>, Project
     List<Project> findByNameContaining(String name);
     Optional<Project> findByPublicId(UUID publicId);
 
-    List<Project> findAllByPublicId(Collection<UUID> publicId);
+    List<Project> findAllByPublicIdIn(Collection<UUID> publicId);
 
     default Project getOrThrow(Long projectId){
         return findById(projectId).orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
     }
 
-    default Project getOrThrowByProjectId(UUID publicId){
+    default Project getOrThrowByPublicId(UUID publicId){
         return findByPublicId(publicId).orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
     }
 }

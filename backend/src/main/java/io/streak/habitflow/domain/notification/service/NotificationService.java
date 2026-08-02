@@ -36,9 +36,9 @@ public class NotificationService {
 
     @Transactional
     @PreAuthorize("@notificationAuth(#publicNotificationId)")
-    public NotificationResponse.Summary confirmNotification(UUID publicNotificationId, NotificationRequest.ConfirmRead request, Long loginMemberId) {
+    public NotificationResponse.Summary updateNotificationConfirmation(UUID publicNotificationId, NotificationRequest.ConfirmRead request, Long loginMemberId) {
         Notification notification = notificationRepository.getOrThrowByPublicId(publicNotificationId);
-        notification.updateConfirmed(request.confirmed());
+        notification.updateConfirmationStatus(request.confirmed());
         return NotificationResponse.Summary.of(notification,notification.getPublicId().toString(),notification.getReceiver().getPublicId().toString(),
                 notification.getActor().getPublicId().toString(),notification.getTargetPublicId().toString());
     }

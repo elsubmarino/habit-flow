@@ -61,7 +61,7 @@ public class ActivityLogService {
 
         List<Long> targetIds = List.of();
         if(search.targetIds() != null){
-            targetIds = projectRepository.findAllByPublicId(search.memberIds())
+            targetIds = projectRepository.findAllByPublicIdIn(search.targetIds())
                     .stream()
                     .map(Project::getId).toList();
         }
