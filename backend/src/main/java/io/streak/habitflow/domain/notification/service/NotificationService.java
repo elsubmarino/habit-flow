@@ -35,7 +35,7 @@ public class NotificationService {
     }
 
     @Transactional
-    @PreAuthorize("@notificationAuth(#publicNotificationId)")
+    @PreAuthorize("@notificationAuthorization(#publicNotificationId)")
     public NotificationResponse.Summary updateNotificationConfirmation(UUID publicNotificationId, NotificationRequest.ConfirmRead request, Long loginMemberId) {
         Notification notification = notificationRepository.getOrThrowByPublicId(publicNotificationId);
         notification.updateConfirmationStatus(request.confirmed());

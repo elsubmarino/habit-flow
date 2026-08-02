@@ -3,8 +3,8 @@ package io.streak.habitflow.domain.comment.api;
 import io.streak.habitflow.domain.comment.dto.request.CommentRequest;
 import io.streak.habitflow.domain.comment.dto.response.CommentResponse;
 import io.streak.habitflow.domain.comment.service.CommentService;
-import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
+import io.streak.habitflow.global.infra.file.StoredFile;
 import io.streak.habitflow.global.util.HashidsProvider;
 import io.streak.habitflow.global.web.LoginMemberId;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,12 +35,12 @@ public class CommentController {
             @LoginMemberId Long loginMemberId,
             @RequestPart(value="file",required = false) MultipartFile file,
             @RequestPart("commentRequest") @Valid CommentRequest.Create request) {
-        FileDto fileDto = null;
+        StoredFile storedFile = null;
         if(file!=null&&!file.isEmpty()){
-            fileDto = fileStorageService.upload(file);
+            storedFile = fileStorageService.upload(file);
         }
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(commentService.createComment(request.publicTaskId(),request,fileDto,loginMemberId));
+                .body(commentService.createComment(request.publicTaskId(),request, storedFile,loginMemberId));
     }
 
     @PutMapping("/{publicCommentId}")

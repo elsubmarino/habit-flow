@@ -1,4 +1,4 @@
-package io.streak.habitflow.global.security.dto;
+package io.streak.habitflow.global.security.principal;
 
 import lombok.Getter;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

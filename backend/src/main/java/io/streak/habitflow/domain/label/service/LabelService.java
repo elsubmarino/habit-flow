@@ -60,7 +60,7 @@ public class LabelService {
         return LabelResponse.Detail.of(savedLabel, request.favorite(),savedLabel.getPublicId().toString());
     }
 
-    @PreAuthorize("@labelAuth.canAccess(#publicLabelId)")
+    @PreAuthorize("@labelAuthorization.canAccess(#publicLabelId)")
     public LabelResponse.Detail getLabelByPublicId(UUID publicLabelId, Long loginMemberId) {
         Label label = labelRepository.getOrThrowByPublicId(publicLabelId);
         boolean isFavorite = false;
@@ -72,7 +72,7 @@ public class LabelService {
         return LabelResponse.Detail.of(label,isFavorite,label.getPublicId().toString());
     }
 
-    @PreAuthorize("@labelAuth.canAccess(#publicLabelId)")
+    @PreAuthorize("@labelAuthorization.canAccess(#publicLabelId)")
     @Transactional
     public LabelResponse.Detail updateLabel(UUID publicLabelId, LabelRequest.Update request, Long loginMemberId) {
         Label label = labelRepository.getOrThrowByPublicId(publicLabelId);
@@ -130,7 +130,7 @@ public class LabelService {
         return new SliceImpl<>(labelResponses, pageable, hasNext);
     }
 
-    @PreAuthorize("@labelAuth.canAccess(#publicLabelId)")
+    @PreAuthorize("@labelAuthorization.canAccess(#publicLabelId)")
     @Transactional
     public void deleteLabel(UUID publicLabelId, Long loginMemberId){
         Label label = labelRepository.getOrThrowByPublicId(publicLabelId);
@@ -142,7 +142,7 @@ public class LabelService {
     }
 
     @Transactional
-    @PreAuthorize("@labelAuth.canAccess(#publicLabelId)")
+    @PreAuthorize("@labelAuthorization.canAccess(#publicLabelId)")
     public LabelResponse.Summary updateSortOrder(UUID publicLabelId, LabelRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
         Label label = labelRepository.getOrThrowByPublicId(publicLabelId);
 

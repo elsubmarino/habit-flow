@@ -1,4 +1,4 @@
-package io.streak.habitflow.global.security.auth;
+package io.streak.habitflow.domain.comment.authorization;
 
 import io.streak.habitflow.domain.comment.entity.Comment;
 import io.streak.habitflow.domain.comment.repository.CommentRepository;
@@ -8,9 +8,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-@Component("commentAuth")
+@Component("commentAuthorization")
 @RequiredArgsConstructor
-public class CommentAuth {
+public class CommentAuthorization {
     private final CommentRepository commentRepository;
 
     public boolean canAccess(UUID publicCommentId){

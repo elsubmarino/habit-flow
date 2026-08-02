@@ -7,8 +7,8 @@ import io.streak.habitflow.domain.task.dto.response.TaskResponse;
 import io.streak.habitflow.domain.task.service.TaskService;
 import io.streak.habitflow.domain.task.type.TaskFilterType;
 import io.streak.habitflow.global.common.constant.PageSizeConstants;
-import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
+import io.streak.habitflow.global.infra.file.StoredFile;
 import io.streak.habitflow.global.util.HashidsProvider;
 import io.streak.habitflow.global.web.LoginMemberId;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,11 +47,11 @@ public class TaskController {
     public ResponseEntity<TaskResponse.Detail> createTask(@LoginMemberId Long loginMemberId,
                                                    @RequestPart(value = "file", required = false) MultipartFile file,
                                                    @RequestPart("taskRequest") @Valid TaskRequest.Create request){
-        FileDto fileDto = null;
+        StoredFile storedFile = null;
         if(file!=null&&!file.isEmpty()){
-            fileDto = fileStorageService.upload(file);
+            storedFile = fileStorageService.upload(file);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(request, fileDto, loginMemberId));
+        return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(request, storedFile, loginMemberId));
     }
 
     @PutMapping("/{publicTaskId}")

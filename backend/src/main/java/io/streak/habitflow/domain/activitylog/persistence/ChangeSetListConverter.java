@@ -1,4 +1,4 @@
-package io.streak.habitflow.domain.activitylog.entity;
+package io.streak.habitflow.domain.activitylog.persistence;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;

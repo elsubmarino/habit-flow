@@ -1,4 +1,4 @@
-package io.streak.habitflow.global.security.auth;
+package io.streak.habitflow.domain.label.authorization;
 
 import io.streak.habitflow.domain.label.entity.Label;
 import io.streak.habitflow.domain.label.repository.LabelRepository;
@@ -8,9 +8,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-@Component("labelAuth")
+@Component("labelAuthorization")
 @RequiredArgsConstructor
-public class LabelAuth {
+public class LabelAuthorization {
     private final LabelRepository labelRepository;
 
     public boolean canAccess(UUID publicLabelId){

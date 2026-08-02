@@ -1,4 +1,4 @@
-package io.streak.habitflow.global.security.auth;
+package io.streak.habitflow.domain.member.authorization;
 
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
@@ -8,9 +8,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-@Component("memberAuth")
+@Component("memberAuthorization")
 @RequiredArgsConstructor
-public class MemberAuth {
+public class MemberAuthorization {
     private final MemberRepository memberRepository;
 
     public boolean canAccess(UUID publicMemberId){

@@ -29,8 +29,8 @@ import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.common.type.TargetType;
 import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.exception.BusinessException;
-import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
+import io.streak.habitflow.global.infra.file.StoredFile;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -61,7 +61,7 @@ public class TaskService {
     private final TaskMapper taskMapper;
 
     @Transactional
-    @PreAuthorize("@taskAuth(#publicTaskId)")
+    @PreAuthorize("@taskAuthorization(#publicTaskId)")
     public void deleteTask(UUID publicTaskId, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         taskRepository.deleteById(task.getId());
@@ -76,8 +76,8 @@ public class TaskService {
     }
 
     @Transactional
-    @PreAuthorize("@taskAuth(#request.publicParentId)")
-    public TaskResponse.Detail createTask(TaskRequest.Create request, FileDto fileDto, Long loginMemberId){
+    @PreAuthorize("@taskAuthorization(#request.publicParentId)")
+    public TaskResponse.Detail createTask(TaskRequest.Create request, StoredFile storedFile, Long loginMemberId){
 
         Member member = memberRepository.getReferenceById(loginMemberId);
 
@@ -157,7 +157,7 @@ public class TaskService {
             taskLabels.forEach(task::addTaskLabel);
         }
 
-        if(fileDto != null){
+        if(storedFile != null){
             Comment comment = Comment.builder()
                     .content("첨부파일이 등록되었습니다.")
                     .member(member)
@@ -165,9 +165,9 @@ public class TaskService {
                     .build();
 
             Attachment attachment = Attachment.builder()
-                    .originalFileName(fileDto.originalFileName())
-                    .savedFileName(fileDto.savedFileName())
-                    .fileUrl(fileDto.fileUrl())
+                    .originalFileName(storedFile.originalFileName())
+                    .savedFileName(storedFile.savedFileName())
+                    .fileUrl(storedFile.fileUrl())
                     .build();
 
             comment.addAttachment(attachment);
@@ -207,7 +207,7 @@ public class TaskService {
         return parentTask;
     }
 
-    @PreAuthorize("@taskAuth.canAccess(#publicTaskId)")
+    @PreAuthorize("@taskAuthorization.canAccess(#publicTaskId)")
     public TaskResponse.Detail getTaskByPublicId(UUID publicTaskId, Long loginMemberId){
         Task task = taskRepository.findByPublicId(publicTaskId)
                 .orElseThrow(()-> new BusinessException(ErrorCode.NOT_FOUND));
@@ -220,7 +220,7 @@ public class TaskService {
         return taskMapper.toDetail(task, task.getPublicId().toString(), labelSummaryResponses);
     }
 
-    @PreAuthorize("@projectAuth(#publicProjectId)")
+    @PreAuthorize("@projectAuthorization(#publicProjectId)")
     public Slice<TaskResponse.Summary> getTasksByProject(UUID publicProjectId, Long loginMemberId, Pageable pageable){
         int pageSize = pageable.getPageSize();
 
@@ -302,7 +302,7 @@ public class TaskService {
     }
 
     @Transactional
-    @PreAuthorize("@taskAuth(#publicTaskId)")
+    @PreAuthorize("@taskAuthorization(#publicTaskId)")
     public TaskResponse.Detail updateTask(UUID publicTaskId, TaskRequest.Update request, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
 
@@ -344,7 +344,7 @@ public class TaskService {
     }
 
     @Transactional
-    @PreAuthorize("@taskAuth(#publicTaskId)")
+    @PreAuthorize("@taskAuthorization(#publicTaskId)")
     @DistributedLock(key = "#publicTaskId")
     public TaskResponse.Summary toggleCompletion(UUID publicTaskId, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
@@ -424,7 +424,7 @@ public class TaskService {
     }
 
     @Transactional
-    @PreAuthorize("@taskAuth(#publicTaskId)")
+    @PreAuthorize("@taskAuthorization(#publicTaskId)")
     public TaskResponse.Detail updateTaskDueDate(UUID publicTaskId, TaskRequest.UpdateDueDate request, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
 
@@ -526,7 +526,7 @@ public class TaskService {
     }
 
     @Transactional
-    @PreAuthorize("@taskAuth(#publicTaskId)")
+    @PreAuthorize("@taskAuthorization(#publicTaskId)")
     public TaskResponse.Detail updatePriority(UUID publicTaskId, TaskPriorityType taskPriorityType, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
@@ -555,7 +555,7 @@ public class TaskService {
     }
 
     @Transactional
-    @PreAuthorize("@taskAuth(#publicTaskId)")
+    @PreAuthorize("@taskAuthorization(#publicTaskId)")
     public TaskResponse.Detail updateTaskLabels(UUID publicTaskId, List<String> labelIds, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         // 빈 목록이면 라벨 전부 제거 후 빈 목록으로 응답
@@ -577,7 +577,7 @@ public class TaskService {
     }
 
     @Transactional
-    @PreAuthorize("@taskAuth(#publicTaskId)")
+    @PreAuthorize("@taskAuthorization(#publicTaskId)")
     public TaskResponse.Detail moveTaskToProject(UUID publicTaskId, UUID publicProjectId, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());
@@ -612,7 +612,7 @@ public class TaskService {
     }
 
     @Transactional
-    @PreAuthorize("@taskAuth(#publicTaskId)")
+    @PreAuthorize("@taskAuthorization(#publicTaskId)")
     public TaskResponse.Summary updateSortOrder(UUID publicTaskId, TaskRequest.UpdateSortOrder updateSortOrder, Long loginMemberId){
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<LabelSummaryQuery> taskLabels = labelRepository.findLabelSummariesByTaskId(task.getId());

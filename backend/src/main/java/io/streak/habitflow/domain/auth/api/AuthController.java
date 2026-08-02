@@ -1,10 +1,10 @@
 package io.streak.habitflow.domain.auth.api;
 
 import io.streak.habitflow.domain.auth.dto.request.AuthRequest;
+import io.streak.habitflow.domain.auth.model.TokenPair;
 import io.streak.habitflow.domain.auth.service.AuthService;
-import io.streak.habitflow.global.security.dto.TokenDto;
-import io.streak.habitflow.global.security.dto.UserPrincipal;
 import io.streak.habitflow.global.security.jwt.TokenCookieManager;
+import io.streak.habitflow.global.security.principal.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -46,9 +46,9 @@ public class AuthController {
     @ApiResponses({@ApiResponse(responseCode = "200", description = "회원 로그인 성공")})
     public ResponseEntity<Map<String, String>> login(@RequestBody AuthRequest.Login request,
                                                      HttpServletResponse httpServletResponse){
-        TokenDto tokenDto = authService.login(request);
-        tokenCookieManager.addRefreshTokenCookie(httpServletResponse,tokenDto.refreshToken());
-        return ResponseEntity.ok(Map.of("accessToken", tokenDto.accessToken()));
+        TokenPair tokenPair = authService.login(request);
+        tokenCookieManager.addRefreshTokenCookie(httpServletResponse, tokenPair.refreshToken());
+        return ResponseEntity.ok(Map.of("accessToken", tokenPair.accessToken()));
     }
 
     @PostMapping("/logout")
@@ -73,9 +73,9 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> refreshTokens(
             @CookieValue(value="refreshToken") String refreshToken,
             HttpServletResponse response){
-        TokenDto tokenDto = authService.refreshTokens(refreshToken);
-        tokenCookieManager.addRefreshTokenCookie(response,tokenDto.refreshToken());
+        TokenPair tokenPair = authService.refreshTokens(refreshToken);
+        tokenCookieManager.addRefreshTokenCookie(response, tokenPair.refreshToken());
 
-        return ResponseEntity.ok(Map.of("accessToken",tokenDto.accessToken()));
+        return ResponseEntity.ok(Map.of("accessToken", tokenPair.accessToken()));
     }
 }

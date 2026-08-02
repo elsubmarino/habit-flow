@@ -1,4 +1,4 @@
-package io.streak.habitflow.global.security.auth;
+package io.streak.habitflow.domain.project.authorization;
 
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
@@ -11,9 +11,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-@Component("projectAuth")
+@Component("projectAuthorization")
 @RequiredArgsConstructor
-public class ProjectAuth {
+public class ProjectAuthorization {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final MemberRepository memberRepository;

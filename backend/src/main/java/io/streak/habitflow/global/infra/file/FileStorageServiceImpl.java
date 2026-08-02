@@ -21,7 +21,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     private static final Set<String> ALLOWED = Set.of("image/jpeg", "image/png", "image/webp");
 
     @Override
-    public FileDto upload(MultipartFile file) {
+    public StoredFile upload(MultipartFile file) {
         if(file.isEmpty()){
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
@@ -53,7 +53,7 @@ public class FileStorageServiceImpl implements FileStorageService {
 
 
 
-            return FileDto.builder()
+            return StoredFile.builder()
                     .originalFileName(originalFileName)
                     .savedFileName(saveFileName)
                     .fileUrl(fileUrl)

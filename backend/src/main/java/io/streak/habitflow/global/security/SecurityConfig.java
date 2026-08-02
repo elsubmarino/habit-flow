@@ -1,11 +1,11 @@
 package io.streak.habitflow.global.security;
 
+import io.streak.habitflow.domain.auth.oauth.CustomOAuth2UserService;
+import io.streak.habitflow.domain.auth.oauth.OAuth2LoginSuccessHandler;
 import io.streak.habitflow.global.error.SecurityErrorWriter;
 import io.streak.habitflow.global.security.jwt.JwtAuthenticationFilter;
 import io.streak.habitflow.global.security.jwt.JwtTokenProvider;
-import io.streak.habitflow.global.security.oauth.CustomOAuth2UserService;
 import io.streak.habitflow.global.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
-import io.streak.habitflow.global.security.oauth.OAuth2LoginSuccessHandler;
 import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

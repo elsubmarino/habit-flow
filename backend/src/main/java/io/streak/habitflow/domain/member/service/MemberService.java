@@ -87,7 +87,7 @@ public class MemberService {
 
 
     @Transactional
-    @PreAuthorize("@memberAuth(#publicMemberId)")
+    @PreAuthorize("@memberAuthorization(#publicMemberId)")
     public MemberResponse.Detail updateMember(UUID publicMemberId, MemberRequest.Update  request, Long loginMemberId){
         Member member = memberRepository.getOrThrowByPublicId(publicMemberId);
         if (!request.name().equals(member.getName())) {

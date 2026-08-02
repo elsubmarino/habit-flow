@@ -1,8 +1,9 @@
-package io.streak.habitflow.global.security.oauth;
+package io.streak.habitflow.domain.auth.oauth;
 
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.global.security.jwt.JwtTokenProvider;
+import io.streak.habitflow.global.security.oauth.HttpCookieOAuth2AuthorizationRequestRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

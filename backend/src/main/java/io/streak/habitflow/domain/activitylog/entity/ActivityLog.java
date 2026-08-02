@@ -1,5 +1,6 @@
 package io.streak.habitflow.domain.activitylog.entity;
 
+import io.streak.habitflow.domain.activitylog.persistence.ChangeSetListConverter;
 import io.streak.habitflow.domain.activitylog.vo.ChangeSet;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.global.common.entity.BaseCreatedTimeEntity;

@@ -2,7 +2,7 @@ package io.streak.habitflow.global.web;
 
 import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.exception.BusinessException;
-import io.streak.habitflow.global.security.dto.UserPrincipal;
+import io.streak.habitflow.global.security.principal.UserPrincipal;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

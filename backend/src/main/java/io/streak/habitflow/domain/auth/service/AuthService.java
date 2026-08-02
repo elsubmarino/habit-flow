@@ -2,13 +2,13 @@ package io.streak.habitflow.domain.auth.service;
 
 import io.jsonwebtoken.Claims;
 import io.streak.habitflow.domain.auth.dto.request.AuthRequest;
+import io.streak.habitflow.domain.auth.model.TokenPair;
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;
 import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.SecurityErrorWriter;
 import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.infra.mail.MailService;
-import io.streak.habitflow.global.security.dto.TokenDto;
 import io.streak.habitflow.global.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +49,7 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenDto login(AuthRequest.Login request){
+    public TokenPair login(AuthRequest.Login request){
         String failKey = "LOGIN_FAIL:" + request.email();
         String failCount = redisTemplate.opsForValue().get(failKey);
         if (failCount != null && Integer.parseInt(failCount) >= 5) {
@@ -79,7 +79,7 @@ public class AuthService {
                 TimeUnit.DAYS
         );
 
-        return new TokenDto(accessToken, refreshToken);
+        return new TokenPair(accessToken, refreshToken);
     }
 
     @Transactional
@@ -102,7 +102,7 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenDto refreshTokens(String refreshToken) {
+    public TokenPair refreshTokens(String refreshToken) {
         if (!jwtTokenProvider.validateToken(refreshToken)) {
             throw new BusinessException(ErrorCode.UNAUTHORIZED);
         }
@@ -133,7 +133,7 @@ public class AuthService {
                 14,
                 TimeUnit.DAYS
         );
-        return new TokenDto(newAccessToken,newRefreshToken);
+        return new TokenPair(newAccessToken,newRefreshToken);
     }
 
     public void sendAuthCode(String email){

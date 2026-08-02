@@ -1,4 +1,4 @@
-package io.streak.habitflow.global.security.auth;
+package io.streak.habitflow.domain.notification.authorization;
 
 import io.streak.habitflow.domain.notification.entity.Notification;
 import io.streak.habitflow.domain.notification.repository.NotificationRepository;
@@ -7,9 +7,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-@Component("notificationAuth")
+@Component("notificationAuthorization")
 @RequiredArgsConstructor
-public class NotificationAuth {
+public class NotificationAuthorization {
     private final NotificationRepository notificationRepository;
     public boolean canAccess(UUID publicNotificationId){
         Notification notification = notificationRepository.getOrThrowByPublicId(publicNotificationId);

@@ -12,8 +12,8 @@ import io.streak.habitflow.domain.task.entity.Task;
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.global.common.type.ActivityType;
 import io.streak.habitflow.global.common.type.TargetType;
-import io.streak.habitflow.global.infra.file.FileDto;
 import io.streak.habitflow.global.infra.file.FileStorageService;
+import io.streak.habitflow.global.infra.file.StoredFile;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -37,8 +37,8 @@ public class CommentService {
     private final HashidsProvider hashidsProvider;
 
     @Transactional
-    @PreAuthorize("@taskAuth.canAccess(#publicTaskId)")
-    public CommentResponse.Detail createComment(UUID publicTaskId, CommentRequest.Create request, FileDto fileDto, Long loginMemberId) {
+    @PreAuthorize("@taskAuthorization.canAccess(#publicTaskId)")
+    public CommentResponse.Detail createComment(UUID publicTaskId, CommentRequest.Create request, StoredFile storedFile, Long loginMemberId) {
         Member member = memberRepository.getReferenceById(loginMemberId);
 
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
@@ -49,11 +49,11 @@ public class CommentService {
                 .content(request.content())
                 .build();
 
-        if(fileDto != null){
+        if(storedFile != null){
             Attachment attachment = Attachment.builder()
-                    .originalFileName(fileDto.originalFileName())
-                    .savedFileName((fileDto.savedFileName()))
-                    .fileUrl(fileDto.fileUrl())
+                    .originalFileName(storedFile.originalFileName())
+                    .savedFileName((storedFile.savedFileName()))
+                    .fileUrl(storedFile.fileUrl())
                     .build();
             comment.addAttachment(attachment);
         }
@@ -72,7 +72,7 @@ public class CommentService {
         return CommentResponse.Detail.of(result,result.getPublicId().toString());
     }
 
-    @PreAuthorize("@taskAuth.canAccess(#publicTaskId)")
+    @PreAuthorize("@taskAuthorization.canAccess(#publicTaskId)")
     public List<CommentResponse.Detail> getComments(UUID publicTaskId, Long loginMemberId) {
         Task task = taskRepository.getOrThrowByPublicId(publicTaskId);
         List<Comment> comments = commentRepository.findByTaskIdWithAttachments(task.getId());
@@ -84,7 +84,7 @@ public class CommentService {
     }
 
     @Transactional
-    @PreAuthorize("@commentAuth.canAccess(#publicCommentId)")
+    @PreAuthorize("@commentAuthorization.canAccess(#publicCommentId)")
     public CommentResponse.Detail updateComment(UUID publicCommentId, CommentRequest.Update request, Long loginMemberId) {
         Comment comment = commentRepository.getOrThrowByPublicId(publicCommentId);
         if(comment.getContent().equals(request.content())){
@@ -95,7 +95,7 @@ public class CommentService {
     }
 
     @Transactional
-    @PreAuthorize("@commentAuth.canAccess(#publicCommentId)")
+    @PreAuthorize("@commentAuthorization.canAccess(#publicCommentId)")
     public void deleteComment(UUID publicCommentId, Long loginMemberId){
         Comment comment = commentRepository.getOrThrowByPublicId(publicCommentId);
         commentRepository.deleteById(comment.getId());

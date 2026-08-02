@@ -3,7 +3,7 @@ package io.streak.habitflow.global.security.jwt;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import io.streak.habitflow.global.security.dto.UserPrincipal;
+import io.streak.habitflow.global.security.principal.UserPrincipal;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

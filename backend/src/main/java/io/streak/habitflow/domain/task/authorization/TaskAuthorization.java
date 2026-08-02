@@ -1,4 +1,4 @@
-package io.streak.habitflow.global.security.auth;
+package io.streak.habitflow.domain.task.authorization;
 
 import io.streak.habitflow.domain.task.repository.TaskRepository;
 import io.streak.habitflow.global.security.SecurityUtils;
@@ -7,9 +7,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-@Component("taskAuth")
+@Component("taskAuthorization")
 @RequiredArgsConstructor
-public class TaskAuth {
+public class TaskAuthorization {
     private final TaskRepository taskRepository;
 
     public boolean canAccess(UUID publicTaskId){

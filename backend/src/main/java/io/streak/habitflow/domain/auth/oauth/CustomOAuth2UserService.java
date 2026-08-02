@@ -1,4 +1,4 @@
-package io.streak.habitflow.global.security.oauth;
+package io.streak.habitflow.domain.auth.oauth;
 
 import io.streak.habitflow.domain.member.entity.Member;
 import io.streak.habitflow.domain.member.repository.MemberRepository;

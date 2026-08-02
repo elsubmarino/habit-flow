@@ -1,6 +1,6 @@
 package io.streak.habitflow.global.security;
 
-import io.streak.habitflow.global.security.dto.UserPrincipal;
+import io.streak.habitflow.global.security.principal.UserPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 public class SecurityUtils {
