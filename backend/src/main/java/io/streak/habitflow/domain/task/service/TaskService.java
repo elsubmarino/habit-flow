@@ -90,7 +90,7 @@ public class TaskService {
             project = projectRepository.findByPublicId(request.publicProjectId())
                     .orElseThrow(()->new BusinessException(ErrorCode.NOT_FOUND));
             long projectCount = taskRepository.countByProject(project);
-            if (projectCount > 500) {
+            if (projectCount >= 500) {
                 throw new BusinessException(ErrorCode.TASK_LIMIT_EXCEEDED);
             }
 

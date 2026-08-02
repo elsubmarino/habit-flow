@@ -12,7 +12,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Getter
-@Table(name="members")
+@Table(name="members",
+    uniqueConstraints = {
+        @UniqueConstraint(name="uk_members_email",columnNames = "email"),
+        @UniqueConstraint(name="uk_members_public_id",columnNames = "public_id")
+    })
 public class Member extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,13 +24,12 @@ public class Member extends BaseTimeEntity {
     private Long id;
 
     @Builder.Default
-    @Column(nullable = false,unique = true,updatable = false)
+    @Column(nullable = false,updatable = false)
     private UUID publicId = UUID.randomUUID();
 
     private String name;
     private String password;
 
-    @Column(unique = true)
     private String email;
 
     @Enumerated(EnumType.STRING)

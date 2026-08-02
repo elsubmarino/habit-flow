@@ -55,7 +55,7 @@ public class ProjectService {
         Member member = memberRepository.getReferenceById(memberId);
 
         long projectCount = projectMemberRepository.countByMember(member);
-        if (projectCount > 500) {
+        if (projectCount >= 500) {
             throw new BusinessException(ErrorCode.PROJECT_LIMIT_EXCEEDED);
         }
 

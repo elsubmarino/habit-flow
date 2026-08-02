@@ -10,6 +10,7 @@ import io.streak.habitflow.global.error.ErrorCode;
 import io.streak.habitflow.global.error.exception.BusinessException;
 import io.streak.habitflow.global.util.HashidsProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,12 +28,12 @@ public class MemberService {
     private final HashidsProvider hashidsProvider;
 
     @Transactional
-    public MemberResponse.Detail createMember(MemberRequest.SignUp request){
-        if(!authService.isVerifiedEmail(request.email())){
+    public MemberResponse.Detail createMember(MemberRequest.SignUp request) {
+        if (!authService.isVerifiedEmail(request.email())) {
             throw new BusinessException(ErrorCode.UNVERIFIED_EMAIL);
         }
 
-        if(memberRepository.findByEmail(request.email()).isPresent()){
+        if (memberRepository.findByEmail(request.email()).isPresent()) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
@@ -42,11 +43,32 @@ public class MemberService {
                 .password(passwordEncoder.encode(request.password()))
                 .memberRole(MemberRole.USER)
                 .build();
-        Member result = memberRepository.save(member);
+
+        Member result;
+
+        try {
+            result = memberRepository.saveAndFlush(member);
+        } catch (DataIntegrityViolationException ex) {
+            if (hasConstraint(ex, "uk_members_email")) {
+                throw new BusinessException(
+                        ErrorCode.DUPLICATE_EMAIL,
+                        "회원 이메일 고유 제약 위반",
+                        ex
+                );
+            }
+
+            // 이메일 중복이 아닌 예상하지 못한 DB 오류는 500으로 처리
+            throw ex;
+        }
 
         authService.clearEmailVerification(request.email());
-        return MemberResponse.Detail.to(result,result.getPublicId().toString());
+
+        return MemberResponse.Detail.to(
+                result,
+                result.getPublicId().toString()
+        );
     }
+
 
     @Transactional
     @PreAuthorize("@memberAuth(#publicMemberId)")
